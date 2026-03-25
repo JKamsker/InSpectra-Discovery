@@ -23,6 +23,16 @@ on:
         required: true
         default: "250"
         type: string
+      batch_prefix:
+        description: Prefix used when naming dispatched batches
+        required: false
+        default: discovery-queue
+        type: string
+      force_reanalyze:
+        description: Whether to rerun items even if state already marks them successful
+        required: false
+        default: "false"
+        type: string
 
 permissions:
   actions: write
@@ -77,12 +87,14 @@ jobs:
           $stateBranch = '${{ inputs.state_branch }}'
           $queuePath = '${{ inputs.queue_path }}'
           $batchSize = [int]'${{ inputs.batch_size }}'
+          $batchPrefix = '${{ inputs.batch_prefix }}'
 
           $planPath = Join-Path $env:RUNNER_TEMP 'queue-dispatch-plan.json'
           ./scripts/Export-DiscoveryQueueDispatchPlan.ps1 `
             -QueuePath $queuePath `
             -TargetBranch $targetBranch `
             -StateBranch $stateBranch `
+            -BatchPrefix $batchPrefix `
             -BatchSize $batchSize `
             -OutputPath $planPath
 
@@ -185,7 +197,8 @@ jobs:
             -f offset=$offset `
             -f take=$take `
             -f state_branch=$stateBranch `
-            -f target_branch=$targetBranch
+            -f target_branch=$targetBranch `
+            -f force_reanalyze='${{ inputs.force_reanalyze }}'
 
           $analysisRun = Wait-ForWorkflowRun `
             -Repository $repository `

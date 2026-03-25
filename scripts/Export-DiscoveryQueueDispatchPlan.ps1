@@ -12,6 +12,8 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$OutputPath,
 
+    [string]$BatchPrefix = 'discovery-queue',
+
     [ValidateRange(1, 250)]
     [int]$BatchSize = 250
 )
@@ -42,8 +44,17 @@ function Get-RelativeRepositoryPath {
 }
 
 function Get-SanitizedBatchPrefix {
-    param([string]$BranchName, [AllowNull()][string]$Timestamp)
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Prefix,
 
+        [Parameter(Mandatory = $true)]
+        [string]$BranchName,
+
+        [AllowNull()][string]$Timestamp
+    )
+
+    $normalizedPrefix = ($Prefix.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-')
     $normalizedBranch = ($BranchName.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-')
     $normalizedTimestamp = if ([string]::IsNullOrWhiteSpace($Timestamp)) {
         [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssZ').ToLowerInvariant()
@@ -52,7 +63,7 @@ function Get-SanitizedBatchPrefix {
         $Timestamp.ToLowerInvariant() -replace '[^0-9tz]+', ''
     }
 
-    return "discovery-queue-$normalizedBranch-$normalizedTimestamp"
+    return "$normalizedPrefix-$normalizedBranch-$normalizedTimestamp"
 }
 
 $timestampSeed = if ($Queue.PSObject.Properties.Name -contains 'cursorEndUtc' -and $Queue.cursorEndUtc) {
@@ -62,7 +73,7 @@ else {
     [DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssZ')
 }
 
-$prefix = Get-SanitizedBatchPrefix -BranchName $TargetBranch -Timestamp $timestampSeed
+$prefix = Get-SanitizedBatchPrefix -Prefix $BatchPrefix -BranchName $TargetBranch -Timestamp $timestampSeed
 $batches = [System.Collections.Generic.List[object]]::new()
 
 for ($offset = 0; $offset -lt $QueueItems.Count; $offset += $BatchSize) {

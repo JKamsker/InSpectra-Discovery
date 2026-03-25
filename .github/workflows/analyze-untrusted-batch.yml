@@ -35,6 +35,11 @@ on:
         required: false
         default: "main"
         type: string
+      force_reanalyze:
+        description: Whether to rerun items even if they already have terminal or successful state
+        required: false
+        default: "false"
+        type: string
   repository_dispatch:
     types:
       - analyze-untrusted-batch
@@ -125,6 +130,38 @@ jobs:
             'main'
           }
 
+          function ConvertTo-BoolOrDefault {
+            param(
+              [AllowNull()][string]$Value,
+              [bool]$Default = $false
+            )
+
+            if ([string]::IsNullOrWhiteSpace($Value)) {
+              return $Default
+            }
+
+            $normalized = $Value.Trim().ToLowerInvariant()
+            if ($normalized -in @('1', 'true', 'yes', 'y', 'on')) {
+              return $true
+            }
+
+            if ($normalized -in @('0', 'false', 'no', 'n', 'off')) {
+              return $false
+            }
+
+            return $Default
+          }
+
+          $forceReanalyze = if ('${{ inputs.force_reanalyze }}') {
+            ConvertTo-BoolOrDefault -Value '${{ inputs.force_reanalyze }}'
+          }
+          elseif ('${{ github.event.client_payload.force_reanalyze }}') {
+            ConvertTo-BoolOrDefault -Value '${{ github.event.client_payload.force_reanalyze }}'
+          }
+          else {
+            $false
+          }
+
           $planPath = Join-Path $env:RUNNER_TEMP 'expected.json'
           if ([string]::IsNullOrWhiteSpace($queuePath)) {
             throw 'queue_path is required. Checked-in batch manifests were removed; use a queue-driven run.'
@@ -157,6 +194,10 @@ jobs:
 
           if ($null -ne $take) {
             $arguments.Take = $take
+          }
+
+          if ($forceReanalyze) {
+            $arguments.ForceReanalyze = $true
           }
 
           ./scripts/Export-UntrustedBatchPlan.ps1 @arguments

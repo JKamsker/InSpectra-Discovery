@@ -20,6 +20,8 @@ param(
     [ValidateRange(1, [int]::MaxValue)]
     [int]$Take = [int]::MaxValue,
 
+    [switch]$ForceReanalyze,
+
     [string]$TargetBranch = 'main'
 )
 
@@ -300,7 +302,7 @@ foreach ($item in $batch.items) {
     $statePath = Get-StatePath -LowerId $lowerId -LowerVersion $lowerVersion
     $state = if (Test-Path $statePath) { Get-Content $statePath -Raw | ConvertFrom-Json } else { $null }
 
-    if ($state) {
+    if ($state -and -not $ForceReanalyze) {
         $status = [string]$state.currentStatus
         $nextAttemptAt = if ($state.nextAttemptAt) { [DateTimeOffset]$state.nextAttemptAt } else { $null }
 
@@ -351,6 +353,7 @@ $plan = [ordered]@{
     sourceManifestPath = $batch.sourceManifestPath
     sourceSnapshotPath = $batch.sourceSnapshotPath
     targetBranch = $batch.targetBranch
+    forceReanalyze = $ForceReanalyze.IsPresent
     selectedCount = $selectedItems.Count
     skippedCount = $skippedItems.Count
     items = @($selectedItems)
@@ -361,5 +364,6 @@ Write-JsonFile -Path $OutputPath -InputObject $plan
 
 Write-Host "Planned batch $($batch.batchId)"
 Write-Host "Target branch: $($batch.targetBranch)"
+Write-Host "Force reanalyze: $($ForceReanalyze.IsPresent)"
 Write-Host "Selected items: $($selectedItems.Count)"
 Write-Host "Skipped items: $($skippedItems.Count)"
