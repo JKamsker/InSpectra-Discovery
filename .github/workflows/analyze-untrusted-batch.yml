@@ -1,0 +1,118 @@
+name: Analyze Untrusted Batch
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_id:
+        description: Batch definition to execute
+        required: true
+        default: pilot-batch-01
+        type: choice
+        options:
+          - pilot-batch-01
+          - pilot-batch-02
+  repository_dispatch:
+    types:
+      - analyze-untrusted-batch
+
+permissions:
+  contents: read
+
+concurrency:
+  group: analyze-untrusted-${{ inputs.batch_id || github.event.client_payload.batch_id }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      batch_id: ${{ steps.plan.outputs.batch_id }}
+      selected_count: ${{ steps.plan.outputs.selected_count }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Build batch plan
+        id: plan
+        shell: pwsh
+        run: |
+          $batchId = if ('${{ inputs.batch_id }}') {
+            '${{ inputs.batch_id }}'
+          }
+          elseif ('${{ github.event.client_payload.batch_id }}') {
+            '${{ github.event.client_payload.batch_id }}'
+          }
+          else {
+            throw 'No batch_id was provided.'
+          }
+
+          $planPath = Join-Path $env:RUNNER_TEMP 'expected.json'
+          ./scripts/Export-UntrustedBatchPlan.ps1 `
+            -BatchPath "config/untrusted-batches/$batchId.json" `
+            -OutputPath $planPath
+
+          $plan = Get-Content $planPath -Raw | ConvertFrom-Json
+          "batch_id=$($plan.batchId)" >> $env:GITHUB_OUTPUT
+          "selected_count=$($plan.selectedCount)" >> $env:GITHUB_OUTPUT
+          "matrix<<EOF" >> $env:GITHUB_OUTPUT
+          ((@($plan.items) | ConvertTo-Json -Compress) ?? '[]') >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Upload expected plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: plan-${{ steps.plan.outputs.batch_id }}
+          path: ${{ runner.temp }}/expected.json
+          if-no-files-found: error
+          retention-days: 7
+
+  analyze:
+    needs: plan
+    if: ${{ needs.plan.outputs.selected_count != '0' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Analyze package
+        shell: pwsh
+        env:
+          RESULT_ROOT: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
+        run: |
+          ./scripts/Invoke-UntrustedToolAnalysis.ps1 `
+            -PackageId '${{ matrix.packageId }}' `
+            -Version '${{ matrix.version }}' `
+            -OutputRoot $env:RESULT_ROOT `
+            -BatchId '${{ needs.plan.outputs.batch_id }}' `
+            -Attempt ${{ matrix.attempt }} `
+            -Source 'analyze-untrusted-batch'
+
+      - name: Upload analysis artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifactName }}
+          path: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
+          if-no-files-found: error
+          retention-days: 7

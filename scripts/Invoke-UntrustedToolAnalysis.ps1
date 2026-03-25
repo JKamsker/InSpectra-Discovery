@@ -211,6 +211,9 @@ New-Item -ItemType Directory -Path $TempRoot -Force | Out-Null
 try {
     $env:HOME = Join-Path $TempRoot 'home'
     $env:DOTNET_CLI_HOME = Join-Path $TempRoot 'dotnet-home'
+    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+    $env:DOTNET_NOLOGO = '1'
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
     $env:NUGET_PACKAGES = Join-Path $TempRoot 'nuget-packages'
     $env:NUGET_HTTP_CACHE_PATH = Join-Path $TempRoot 'nuget-http-cache'
 
@@ -225,14 +228,17 @@ try {
     $result.packageContentUrl = [string]$leaf.packageContent
     $result.publishedAt = ([DateTimeOffset]$catalogLeaf.published).ToUniversalTime().ToString('o')
 
+    $packageEntries = if ($catalogLeaf.PSObject.Properties.Name -contains 'packageEntries') { @($catalogLeaf.packageEntries) } else { @() }
+    $dependencyGroups = if ($catalogLeaf.PSObject.Properties.Name -contains 'dependencyGroups') { @($catalogLeaf.dependencyGroups) } else { @() }
+
     $detectionEntries = @(
-        @($catalogLeaf.packageEntries) |
+        $packageEntries |
             Where-Object { $_.name -in @('Spectre.Console.dll', 'Spectre.Console.Cli.dll') } |
             Select-Object -ExpandProperty fullName
     )
 
     $dependencyIds = @(
-        @($catalogLeaf.dependencyGroups) |
+        $dependencyGroups |
             ForEach-Object { @($_.dependencies) } |
             Where-Object { $_.id -like 'Spectre.Console*' } |
             Select-Object -ExpandProperty id -Unique

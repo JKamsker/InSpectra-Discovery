@@ -4,6 +4,7 @@
 - [x] Enrich the snapshot with `totalDownloads` from NuGet search metadata and sort the package list descending by downloads.
 - [x] Add a catalog-based `filter spectre-console` command that reads the ranked index and writes a filtered JSON file with Spectre evidence.
 - [x] Add a trusted single-package GitHub Actions workflow for JellyfinCli that evaluates the tool and opens a PR with versioned package index files.
+- [x] Add a pilot untrusted analysis pipeline with two 10-item batches, artifact-only analysis, retry state, and a promotion workflow.
 
 Command:
 `dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --concurrency 16`
@@ -28,3 +29,13 @@ Versioned outputs:
 
 Latest alias:
 `index/packages/jellyfincli/latest/{metadata.json,opencli.json,xmldoc.xml}`
+
+Pilot untrusted batches:
+`config/untrusted-batches/pilot-batch-01.json`
+`config/untrusted-batches/pilot-batch-02.json`
+
+Untrusted analysis workflow:
+`.github/workflows/analyze-untrusted-batch.yml`
+
+Promotion workflow:
+`.github/workflows/promote-untrusted-analysis-results.yml`

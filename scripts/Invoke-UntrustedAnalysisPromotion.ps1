@@ -179,6 +179,26 @@ function Write-SuccessArtifacts {
     Write-JsonFile -Path $openCliPath -InputObject (Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact) -Raw | ConvertFrom-Json)
     Write-TextFile -Path $xmlDocPath -Content (Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.xmldocArtifact) -Raw)
 
+    $steps = [ordered]@{
+        install = $Result.steps.install
+        opencli = if ($Result.steps.opencli) {
+            $clone = [ordered]@{}
+            foreach ($property in $Result.steps.opencli.PSObject.Properties) {
+                $clone[$property.Name] = $property.Value
+            }
+            $clone.path = Get-RelativeRepositoryPath -Path $openCliPath
+            $clone
+        } else { $null }
+        xmldoc = if ($Result.steps.xmldoc) {
+            $clone = [ordered]@{}
+            foreach ($property in $Result.steps.xmldoc.PSObject.Properties) {
+                $clone[$property.Name] = $property.Value
+            }
+            $clone.path = Get-RelativeRepositoryPath -Path $xmlDocPath
+            $clone
+        } else { $null }
+    }
+
     $metadata = [ordered]@{
         schemaVersion = 1
         packageId = $Result.packageId
@@ -200,7 +220,7 @@ function Write-SuccessArtifacts {
         toolSettingsPath = $Result.toolSettingsPath
         detection = $Result.detection
         timings = $Result.timings
-        steps = $Result.steps
+        steps = $steps
         artifacts = [ordered]@{
             metadataPath = Get-RelativeRepositoryPath -Path $metadataPath
             opencliPath = Get-RelativeRepositoryPath -Path $openCliPath
