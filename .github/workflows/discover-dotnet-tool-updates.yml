@@ -3,16 +3,32 @@ name: Discover Dotnet Tool Updates
 on:
   workflow_dispatch:
     inputs:
+      target_branch:
+        description: Branch to update with discovery state
+        required: true
+        default: main
+        type: string
+      apply_mode:
+        description: How discovery results should be applied
+        required: true
+        default: pull_request
+        type: choice
+        options:
+          - pull_request
+          - commit_and_dispatch
       overlap_minutes:
         description: Catalog overlap window in minutes
         required: true
         default: "30"
+        type: string
       seed_cursor_utc:
         description: Optional ISO-8601 cursor seed if state file is missing
         required: false
         default: ""
+        type: string
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -30,6 +46,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
+          ref: ${{ inputs.target_branch }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -145,7 +162,7 @@ jobs:
           Write-Host 'No added or updated dotnet tools were discovered.'
 
       - name: Open pull request
-        if: ${{ steps.delta.outputs.changed_package_count != '0' }}
+        if: ${{ steps.delta.outputs.changed_package_count != '0' && inputs.apply_mode == 'pull_request' }}
         id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
@@ -162,10 +179,53 @@ jobs:
           body-path: ${{ steps.delta.outputs.body_path }}
 
       - name: Report pull request result
-        if: ${{ steps.delta.outputs.changed_package_count != '0' }}
+        if: ${{ steps.delta.outputs.changed_package_count != '0' && inputs.apply_mode == 'pull_request' }}
         shell: pwsh
         run: |
           Write-Host "Pull request operation: ${{ steps.cpr.outputs.pull-request-operation }}"
           if ('${{ steps.cpr.outputs.pull-request-url }}') {
             Write-Host "Pull request URL: ${{ steps.cpr.outputs.pull-request-url }}"
           }
+
+      - name: Commit discovery state to target branch
+        if: ${{ steps.delta.outputs.changed_package_count != '0' && inputs.apply_mode == 'commit_and_dispatch' }}
+        id: commit
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add state/discovery
+
+          if ((git diff --cached --quiet --exit-code), $LASTEXITCODE -contains 0) {
+            Write-Host 'No staged discovery changes were found.'
+            "commit_sha=" >> $env:GITHUB_OUTPUT
+            exit 0
+          }
+
+          git commit -m 'chore(discovery): update dotnet-tool delta'
+          git push origin "HEAD:${{ inputs.target_branch }}"
+
+          $commitSha = (git rev-parse HEAD).Trim()
+          "commit_sha=$commitSha" >> $env:GITHUB_OUTPUT
+          Write-Host "Pushed discovery state commit $commitSha to ${{ inputs.target_branch }}."
+
+      - name: Dispatch queue analysis
+        if: >-
+          ${{
+            steps.delta.outputs.changed_package_count != '0' &&
+            inputs.apply_mode == 'commit_and_dispatch' &&
+            steps.spectre.outputs.queue_count != '' &&
+            steps.spectre.outputs.queue_count != '0'
+          }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run dispatch-discovery-queue-analysis.yml `
+            --repo '${{ github.repository }}' `
+            --ref '${{ inputs.target_branch }}' `
+            -f target_branch='${{ inputs.target_branch }}' `
+            -f queue_path='state/discovery/dotnet-tools.spectre-console-cli.queue.json' `
+            -f batch_size='250'
+
+          Write-Host "Dispatched queue analysis for ${{ inputs.target_branch }}."
