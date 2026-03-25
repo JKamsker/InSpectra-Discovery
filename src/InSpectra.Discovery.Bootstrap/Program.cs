@@ -45,6 +45,7 @@ static async Task<int> RunAsync(string[] args)
         {
             IndexBuildCommandRequest build => await RunIndexBuildAsync(apiClient, output, build.Options, cancellationSource.Token),
             IndexDeltaCommandRequest delta => await RunIndexDeltaAsync(apiClient, output, delta.Options, cancellationSource.Token),
+            IndexDeltaSpectreConsoleCliCommandRequest deltaSpectre => await RunIndexDeltaSpectreConsoleCliAsync(apiClient, output, deltaSpectre.Options, cancellationSource.Token),
             FilterSpectreConsoleCommandRequest filter => await RunSpectreFilterAsync(apiClient, output, filter.Options, cancellationSource.Token),
             _ => throw new InvalidOperationException($"Unsupported command type '{request.GetType().Name}'."),
         };
@@ -178,6 +179,46 @@ static async Task<int> RunIndexDeltaAsync(
             new SummaryRow("Current snapshot", currentSnapshotPath),
             new SummaryRow("Delta output", deltaOutputPath),
             new SummaryRow("Cursor state", cursorStatePath),
+        ],
+        options.Json,
+        cancellationToken);
+}
+
+static async Task<int> RunIndexDeltaSpectreConsoleCliAsync(
+    NuGetApiClient apiClient,
+    CommandOutput output,
+    IndexDeltaSpectreConsoleCliOptions options,
+    CancellationToken cancellationToken)
+{
+    var builder = new SpectreConsoleCliDeltaQueueBuilder(apiClient);
+    var computation = await builder.RunAsync(
+        options,
+        options.Json ? null : output.WriteProgress,
+        cancellationToken);
+
+    var outputDeltaPath = Path.GetFullPath(options.OutputDeltaPath);
+    var queueOutputPath = Path.GetFullPath(options.QueueOutputPath);
+
+    await WriteJsonFileAsync(outputDeltaPath, computation.Delta, cancellationToken);
+    await WriteJsonFileAsync(queueOutputPath, computation.Queue, cancellationToken);
+
+    return await output.WriteSuccessAsync(
+        new IndexDeltaSpectreConsoleCliCommandSummary(
+            Command: "index delta-spectre-console-cli",
+            InputDeltaPath: Path.GetFullPath(options.InputDeltaPath),
+            OutputDeltaPath: outputDeltaPath,
+            QueueOutputPath: queueOutputPath,
+            ScannedChangeCount: computation.Delta.ScannedChangeCount,
+            MatchedPackageCount: computation.Delta.PackageCount,
+            QueueCount: computation.Queue.ItemCount),
+        [
+            new SummaryRow("Command", "index delta-spectre-console-cli"),
+            new SummaryRow("Input delta", Path.GetFullPath(options.InputDeltaPath)),
+            new SummaryRow("Scanned changes", computation.Delta.ScannedChangeCount.ToString()),
+            new SummaryRow("Matched subset", computation.Delta.PackageCount.ToString()),
+            new SummaryRow("Queued current", computation.Queue.ItemCount.ToString()),
+            new SummaryRow("Output delta", outputDeltaPath),
+            new SummaryRow("Queue output", queueOutputPath),
         ],
         options.Json,
         cancellationToken);

@@ -9,6 +9,7 @@
 - [x] Add a pilot untrusted analysis pipeline with two 10-item batches, artifact-only analysis, retry state, and a promotion workflow.
 - [x] Make the untrusted analyzer classify `opencli` and `xmldoc` independently, tolerate ANSI/noisy output, and stop requeueing deterministic contract/auth/config failures.
 - [x] Add a catalog-cursor `index delta` command and a workflow that opens a PR for dotnet-tool additions or latest-version changes since the last discovery cursor.
+- [x] Narrow each broad discovery delta to changed `Spectre.Console.Cli` tools only, and emit a queue JSON that can feed later analysis runs directly.
 
 Command:
 `dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --concurrency 16`
@@ -57,3 +58,9 @@ Promotion workflow:
 
 Delta discovery workflow:
 `.github/workflows/discover-dotnet-tool-updates.yml`
+
+Narrowed Spectre CLI delta:
+`state/discovery/dotnet-tools.spectre-console-cli.delta.json`
+
+Action queue:
+`state/discovery/dotnet-tools.spectre-console-cli.queue.json`

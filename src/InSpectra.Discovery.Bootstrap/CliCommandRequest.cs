@@ -3,6 +3,7 @@ internal enum HelpTopic
     Root,
     IndexBuild,
     IndexDelta,
+    IndexDeltaSpectreConsoleCli,
     Filter,
     FilterSpectreConsole,
     FilterSpectreConsoleCli,
@@ -17,6 +18,8 @@ internal sealed record VersionCommandRequest() : CliCommandRequest(false);
 internal sealed record IndexBuildCommandRequest(BootstrapOptions Options) : CliCommandRequest(Options.Json);
 
 internal sealed record IndexDeltaCommandRequest(IndexDeltaOptions Options) : CliCommandRequest(Options.Json);
+
+internal sealed record IndexDeltaSpectreConsoleCliCommandRequest(IndexDeltaSpectreConsoleCliOptions Options) : CliCommandRequest(Options.Json);
 
 internal sealed record FilterSpectreConsoleCommandRequest(SpectreConsoleFilterOptions Options) : CliCommandRequest(Options.Json);
 

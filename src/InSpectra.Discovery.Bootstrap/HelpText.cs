@@ -15,6 +15,9 @@ internal static class HelpText
             case HelpTopic.IndexDelta:
                 WriteIndexDelta(writer);
                 break;
+            case HelpTopic.IndexDeltaSpectreConsoleCli:
+                WriteIndexDeltaSpectreConsoleCli(writer);
+                break;
             case HelpTopic.Filter:
                 WriteFilter(writer);
                 break;
@@ -53,6 +56,9 @@ internal static class HelpText
         writer.WriteLine("  Discover added or updated dotnet tools since the last catalog cursor:");
         writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta");
         writer.WriteLine();
+        writer.WriteLine("  Narrow the latest delta to changed Spectre.Console.Cli tools and queue them:");
+        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta-spectre-console-cli");
+        writer.WriteLine();
         writer.WriteLine("  Write the Spectre.Console subset from an existing index:");
         writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console");
         writer.WriteLine();
@@ -62,6 +68,8 @@ internal static class HelpText
         writer.WriteLine("COMMANDS");
         writer.WriteLine("  index build              Build the current ranked dotnet-tool index from NuGet.");
         writer.WriteLine("  index delta              Discover added or updated dotnet tools since the saved catalog cursor.");
+        writer.WriteLine("  index delta-spectre-console-cli");
+        writer.WriteLine("                           Narrow the latest delta to packages with Spectre.Console.Cli evidence.");
         writer.WriteLine("  filter spectre-console   Filter an index to packages with Spectre.Console evidence.");
         writer.WriteLine("  filter spectre-console-cli");
         writer.WriteLine("                           Filter an index to packages with Spectre.Console.Cli evidence.");
@@ -122,6 +130,31 @@ internal static class HelpText
         writer.WriteLine("EXAMPLES");
         writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta");
         writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta --seed-cursor-utc 2026-03-25T13:07:00Z --json");
+    }
+
+    private static void WriteIndexDeltaSpectreConsoleCli(TextWriter writer)
+    {
+        writer.WriteLine("NAME");
+        writer.WriteLine("  index delta-spectre-console-cli");
+        writer.WriteLine();
+        writer.WriteLine("USAGE");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta-spectre-console-cli [options]");
+        writer.WriteLine();
+        writer.WriteLine("DESCRIPTION");
+        writer.WriteLine("  Reads the latest dotnet-tool delta, inspects only the changed package IDs for");
+        writer.WriteLine("  Spectre.Console.Cli evidence, writes a narrowed delta snapshot, and emits a");
+        writer.WriteLine("  compact queue JSON for current package versions that still need analysis.");
+        writer.WriteLine();
+        writer.WriteLine("OPTIONS");
+        writer.WriteLine($"  --input <path>         Input delta path. Default: {IndexDeltaSpectreConsoleCliOptions.DefaultInputDeltaPath}");
+        writer.WriteLine($"  --output <path>        Narrowed delta output path. Default: {IndexDeltaSpectreConsoleCliOptions.DefaultOutputDeltaPath}");
+        writer.WriteLine($"  --queue-output <path>  Queue output path. Default: {IndexDeltaSpectreConsoleCliOptions.DefaultQueueOutputPath}");
+        writer.WriteLine("  --concurrency <num>    Catalog fetch concurrency. Default: 12.");
+        writer.WriteLine("  --json                 Emit a machine-readable command summary to stdout.");
+        writer.WriteLine();
+        writer.WriteLine("EXAMPLES");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta-spectre-console-cli");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta-spectre-console-cli --json");
     }
 
     private static void WriteFilter(TextWriter writer)

@@ -15,6 +15,15 @@ internal sealed record IndexDeltaCommandSummary(
     DateTimeOffset CursorStartUtc,
     DateTimeOffset CursorEndUtc);
 
+internal sealed record IndexDeltaSpectreConsoleCliCommandSummary(
+    string Command,
+    string InputDeltaPath,
+    string OutputDeltaPath,
+    string QueueOutputPath,
+    int ScannedChangeCount,
+    int MatchedPackageCount,
+    int QueueCount);
+
 internal sealed record SpectreConsoleFilterCommandSummary(
     string Command,
     string InputPath,

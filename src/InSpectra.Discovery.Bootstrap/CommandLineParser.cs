@@ -72,6 +72,17 @@ internal static class CommandLineParser
             return new IndexDeltaCommandRequest(IndexDeltaOptions.Parse(commandArgs));
         }
 
+        if (string.Equals(args[0], "delta-spectre-console-cli", StringComparison.OrdinalIgnoreCase))
+        {
+            var commandArgs = args[1..];
+            if (commandArgs.Any(IsHelpToken))
+            {
+                return new HelpCommandRequest(HelpTopic.IndexDeltaSpectreConsoleCli);
+            }
+
+            return new IndexDeltaSpectreConsoleCliCommandRequest(IndexDeltaSpectreConsoleCliOptions.Parse(commandArgs));
+        }
+
         throw new CliUsageException(
             $"Unknown command 'index {args[0]}'.",
             HelpTopic.IndexBuild,
