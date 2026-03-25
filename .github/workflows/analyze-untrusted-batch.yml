@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
     inputs:
       batch_id:
-        description: Batch id or generated queue batch id to execute
+        description: Logical batch id for the queue slice to execute
         required: false
         default: ""
         type: string
       queue_path:
-        description: Optional queue JSON path to slice instead of a checked-in batch manifest
+        description: Queue JSON path to slice for this run
         required: false
         default: ""
         type: string
@@ -126,48 +126,40 @@ jobs:
           }
 
           $planPath = Join-Path $env:RUNNER_TEMP 'expected.json'
-          if (-not [string]::IsNullOrWhiteSpace($queuePath)) {
-            if ([string]::IsNullOrWhiteSpace($batchId)) {
-              throw 'A queue-driven run requires batch_id.'
-            }
-
-            git fetch origin $stateBranch --depth=1
-            $queueContent = git show "FETCH_HEAD:$queuePath"
-            $materializedQueuePath = Join-Path $PWD $queuePath
-            $materializedQueueDirectory = Split-Path -Parent $materializedQueuePath
-            if ($materializedQueueDirectory) {
-              New-Item -ItemType Directory -Path $materializedQueueDirectory -Force | Out-Null
-            }
-
-            [System.IO.File]::WriteAllText(
-              $materializedQueuePath,
-              $queueContent + [Environment]::NewLine,
-              [System.Text.UTF8Encoding]::new($false))
-
-            $arguments = @{
-              QueuePath = $materializedQueuePath
-              BatchId = $batchId
-              OutputPath = $planPath
-              Offset = $offset
-              TargetBranch = $targetBranch
-            }
-
-            if ($null -ne $take) {
-              $arguments.Take = $take
-            }
-
-            ./scripts/Export-UntrustedBatchPlan.ps1 @arguments
+          if ([string]::IsNullOrWhiteSpace($queuePath)) {
+            throw 'queue_path is required. Checked-in batch manifests were removed; use a queue-driven run.'
           }
-          else {
-            if ([string]::IsNullOrWhiteSpace($batchId)) {
-              throw 'No batch_id was provided.'
-            }
 
-            ./scripts/Export-UntrustedBatchPlan.ps1 `
-              -BatchPath "config/untrusted-batches/$batchId.json" `
-              -OutputPath $planPath `
-              -TargetBranch $targetBranch
+          if ([string]::IsNullOrWhiteSpace($batchId)) {
+            throw 'A queue-driven run requires batch_id.'
           }
+
+          git fetch origin $stateBranch --depth=1
+          $queueContent = git show "FETCH_HEAD:$queuePath"
+          $materializedQueuePath = Join-Path $PWD $queuePath
+          $materializedQueueDirectory = Split-Path -Parent $materializedQueuePath
+          if ($materializedQueueDirectory) {
+            New-Item -ItemType Directory -Path $materializedQueueDirectory -Force | Out-Null
+          }
+
+          [System.IO.File]::WriteAllText(
+            $materializedQueuePath,
+            $queueContent + [Environment]::NewLine,
+            [System.Text.UTF8Encoding]::new($false))
+
+          $arguments = @{
+            QueuePath = $materializedQueuePath
+            BatchId = $batchId
+            OutputPath = $planPath
+            Offset = $offset
+            TargetBranch = $targetBranch
+          }
+
+          if ($null -ne $take) {
+            $arguments.Take = $take
+          }
+
+          ./scripts/Export-UntrustedBatchPlan.ps1 @arguments
 
           $plan = Get-Content $planPath -Raw | ConvertFrom-Json
           "batch_id=$($plan.batchId)" >> $env:GITHUB_OUTPUT
