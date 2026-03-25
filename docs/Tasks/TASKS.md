@@ -8,6 +8,7 @@
 - [x] Add a trusted single-package GitHub Actions workflow for JellyfinCli that evaluates the tool and opens a PR with versioned package index files.
 - [x] Add a pilot untrusted analysis pipeline with two 10-item batches, artifact-only analysis, retry state, and a promotion workflow.
 - [x] Make the untrusted analyzer classify `opencli` and `xmldoc` independently, tolerate ANSI/noisy output, and stop requeueing deterministic contract/auth/config failures.
+- [x] Add a catalog-cursor `index delta` command and a workflow that opens a PR for dotnet-tool additions or latest-version changes since the last discovery cursor.
 
 Command:
 `dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --concurrency 16`
@@ -53,3 +54,6 @@ Untrusted analysis workflow:
 
 Promotion workflow:
 `.github/workflows/promote-untrusted-analysis-results.yml`
+
+Delta discovery workflow:
+`.github/workflows/discover-dotnet-tool-updates.yml`

@@ -20,6 +20,12 @@ internal sealed class NuGetApiClient
     public Task<NuGetServiceIndex> GetServiceResourcesAsync(string serviceIndexUrl, CancellationToken cancellationToken)
         => GetJsonAsync<NuGetServiceIndex>(serviceIndexUrl, cancellationToken);
 
+    public Task<CatalogIndex> GetCatalogIndexAsync(string catalogIndexUrl, CancellationToken cancellationToken)
+        => GetJsonAsync<CatalogIndex>(catalogIndexUrl, cancellationToken);
+
+    public Task<CatalogPage> GetCatalogPageAsync(string pageUrl, CancellationToken cancellationToken)
+        => GetJsonAsync<CatalogPage>(pageUrl, cancellationToken);
+
     public Task<SearchResponse> SearchAsync(
         string searchUrl,
         string query,

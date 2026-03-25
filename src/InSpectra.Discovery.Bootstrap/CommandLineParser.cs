@@ -50,21 +50,32 @@ internal static class CommandLineParser
             return new HelpCommandRequest(HelpTopic.IndexBuild);
         }
 
-        if (!string.Equals(args[0], "build", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(args[0], "build", StringComparison.OrdinalIgnoreCase))
         {
-            throw new CliUsageException(
-                $"Unknown command 'index {args[0]}'.",
-                HelpTopic.IndexBuild,
-                ContainsJson(args));
+            var commandArgs = args[1..];
+            if (commandArgs.Any(IsHelpToken))
+            {
+                return new HelpCommandRequest(HelpTopic.IndexBuild);
+            }
+
+            return new IndexBuildCommandRequest(BootstrapOptions.Parse(commandArgs));
         }
 
-        var commandArgs = args[1..];
-        if (commandArgs.Any(IsHelpToken))
+        if (string.Equals(args[0], "delta", StringComparison.OrdinalIgnoreCase))
         {
-            return new HelpCommandRequest(HelpTopic.IndexBuild);
+            var commandArgs = args[1..];
+            if (commandArgs.Any(IsHelpToken))
+            {
+                return new HelpCommandRequest(HelpTopic.IndexDelta);
+            }
+
+            return new IndexDeltaCommandRequest(IndexDeltaOptions.Parse(commandArgs));
         }
 
-        return new IndexBuildCommandRequest(BootstrapOptions.Parse(commandArgs));
+        throw new CliUsageException(
+            $"Unknown command 'index {args[0]}'.",
+            HelpTopic.IndexBuild,
+            ContainsJson(args));
     }
 
     private static CliCommandRequest ParseFilter(string[] args)

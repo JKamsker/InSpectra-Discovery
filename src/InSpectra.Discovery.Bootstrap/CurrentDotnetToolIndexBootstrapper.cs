@@ -4,10 +4,12 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
 {
     private const string PackageType = "dotnettool";
     private readonly NuGetApiClient _apiClient;
+    private readonly DotnetToolIndexEntryResolver _entryResolver;
 
     public CurrentDotnetToolIndexBootstrapper(NuGetApiClient apiClient)
     {
         _apiClient = apiClient;
+        _entryResolver = new DotnetToolIndexEntryResolver(apiClient);
     }
 
     public async Task<DotnetToolIndexSnapshot> RunAsync(
@@ -117,7 +119,7 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
             },
             async (packageId, token) =>
             {
-                var entry = await BuildPackageEntryAsync(packageId, searchUrl, registrationBaseUrl, token);
+                var entry = await _entryResolver.ResolveRequiredAsync(packageId, searchUrl, registrationBaseUrl, token);
                 results.Add(entry);
 
                 var current = Interlocked.Increment(ref completed);
@@ -131,56 +133,5 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
             .OrderByDescending(entry => entry.TotalDownloads)
             .ThenBy(entry => entry.PackageId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
-    }
-
-    private async Task<DotnetToolIndexEntry> BuildPackageEntryAsync(
-        string packageId,
-        string searchUrl,
-        string registrationBaseUrl,
-        CancellationToken cancellationToken)
-    {
-        var registrationTask = _apiClient.GetRegistrationIndexAsync(registrationBaseUrl, packageId, cancellationToken);
-        var totalDownloadsTask = _apiClient.GetPackageTotalDownloadsAsync(searchUrl, packageId, cancellationToken);
-
-        await Task.WhenAll(registrationTask, totalDownloadsTask);
-
-        var registrationIndex = await registrationTask;
-        var totalDownloads = await totalDownloadsTask;
-        var versionCount = registrationIndex.Items.Sum(page => page.Count);
-
-        foreach (var pageReference in registrationIndex.Items.Reverse())
-        {
-            var leaves = pageReference.Items
-                ?? (await _apiClient.GetRegistrationPageAsync(pageReference.Id, cancellationToken)).Items;
-
-            foreach (var leaf in leaves.Reverse())
-            {
-                if (leaf.CatalogEntry.Listed != true)
-                {
-                    continue;
-                }
-
-                return new DotnetToolIndexEntry(
-                    PackageId: packageId,
-                    LatestVersion: leaf.CatalogEntry.Version,
-                    TotalDownloads: totalDownloads,
-                    VersionCount: versionCount,
-                    Listed: true,
-                    PublishedAtUtc: leaf.CatalogEntry.Published?.ToUniversalTime(),
-                    CommitTimestampUtc: leaf.CommitTimeStamp.ToUniversalTime(),
-                    ProjectUrl: leaf.CatalogEntry.ProjectUrl,
-                    PackageUrl: $"https://www.nuget.org/packages/{Uri.EscapeDataString(packageId)}/{Uri.EscapeDataString(leaf.CatalogEntry.Version)}",
-                    PackageContentUrl: leaf.PackageContent,
-                    RegistrationUrl: registrationIndex.Id,
-                    CatalogEntryUrl: leaf.CatalogEntry.Id,
-                    Authors: leaf.CatalogEntry.Authors,
-                    Description: leaf.CatalogEntry.Description,
-                    LicenseExpression: leaf.CatalogEntry.LicenseExpression,
-                    LicenseUrl: leaf.CatalogEntry.LicenseUrl,
-                    ReadmeUrl: leaf.CatalogEntry.ReadmeUrl);
-            }
-        }
-
-        throw new InvalidOperationException($"No listed version was found in the registration index for '{packageId}'.");
     }
 }

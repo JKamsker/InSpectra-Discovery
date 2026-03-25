@@ -24,6 +24,23 @@ internal sealed record NuGetServiceResource(
     [property: JsonPropertyName("@id")] string Id,
     [property: JsonPropertyName("@type")] string Type);
 
+internal sealed record CatalogIndex(
+    [property: JsonPropertyName("items")] IReadOnlyList<CatalogPageReference> Items);
+
+internal sealed record CatalogPageReference(
+    [property: JsonPropertyName("@id")] string Id,
+    [property: JsonPropertyName("commitTimeStamp")] DateTimeOffset CommitTimeStamp);
+
+internal sealed record CatalogPage(
+    [property: JsonPropertyName("items")] IReadOnlyList<CatalogPageItem> Items);
+
+internal sealed record CatalogPageItem(
+    [property: JsonPropertyName("@id")] string Id,
+    [property: JsonPropertyName("@type")] string Type,
+    [property: JsonPropertyName("commitTimeStamp")] DateTimeOffset CommitTimeStamp,
+    [property: JsonPropertyName("nuget:id")] string PackageId,
+    [property: JsonPropertyName("nuget:version")] string PackageVersion);
+
 internal sealed record SearchResponse(
     [property: JsonPropertyName("totalHits")] int TotalHits,
     [property: JsonPropertyName("data")] IReadOnlyList<SearchPackage> Data);
@@ -68,11 +85,16 @@ internal sealed record CatalogEntry(
 internal sealed record CatalogLeaf(
     [property: JsonPropertyName("@id")] string Id,
     [property: JsonPropertyName("packageEntries")] IReadOnlyList<CatalogPackageEntry>? PackageEntries,
-    [property: JsonPropertyName("dependencyGroups")] IReadOnlyList<CatalogDependencyGroup>? DependencyGroups);
+    [property: JsonPropertyName("dependencyGroups")] IReadOnlyList<CatalogDependencyGroup>? DependencyGroups,
+    [property: JsonPropertyName("packageTypes")] IReadOnlyList<CatalogPackageType>? PackageTypes);
 
 internal sealed record CatalogPackageEntry(
     [property: JsonPropertyName("fullName")] string FullName,
     [property: JsonPropertyName("name")] string Name);
+
+internal sealed record CatalogPackageType(
+    [property: JsonPropertyName("name")] string Name,
+    [property: JsonPropertyName("version")] string? Version);
 
 internal sealed record CatalogDependencyGroup(
     [property: JsonPropertyName("dependencies")] IReadOnlyList<CatalogDependency>? Dependencies);

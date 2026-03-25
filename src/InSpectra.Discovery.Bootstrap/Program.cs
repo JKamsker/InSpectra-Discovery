@@ -44,6 +44,7 @@ static async Task<int> RunAsync(string[] args)
         return request switch
         {
             IndexBuildCommandRequest build => await RunIndexBuildAsync(apiClient, output, build.Options, cancellationSource.Token),
+            IndexDeltaCommandRequest delta => await RunIndexDeltaAsync(apiClient, output, delta.Options, cancellationSource.Token),
             FilterSpectreConsoleCommandRequest filter => await RunSpectreFilterAsync(apiClient, output, filter.Options, cancellationSource.Token),
             _ => throw new InvalidOperationException($"Unsupported command type '{request.GetType().Name}'."),
         };
@@ -134,4 +135,57 @@ static async Task<int> RunSpectreFilterAsync(
         ],
         options.Json,
         cancellationToken);
+}
+
+static async Task<int> RunIndexDeltaAsync(
+    NuGetApiClient apiClient,
+    CommandOutput output,
+    IndexDeltaOptions options,
+    CancellationToken cancellationToken)
+{
+    var discoverer = new DotnetToolCatalogDeltaDiscoverer(apiClient);
+    var computation = await discoverer.RunAsync(
+        options,
+        options.Json ? null : output.WriteProgress,
+        cancellationToken);
+
+    var currentSnapshotPath = Path.GetFullPath(options.CurrentSnapshotPath);
+    var deltaOutputPath = Path.GetFullPath(options.DeltaOutputPath);
+    var cursorStatePath = Path.GetFullPath(options.CursorStatePath);
+
+    await WriteJsonFileAsync(currentSnapshotPath, computation.UpdatedCurrentSnapshot, cancellationToken);
+    await WriteJsonFileAsync(deltaOutputPath, computation.Delta, cancellationToken);
+    await WriteJsonFileAsync(cursorStatePath, computation.CursorState, cancellationToken);
+
+    return await output.WriteSuccessAsync(
+        new IndexDeltaCommandSummary(
+            Command: "index delta",
+            CurrentSnapshotPath: currentSnapshotPath,
+            DeltaOutputPath: deltaOutputPath,
+            CursorStatePath: cursorStatePath,
+            CatalogLeafCount: computation.Delta.CatalogLeafCount,
+            AffectedPackageCount: computation.Delta.AffectedPackageCount,
+            ChangedPackageCount: computation.Delta.ChangedPackageCount,
+            CursorStartUtc: computation.Delta.CursorStartUtc,
+            CursorEndUtc: computation.Delta.CursorEndUtc),
+        [
+            new SummaryRow("Command", "index delta"),
+            new SummaryRow("Cursor start", computation.Delta.CursorStartUtc.ToString("O")),
+            new SummaryRow("Cursor end", computation.Delta.CursorEndUtc.ToString("O")),
+            new SummaryRow("Catalog leaves", computation.Delta.CatalogLeafCount.ToString()),
+            new SummaryRow("Affected packages", computation.Delta.AffectedPackageCount.ToString()),
+            new SummaryRow("Changed packages", computation.Delta.ChangedPackageCount.ToString()),
+            new SummaryRow("Current snapshot", currentSnapshotPath),
+            new SummaryRow("Delta output", deltaOutputPath),
+            new SummaryRow("Cursor state", cursorStatePath),
+        ],
+        options.Json,
+        cancellationToken);
+}
+
+static async Task WriteJsonFileAsync<T>(string outputPath, T value, CancellationToken cancellationToken)
+{
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+    await using var outputStream = File.Create(outputPath);
+    await JsonSerializer.SerializeAsync(outputStream, value, JsonOptions.Default, cancellationToken);
 }
