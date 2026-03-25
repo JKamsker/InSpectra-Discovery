@@ -168,7 +168,7 @@ function Test-IsSecondaryRateLimitError {
 
 function Upsert-Comment {
     param(
-        [Parameter(Mandatory = $true)]
+        [AllowNull()]
         [object]$ExistingComment,
 
         [Parameter(Mandatory = $true)]
@@ -221,11 +221,13 @@ foreach ($item in @($summary.nonSuccessItems)) {
     $marker = New-CommentMarker -PackageId $item.packageId -Version $item.version
     $body = New-CommentBody -Marker $marker -Item $item -WorkflowRunUrl $WorkflowRunUrl
     $existingComment = $existingComments | Where-Object { $_.body -like "*$marker*" } | Select-Object -First 1
+    $didWriteComment = $false
 
     if ($existingComment -and (Normalize-LineEndings -Text ([string]$existingComment.body)) -ceq (Normalize-LineEndings -Text $body)) {
         $comment = $existingComment
     }
     else {
+        $didWriteComment = $true
         $comment = Upsert-Comment `
             -ExistingComment $existingComment `
             -Repository $Repository `
@@ -241,7 +243,7 @@ foreach ($item in @($summary.nonSuccessItems)) {
         commentUrl = $comment.html_url
     }
 
-    if ($itemIndex -lt $itemCount -and $InterCommentDelaySeconds -gt 0) {
+    if ($didWriteComment -and $itemIndex -lt $itemCount -and $InterCommentDelaySeconds -gt 0) {
         Start-Sleep -Seconds $InterCommentDelaySeconds
     }
 }
