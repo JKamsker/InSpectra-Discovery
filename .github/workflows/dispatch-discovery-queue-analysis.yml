@@ -1,17 +1,17 @@
 name: Dispatch Discovery Queue Analysis
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - state/discovery/dotnet-tools.spectre-console-cli.queue.json
   workflow_dispatch:
     inputs:
       target_branch:
         description: Branch containing the discovery queue and receiving the promotion PRs
         required: true
         default: main
+        type: string
+      state_branch:
+        description: Branch that stores discovery queue state
+        required: true
+        default: automation/discovery-state
         type: string
       queue_path:
         description: Queue JSON path to split and dispatch
@@ -29,7 +29,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: dispatch-discovery-queue-${{ github.event_name == 'push' && github.ref_name || inputs.target_branch }}
+  group: dispatch-discovery-queue-${{ inputs.target_branch }}-${{ inputs.state_branch }}
   cancel-in-progress: false
 
 jobs:
@@ -47,37 +47,42 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
-          ref: ${{ github.event_name == 'push' && github.ref_name || inputs.target_branch }}
+          ref: ${{ github.ref_name }}
+
+      - name: Materialize queue from state branch
+        shell: pwsh
+        run: |
+          $stateBranch = '${{ inputs.state_branch }}'
+          $queuePath = '${{ inputs.queue_path }}'
+
+          git fetch origin $stateBranch --depth=1
+          $queueContent = git show "FETCH_HEAD:$queuePath"
+
+          $targetPath = Join-Path $PWD $queuePath
+          $targetDirectory = Split-Path -Parent $targetPath
+          if ($targetDirectory) {
+            New-Item -ItemType Directory -Path $targetDirectory -Force | Out-Null
+          }
+
+          [System.IO.File]::WriteAllText(
+            $targetPath,
+            $queueContent + [Environment]::NewLine,
+            [System.Text.UTF8Encoding]::new($false))
 
       - name: Build queue dispatch plan
         id: plan
         shell: pwsh
         run: |
-          $targetBranch = if ('${{ github.event_name }}' -eq 'push') {
-            '${{ github.ref_name }}'
-          }
-          else {
-            '${{ inputs.target_branch }}'
-          }
-
-          $queuePath = if ('${{ github.event_name }}' -eq 'push') {
-            'state/discovery/dotnet-tools.spectre-console-cli.queue.json'
-          }
-          else {
-            '${{ inputs.queue_path }}'
-          }
-
-          $batchSize = if ('${{ github.event_name }}' -eq 'push') {
-            250
-          }
-          else {
-            [int]'${{ inputs.batch_size }}'
-          }
+          $targetBranch = '${{ inputs.target_branch }}'
+          $stateBranch = '${{ inputs.state_branch }}'
+          $queuePath = '${{ inputs.queue_path }}'
+          $batchSize = [int]'${{ inputs.batch_size }}'
 
           $planPath = Join-Path $env:RUNNER_TEMP 'queue-dispatch-plan.json'
           ./scripts/Export-DiscoveryQueueDispatchPlan.ps1 `
             -QueuePath $queuePath `
             -TargetBranch $targetBranch `
+            -StateBranch $stateBranch `
             -BatchSize $batchSize `
             -OutputPath $planPath
 
@@ -162,7 +167,9 @@ jobs:
           }
 
           $repository = '${{ github.repository }}'
+          $workflowRef = '${{ github.ref_name }}'
           $targetBranch = '${{ matrix.targetBranch }}'
+          $stateBranch = '${{ matrix.stateBranch }}'
           $batchId = '${{ matrix.batchId }}'
           $queuePath = '${{ matrix.queuePath }}'
           $offset = '${{ matrix.offset }}'
@@ -172,17 +179,18 @@ jobs:
 
           gh workflow run analyze-untrusted-batch.yml `
             --repo $repository `
-            --ref $targetBranch `
+            --ref $workflowRef `
             -f batch_id=$batchId `
             -f queue_path=$queuePath `
             -f offset=$offset `
             -f take=$take `
+            -f state_branch=$stateBranch `
             -f target_branch=$targetBranch
 
           $analysisRun = Wait-ForWorkflowRun `
             -Repository $repository `
             -WorkflowFile 'analyze-untrusted-batch.yml' `
-            -Branch $targetBranch `
+            -Branch $workflowRef `
             -DisplayTitle $analysisRunName `
             -NotBefore $dispatchStartedAt
 
@@ -202,13 +210,13 @@ jobs:
 
           gh workflow run promote-untrusted-analysis-results.yml `
             --repo $repository `
-            --ref $targetBranch `
+            --ref $workflowRef `
             -f analysis_run_id="$($analysisRun.databaseId)"
 
           $promotionRun = Wait-ForWorkflowRun `
             -Repository $repository `
             -WorkflowFile 'promote-untrusted-analysis-results.yml' `
-            -Branch $targetBranch `
+            -Branch $workflowRef `
             -DisplayTitle $promotionRunName `
             -NotBefore $promotionDispatchStartedAt
 
