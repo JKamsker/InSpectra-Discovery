@@ -13,7 +13,13 @@ param(
     [string]$WorkflowRunUrl,
 
     [Parameter(Mandatory = $true)]
-    [string]$CommentIndexOutputPath
+    [string]$CommentIndexOutputPath,
+
+    [int]$InterCommentDelaySeconds = 3,
+
+    [int]$SecondaryRateLimitDelaySeconds = 60,
+
+    [int]$MaxContentCreationAttempts = 5
 )
 
 Set-StrictMode -Version Latest
@@ -139,28 +145,86 @@ function New-CommentBody {
     return ($lines -join [Environment]::NewLine) + [Environment]::NewLine
 }
 
+function Test-IsSecondaryRateLimitError {
+    param([string]$Message)
+
+    return $Message -match 'secondary rate limit' -or
+        $Message -match 'temporarily blocked from content creation' -or
+        $Message -match 'HTTP 403'
+}
+
+function Upsert-Comment {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$ExistingComment,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Repository,
+
+        [Parameter(Mandatory = $true)]
+        [int]$PullRequestNumber,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Body,
+
+        [Parameter(Mandatory = $true)]
+        [int]$MaxAttempts,
+
+        [Parameter(Mandatory = $true)]
+        [int]$SecondaryRateLimitDelaySeconds
+    )
+
+    $payload = [ordered]@{ body = $Body } | ConvertTo-Json -Depth 5 -Compress
+
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        try {
+            if ($ExistingComment) {
+                return Invoke-GhApiJson -Arguments @('api', "repos/$Repository/issues/comments/$($ExistingComment.id)", '--method', 'PATCH') -InputJson $payload
+            }
+
+            return Invoke-GhApiJson -Arguments @('api', "repos/$Repository/issues/$PullRequestNumber/comments", '--method', 'POST') -InputJson $payload
+        }
+        catch {
+            $message = $_.Exception.Message
+            if ($attempt -eq $MaxAttempts -or -not (Test-IsSecondaryRateLimitError -Message $message)) {
+                throw
+            }
+
+            Start-Sleep -Seconds ($SecondaryRateLimitDelaySeconds * $attempt)
+        }
+    }
+
+    throw 'Unreachable comment upsert failure.'
+}
+
 $summary = Get-Content $SummaryPath -Raw | ConvertFrom-Json
 $existingComments = @(Get-IssueComments -Repository $Repository -PullRequestNumber $PullRequestNumber)
 $commentIndex = @()
+$itemCount = @($summary.nonSuccessItems).Count
+$itemIndex = 0
 
 foreach ($item in @($summary.nonSuccessItems)) {
+    $itemIndex++
     $marker = New-CommentMarker -PackageId $item.packageId -Version $item.version
     $body = New-CommentBody -Marker $marker -Item $item -WorkflowRunUrl $WorkflowRunUrl
     $existingComment = $existingComments | Where-Object { $_.body -like "*$marker*" } | Select-Object -First 1
 
-    if ($existingComment) {
-        $payload = [ordered]@{ body = $body } | ConvertTo-Json -Depth 5 -Compress
-        $comment = Invoke-GhApiJson -Arguments @('api', "repos/$Repository/issues/comments/$($existingComment.id)", '--method', 'PATCH') -InputJson $payload
-    }
-    else {
-        $payload = [ordered]@{ body = $body } | ConvertTo-Json -Depth 5 -Compress
-        $comment = Invoke-GhApiJson -Arguments @('api', "repos/$Repository/issues/$PullRequestNumber/comments", '--method', 'POST') -InputJson $payload
-    }
+    $comment = Upsert-Comment `
+        -ExistingComment $existingComment `
+        -Repository $Repository `
+        -PullRequestNumber $PullRequestNumber `
+        -Body $body `
+        -MaxAttempts $MaxContentCreationAttempts `
+        -SecondaryRateLimitDelaySeconds $SecondaryRateLimitDelaySeconds
 
     $commentIndex += [ordered]@{
         packageId = $item.packageId
         version = $item.version
         commentUrl = $comment.html_url
+    }
+
+    if ($itemIndex -lt $itemCount -and $InterCommentDelaySeconds -gt 0) {
+        Start-Sleep -Seconds $InterCommentDelaySeconds
     }
 }
 
