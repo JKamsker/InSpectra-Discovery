@@ -1,6 +1,8 @@
 name: Discover Dotnet Tool Updates
 
 on:
+  schedule:
+    - cron: '9 21 * * *'
   workflow_dispatch:
     inputs:
       target_branch:
@@ -41,12 +43,34 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Resolve run parameters
+        id: resolve
+        shell: pwsh
+        run: |
+          if ('${{ github.event_name }}' -eq 'schedule') {
+            $targetBranch = 'main-temp'
+            $applyMode = 'commit_and_dispatch'
+            $overlapMinutes = '30'
+            $seedCursorUtc = ''
+          }
+          else {
+            $targetBranch = '${{ inputs.target_branch }}'
+            $applyMode = '${{ inputs.apply_mode }}'
+            $overlapMinutes = '${{ inputs.overlap_minutes }}'
+            $seedCursorUtc = '${{ inputs.seed_cursor_utc }}'
+          }
+
+          "target_branch=$targetBranch" >> $env:GITHUB_OUTPUT
+          "apply_mode=$applyMode" >> $env:GITHUB_OUTPUT
+          "overlap_minutes=$overlapMinutes" >> $env:GITHUB_OUTPUT
+          "seed_cursor_utc=$seedCursorUtc" >> $env:GITHUB_OUTPUT
+
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: true
-          ref: ${{ inputs.target_branch }}
+          ref: ${{ steps.resolve.outputs.target_branch }}
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
@@ -63,11 +87,11 @@ jobs:
             '--',
             'index', 'delta',
             '--json',
-            '--overlap-minutes', '${{ inputs.overlap_minutes }}'
+            '--overlap-minutes', '${{ steps.resolve.outputs.overlap_minutes }}'
           )
 
-          if (-not [string]::IsNullOrWhiteSpace('${{ inputs.seed_cursor_utc }}')) {
-            $args += @('--seed-cursor-utc', '${{ inputs.seed_cursor_utc }}')
+          if (-not [string]::IsNullOrWhiteSpace('${{ steps.resolve.outputs.seed_cursor_utc }}')) {
+            $args += @('--seed-cursor-utc', '${{ steps.resolve.outputs.seed_cursor_utc }}')
           }
 
           $result = dotnet @args | ConvertFrom-Json
@@ -162,7 +186,7 @@ jobs:
           Write-Host 'No added or updated dotnet tools were discovered.'
 
       - name: Open pull request
-        if: ${{ steps.delta.outputs.changed_package_count != '0' && inputs.apply_mode == 'pull_request' }}
+        if: ${{ steps.delta.outputs.changed_package_count != '0' && steps.resolve.outputs.apply_mode == 'pull_request' }}
         id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
@@ -179,7 +203,7 @@ jobs:
           body-path: ${{ steps.delta.outputs.body_path }}
 
       - name: Report pull request result
-        if: ${{ steps.delta.outputs.changed_package_count != '0' && inputs.apply_mode == 'pull_request' }}
+        if: ${{ steps.delta.outputs.changed_package_count != '0' && steps.resolve.outputs.apply_mode == 'pull_request' }}
         shell: pwsh
         run: |
           Write-Host "Pull request operation: ${{ steps.cpr.outputs.pull-request-operation }}"
@@ -188,7 +212,7 @@ jobs:
           }
 
       - name: Commit discovery state to target branch
-        if: ${{ steps.delta.outputs.changed_package_count != '0' && inputs.apply_mode == 'commit_and_dispatch' }}
+        if: ${{ steps.delta.outputs.changed_package_count != '0' && steps.resolve.outputs.apply_mode == 'commit_and_dispatch' }}
         id: commit
         shell: pwsh
         run: |
@@ -203,17 +227,17 @@ jobs:
           }
 
           git commit -m 'chore(discovery): update dotnet-tool delta'
-          git push origin "HEAD:${{ inputs.target_branch }}"
+          git push origin "HEAD:${{ steps.resolve.outputs.target_branch }}"
 
           $commitSha = (git rev-parse HEAD).Trim()
           "commit_sha=$commitSha" >> $env:GITHUB_OUTPUT
-          Write-Host "Pushed discovery state commit $commitSha to ${{ inputs.target_branch }}."
+          Write-Host "Pushed discovery state commit $commitSha to ${{ steps.resolve.outputs.target_branch }}."
 
       - name: Dispatch queue analysis
         if: >-
           ${{
             steps.delta.outputs.changed_package_count != '0' &&
-            inputs.apply_mode == 'commit_and_dispatch' &&
+            steps.resolve.outputs.apply_mode == 'commit_and_dispatch' &&
             steps.spectre.outputs.queue_count != '' &&
             steps.spectre.outputs.queue_count != '0'
           }}
@@ -223,9 +247,9 @@ jobs:
         run: |
           gh workflow run dispatch-discovery-queue-analysis.yml `
             --repo '${{ github.repository }}' `
-            --ref '${{ inputs.target_branch }}' `
-            -f target_branch='${{ inputs.target_branch }}' `
+            --ref '${{ steps.resolve.outputs.target_branch }}' `
+            -f target_branch='${{ steps.resolve.outputs.target_branch }}' `
             -f queue_path='state/discovery/dotnet-tools.spectre-console-cli.queue.json' `
             -f batch_size='250'
 
-          Write-Host "Dispatched queue analysis for ${{ inputs.target_branch }}."
+          Write-Host "Dispatched queue analysis for ${{ steps.resolve.outputs.target_branch }}."
