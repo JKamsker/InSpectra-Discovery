@@ -7,6 +7,9 @@ param(
     [string]$TargetBranch,
 
     [Parameter(Mandatory = $true)]
+    [string]$StateBranch,
+
+    [Parameter(Mandatory = $true)]
     [string]$OutputPath,
 
     [ValidateRange(1, 250)]
@@ -72,6 +75,7 @@ for ($offset = 0; $offset -lt $QueueItems.Count; $offset += $BatchSize) {
         offset = $offset
         take = $take
         targetBranch = $TargetBranch
+        stateBranch = $StateBranch
         itemCount = $take
     })
 }
@@ -81,6 +85,7 @@ $plan = [ordered]@{
     generatedAt = [DateTimeOffset]::UtcNow.ToString('o')
     queuePath = Get-RelativeRepositoryPath -Path $QueueFile.Path
     targetBranch = $TargetBranch
+    stateBranch = $StateBranch
     queueItemCount = $QueueItems.Count
     batchSize = $BatchSize
     batchCount = $batches.Count
@@ -92,3 +97,4 @@ Write-JsonFile -Path $OutputPath -InputObject $plan
 Write-Host "Queue items: $($QueueItems.Count)"
 Write-Host "Dispatch batches: $($batches.Count)"
 Write-Host "Target branch: $TargetBranch"
+Write-Host "State branch: $StateBranch"

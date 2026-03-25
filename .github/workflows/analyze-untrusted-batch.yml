@@ -25,6 +25,11 @@ on:
         required: false
         default: ""
         type: string
+      state_branch:
+        description: Branch that stores discovery queue state
+        required: false
+        default: automation/discovery-state
+        type: string
       target_branch:
         description: Base branch for the eventual promotion pull request
         required: false
@@ -100,6 +105,16 @@ jobs:
             $null
           }
 
+          $stateBranch = if ('${{ inputs.state_branch }}') {
+            '${{ inputs.state_branch }}'
+          }
+          elseif ('${{ github.event.client_payload.state_branch }}') {
+            '${{ github.event.client_payload.state_branch }}'
+          }
+          else {
+            'automation/discovery-state'
+          }
+
           $targetBranch = if ('${{ inputs.target_branch }}') {
             '${{ inputs.target_branch }}'
           }
@@ -116,8 +131,21 @@ jobs:
               throw 'A queue-driven run requires batch_id.'
             }
 
+            git fetch origin $stateBranch --depth=1
+            $queueContent = git show "FETCH_HEAD:$queuePath"
+            $materializedQueuePath = Join-Path $PWD $queuePath
+            $materializedQueueDirectory = Split-Path -Parent $materializedQueuePath
+            if ($materializedQueueDirectory) {
+              New-Item -ItemType Directory -Path $materializedQueueDirectory -Force | Out-Null
+            }
+
+            [System.IO.File]::WriteAllText(
+              $materializedQueuePath,
+              $queueContent + [Environment]::NewLine,
+              [System.Text.UTF8Encoding]::new($false))
+
             $arguments = @{
-              QueuePath = $queuePath
+              QueuePath = $materializedQueuePath
               BatchId = $batchId
               OutputPath = $planPath
               Offset = $offset
