@@ -26,8 +26,26 @@ internal sealed record DotnetToolDeltaEntry(
     string ChangeKind,
     string? PreviousVersion,
     string? CurrentVersion,
-    DotnetToolIndexEntry? Previous,
-    DotnetToolIndexEntry? Current);
+    DotnetToolDeltaState? Previous,
+    DotnetToolDeltaState? Current);
+
+internal sealed record DotnetToolDeltaState(
+    string LatestVersion,
+    long TotalDownloads,
+    int VersionCount,
+    bool Listed,
+    DateTimeOffset? PublishedAtUtc,
+    DateTimeOffset CommitTimestampUtc,
+    string? ProjectUrl,
+    string PackageUrl,
+    string PackageContentUrl,
+    string RegistrationUrl,
+    string CatalogEntryUrl,
+    string? Authors,
+    string? Description,
+    string? LicenseExpression,
+    string? LicenseUrl,
+    string? ReadmeUrl);
 
 internal sealed record DotnetToolDeltaComputation(
     DotnetToolDeltaSnapshot Delta,

@@ -41,8 +41,8 @@ internal sealed class SpectreConsoleCliDeltaQueueBuilder
             },
             async (change, token) =>
             {
-                var previous = await InspectStateAsync(change.Previous, token);
-                var current = await InspectStateAsync(change.Current, token);
+                var previous = await InspectStateAsync(change.PackageId, change.Previous, token);
+                var current = await InspectStateAsync(change.PackageId, change.Current, token);
                 var subsetChangeKind = GetSubsetChangeKind(previous, current);
 
                 if (subsetChangeKind is not null)
@@ -53,8 +53,8 @@ internal sealed class SpectreConsoleCliDeltaQueueBuilder
                         SubsetChangeKind: subsetChangeKind,
                         PreviousVersion: change.PreviousVersion,
                         CurrentVersion: change.CurrentVersion,
-                        Previous: previous,
-                        Current: current));
+                        Previous: previous is null ? null : DeltaStateProjection.Project(previous),
+                        Current: current is null ? null : DeltaStateProjection.Project(current)));
                 }
 
                 if (current?.Detection.HasSpectreConsoleCli == true && subsetChangeKind is not null)
@@ -115,11 +115,15 @@ internal sealed class SpectreConsoleCliDeltaQueueBuilder
     }
 
     private async Task<SpectreConsoleToolEntry?> InspectStateAsync(
-        DotnetToolIndexEntry? entry,
+        string packageId,
+        DotnetToolDeltaState? entry,
         CancellationToken cancellationToken)
         => entry is null
             ? null
-            : await _inspector.InspectAsync(entry, SpectreConsoleFilterMode.SpectreConsoleCliOnly, cancellationToken);
+            : await _inspector.InspectAsync(
+                DeltaStateProjection.Rehydrate(packageId, entry),
+                SpectreConsoleFilterMode.SpectreConsoleCliOnly,
+                cancellationToken);
 
     private static string? GetSubsetChangeKind(
         SpectreConsoleToolEntry? previous,

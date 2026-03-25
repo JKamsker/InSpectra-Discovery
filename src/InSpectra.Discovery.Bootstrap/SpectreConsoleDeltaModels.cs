@@ -16,8 +16,27 @@ internal sealed record SpectreConsoleCliDeltaEntry(
     string SubsetChangeKind,
     string? PreviousVersion,
     string? CurrentVersion,
-    SpectreConsoleToolEntry? Previous,
-    SpectreConsoleToolEntry? Current);
+    SpectreConsoleCliDeltaState? Previous,
+    SpectreConsoleCliDeltaState? Current);
+
+internal sealed record SpectreConsoleCliDeltaState(
+    string LatestVersion,
+    long TotalDownloads,
+    int VersionCount,
+    bool Listed,
+    DateTimeOffset? PublishedAtUtc,
+    DateTimeOffset CommitTimestampUtc,
+    string? ProjectUrl,
+    string PackageUrl,
+    string PackageContentUrl,
+    string RegistrationUrl,
+    string CatalogEntryUrl,
+    string? Authors,
+    string? Description,
+    string? LicenseExpression,
+    string? LicenseUrl,
+    string? ReadmeUrl,
+    SpectreConsoleDetection Detection);
 
 internal sealed record SpectreConsoleCliQueueSnapshot(
     DateTimeOffset GeneratedAtUtc,

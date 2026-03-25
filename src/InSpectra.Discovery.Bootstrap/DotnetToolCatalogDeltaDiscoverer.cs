@@ -187,17 +187,35 @@ internal sealed class DotnetToolCatalogDeltaDiscoverer
     {
         if (previous is null && current is not null)
         {
-            return new DotnetToolDeltaEntry(current.PackageId, "added", null, current.LatestVersion, null, current);
+            return new DotnetToolDeltaEntry(
+                current.PackageId,
+                "added",
+                null,
+                current.LatestVersion,
+                null,
+                DeltaStateProjection.Project(current));
         }
 
         if (previous is not null && current is null)
         {
-            return new DotnetToolDeltaEntry(previous.PackageId, "removed", previous.LatestVersion, null, previous, null);
+            return new DotnetToolDeltaEntry(
+                previous.PackageId,
+                "removed",
+                previous.LatestVersion,
+                null,
+                DeltaStateProjection.Project(previous),
+                null);
         }
 
         if (previous is not null && current is not null && !string.Equals(previous.LatestVersion, current.LatestVersion, StringComparison.OrdinalIgnoreCase))
         {
-            return new DotnetToolDeltaEntry(previous.PackageId, "latest-version-changed", previous.LatestVersion, current.LatestVersion, previous, current);
+            return new DotnetToolDeltaEntry(
+                previous.PackageId,
+                "latest-version-changed",
+                previous.LatestVersion,
+                current.LatestVersion,
+                DeltaStateProjection.Project(previous),
+                DeltaStateProjection.Project(current));
         }
 
         return null;
@@ -221,7 +239,7 @@ internal sealed class DotnetToolCatalogDeltaDiscoverer
             }
             else
             {
-                packages[change.PackageId] = change.Current;
+                packages[change.PackageId] = DeltaStateProjection.Rehydrate(change.PackageId, change.Current);
             }
         }
 
