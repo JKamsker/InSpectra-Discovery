@@ -209,13 +209,18 @@ foreach ($item in @($summary.nonSuccessItems)) {
     $body = New-CommentBody -Marker $marker -Item $item -WorkflowRunUrl $WorkflowRunUrl
     $existingComment = $existingComments | Where-Object { $_.body -like "*$marker*" } | Select-Object -First 1
 
-    $comment = Upsert-Comment `
-        -ExistingComment $existingComment `
-        -Repository $Repository `
-        -PullRequestNumber $PullRequestNumber `
-        -Body $body `
-        -MaxAttempts $MaxContentCreationAttempts `
-        -SecondaryRateLimitDelaySeconds $SecondaryRateLimitDelaySeconds
+    if ($existingComment -and [string]$existingComment.body -ceq $body) {
+        $comment = $existingComment
+    }
+    else {
+        $comment = Upsert-Comment `
+            -ExistingComment $existingComment `
+            -Repository $Repository `
+            -PullRequestNumber $PullRequestNumber `
+            -Body $body `
+            -MaxAttempts $MaxContentCreationAttempts `
+            -SecondaryRateLimitDelaySeconds $SecondaryRateLimitDelaySeconds
+    }
 
     $commentIndex += [ordered]@{
         packageId = $item.packageId
