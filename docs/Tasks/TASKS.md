@@ -3,6 +3,7 @@
 - [x] Run the bootstrap locally and record the output paths/usage.
 - [x] Enrich the snapshot with `totalDownloads` from NuGet search metadata and sort the package list descending by downloads.
 - [x] Add a catalog-based `filter spectre-console` command that reads the ranked index and writes a filtered JSON file with Spectre evidence.
+- [x] Add a trusted single-package GitHub Actions workflow for JellyfinCli that evaluates the tool and opens a PR with queue/generated/index files.
 
 Command:
 `dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --concurrency 16`
@@ -15,3 +16,9 @@ Spectre filter:
 
 Filtered output:
 `artifacts/index/dotnet-tools.spectre-console.json`
+
+Trusted evaluator:
+`pwsh -File scripts/Invoke-TrustedToolEvaluation.ps1 -PackageId JellyfinCli -Version 0.1.16 -Source workflow-dispatch -Trusted`
+
+Workflow:
+`.github/workflows/evaluate-trusted-jellyfincli.yml`
