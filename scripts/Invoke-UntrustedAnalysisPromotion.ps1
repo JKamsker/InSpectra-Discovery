@@ -95,6 +95,46 @@ function Get-BackoffHours {
     return 24
 }
 
+function Get-DefaultReasonMessage {
+    param(
+        [AllowNull()][string]$Status,
+        [AllowNull()][string]$Classification
+    )
+
+    switch ($Classification) {
+        'spectre-cli-missing' { return 'No Spectre.Console.Cli evidence was found in the published package.' }
+        'missing-result-artifact' { return 'No result artifact was uploaded for this matrix item.' }
+        'missing-success-artifact' { return 'The analyzer reported success, but the expected success artifact was missing.' }
+        'missing-result' { return 'No result was recorded for this matrix item.' }
+        default {
+            if ($Status -eq 'terminal-negative') {
+                return 'The package did not satisfy the Spectre.Console.Cli prefilter.'
+            }
+
+            return 'No explicit reason was recorded.'
+        }
+    }
+}
+
+function Get-NonSuccessReason {
+    param(
+        [object]$Result,
+        [object]$StateRecord
+    )
+
+    $message = if ($Result.failureMessage) {
+        [string]$Result.failureMessage
+    }
+    elseif ($StateRecord.lastFailureMessage) {
+        [string]$StateRecord.lastFailureMessage
+    }
+    else {
+        Get-DefaultReasonMessage -Status $StateRecord.currentStatus -Classification $Result.classification
+    }
+
+    return $message.Trim()
+}
+
 function New-SyntheticFailureResult {
     param([object]$Item, [int]$Attempt, [string]$Classification, [string]$Message)
     [ordered]@{
@@ -314,6 +354,7 @@ $summary = [ordered]@{
     retryableFailureCount = 0
     terminalFailureCount = 0
     missingCount = 0
+    nonSuccessItems = @()
 }
 
 foreach ($item in $Plan.items) {
@@ -351,6 +392,18 @@ foreach ($item in $Plan.items) {
         'terminal-negative' { $summary.terminalNegativeCount++ }
         'retryable-failure' { $summary.retryableFailureCount++ }
         'terminal-failure' { $summary.terminalFailureCount++ }
+    }
+
+    if ($stateRecord.currentStatus -ne 'success') {
+        $summary.nonSuccessItems += [ordered]@{
+            packageId = $result.packageId
+            version = $result.version
+            status = $stateRecord.currentStatus
+            disposition = $result.disposition
+            phase = $result.phase
+            classification = $result.classification
+            reason = Get-NonSuccessReason -Result $result -StateRecord $stateRecord
+        }
     }
 }
 
