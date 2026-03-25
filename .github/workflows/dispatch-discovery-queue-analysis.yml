@@ -107,18 +107,129 @@ jobs:
         include: ${{ fromJson(needs.plan.outputs.matrix) }}
 
     steps:
-      - name: Dispatch analyze workflow
+      - name: Dispatch, watch, and promote batch
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh workflow run analyze-untrusted-batch.yml `
-            --repo '${{ github.repository }}' `
-            --ref '${{ matrix.targetBranch }}' `
-            -f batch_id='${{ matrix.batchId }}' `
-            -f queue_path='${{ matrix.queuePath }}' `
-            -f offset='${{ matrix.offset }}' `
-            -f take='${{ matrix.take }}' `
-            -f target_branch='${{ matrix.targetBranch }}'
+          function Wait-ForWorkflowRun {
+            param(
+              [Parameter(Mandatory = $true)]
+              [string]$Repository,
 
-          Write-Host "Dispatched ${{ matrix.batchId }} for ${{ matrix.targetBranch }} with ${{ matrix.itemCount }} queue items."
+              [Parameter(Mandatory = $true)]
+              [string]$WorkflowFile,
+
+              [Parameter(Mandatory = $true)]
+              [string]$Branch,
+
+              [Parameter(Mandatory = $true)]
+              [string]$DisplayTitle,
+
+              [Parameter(Mandatory = $true)]
+              [DateTimeOffset]$NotBefore,
+
+              [int]$TimeoutSeconds = 180
+            )
+
+            $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
+            while ([DateTimeOffset]::UtcNow -lt $deadline) {
+              $runs = gh run list `
+                --repo $Repository `
+                --workflow $WorkflowFile `
+                --branch $Branch `
+                --limit 20 `
+                --json databaseId,displayTitle,createdAt,status,url | ConvertFrom-Json
+
+              $match = @(
+                $runs |
+                  Where-Object {
+                    $_.displayTitle -eq $DisplayTitle -and
+                    ([DateTimeOffset]$_.createdAt) -ge $NotBefore.AddSeconds(-5)
+                  } |
+                  Sort-Object { [DateTimeOffset]$_.createdAt } -Descending |
+                  Select-Object -First 1
+              )
+
+              if ($match.Count -gt 0 -and $match[0]) {
+                return $match[0]
+              }
+
+              Start-Sleep -Seconds 5
+            }
+
+            throw "Timed out waiting for workflow '$WorkflowFile' run '$DisplayTitle' on branch '$Branch'."
+          }
+
+          $repository = '${{ github.repository }}'
+          $targetBranch = '${{ matrix.targetBranch }}'
+          $batchId = '${{ matrix.batchId }}'
+          $queuePath = '${{ matrix.queuePath }}'
+          $offset = '${{ matrix.offset }}'
+          $take = '${{ matrix.take }}'
+          $dispatchStartedAt = [DateTimeOffset]::UtcNow
+          $analysisRunName = "Analyze Untrusted Batch / $batchId"
+
+          gh workflow run analyze-untrusted-batch.yml `
+            --repo $repository `
+            --ref $targetBranch `
+            -f batch_id=$batchId `
+            -f queue_path=$queuePath `
+            -f offset=$offset `
+            -f take=$take `
+            -f target_branch=$targetBranch
+
+          $analysisRun = Wait-ForWorkflowRun `
+            -Repository $repository `
+            -WorkflowFile 'analyze-untrusted-batch.yml' `
+            -Branch $targetBranch `
+            -DisplayTitle $analysisRunName `
+            -NotBefore $dispatchStartedAt
+
+          Write-Host "Watching analysis run $($analysisRun.databaseId): $($analysisRun.url)"
+          gh run watch $analysisRun.databaseId --repo $repository --exit-status
+
+          $analysisSummary = gh run view $analysisRun.databaseId `
+            --repo $repository `
+            --json conclusion,url | ConvertFrom-Json
+
+          if ($analysisSummary.conclusion -ne 'success') {
+            throw "Analysis run '$($analysisRun.databaseId)' completed with conclusion '$($analysisSummary.conclusion)'."
+          }
+
+          $promotionDispatchStartedAt = [DateTimeOffset]::UtcNow
+          $promotionRunName = "Promote Untrusted Analysis Results / $($analysisRun.databaseId)"
+
+          gh workflow run promote-untrusted-analysis-results.yml `
+            --repo $repository `
+            --ref $targetBranch `
+            -f analysis_run_id="$($analysisRun.databaseId)"
+
+          $promotionRun = Wait-ForWorkflowRun `
+            -Repository $repository `
+            -WorkflowFile 'promote-untrusted-analysis-results.yml' `
+            -Branch $targetBranch `
+            -DisplayTitle $promotionRunName `
+            -NotBefore $promotionDispatchStartedAt
+
+          Write-Host "Watching promotion run $($promotionRun.databaseId): $($promotionRun.url)"
+          gh run watch $promotionRun.databaseId --repo $repository --exit-status
+
+          $prBranch = "automation/untrusted-$batchId-$($analysisRun.databaseId)"
+          $pullRequest = @(
+            gh pr list `
+              --repo $repository `
+              --state open `
+              --base $targetBranch `
+              --head $prBranch `
+              --json number,url,title | ConvertFrom-Json
+          ) | Select-Object -First 1
+
+          if ($pullRequest) {
+            Write-Host "Pull request: $($pullRequest.url)"
+          }
+          else {
+            Write-Warning "Promotion completed but no open PR was found for branch '$prBranch'."
+          }
+
+          Write-Host "Completed $batchId for $targetBranch with ${{ matrix.itemCount }} queue items."
