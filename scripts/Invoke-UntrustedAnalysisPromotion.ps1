@@ -383,6 +383,7 @@ Get-ChildItem -Path $DownloadDirectory -Filter 'result.json' -Recurse | ForEach-
 $summary = [ordered]@{
     schemaVersion = 1
     batchId = $Plan.batchId
+    targetBranch = if ($Plan.PSObject.Properties.Name -contains 'targetBranch' -and $Plan.targetBranch) { [string]$Plan.targetBranch } else { 'main' }
     promotedAt = $Now.ToString('o')
     expectedCount = $Plan.items.Count
     successCount = 0

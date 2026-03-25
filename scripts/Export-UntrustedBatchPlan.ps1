@@ -1,17 +1,32 @@
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName = 'Batch')]
 param(
-    [Parameter(Mandatory = $true)]
+    [Parameter(Mandatory = $true, ParameterSetName = 'Batch')]
     [string]$BatchPath,
 
+    [Parameter(Mandatory = $true, ParameterSetName = 'Queue')]
+    [string]$QueuePath,
+
+    [Parameter(Mandatory = $true, ParameterSetName = 'Queue')]
+    [string]$BatchId,
+
     [Parameter(Mandatory = $true)]
-    [string]$OutputPath
+    [string]$OutputPath,
+
+    [Parameter(ParameterSetName = 'Queue')]
+    [ValidateRange(0, [int]::MaxValue)]
+    [int]$Offset = 0,
+
+    [Parameter(ParameterSetName = 'Queue')]
+    [ValidateRange(1, [int]::MaxValue)]
+    [int]$Take = [int]::MaxValue,
+
+    [string]$TargetBranch = 'main'
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$BatchFile = Resolve-Path $BatchPath
 $GeneratedAt = [DateTimeOffset]::UtcNow
 
 function Write-JsonFile {
@@ -30,6 +45,15 @@ function Write-JsonFile {
 
     $json = $InputObject | ConvertTo-Json -Depth 50
     [System.IO.File]::WriteAllText($Path, $json + [Environment]::NewLine, [System.Text.UTF8Encoding]::new($false))
+}
+
+function Get-RelativeRepositoryPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+
+    return ([System.IO.Path]::GetRelativePath($RepositoryRoot, $Path)) -replace '\\', '/'
 }
 
 function Get-StatePath {
@@ -57,7 +81,49 @@ function Get-ArtifactName {
     return ([regex]::Replace($raw, '[^a-z0-9._-]+', '-')).Trim('-')
 }
 
-$batch = Get-Content $BatchFile -Raw | ConvertFrom-Json
+function Get-BatchDefinition {
+    if ($PSCmdlet.ParameterSetName -eq 'Batch') {
+        $batchFile = Resolve-Path $BatchPath
+        $batch = Get-Content $batchFile -Raw | ConvertFrom-Json
+        return [ordered]@{
+            batchId = [string]$batch.batchId
+            items = @($batch.items)
+            sourceManifestPath = Get-RelativeRepositoryPath -Path $batchFile.Path
+            sourceSnapshotPath = [string]$batch.sourceSnapshotPath
+            targetBranch = $TargetBranch
+        }
+    }
+
+    $queueFile = Resolve-Path $QueuePath
+    $queue = Get-Content $queueFile -Raw | ConvertFrom-Json
+    $queueItems = @($queue.items)
+    $selectedItems = if ($Offset -ge $queueItems.Count) {
+        @()
+    }
+    else {
+        @($queueItems | Select-Object -Skip $Offset -First $Take)
+    }
+
+    $sourceSnapshotPath = if ($queue.PSObject.Properties.Name -contains 'sourceCurrentSnapshotPath' -and $queue.sourceCurrentSnapshotPath) {
+        [string]$queue.sourceCurrentSnapshotPath
+    }
+    elseif ($queue.PSObject.Properties.Name -contains 'inputDeltaPath' -and $queue.inputDeltaPath) {
+        [string]$queue.inputDeltaPath
+    }
+    else {
+        Get-RelativeRepositoryPath -Path $queueFile.Path
+    }
+
+    return [ordered]@{
+        batchId = $BatchId
+        items = $selectedItems
+        sourceManifestPath = Get-RelativeRepositoryPath -Path $queueFile.Path
+        sourceSnapshotPath = $sourceSnapshotPath
+        targetBranch = $TargetBranch
+    }
+}
+
+$batch = Get-BatchDefinition
 $selectedItems = [System.Collections.Generic.List[object]]::new()
 $skippedItems = [System.Collections.Generic.List[object]]::new()
 
@@ -107,8 +173,9 @@ $plan = [ordered]@{
     schemaVersion = 1
     batchId = $batch.batchId
     generatedAt = $GeneratedAt.ToString('o')
-    sourceManifestPath = [System.IO.Path]::GetRelativePath($RepositoryRoot, $BatchFile.Path) -replace '\\', '/'
+    sourceManifestPath = $batch.sourceManifestPath
     sourceSnapshotPath = $batch.sourceSnapshotPath
+    targetBranch = $batch.targetBranch
     selectedCount = $selectedItems.Count
     skippedCount = $skippedItems.Count
     items = @($selectedItems)
@@ -118,5 +185,6 @@ $plan = [ordered]@{
 Write-JsonFile -Path $OutputPath -InputObject $plan
 
 Write-Host "Planned batch $($batch.batchId)"
+Write-Host "Target branch: $($batch.targetBranch)"
 Write-Host "Selected items: $($selectedItems.Count)"
 Write-Host "Skipped items: $($skippedItems.Count)"

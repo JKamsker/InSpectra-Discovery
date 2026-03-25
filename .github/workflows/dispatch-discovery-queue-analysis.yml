@@ -1,0 +1,124 @@
+name: Dispatch Discovery Queue Analysis
+
+on:
+  push:
+    branches:
+      - main-temp
+    paths:
+      - state/discovery/dotnet-tools.spectre-console-cli.queue.json
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Branch containing the discovery queue and receiving the promotion PRs
+        required: true
+        default: main-temp
+        type: string
+      queue_path:
+        description: Queue JSON path to split and dispatch
+        required: true
+        default: state/discovery/dotnet-tools.spectre-console-cli.queue.json
+        type: string
+      batch_size:
+        description: Maximum queue items per dispatched analysis batch
+        required: true
+        default: "250"
+        type: string
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: dispatch-discovery-queue-${{ github.event_name == 'push' && github.ref_name || inputs.target_branch }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      target_branch: ${{ steps.plan.outputs.target_branch }}
+      queue_item_count: ${{ steps.plan.outputs.queue_item_count }}
+      batch_count: ${{ steps.plan.outputs.batch_count }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          ref: ${{ github.event_name == 'push' && github.ref_name || inputs.target_branch }}
+
+      - name: Build queue dispatch plan
+        id: plan
+        shell: pwsh
+        run: |
+          $targetBranch = if ('${{ github.event_name }}' -eq 'push') {
+            '${{ github.ref_name }}'
+          }
+          else {
+            '${{ inputs.target_branch }}'
+          }
+
+          $queuePath = if ('${{ github.event_name }}' -eq 'push') {
+            'state/discovery/dotnet-tools.spectre-console-cli.queue.json'
+          }
+          else {
+            '${{ inputs.queue_path }}'
+          }
+
+          $batchSize = if ('${{ github.event_name }}' -eq 'push') {
+            250
+          }
+          else {
+            [int]'${{ inputs.batch_size }}'
+          }
+
+          $planPath = Join-Path $env:RUNNER_TEMP 'queue-dispatch-plan.json'
+          ./scripts/Export-DiscoveryQueueDispatchPlan.ps1 `
+            -QueuePath $queuePath `
+            -TargetBranch $targetBranch `
+            -BatchSize $batchSize `
+            -OutputPath $planPath
+
+          $plan = Get-Content $planPath -Raw | ConvertFrom-Json
+          "target_branch=$($plan.targetBranch)" >> $env:GITHUB_OUTPUT
+          "queue_item_count=$($plan.queueItemCount)" >> $env:GITHUB_OUTPUT
+          "batch_count=$($plan.batchCount)" >> $env:GITHUB_OUTPUT
+          "matrix<<EOF" >> $env:GITHUB_OUTPUT
+          ((@($plan.batches) | ConvertTo-Json -Compress -AsArray) ?? '[]') >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Report empty queue
+        if: ${{ steps.plan.outputs.queue_item_count == '0' }}
+        shell: pwsh
+        run: |
+          Write-Host 'The Spectre.Console.Cli discovery queue is empty.'
+
+  dispatch:
+    needs: plan
+    if: ${{ needs.plan.outputs.queue_item_count != '0' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.matrix) }}
+
+    steps:
+      - name: Dispatch analyze workflow
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run analyze-untrusted-batch.yml `
+            --repo '${{ github.repository }}' `
+            --ref '${{ matrix.targetBranch }}' `
+            -f batch_id='${{ matrix.batchId }}' `
+            -f queue_path='${{ matrix.queuePath }}' `
+            -f offset='${{ matrix.offset }}' `
+            -f take='${{ matrix.take }}' `
+            -f target_branch='${{ matrix.targetBranch }}'
+
+          Write-Host "Dispatched ${{ matrix.batchId }} for ${{ matrix.targetBranch }} with ${{ matrix.itemCount }} queue items."

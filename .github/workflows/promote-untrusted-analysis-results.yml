@@ -28,12 +28,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-
       - name: Resolve analysis run
         id: source
         shell: pwsh
@@ -52,7 +46,7 @@ jobs:
 
           $run = gh run view $analysisRunId `
             --repo '${{ github.repository }}' `
-            --json databaseId,url,status,conclusion,workflowName | ConvertFrom-Json
+            --json databaseId,url,status,conclusion,workflowName,headBranch | ConvertFrom-Json
 
           if ($run.workflowName -ne 'Analyze Untrusted Batch') {
             throw "Run '$analysisRunId' is not an Analyze Untrusted Batch run."
@@ -68,6 +62,14 @@ jobs:
 
           "analysis_run_id=$analysisRunId" >> $env:GITHUB_OUTPUT
           "analysis_run_url=$($run.url)" >> $env:GITHUB_OUTPUT
+          "head_branch=$($run.headBranch)" >> $env:GITHUB_OUTPUT
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ steps.source.outputs.head_branch }}
 
       - name: Download workflow artifacts
         shell: pwsh
@@ -103,6 +105,7 @@ jobs:
           "retryable_failure_count=$($summary.retryableFailureCount)" >> $env:GITHUB_OUTPUT
           "terminal_failure_count=$($summary.terminalFailureCount)" >> $env:GITHUB_OUTPUT
           "missing_count=$($summary.missingCount)" >> $env:GITHUB_OUTPUT
+          "target_branch=$($summary.targetBranch)" >> $env:GITHUB_OUTPUT
           "body_path=$bodyPath" >> $env:GITHUB_OUTPUT
           "pr_branch=automation/untrusted-$($summary.batchId)-${{ steps.source.outputs.analysis_run_id }}" >> $env:GITHUB_OUTPUT
 
@@ -113,6 +116,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ steps.promote.outputs.pr_branch }}
+          base: ${{ steps.promote.outputs.target_branch }}
           delete-branch: true
           add-paths: |
             index/**
@@ -135,7 +139,7 @@ jobs:
           ./scripts/Ensure-UntrustedPromotionPullRequest.ps1 `
             -Repository '${{ github.repository }}' `
             -Branch '${{ steps.promote.outputs.pr_branch }}' `
-            -BaseBranch 'main' `
+            -BaseBranch '${{ steps.promote.outputs.target_branch }}' `
             -Title 'chore(index): promote untrusted analysis ${{ steps.promote.outputs.batch_id }}' `
             -BodyPath '${{ steps.promote.outputs.body_path }}' `
             -ExistingPullRequestNumber '${{ steps.cpr.outputs.pull-request-number }}' `

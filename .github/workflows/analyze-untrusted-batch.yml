@@ -4,9 +4,29 @@ on:
   workflow_dispatch:
     inputs:
       batch_id:
-        description: Batch definition to execute
-        required: true
-        default: pilot-batch-01
+        description: Batch id or generated queue batch id to execute
+        required: false
+        default: ""
+        type: string
+      queue_path:
+        description: Optional queue JSON path to slice instead of a checked-in batch manifest
+        required: false
+        default: ""
+        type: string
+      offset:
+        description: Queue item offset for queue-driven runs
+        required: false
+        default: "0"
+        type: string
+      take:
+        description: Queue batch size for queue-driven runs
+        required: false
+        default: ""
+        type: string
+      target_branch:
+        description: Base branch for the eventual promotion pull request
+        required: false
+        default: "main"
         type: string
   repository_dispatch:
     types:
@@ -45,13 +65,79 @@ jobs:
             '${{ github.event.client_payload.batch_id }}'
           }
           else {
-            throw 'No batch_id was provided.'
+            $null
+          }
+
+          $queuePath = if ('${{ inputs.queue_path }}') {
+            '${{ inputs.queue_path }}'
+          }
+          elseif ('${{ github.event.client_payload.queue_path }}') {
+            '${{ github.event.client_payload.queue_path }}'
+          }
+          else {
+            $null
+          }
+
+          $offset = if ('${{ inputs.offset }}') {
+            [int]'${{ inputs.offset }}'
+          }
+          elseif ('${{ github.event.client_payload.offset }}') {
+            [int]'${{ github.event.client_payload.offset }}'
+          }
+          else {
+            0
+          }
+
+          $take = if ('${{ inputs.take }}') {
+            [int]'${{ inputs.take }}'
+          }
+          elseif ('${{ github.event.client_payload.take }}') {
+            [int]'${{ github.event.client_payload.take }}'
+          }
+          else {
+            $null
+          }
+
+          $targetBranch = if ('${{ inputs.target_branch }}') {
+            '${{ inputs.target_branch }}'
+          }
+          elseif ('${{ github.event.client_payload.target_branch }}') {
+            '${{ github.event.client_payload.target_branch }}'
+          }
+          else {
+            'main'
           }
 
           $planPath = Join-Path $env:RUNNER_TEMP 'expected.json'
-          ./scripts/Export-UntrustedBatchPlan.ps1 `
-            -BatchPath "config/untrusted-batches/$batchId.json" `
-            -OutputPath $planPath
+          if (-not [string]::IsNullOrWhiteSpace($queuePath)) {
+            if ([string]::IsNullOrWhiteSpace($batchId)) {
+              throw 'A queue-driven run requires batch_id.'
+            }
+
+            $arguments = @{
+              QueuePath = $queuePath
+              BatchId = $batchId
+              OutputPath = $planPath
+              Offset = $offset
+              TargetBranch = $targetBranch
+            }
+
+            if ($null -ne $take) {
+              $arguments.Take = $take
+            }
+
+            ./scripts/Export-UntrustedBatchPlan.ps1 @arguments
+          }
+          else {
+            if ([string]::IsNullOrWhiteSpace($batchId)) {
+              throw 'No batch_id was provided.'
+            }
+
+            ./scripts/Export-UntrustedBatchPlan.ps1 `
+              -BatchPath "config/untrusted-batches/$batchId.json" `
+              -OutputPath $planPath `
+              -TargetBranch $targetBranch
+          }
 
           $plan = Get-Content $planPath -Raw | ConvertFrom-Json
           "batch_id=$($plan.batchId)" >> $env:GITHUB_OUTPUT
