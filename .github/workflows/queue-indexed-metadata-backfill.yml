@@ -1,4 +1,4 @@
-name: Queue Indexed Version Metadata Backfill
+name: Queue Indexed Package History Backfill
 
 on:
   workflow_dispatch:
@@ -16,7 +16,7 @@ on:
       queue_path:
         description: Queue JSON path to write on the state branch
         required: true
-        default: state/backfill/indexed-package-versions-metadata.queue.json
+        default: state/backfill/indexed-package-history.queue.json
         type: string
       batch_size:
         description: Maximum queue items per dispatched analysis batch
@@ -29,7 +29,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: queue-indexed-version-metadata-backfill-${{ inputs.target_branch }}-${{ inputs.state_branch }}
+  group: queue-indexed-package-history-backfill-${{ inputs.target_branch }}-${{ inputs.state_branch }}
   cancel-in-progress: false
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
           persist-credentials: true
           ref: ${{ github.ref_name }}
 
-      - name: Build indexed version metadata backfill queue
+      - name: Build indexed package history backfill queue
         id: queue
         shell: pwsh
         run: |
@@ -63,9 +63,9 @@ jobs:
         run: |
           $stateBranch = '${{ inputs.state_branch }}'
           $queuePath = '${{ inputs.queue_path }}'
-          $snapshotRoot = Join-Path $env:RUNNER_TEMP 'indexed-version-backfill-state-snapshot'
+          $snapshotRoot = Join-Path $env:RUNNER_TEMP 'indexed-history-backfill-state-snapshot'
           $snapshotPath = Join-Path $snapshotRoot 'backfill'
-          $stateWorktree = Join-Path $env:RUNNER_TEMP 'indexed-version-backfill-state-worktree'
+          $stateWorktree = Join-Path $env:RUNNER_TEMP 'indexed-history-backfill-state-worktree'
 
           if (Test-Path $snapshotRoot) {
             Remove-Item $snapshotRoot -Recurse -Force
@@ -108,7 +108,7 @@ jobs:
             $hasChanges = $LASTEXITCODE -ne 0
 
             if ($hasChanges) {
-              git -C $stateWorktree commit -m 'chore(backfill): queue indexed version metadata refresh'
+              git -C $stateWorktree commit -m 'chore(backfill): queue indexed package history refresh'
 
               if ($branchExists) {
                 git -C $stateWorktree push origin "HEAD:$stateBranch"
@@ -143,9 +143,9 @@ jobs:
             -f queue_path='${{ inputs.queue_path }}' `
             -f batch_size='${{ inputs.batch_size }}' `
             -f batch_prefix='${{ steps.queue.outputs.batch_prefix }}' `
-            -f force_reanalyze='true'
+            -f force_reanalyze='false'
 
-          Write-Host "Dispatched indexed version metadata backfill for ${{ steps.queue.outputs.item_count }} package versions."
+          Write-Host "Dispatched indexed package history backfill for ${{ steps.queue.outputs.item_count }} missing package versions."
 
       - name: Report empty queue
         if: ${{ steps.queue.outputs.item_count == '0' }}
