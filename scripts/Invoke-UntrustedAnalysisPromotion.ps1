@@ -106,6 +106,13 @@ function Get-DefaultReasonMessage {
         'missing-result-artifact' { return 'No result artifact was uploaded for this matrix item.' }
         'missing-success-artifact' { return 'The analyzer reported success, but the expected success artifact was missing.' }
         'missing-result' { return 'No result was recorded for this matrix item.' }
+        'environment-missing-runtime' { return 'The runner did not have the .NET runtime required by this tool.' }
+        'environment-missing-dependency' { return 'The tool required a native dependency that is not available on the runner.' }
+        'requires-interactive-input' { return 'The tool attempted to prompt for interactive input, which is not available in batch mode.' }
+        'requires-interactive-authentication' { return 'The tool attempted an interactive authentication flow.' }
+        'unsupported-platform' { return 'The tool does not support the runner operating system.' }
+        'unsupported-command' { return 'The tool does not implement the expected introspection command.' }
+        'invalid-json' { return 'The tool exited, but its JSON output could not be parsed.' }
         default {
             if ($Status -eq 'terminal-negative') {
                 return 'The package did not satisfy the Spectre.Console.Cli prefilter.'

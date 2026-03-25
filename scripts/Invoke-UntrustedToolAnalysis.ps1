@@ -170,6 +170,75 @@ function Test-MatchesAnyPattern {
     return $false
 }
 
+function Get-BalancedJsonSegment {
+    param([AllowNull()][string]$Text)
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return $null
+    }
+
+    $start = $null
+    for ($i = 0; $i -lt $Text.Length; $i++) {
+        $char = $Text[$i]
+        if ($char -eq '{' -or $char -eq '[') {
+            $start = $i
+            break
+        }
+    }
+
+    if ($null -eq $start) {
+        return $null
+    }
+
+    $stack = [System.Collections.Generic.Stack[char]]::new()
+    $inString = $false
+    $escapeNext = $false
+
+    for ($i = $start; $i -lt $Text.Length; $i++) {
+        $char = $Text[$i]
+
+        if ($escapeNext) {
+            $escapeNext = $false
+            continue
+        }
+
+        if ($inString) {
+            if ($char -eq '\') {
+                $escapeNext = $true
+            }
+            elseif ($char -eq '"') {
+                $inString = $false
+            }
+
+            continue
+        }
+
+        if ($char -eq '"') {
+            $inString = $true
+            continue
+        }
+
+        if ($char -eq '{') {
+            $stack.Push('}')
+            continue
+        }
+
+        if ($char -eq '[') {
+            $stack.Push(']')
+            continue
+        }
+
+        if (($char -eq '}' -or $char -eq ']') -and $stack.Count -gt 0 -and $stack.Peek() -eq $char) {
+            $null = $stack.Pop()
+            if ($stack.Count -eq 0) {
+                return $Text.Substring($start, ($i - $start) + 1).Trim()
+            }
+        }
+    }
+
+    return $null
+}
+
 function Try-ParseJsonPayload {
     param([AllowNull()][string]$Text)
 
@@ -195,6 +264,11 @@ function Try-ParseJsonPayload {
         if (-not [string]::IsNullOrWhiteSpace($candidate)) {
             $candidates.Add($candidate)
         }
+    }
+
+    $balancedCandidate = Get-BalancedJsonSegment -Text $normalized
+    if (-not [string]::IsNullOrWhiteSpace($balancedCandidate) -and -not $candidates.Contains($balancedCandidate)) {
+        $candidates.Add($balancedCandidate)
     }
 
     $lastError = $null
@@ -287,16 +361,41 @@ function Get-IntrospectionClassification {
     if (Test-MatchesAnyPattern -Text $Text -Patterns @(
         "(?is)\bunknown command\b.*\b$subcommandPattern\b",
         "(?is)\bunrecognized command\b.*\b$subcommandPattern\b",
+        "(?is)\bunknown argument\b.*\b$subcommandPattern\b",
+        "(?is)\bunrecognized argument\b.*\b$subcommandPattern\b",
         "(?is)\b$subcommandPattern\b.*\b(?:not recognized|not found|not a valid command|invalid command)\b",
+        "(?is)\bcould not match\b.*\b$subcommandPattern\b",
+        "(?is)\bcould not resolve type\b.*\b(?:opencli|xmldoc|spectre\.console\.cli\.(?:opendoc|xmldoc|xml?doc)command|spectre\.console\.cli\.xmldoccommand)\b",
         '(?is)\brequired command was not provided\b'
     )) {
         return 'unsupported-command'
     }
 
     if (Test-MatchesAnyPattern -Text $Text -Patterns @(
+        '(?is)\byou must install or update \.net\b',
+        '(?is)\bframework:\s+''?microsoft\.netcore\.app',
+        '(?is)\bno frameworks? were found\b',
+        '(?is)\bthe following frameworks were found\b'
+    )) {
+        return 'environment-missing-runtime'
+    }
+
+    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
         '(?is)\b(unable to load shared library|cannot open shared object file|dllnotfoundexception|could not load file or assembly|libsecret)\b'
     )) {
         return 'environment-missing-dependency'
+    }
+
+    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
+        '(?is)\b(?:current terminal isn''t interactive|non-interactive mode|cannot prompt|cannot show selection prompt|failed to read input in non-interactive mode)\b'
+    )) {
+        return 'requires-interactive-input'
+    }
+
+    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
+        '(?is)\b(?:windows only|unsupported operating system|platform not supported|os platform is not supported)\b'
+    )) {
+        return 'unsupported-platform'
     }
 
     if (Test-MatchesAnyPattern -Text $Text -Patterns @(
@@ -349,7 +448,7 @@ function Invoke-IntrospectionCommand {
 
     if ($result.timedOut) {
         $status = 'timed-out'
-        if ($classification -in @('requires-configuration', 'environment-missing-dependency', 'requires-interactive-authentication')) {
+        if ($classification -in @('requires-configuration', 'environment-missing-dependency', 'environment-missing-runtime', 'requires-interactive-authentication', 'requires-interactive-input', 'unsupported-platform')) {
             $dispositionHint = 'terminal-failure'
         }
         else {
