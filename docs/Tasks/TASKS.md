@@ -3,6 +3,8 @@
 - [x] Run the bootstrap locally and record the output paths/usage.
 - [x] Enrich the snapshot with `totalDownloads` from NuGet search metadata and sort the package list descending by downloads.
 - [x] Add a catalog-based `filter spectre-console` command that reads the ranked index and writes a filtered JSON file with Spectre evidence.
+- [x] Add a stricter `filter spectre-console-cli` command and use its snapshot as the primary source for untrusted Spectre CLI batches.
+- [x] Enrich the Spectre CLI snapshot with resolved Spectre package versions from `*.deps.json` and assembly/file version metadata from `Spectre.Console*.dll`.
 - [x] Add a trusted single-package GitHub Actions workflow for JellyfinCli that evaluates the tool and opens a PR with versioned package index files.
 - [x] Add a pilot untrusted analysis pipeline with two 10-item batches, artifact-only analysis, retry state, and a promotion workflow.
 
@@ -17,6 +19,15 @@ Spectre filter:
 
 Filtered output:
 `artifacts/index/dotnet-tools.spectre-console.json`
+
+Spectre CLI filter:
+`dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli --concurrency 16`
+
+Primary source snapshot:
+`artifacts/index/dotnet-tools.spectre-console-cli.json`
+
+Version evidence:
+`packages[*].detection.packageInspection`
 
 Trusted evaluator:
 `pwsh -File scripts/Invoke-TrustedToolEvaluation.ps1 -PackageId JellyfinCli -Version 0.1.16 -Source workflow-dispatch -Trusted`
@@ -33,6 +44,7 @@ Latest alias:
 Pilot untrusted batches:
 `config/untrusted-batches/pilot-batch-01.json`
 `config/untrusted-batches/pilot-batch-02.json`
+`config/untrusted-batches/pilot-batch-03.json`
 
 Untrusted analysis workflow:
 `.github/workflows/analyze-untrusted-batch.yml`

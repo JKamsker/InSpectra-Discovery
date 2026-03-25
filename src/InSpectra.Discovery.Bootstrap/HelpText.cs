@@ -12,8 +12,14 @@ internal static class HelpText
             case HelpTopic.IndexBuild:
                 WriteIndexBuild(writer);
                 break;
+            case HelpTopic.Filter:
+                WriteFilter(writer);
+                break;
             case HelpTopic.FilterSpectreConsole:
                 WriteFilterSpectreConsole(writer);
+                break;
+            case HelpTopic.FilterSpectreConsoleCli:
+                WriteFilterSpectreConsoleCli(writer);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(topic), topic, null);
@@ -44,9 +50,14 @@ internal static class HelpText
         writer.WriteLine("  Write the Spectre.Console subset from an existing index:");
         writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console");
         writer.WriteLine();
+        writer.WriteLine("  Write the Spectre.Console.Cli subset from an existing index:");
+        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli");
+        writer.WriteLine();
         writer.WriteLine("COMMANDS");
         writer.WriteLine("  index build              Build the current ranked dotnet-tool index from NuGet.");
         writer.WriteLine("  filter spectre-console   Filter an index to packages with Spectre.Console evidence.");
+        writer.WriteLine("  filter spectre-console-cli");
+        writer.WriteLine("                           Filter an index to packages with Spectre.Console.Cli evidence.");
         writer.WriteLine();
         writer.WriteLine("OPTIONS");
         writer.WriteLine("  -h, --help     Show help.");
@@ -78,6 +89,19 @@ internal static class HelpText
         writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --output artifacts/index/tools.json --json");
     }
 
+    private static void WriteFilter(TextWriter writer)
+    {
+        writer.WriteLine("NAME");
+        writer.WriteLine("  filter");
+        writer.WriteLine();
+        writer.WriteLine("USAGE");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter <command> [options]");
+        writer.WriteLine();
+        writer.WriteLine("COMMANDS");
+        writer.WriteLine("  spectre-console       Filter an index to packages with Spectre.Console evidence.");
+        writer.WriteLine("  spectre-console-cli   Filter an index to packages with Spectre.Console.Cli evidence.");
+    }
+
     private static void WriteFilterSpectreConsole(TextWriter writer)
     {
         writer.WriteLine("NAME");
@@ -93,12 +117,36 @@ internal static class HelpText
         writer.WriteLine();
         writer.WriteLine("OPTIONS");
         writer.WriteLine($"  --input <path>         Input index path. Default: {SpectreConsoleFilterOptions.DefaultInputPath}");
-        writer.WriteLine($"  --output <path>        Output JSON path. Default: {SpectreConsoleFilterOptions.DefaultOutputPath}");
+        writer.WriteLine($"  --output <path>        Output JSON path. Default: {SpectreConsoleFilterOptions.DefaultSpectreConsoleOutputPath}");
         writer.WriteLine("  --concurrency <num>    Catalog fetch concurrency. Default: 16.");
         writer.WriteLine("  --json                 Emit a machine-readable command summary to stdout.");
         writer.WriteLine();
         writer.WriteLine("EXAMPLES");
         writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console");
         writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console --output artifacts/index/spectre.json --json");
+    }
+
+    private static void WriteFilterSpectreConsoleCli(TextWriter writer)
+    {
+        writer.WriteLine("NAME");
+        writer.WriteLine("  filter spectre-console-cli");
+        writer.WriteLine();
+        writer.WriteLine("USAGE");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli [options]");
+        writer.WriteLine();
+        writer.WriteLine("DESCRIPTION");
+        writer.WriteLine("  Reads the ranked dotnet-tool index, fetches each package's catalog entry, and");
+        writer.WriteLine("  writes a filtered JSON file containing only packages whose catalog payload shows");
+        writer.WriteLine("  Spectre.Console.Cli evidence.");
+        writer.WriteLine();
+        writer.WriteLine("OPTIONS");
+        writer.WriteLine($"  --input <path>         Input index path. Default: {SpectreConsoleFilterOptions.DefaultInputPath}");
+        writer.WriteLine($"  --output <path>        Output JSON path. Default: {SpectreConsoleFilterOptions.DefaultSpectreConsoleCliOutputPath}");
+        writer.WriteLine("  --concurrency <num>    Catalog fetch concurrency. Default: 16.");
+        writer.WriteLine("  --json                 Emit a machine-readable command summary to stdout.");
+        writer.WriteLine();
+        writer.WriteLine("EXAMPLES");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli --output artifacts/index/spectre-cli.json --json");
     }
 }

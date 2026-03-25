@@ -120,13 +120,13 @@ static async Task<int> RunSpectreFilterAsync(
 
     return await output.WriteSuccessAsync(
         new SpectreConsoleFilterCommandSummary(
-            Command: "filter spectre-console",
+            Command: options.CommandName,
             InputPath: snapshot.InputPath,
             OutputPath: outputPath,
             ScannedPackageCount: snapshot.ScannedPackageCount,
             MatchedPackageCount: snapshot.PackageCount),
         [
-            new SummaryRow("Command", "filter spectre-console"),
+            new SummaryRow("Command", options.CommandName),
             new SummaryRow("Input", snapshot.InputPath),
             new SummaryRow("Scanned", snapshot.ScannedPackageCount.ToString()),
             new SummaryRow("Matched", snapshot.PackageCount.ToString()),

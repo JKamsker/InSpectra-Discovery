@@ -2,7 +2,9 @@ internal enum HelpTopic
 {
     Root,
     IndexBuild,
+    Filter,
     FilterSpectreConsole,
+    FilterSpectreConsoleCli,
 }
 
 internal abstract record CliCommandRequest(bool JsonRequested);

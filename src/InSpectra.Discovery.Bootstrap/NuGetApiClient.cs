@@ -86,6 +86,39 @@ internal sealed class NuGetApiClient
         throw new InvalidOperationException($"Could not resolve search metadata for '{packageId}'.");
     }
 
+    public async Task DownloadFileAsync(string url, string destinationPath, CancellationToken cancellationToken)
+    {
+        var delay = TimeSpan.FromSeconds(2);
+
+        for (var attempt = 1; attempt <= 4; attempt++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+            if (attempt < 4 && IsRetryable(response.StatusCode))
+            {
+                await Task.Delay(delay, cancellationToken);
+                delay = delay + delay;
+                continue;
+            }
+
+            response.EnsureSuccessStatusCode();
+
+            var directory = Path.GetDirectoryName(destinationPath);
+            if (!string.IsNullOrEmpty(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            await using var sourceStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            await using var destinationStream = File.Create(destinationPath);
+            await sourceStream.CopyToAsync(destinationStream, cancellationToken);
+            return;
+        }
+
+        throw new InvalidOperationException($"Exhausted retries for '{url}'.");
+    }
+
     private async Task<T> GetJsonAsync<T>(string url, CancellationToken cancellationToken)
     {
         var delay = TimeSpan.FromSeconds(2);

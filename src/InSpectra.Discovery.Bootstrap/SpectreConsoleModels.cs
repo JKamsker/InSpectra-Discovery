@@ -31,4 +31,26 @@ internal sealed record SpectreConsoleDetection(
     bool HasSpectreConsole,
     bool HasSpectreConsoleCli,
     IReadOnlyList<string> MatchedPackageEntries,
-    IReadOnlyList<string> MatchedDependencyIds);
+    IReadOnlyList<string> MatchedDependencyIds,
+    SpectrePackageInspection PackageInspection);
+
+internal sealed record SpectrePackageInspection(
+    IReadOnlyList<string> DepsFilePaths,
+    IReadOnlyList<string> SpectreConsoleDependencyVersions,
+    IReadOnlyList<string> SpectreConsoleCliDependencyVersions,
+    IReadOnlyList<SpectreAssemblyVersionInfo> SpectreConsoleAssemblies,
+    IReadOnlyList<SpectreAssemblyVersionInfo> SpectreConsoleCliAssemblies)
+{
+    public static SpectrePackageInspection Empty { get; } = new(
+        [],
+        [],
+        [],
+        [],
+        []);
+}
+
+internal sealed record SpectreAssemblyVersionInfo(
+    string Path,
+    string? AssemblyVersion,
+    string? FileVersion,
+    string? InformationalVersion);

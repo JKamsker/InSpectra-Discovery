@@ -71,24 +71,43 @@ internal static class CommandLineParser
     {
         if (args.Length == 0 || IsHelpToken(args[0]))
         {
-            return new HelpCommandRequest(HelpTopic.FilterSpectreConsole);
+            return new HelpCommandRequest(HelpTopic.Filter);
         }
 
-        if (!string.Equals(args[0], "spectre-console", StringComparison.OrdinalIgnoreCase))
+        var mode = GetFilterMode(args[0], args);
+
+        var helpTopic = mode switch
         {
-            throw new CliUsageException(
-                $"Unknown command 'filter {args[0]}'.",
-                HelpTopic.FilterSpectreConsole,
-                ContainsJson(args));
-        }
+            SpectreConsoleFilterMode.AnySpectreConsole => HelpTopic.FilterSpectreConsole,
+            SpectreConsoleFilterMode.SpectreConsoleCliOnly => HelpTopic.FilterSpectreConsoleCli,
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
+        };
 
         var commandArgs = args[1..];
         if (commandArgs.Any(IsHelpToken))
         {
-            return new HelpCommandRequest(HelpTopic.FilterSpectreConsole);
+            return new HelpCommandRequest(helpTopic);
         }
 
-        return new FilterSpectreConsoleCommandRequest(SpectreConsoleFilterOptions.Parse(commandArgs));
+        return new FilterSpectreConsoleCommandRequest(SpectreConsoleFilterOptions.Parse(commandArgs, mode));
+    }
+
+    private static SpectreConsoleFilterMode GetFilterMode(string command, IEnumerable<string> args)
+    {
+        if (string.Equals(command, "spectre-console", StringComparison.OrdinalIgnoreCase))
+        {
+            return SpectreConsoleFilterMode.AnySpectreConsole;
+        }
+
+        if (string.Equals(command, "spectre-console-cli", StringComparison.OrdinalIgnoreCase))
+        {
+            return SpectreConsoleFilterMode.SpectreConsoleCliOnly;
+        }
+
+        throw new CliUsageException(
+            $"Unknown command 'filter {command}'.",
+            HelpTopic.Filter,
+            ContainsJson(args));
     }
 
     private static bool ContainsJson(IEnumerable<string> args)

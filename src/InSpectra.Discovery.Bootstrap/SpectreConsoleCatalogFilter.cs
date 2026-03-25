@@ -4,10 +4,12 @@ using System.Text.Json;
 internal sealed class SpectreConsoleCatalogFilter
 {
     private readonly NuGetApiClient _apiClient;
+    private readonly PackageArchiveInspector _packageArchiveInspector;
 
     public SpectreConsoleCatalogFilter(NuGetApiClient apiClient)
     {
         _apiClient = apiClient;
+        _packageArchiveInspector = new PackageArchiveInspector(apiClient);
     }
 
     public async Task<SpectreConsoleFilterSnapshot> RunAsync(
@@ -33,7 +35,7 @@ internal sealed class SpectreConsoleCatalogFilter
             throw new InvalidOperationException($"Could not read a dotnet-tool snapshot from {inputPath}.");
         }
 
-        reportProgress?.Invoke("Scanning catalog entries for Spectre.Console evidence...");
+        reportProgress?.Invoke($"Scanning catalog entries for {options.EvidenceLabel} evidence...");
 
         var matches = new ConcurrentBag<SpectreConsoleToolEntry>();
         var completed = 0;
@@ -50,8 +52,9 @@ internal sealed class SpectreConsoleCatalogFilter
                 var catalogLeaf = await _apiClient.GetCatalogLeafAsync(package.CatalogEntryUrl, token);
                 var detection = Detect(catalogLeaf);
 
-                if (detection.HasSpectreConsole || detection.HasSpectreConsoleCli)
+                if (ShouldInclude(options.Mode, detection))
                 {
+                    var packageInspection = await _packageArchiveInspector.InspectAsync(package.PackageContentUrl, token);
                     matches.Add(new SpectreConsoleToolEntry(
                         PackageId: package.PackageId,
                         LatestVersion: package.LatestVersion,
@@ -70,7 +73,7 @@ internal sealed class SpectreConsoleCatalogFilter
                         LicenseExpression: package.LicenseExpression,
                         LicenseUrl: package.LicenseUrl,
                         ReadmeUrl: package.ReadmeUrl,
-                        Detection: detection));
+                        Detection: detection with { PackageInspection = packageInspection }));
                 }
 
                 var current = Interlocked.Increment(ref completed);
@@ -87,13 +90,21 @@ internal sealed class SpectreConsoleCatalogFilter
 
         return new SpectreConsoleFilterSnapshot(
             GeneratedAtUtc: DateTimeOffset.UtcNow,
-            Filter: "spectre-console",
+            Filter: options.FilterName,
             InputPath: inputPath,
             SourceGeneratedAtUtc: snapshot.GeneratedAtUtc,
             ScannedPackageCount: snapshot.Packages.Count,
             PackageCount: filteredPackages.Length,
             Packages: filteredPackages);
     }
+
+    private static bool ShouldInclude(SpectreConsoleFilterMode mode, SpectreConsoleDetection detection)
+        => mode switch
+        {
+            SpectreConsoleFilterMode.AnySpectreConsole => detection.HasSpectreConsole || detection.HasSpectreConsoleCli,
+            SpectreConsoleFilterMode.SpectreConsoleCliOnly => detection.HasSpectreConsoleCli,
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
+        };
 
     private static SpectreConsoleDetection Detect(CatalogLeaf catalogLeaf)
     {
@@ -122,6 +133,7 @@ internal sealed class SpectreConsoleCatalogFilter
             HasSpectreConsoleCli: matchedEntries.Any(entry => entry.EndsWith("Spectre.Console.Cli.dll", StringComparison.OrdinalIgnoreCase))
                 || matchedDependencies.Any(id => string.Equals(id, "Spectre.Console.Cli", StringComparison.OrdinalIgnoreCase)),
             MatchedPackageEntries: matchedEntries,
-            MatchedDependencyIds: matchedDependencies);
+            MatchedDependencyIds: matchedDependencies,
+            PackageInspection: SpectrePackageInspection.Empty);
     }
 }
