@@ -18,7 +18,7 @@ param(
 
     [int]$InstallTimeoutSeconds = 300,
 
-    [int]$CommandTimeoutSeconds = 300
+    [int]$CommandTimeoutSeconds = 60
 )
 
 Set-StrictMode -Version Latest
