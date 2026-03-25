@@ -15,6 +15,8 @@ $PackagesRoot = Join-Path $IndexRoot 'packages'
 $StateRoot = Join-Path $RepositoryRoot 'state'
 $Now = [DateTimeOffset]::UtcNow
 
+. (Join-Path $PSScriptRoot 'OpenCliSynthesis.ps1')
+
 function Write-JsonFile {
     param([string]$Path, [object]$InputObject)
     $directory = Split-Path -Parent $Path
@@ -226,16 +228,39 @@ function Write-SuccessArtifacts {
 
     $hasOpenCliArtifact = $ArtifactDirectory -and $Result.artifacts.opencliArtifact -and (Test-Path (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact))
     $hasXmlDocArtifact = $ArtifactDirectory -and $Result.artifacts.xmldocArtifact -and (Test-Path (Join-Path $ArtifactDirectory $Result.artifacts.xmldocArtifact))
+    $openCliSource = $null
+    $openCliDocument = $null
+    $xmlDocContent = $null
 
     if ($hasOpenCliArtifact) {
-        Write-JsonFile -Path $openCliPath -InputObject (Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact) -Raw | ConvertFrom-Json)
+        $openCliDocument = Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact) -Raw | ConvertFrom-Json
+        $openCliSource = 'tool-output'
+    }
+
+    if ($hasXmlDocArtifact) {
+        $xmlDocContent = Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.xmldocArtifact) -Raw
+    }
+
+    if ($null -eq $openCliDocument -and $hasXmlDocArtifact) {
+        [xml]$xmlDocument = $xmlDocContent
+        $openCliTitle = if ($Result.command) { [string]$Result.command } else { [string]$Result.packageId }
+        $openCliDocument = Convert-XmldocToOpenCliDocument `
+            -XmlDocument $xmlDocument `
+            -Title $openCliTitle
+        $openCliSource = 'synthesized-from-xmldoc'
+    }
+
+    $hasOpenCliOutput = $null -ne $openCliDocument
+
+    if ($hasOpenCliOutput) {
+        Write-JsonFile -Path $openCliPath -InputObject $openCliDocument
     }
     else {
         Remove-Item -Path $openCliPath -Force -ErrorAction SilentlyContinue
     }
 
     if ($hasXmlDocArtifact) {
-        Write-TextFile -Path $xmlDocPath -Content (Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.xmldocArtifact) -Raw)
+        Write-TextFile -Path $xmlDocPath -Content $xmlDocContent
     }
     else {
         Remove-Item -Path $xmlDocPath -Force -ErrorAction SilentlyContinue
@@ -248,11 +273,14 @@ function Write-SuccessArtifacts {
             foreach ($property in $Result.steps.opencli.PSObject.Properties) {
                 $clone[$property.Name] = $property.Value
             }
-            if ($hasOpenCliArtifact) {
+            if ($hasOpenCliOutput) {
                 $clone.path = Get-RelativeRepositoryPath -Path $openCliPath
             }
             else {
                 $clone.Remove('path')
+            }
+            if ($openCliSource) {
+                $clone.artifactSource = $openCliSource
             }
             $clone
         } else { $null }
@@ -296,7 +324,8 @@ function Write-SuccessArtifacts {
         steps = $steps
         artifacts = [ordered]@{
             metadataPath = Get-RelativeRepositoryPath -Path $metadataPath
-            opencliPath = if ($hasOpenCliArtifact) { Get-RelativeRepositoryPath -Path $openCliPath } else { $null }
+            opencliPath = if ($hasOpenCliOutput) { Get-RelativeRepositoryPath -Path $openCliPath } else { $null }
+            opencliSource = if ($hasOpenCliOutput) { $openCliSource } else { $null }
             xmldocPath = if ($hasXmlDocArtifact) { Get-RelativeRepositoryPath -Path $xmlDocPath } else { $null }
         }
     }

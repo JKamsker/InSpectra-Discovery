@@ -21,6 +21,8 @@ $TempRoot = Join-Path ([System.IO.Path]::GetTempPath()) ("inspectra-$($PackageId
 $GeneratedAt = [DateTimeOffset]::UtcNow
 $EvaluationTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
+. (Join-Path $PSScriptRoot 'OpenCliSynthesis.ps1')
+
 function Write-JsonFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -303,6 +305,7 @@ try {
     $xmlDocResult = $null
     $openCliDocument = $null
     $validatedXmlDoc = $null
+    $openCliSource = $null
 
     if ($installResult.exitCode -eq 0) {
         $commandPath = Resolve-CommandPath -ToolDirectory $installDirectory -CommandName $commandName
@@ -312,20 +315,34 @@ try {
 
     if ($openCliResult -and $openCliResult.exitCode -eq 0) {
         $openCliDocument = $openCliResult.stdout | ConvertFrom-Json
+        $openCliSource = 'tool-output'
     }
 
     if ($xmlDocResult -and $xmlDocResult.exitCode -eq 0) {
         $validatedXmlDoc = [xml]$xmlDocResult.stdout
     }
 
+    if ($null -eq $openCliDocument -and $null -ne $validatedXmlDoc) {
+        $openCliDocument = Convert-XmldocToOpenCliDocument `
+            -XmlDocument $validatedXmlDoc `
+            -Title $commandName
+        $openCliSource = 'synthesized-from-xmldoc'
+    }
+
     $status = if (
         $installResult.exitCode -eq 0 -and
-        $openCliResult -and $openCliResult.exitCode -eq 0 -and
         $xmlDocResult -and $xmlDocResult.exitCode -eq 0 -and
         $null -ne $openCliDocument -and
-        $null -ne $validatedXmlDoc
+        $null -ne $validatedXmlDoc -and
+        $openCliSource -eq 'tool-output'
     ) {
         'ok'
+    }
+    elseif (
+        $installResult.exitCode -eq 0 -and
+        ($null -ne $openCliDocument -or $null -ne $validatedXmlDoc)
+    ) {
+        'partial'
     }
     else {
         'failed'
@@ -397,6 +414,7 @@ try {
         artifacts = [ordered]@{
             metadataPath = Get-RelativeRepositoryPath -Path $metadataPath
             opencliPath = $openCliArtifactPath
+            opencliSource = if ($openCliArtifactPath) { $openCliSource } else { $null }
             xmldocPath = $xmlDocArtifactPath
         }
     }
