@@ -31,8 +31,8 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
                 "Update the prefix alphabet or investigate changed NuGet search behavior before trusting this snapshot.");
         }
 
-        Console.WriteLine("Fetching registration metadata...");
-        var packages = await BuildPackageIndexAsync(packageIds, registrationBaseUrl, options, cancellationToken);
+        Console.WriteLine("Fetching registration metadata and download counts...");
+        var packages = await BuildPackageIndexAsync(packageIds, searchUrl, registrationBaseUrl, options, cancellationToken);
 
         return new DotnetToolIndexSnapshot(
             GeneratedAtUtc: DateTimeOffset.UtcNow,
@@ -44,7 +44,8 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
                 SearchUrl: searchUrl,
                 RegistrationBaseUrl: registrationBaseUrl,
                 PrefixAlphabet: options.PrefixAlphabet,
-                ExpectedPackageCount: expectedCount),
+                ExpectedPackageCount: expectedCount,
+                SortOrder: "totalDownloads-desc"),
             Packages: packages);
     }
 
@@ -93,6 +94,7 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
 
     private async Task<IReadOnlyList<DotnetToolIndexEntry>> BuildPackageIndexAsync(
         IEnumerable<string> packageIds,
+        string searchUrl,
         string registrationBaseUrl,
         BootstrapOptions options,
         CancellationToken cancellationToken)
@@ -110,7 +112,7 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
             },
             async (packageId, token) =>
             {
-                var entry = await BuildPackageEntryAsync(packageId, registrationBaseUrl, token);
+                var entry = await BuildPackageEntryAsync(packageId, searchUrl, registrationBaseUrl, token);
                 results.Add(entry);
 
                 var current = Interlocked.Increment(ref completed);
@@ -121,16 +123,24 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
             });
 
         return results
-            .OrderBy(entry => entry.PackageId, StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(entry => entry.TotalDownloads)
+            .ThenBy(entry => entry.PackageId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
     private async Task<DotnetToolIndexEntry> BuildPackageEntryAsync(
         string packageId,
+        string searchUrl,
         string registrationBaseUrl,
         CancellationToken cancellationToken)
     {
-        var registrationIndex = await _apiClient.GetRegistrationIndexAsync(registrationBaseUrl, packageId, cancellationToken);
+        var registrationTask = _apiClient.GetRegistrationIndexAsync(registrationBaseUrl, packageId, cancellationToken);
+        var totalDownloadsTask = _apiClient.GetPackageTotalDownloadsAsync(searchUrl, packageId, cancellationToken);
+
+        await Task.WhenAll(registrationTask, totalDownloadsTask);
+
+        var registrationIndex = await registrationTask;
+        var totalDownloads = await totalDownloadsTask;
         var versionCount = registrationIndex.Items.Sum(page => page.Count);
 
         foreach (var pageReference in registrationIndex.Items.Reverse())
@@ -148,6 +158,7 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
                 return new DotnetToolIndexEntry(
                     PackageId: packageId,
                     LatestVersion: leaf.CatalogEntry.Version,
+                    TotalDownloads: totalDownloads,
                     VersionCount: versionCount,
                     Listed: true,
                     PublishedAtUtc: leaf.CatalogEntry.Published?.ToUniversalTime(),

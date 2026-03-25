@@ -25,7 +25,12 @@ internal sealed record NuGetServiceResource(
     [property: JsonPropertyName("@type")] string Type);
 
 internal sealed record SearchResponse(
-    [property: JsonPropertyName("totalHits")] int TotalHits);
+    [property: JsonPropertyName("totalHits")] int TotalHits,
+    [property: JsonPropertyName("data")] IReadOnlyList<SearchPackage> Data);
+
+internal sealed record SearchPackage(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("totalDownloads")] long TotalDownloads);
 
 internal sealed record AutocompleteResponse(
     [property: JsonPropertyName("totalHits")] int TotalHits,

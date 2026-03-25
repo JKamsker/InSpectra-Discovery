@@ -11,11 +11,13 @@ internal sealed record DotnetToolIndexSource(
     string SearchUrl,
     string RegistrationBaseUrl,
     string PrefixAlphabet,
-    int ExpectedPackageCount);
+    int ExpectedPackageCount,
+    string SortOrder);
 
 internal sealed record DotnetToolIndexEntry(
     string PackageId,
     string LatestVersion,
+    long TotalDownloads,
     int VersionCount,
     bool Listed,
     DateTimeOffset? PublishedAtUtc,

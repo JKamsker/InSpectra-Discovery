@@ -59,6 +59,30 @@ internal sealed class NuGetApiClient
         return response.TotalHits;
     }
 
+    public async Task<long> GetPackageTotalDownloadsAsync(string searchUrl, string packageId, CancellationToken cancellationToken)
+    {
+        var queries = new[]
+        {
+            $"packageid:{packageId}",
+            $"packageid:\"{packageId}\"",
+            packageId,
+        };
+
+        foreach (var query in queries)
+        {
+            var response = await SearchAsync(searchUrl, query, skip: 0, take: 20, packageType: "dotnettool", cancellationToken);
+            var match = response.Data.FirstOrDefault(candidate =>
+                string.Equals(candidate.Id, packageId, StringComparison.OrdinalIgnoreCase));
+
+            if (match is not null)
+            {
+                return match.TotalDownloads;
+            }
+        }
+
+        throw new InvalidOperationException($"Could not resolve search metadata for '{packageId}'.");
+    }
+
     private async Task<T> GetJsonAsync<T>(string url, CancellationToken cancellationToken)
     {
         var delay = TimeSpan.FromSeconds(2);
