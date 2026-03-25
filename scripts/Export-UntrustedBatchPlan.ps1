@@ -29,6 +29,9 @@ $ErrorActionPreference = 'Stop'
 $RepositoryRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $GeneratedAt = [DateTimeOffset]::UtcNow
 
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
 function Write-JsonFile {
     param(
         [Parameter(Mandatory = $true)]
@@ -79,6 +82,170 @@ function Get-ArtifactName {
 
     $raw = "analysis-$LowerId-$LowerVersion"
     return ([regex]::Replace($raw, '[^a-z0-9._-]+', '-')).Trim('-')
+}
+
+function Get-IsAllPrefixed {
+    param(
+        [AllowEmptyCollection()]
+        [string[]]$Values,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Prefix
+    )
+
+    if ($Values.Count -eq 0) {
+        return $false
+    }
+
+    foreach ($value in $Values) {
+        if (-not $value.StartsWith($Prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+            return $false
+        }
+    }
+
+    return $true
+}
+
+function Add-FrameworkName {
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowEmptyCollection()]
+        [System.Collections.Generic.HashSet[string]]$Frameworks,
+
+        [AllowNull()]$Framework
+    )
+
+    if ($null -eq $Framework) {
+        return
+    }
+
+    if ($Framework -is [string]) {
+        if (-not [string]::IsNullOrWhiteSpace($Framework)) {
+            $null = $Frameworks.Add($Framework.Trim())
+        }
+
+        return
+    }
+
+    if ($Framework.PSObject.Properties.Name -contains 'name' -and -not [string]::IsNullOrWhiteSpace([string]$Framework.name)) {
+        $null = $Frameworks.Add(([string]$Framework.name).Trim())
+    }
+}
+
+function Get-PackageRunnerSelection {
+    param(
+        [AllowNull()][string]$PackageContentUrl
+    )
+
+    $selection = [ordered]@{
+        runsOn = 'ubuntu-latest'
+        reason = 'default-ubuntu'
+        requiredFrameworks = @()
+        toolRids = @()
+        runtimeRids = @()
+        inspectionError = $null
+    }
+
+    if ([string]::IsNullOrWhiteSpace($PackageContentUrl)) {
+        return $selection
+    }
+
+    $tempFile = Join-Path ([System.IO.Path]::GetTempPath()) ("inspectra-batch-" + [System.Guid]::NewGuid().ToString('n') + '.nupkg')
+    $archive = $null
+
+    try {
+        Invoke-WebRequest -Uri $PackageContentUrl -OutFile $tempFile
+        $archive = [System.IO.Compression.ZipFile]::OpenRead($tempFile)
+
+        $frameworks = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $toolRids = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+        $runtimeRids = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
+        foreach ($entry in $archive.Entries) {
+            $entryPath = ($entry.FullName -replace '\\', '/').Trim('/')
+            if ([string]::IsNullOrWhiteSpace($entryPath)) {
+                continue
+            }
+
+            $segments = @($entryPath -split '/')
+
+            if ($segments.Length -ge 4 -and $segments[0] -eq 'tools') {
+                $rid = $segments[2]
+                if (-not [string]::IsNullOrWhiteSpace($rid) -and $rid -ne 'any') {
+                    $null = $toolRids.Add($rid)
+                }
+            }
+
+            if ($segments.Length -ge 3 -and $segments[0] -eq 'runtimes') {
+                $rid = $segments[1]
+                if (-not [string]::IsNullOrWhiteSpace($rid)) {
+                    $null = $runtimeRids.Add($rid)
+                }
+            }
+
+            if ($entryPath.EndsWith('.runtimeconfig.json', [System.StringComparison]::OrdinalIgnoreCase)) {
+                try {
+                    $reader = New-Object System.IO.StreamReader($entry.Open())
+                    try {
+                        $runtimeConfig = $reader.ReadToEnd() | ConvertFrom-Json
+                    }
+                    finally {
+                        $reader.Dispose()
+                    }
+
+                    $runtimeOptions = $runtimeConfig.runtimeOptions
+                    if ($null -ne $runtimeOptions) {
+                        if ($runtimeOptions.PSObject.Properties.Name -contains 'framework') {
+                            Add-FrameworkName -Frameworks $frameworks -Framework $runtimeOptions.framework
+                        }
+
+                        if ($runtimeOptions.PSObject.Properties.Name -contains 'frameworks') {
+                            foreach ($framework in @($runtimeOptions.frameworks)) {
+                                Add-FrameworkName -Frameworks $frameworks -Framework $framework
+                            }
+                        }
+                    }
+                }
+                catch {
+                    $selection.inspectionError = $_.Exception.Message
+                }
+            }
+        }
+
+        $requiredFrameworks = @($frameworks | Sort-Object)
+        $toolRidList = @($toolRids | Sort-Object)
+        $runtimeRidList = @($runtimeRids | Sort-Object)
+
+        $selection.requiredFrameworks = $requiredFrameworks
+        $selection.toolRids = $toolRidList
+        $selection.runtimeRids = $runtimeRidList
+
+        if ($requiredFrameworks -contains 'Microsoft.WindowsDesktop.App') {
+            $selection.runsOn = 'windows-latest'
+            $selection.reason = 'framework-microsoft.windowsdesktop.app'
+        }
+        elseif (Get-IsAllPrefixed -Values $toolRidList -Prefix 'win') {
+            $selection.runsOn = 'windows-latest'
+            $selection.reason = 'tool-rids-windows-only'
+        }
+        elseif (Get-IsAllPrefixed -Values $runtimeRidList -Prefix 'win') {
+            $selection.runsOn = 'windows-latest'
+            $selection.reason = 'runtime-rids-windows-only'
+        }
+    }
+    catch {
+        $selection.reason = 'default-ubuntu-inspection-failed'
+        $selection.inspectionError = $_.Exception.Message
+    }
+    finally {
+        if ($null -ne $archive) {
+            $archive.Dispose()
+        }
+
+        Remove-Item $tempFile -Force -ErrorAction SilentlyContinue
+    }
+
+    return $selection
 }
 
 function Get-BatchDefinition {
@@ -157,6 +324,8 @@ foreach ($item in $batch.items) {
         }
     }
 
+    $runnerSelection = Get-PackageRunnerSelection -PackageContentUrl $item.packageContentUrl
+
     $selectedItems.Add([ordered]@{
         packageId = $item.packageId
         version = $item.version
@@ -166,6 +335,12 @@ foreach ($item in $batch.items) {
         catalogEntryUrl = $item.catalogEntryUrl
         attempt = if ($state) { [int]$state.attemptCount + 1 } else { 1 }
         artifactName = Get-ArtifactName -LowerId $lowerId -LowerVersion $lowerVersion
+        runsOn = $runnerSelection.runsOn
+        runnerReason = $runnerSelection.reason
+        requiredFrameworks = $runnerSelection.requiredFrameworks
+        toolRids = $runnerSelection.toolRids
+        runtimeRids = $runnerSelection.runtimeRids
+        inspectionError = $runnerSelection.inspectionError
     })
 }
 
