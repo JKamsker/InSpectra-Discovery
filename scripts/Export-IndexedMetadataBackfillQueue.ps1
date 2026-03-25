@@ -41,6 +41,15 @@ function Get-RelativeRepositoryPath {
     return ([System.IO.Path]::GetRelativePath($RepositoryRoot, $Path)) -replace '\\', '/'
 }
 
+function Get-PackageStateDirectory {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LowerId
+    )
+
+    return Join-Path $RepositoryRoot "state/packages/$LowerId"
+}
+
 function Invoke-JsonWithRetry {
     param(
         [Parameter(Mandatory = $true)]
@@ -62,6 +71,65 @@ function Invoke-JsonWithRetry {
             Start-Sleep -Seconds ([Math]::Min(10, $attempt * 2))
         }
     }
+}
+
+function Get-PackageRunnerHint {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PackageId
+    )
+
+    $defaultHint = [ordered]@{
+        runsOn = 'ubuntu-latest'
+        reason = 'default-ubuntu-package-history'
+        requiredFrameworks = @()
+        toolRids = @()
+        runtimeRids = @()
+        inspectionError = $null
+        hintSource = 'default'
+    }
+
+    $stateDirectory = Get-PackageStateDirectory -LowerId $PackageId.ToLowerInvariant()
+    if (-not (Test-Path $stateDirectory)) {
+        return $defaultHint
+    }
+
+    foreach ($stateFile in @(Get-ChildItem -Path $stateDirectory -Filter '*.json' -File | Sort-Object Name -Descending)) {
+        try {
+            $state = Get-Content $stateFile.FullName -Raw | ConvertFrom-Json
+        }
+        catch {
+            continue
+        }
+
+        $failureFragments = @()
+        if ($state.PSObject.Properties.Name -contains 'lastFailureSignature' -and $state.lastFailureSignature) {
+            $failureFragments += [string]$state.lastFailureSignature
+        }
+
+        if ($state.PSObject.Properties.Name -contains 'lastFailureMessage' -and $state.lastFailureMessage) {
+            $failureFragments += [string]$state.lastFailureMessage
+        }
+
+        $failureText = ($failureFragments -join "`n").Trim()
+        if ([string]::IsNullOrWhiteSpace($failureText)) {
+            continue
+        }
+
+        if ($failureText -match 'Microsoft\.WindowsDesktop\.App') {
+            return [ordered]@{
+                runsOn = 'windows-latest'
+                reason = 'historical-state-microsoft.windowsdesktop.app'
+                requiredFrameworks = @('Microsoft.WindowsDesktop.App')
+                toolRids = @()
+                runtimeRids = @()
+                inspectionError = $null
+                hintSource = 'historical-state'
+            }
+        }
+    }
+
+    return $defaultHint
 }
 
 function Get-RegistrationIndexUrl {
@@ -133,6 +201,7 @@ $indexedVersionCount = 0
 
 foreach ($package in @($Index.packages)) {
     $packageId = [string]$package.packageId
+    $packageRunnerHint = Get-PackageRunnerHint -PackageId $packageId
     $existingVersions = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
 
     foreach ($versionRecord in @($package.versions)) {
@@ -177,6 +246,13 @@ foreach ($package in @($Index.packages)) {
             publishedAt = $publishedAt
             listed = $catalogEntry.listed
             backfillKind = 'indexed-package-history'
+            runsOn = $packageRunnerHint.runsOn
+            runnerReason = $packageRunnerHint.reason
+            requiredFrameworks = @($packageRunnerHint.requiredFrameworks)
+            toolRids = @($packageRunnerHint.toolRids)
+            runtimeRids = @($packageRunnerHint.runtimeRids)
+            inspectionError = $packageRunnerHint.inspectionError
+            runnerHintSource = $packageRunnerHint.hintSource
         })
     }
 }
@@ -201,6 +277,7 @@ $queue = [ordered]@{
     itemCount = $orderedItems.Count
     batchPrefix = 'indexed-history-backfill'
     forceReanalyze = $false
+    skipRunnerInspection = $true
     skippedCount = $skipped.Count
     skipped = @($skipped)
     items = $orderedItems

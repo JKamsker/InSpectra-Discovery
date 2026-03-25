@@ -260,6 +260,7 @@ function Get-BatchDefinition {
             sourceManifestPath = Get-RelativeRepositoryPath -Path $batchFile.Path
             sourceSnapshotPath = [string]$batch.sourceSnapshotPath
             targetBranch = $TargetBranch
+            skipRunnerInspection = $false
         }
     }
 
@@ -289,6 +290,42 @@ function Get-BatchDefinition {
         sourceManifestPath = Get-RelativeRepositoryPath -Path $queueFile.Path
         sourceSnapshotPath = $sourceSnapshotPath
         targetBranch = $TargetBranch
+        skipRunnerInspection = [bool](
+            $queue.PSObject.Properties.Name -contains 'skipRunnerInspection' -and
+            $queue.skipRunnerInspection
+        )
+    }
+}
+
+function Get-PrecomputedRunnerSelection {
+    param(
+        [AllowNull()]$Item,
+
+        [bool]$SkipRunnerInspection
+    )
+
+    $hasRunsOn = $Item.PSObject.Properties.Name -contains 'runsOn' -and -not [string]::IsNullOrWhiteSpace([string]$Item.runsOn)
+    if (-not $SkipRunnerInspection -and -not $hasRunsOn) {
+        return $null
+    }
+
+    $reason = if ($Item.PSObject.Properties.Name -contains 'runnerReason' -and -not [string]::IsNullOrWhiteSpace([string]$Item.runnerReason)) {
+        [string]$Item.runnerReason
+    }
+    elseif ($SkipRunnerInspection) {
+        'queue-skip-runner-inspection'
+    }
+    else {
+        'precomputed-runner-selection'
+    }
+
+    return [ordered]@{
+        runsOn = if ($hasRunsOn) { [string]$Item.runsOn } else { 'ubuntu-latest' }
+        reason = $reason
+        requiredFrameworks = if ($Item.PSObject.Properties.Name -contains 'requiredFrameworks' -and $null -ne $Item.requiredFrameworks) { @($Item.requiredFrameworks) } else { @() }
+        toolRids = if ($Item.PSObject.Properties.Name -contains 'toolRids' -and $null -ne $Item.toolRids) { @($Item.toolRids) } else { @() }
+        runtimeRids = if ($Item.PSObject.Properties.Name -contains 'runtimeRids' -and $null -ne $Item.runtimeRids) { @($Item.runtimeRids) } else { @() }
+        inspectionError = if ($Item.PSObject.Properties.Name -contains 'inspectionError' -and -not [string]::IsNullOrWhiteSpace([string]$Item.inspectionError)) { [string]$Item.inspectionError } else { $null }
     }
 }
 
@@ -299,6 +336,7 @@ $skippedItems = [System.Collections.Generic.List[object]]::new()
 foreach ($item in $batch.items) {
     $lowerId = $item.packageId.ToLowerInvariant()
     $lowerVersion = $item.version.ToLowerInvariant()
+    $totalDownloads = if ($item.PSObject.Properties.Name -contains 'totalDownloads') { $item.totalDownloads } else { $null }
     $statePath = Get-StatePath -LowerId $lowerId -LowerVersion $lowerVersion
     $state = if (Test-Path $statePath) { Get-Content $statePath -Raw | ConvertFrom-Json } else { $null }
 
@@ -326,12 +364,15 @@ foreach ($item in $batch.items) {
         }
     }
 
-    $runnerSelection = Get-PackageRunnerSelection -PackageContentUrl $item.packageContentUrl
+    $runnerSelection = Get-PrecomputedRunnerSelection -Item $item -SkipRunnerInspection $batch.skipRunnerInspection
+    if ($null -eq $runnerSelection) {
+        $runnerSelection = Get-PackageRunnerSelection -PackageContentUrl $item.packageContentUrl
+    }
 
     $selectedItems.Add([ordered]@{
         packageId = $item.packageId
         version = $item.version
-        totalDownloads = $item.totalDownloads
+        totalDownloads = $totalDownloads
         packageUrl = $item.packageUrl
         packageContentUrl = $item.packageContentUrl
         catalogEntryUrl = $item.catalogEntryUrl
