@@ -7,6 +7,7 @@
 - [x] Enrich the Spectre CLI snapshot with resolved Spectre package versions from `*.deps.json` and assembly/file version metadata from `Spectre.Console*.dll`.
 - [x] Add a trusted single-package GitHub Actions workflow for JellyfinCli that evaluates the tool and opens a PR with versioned package index files.
 - [x] Add a pilot untrusted analysis pipeline with two 10-item batches, artifact-only analysis, retry state, and a promotion workflow.
+- [x] Make the untrusted analyzer classify `opencli` and `xmldoc` independently, tolerate ANSI/noisy output, and stop requeueing deterministic contract/auth/config failures.
 
 Command:
 `dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --concurrency 16`
@@ -45,6 +46,7 @@ Pilot untrusted batches:
 `config/untrusted-batches/pilot-batch-01.json`
 `config/untrusted-batches/pilot-batch-02.json`
 `config/untrusted-batches/pilot-batch-03.json`
+`config/untrusted-batches/rescan-*.json`
 
 Untrusted analysis workflow:
 `.github/workflows/analyze-untrusted-batch.yml`

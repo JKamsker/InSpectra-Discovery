@@ -14,7 +14,11 @@ param(
 
     [int]$Attempt = 1,
 
-    [string]$Source = 'untrusted-batch'
+    [string]$Source = 'untrusted-batch',
+
+    [int]$InstallTimeoutSeconds = 300,
+
+    [int]$CommandTimeoutSeconds = 300
 )
 
 Set-StrictMode -Version Latest
@@ -111,6 +115,292 @@ function Invoke-ProcessCapture {
     }
 }
 
+function Normalize-ConsoleText {
+    param([AllowNull()][string]$Value)
+
+    if ([string]::IsNullOrEmpty($Value)) {
+        return $null
+    }
+
+    $normalized = $Value -replace '^\uFEFF', ''
+    $escape = [regex]::Escape([string][char]27)
+    $normalized = $normalized -replace ($escape + '\[[0-?]*[ -/]*[@-~]'), ''
+    $normalized = $normalized -replace ($escape + '[@-_]'), ''
+    $normalized = $normalized -replace "`0", ''
+
+    return $normalized.Trim()
+}
+
+function Get-PreferredMessage {
+    param(
+        [AllowNull()][string]$Stdout,
+        [AllowNull()][string]$Stderr
+    )
+
+    $normalizedStderr = Normalize-ConsoleText $Stderr
+    if (-not [string]::IsNullOrWhiteSpace($normalizedStderr)) {
+        return $normalizedStderr
+    }
+
+    $normalizedStdout = Normalize-ConsoleText $Stdout
+    if (-not [string]::IsNullOrWhiteSpace($normalizedStdout)) {
+        return $normalizedStdout
+    }
+
+    return $null
+}
+
+function Test-MatchesAnyPattern {
+    param(
+        [AllowNull()][string]$Text,
+        [Parameter(Mandatory = $true)]
+        [string[]]$Patterns
+    )
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return $false
+    }
+
+    foreach ($pattern in $Patterns) {
+        if ($Text -match $pattern) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Try-ParseJsonPayload {
+    param([AllowNull()][string]$Text)
+
+    $normalized = Normalize-ConsoleText $Text
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return [ordered]@{
+            success = $false
+            document = $null
+            artifactText = $null
+            normalizedText = $normalized
+            error = 'Output was empty.'
+        }
+    }
+
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    $candidates.Add($normalized)
+
+    $firstBrace = $normalized.IndexOf('{')
+    $firstBracket = $normalized.IndexOf('[')
+    $startIndex = @($firstBrace, $firstBracket) | Where-Object { $_ -ge 0 } | Sort-Object | Select-Object -First 1
+    if ($null -ne $startIndex -and $startIndex -gt 0) {
+        $candidate = $normalized.Substring($startIndex).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+            $candidates.Add($candidate)
+        }
+    }
+
+    $lastError = $null
+    foreach ($candidate in $candidates) {
+        try {
+            return [ordered]@{
+                success = $true
+                document = $candidate | ConvertFrom-Json
+                artifactText = $candidate
+                normalizedText = $normalized
+                error = $null
+            }
+        }
+        catch {
+            $lastError = $_.Exception.Message
+        }
+    }
+
+    return [ordered]@{
+        success = $false
+        document = $null
+        artifactText = $null
+        normalizedText = $normalized
+        error = if ($lastError) { $lastError } else { 'JSON parsing failed.' }
+    }
+}
+
+function Try-ParseXmlPayload {
+    param([AllowNull()][string]$Text)
+
+    $normalized = Normalize-ConsoleText $Text
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return [ordered]@{
+            success = $false
+            document = $null
+            artifactText = $null
+            normalizedText = $normalized
+            error = 'Output was empty.'
+        }
+    }
+
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    $candidates.Add($normalized)
+
+    $firstAngle = $normalized.IndexOf('<')
+    if ($firstAngle -gt 0) {
+        $candidate = $normalized.Substring($firstAngle).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+            $candidates.Add($candidate)
+        }
+    }
+
+    $lastError = $null
+    foreach ($candidate in $candidates) {
+        try {
+            [xml]$document = $candidate
+            return [ordered]@{
+                success = $true
+                document = $document
+                artifactText = $candidate
+                normalizedText = $normalized
+                error = $null
+            }
+        }
+        catch {
+            $lastError = $_.Exception.Message
+        }
+    }
+
+    return [ordered]@{
+        success = $false
+        document = $null
+        artifactText = $null
+        normalizedText = $normalized
+        error = if ($lastError) { $lastError } else { 'XML parsing failed.' }
+    }
+}
+
+function Get-IntrospectionClassification {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string[]]$ArgumentList,
+
+        [AllowNull()][string]$Text
+    )
+
+    $escapedSegments = @($ArgumentList | ForEach-Object { [regex]::Escape($_) })
+    $subcommandPattern = if ($escapedSegments.Count -gt 0) { '(?:' + ($escapedSegments -join '|') + ')' } else { '(?:cli|opencli|xmldoc)' }
+
+    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
+        "(?is)\bunknown command\b.*\b$subcommandPattern\b",
+        "(?is)\bunrecognized command\b.*\b$subcommandPattern\b",
+        "(?is)\b$subcommandPattern\b.*\b(?:not recognized|not found|not a valid command|invalid command)\b",
+        '(?is)\brequired command was not provided\b'
+    )) {
+        return 'unsupported-command'
+    }
+
+    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
+        '(?is)\b(no|missing)\b.*\b(config|configuration)\b',
+        '(?is)\bconfiguration\b',
+        '(?is)\b(required option|required argument)\b',
+        '(?is)\bmust be specified\b',
+        '(?is)\bnot enough arguments\b'
+    )) {
+        return 'requires-configuration'
+    }
+
+    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
+        '(?is)\b(unable to load shared library|cannot open shared object file|dllnotfoundexception|could not load file or assembly|libsecret)\b'
+    )) {
+        return 'environment-missing-dependency'
+    }
+
+    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
+        '(?is)\b(checking your credentials|credential|authenticate|authentication|device code|sign in|login|log in|open (?:the )?browser)\b'
+    )) {
+        return 'requires-interactive-authentication'
+    }
+
+    return $null
+}
+
+function Invoke-IntrospectionCommand {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$CommandPath,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$ArgumentList,
+
+        [Parameter(Mandatory = $true)]
+        [string]$WorkingDirectory,
+
+        [Parameter(Mandatory = $true)]
+        [ValidateSet('json', 'xml')]
+        [string]$ExpectedFormat,
+
+        [int]$TimeoutSeconds = 300
+    )
+
+    $result = Invoke-ProcessCapture -FilePath $CommandPath -ArgumentList $ArgumentList -WorkingDirectory $WorkingDirectory -TimeoutSeconds $TimeoutSeconds
+    $preferredMessage = Get-PreferredMessage -Stdout $result.stdout -Stderr $result.stderr
+    $classification = Get-IntrospectionClassification -ArgumentList $ArgumentList -Text $preferredMessage
+    $parse = if ($ExpectedFormat -eq 'json') { Try-ParseJsonPayload -Text $result.stdout } else { Try-ParseXmlPayload -Text $result.stdout }
+
+    $status = 'failed'
+    $dispositionHint = 'retryable-failure'
+    $message = $preferredMessage
+    $artifactObject = $null
+    $artifactText = $null
+
+    if ($result.timedOut) {
+        $status = 'timed-out'
+        if ($classification -in @('requires-configuration', 'environment-missing-dependency', 'requires-interactive-authentication')) {
+            $dispositionHint = 'terminal-failure'
+        }
+        else {
+            $classification = 'timeout'
+            $dispositionHint = 'retryable-failure'
+        }
+        $message = if ($preferredMessage) { $preferredMessage } else { 'Command timed out.' }
+    }
+    elseif ($result.exitCode -eq 0 -and $parse.success) {
+        $status = 'ok'
+        $classification = if ($ExpectedFormat -eq 'json') { 'json-ready' } else { 'xml-ready' }
+        $dispositionHint = 'success'
+        $artifactObject = $parse.document
+        $artifactText = $parse.artifactText
+        $message = $null
+    }
+    elseif ($classification) {
+        $status = if ($classification -eq 'unsupported-command') { 'unsupported' } else { 'failed' }
+        $dispositionHint = 'terminal-failure'
+        if (-not $message -and $parse.error) {
+            $message = $parse.error
+        }
+    }
+    elseif ($result.exitCode -eq 0) {
+        $status = 'invalid-output'
+        $classification = if ($ExpectedFormat -eq 'json') { 'invalid-json' } else { 'invalid-xml' }
+        $dispositionHint = 'terminal-failure'
+        $message = if ($parse.error) { $parse.error } else { 'Command exited successfully but did not emit valid output.' }
+    }
+    else {
+        $status = 'failed'
+        $classification = 'command-failed'
+        $dispositionHint = 'retryable-failure'
+        if (-not $message -and $parse.error) {
+            $message = $parse.error
+        }
+    }
+
+    return [ordered]@{
+        commandName = $ArgumentList[-1]
+        expectedFormat = $ExpectedFormat
+        processResult = $result
+        status = $status
+        classification = $classification
+        dispositionHint = $dispositionHint
+        message = $message
+        artifactObject = $artifactObject
+        artifactText = $artifactText
+    }
+}
+
 function Get-StepMetadata {
     param(
         [AllowNull()][object]$Result,
@@ -136,11 +426,31 @@ function Get-StepMetadata {
     }
 
     if ($IncludeStdout) {
-        $metadata.stdout = $Result.stdout
+        $metadata.stdout = Normalize-ConsoleText $Result.stdout
     }
 
     if (-not [string]::IsNullOrEmpty($Result.stderr)) {
-        $metadata.stderr = $Result.stderr
+        $metadata.stderr = Normalize-ConsoleText $Result.stderr
+    }
+
+    return $metadata
+}
+
+function Get-OutcomeMetadata {
+    param(
+        [AllowNull()][object]$Outcome,
+        [AllowNull()][string]$ArtifactPath
+    )
+
+    if ($null -eq $Outcome) {
+        return $null
+    }
+
+    $metadata = Get-StepMetadata -Result $Outcome.processResult -ArtifactPath $ArtifactPath -IncludeStdout:($Outcome.status -ne 'ok')
+    $metadata.outcomeStatus = $Outcome.status
+    $metadata.classification = $Outcome.classification
+    if ($Outcome.message) {
+        $metadata.message = $Outcome.message
     }
 
     return $metadata
@@ -187,6 +497,10 @@ $result = [ordered]@{
         matchedPackageEntries = @()
         matchedDependencyIds = @()
     }
+    introspection = [ordered]@{
+        opencli = $null
+        xmldoc = $null
+    }
     timings = [ordered]@{
         totalMs = $null
         installMs = $null
@@ -214,8 +528,16 @@ try {
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
     $env:DOTNET_NOLOGO = '1'
     $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+    $env:DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION = '0'
     $env:NUGET_PACKAGES = Join-Path $TempRoot 'nuget-packages'
     $env:NUGET_HTTP_CACHE_PATH = Join-Path $TempRoot 'nuget-http-cache'
+    $env:XDG_CONFIG_HOME = Join-Path $TempRoot 'xdg-config'
+    $env:XDG_CACHE_HOME = Join-Path $TempRoot 'xdg-cache'
+    $env:XDG_DATA_HOME = Join-Path $TempRoot 'xdg-data'
+    $env:CI = 'true'
+    $env:NO_COLOR = '1'
+    $env:FORCE_COLOR = '0'
+    $env:TERM = 'dumb'
 
     $lowerId = $PackageId.ToLowerInvariant()
     $lowerVersion = $Version.ToLowerInvariant()
@@ -276,14 +598,14 @@ try {
         $result.runner = [string]$toolSettings.DotNetCliTool.Commands.Command.Runner
 
         $installDirectory = Join-Path $TempRoot 'tool'
-        $installResult = Invoke-ProcessCapture -FilePath 'dotnet' -ArgumentList @('tool', 'install', $PackageId, '--version', $Version, '--tool-path', $installDirectory) -WorkingDirectory $TempRoot -TimeoutSeconds 300
+        $installResult = Invoke-ProcessCapture -FilePath 'dotnet' -ArgumentList @('tool', 'install', $PackageId, '--version', $Version, '--tool-path', $installDirectory) -WorkingDirectory $TempRoot -TimeoutSeconds $InstallTimeoutSeconds
         $result.steps.install = Get-StepMetadata -Result $installResult -IncludeStdout
         $result.timings.installMs = $installResult.durationMs
 
         if ($installResult.timedOut -or $installResult.exitCode -ne 0) {
             $result.phase = 'install'
             $result.classification = if ($installResult.timedOut) { 'install-timeout' } else { 'install-failed' }
-            $result.failureMessage = if ($installResult.stderr) { $installResult.stderr.Trim() } else { $installResult.stdout.Trim() }
+            $result.failureMessage = Get-PreferredMessage -Stdout $installResult.stdout -Stderr $installResult.stderr
         }
         else {
             $commandPath = foreach ($candidate in @(
@@ -297,38 +619,75 @@ try {
                 $result.failureMessage = "Installed tool command '$($result.command)' was not found."
             }
             else {
-                $openCliResult = Invoke-ProcessCapture -FilePath $commandPath -ArgumentList @('cli', 'opencli') -WorkingDirectory $TempRoot -TimeoutSeconds 300
-                $result.timings.opencliMs = $openCliResult.durationMs
-                if ($openCliResult.timedOut -or $openCliResult.exitCode -ne 0) {
-                    $result.steps.opencli = Get-StepMetadata -Result $openCliResult
-                    $result.phase = 'opencli'
-                    $result.classification = if ($openCliResult.timedOut) { 'opencli-timeout' } else { 'opencli-failed' }
-                    $result.failureMessage = if ($openCliResult.stderr) { $openCliResult.stderr.Trim() } else { $openCliResult.stdout.Trim() }
+                $openCliOutcome = Invoke-IntrospectionCommand -CommandPath $commandPath -ArgumentList @('cli', 'opencli') -WorkingDirectory $TempRoot -ExpectedFormat 'json' -TimeoutSeconds $CommandTimeoutSeconds
+                $xmlDocOutcome = Invoke-IntrospectionCommand -CommandPath $commandPath -ArgumentList @('cli', 'xmldoc') -WorkingDirectory $TempRoot -ExpectedFormat 'xml' -TimeoutSeconds $CommandTimeoutSeconds
+
+                $result.timings.opencliMs = $openCliOutcome.processResult.durationMs
+                $result.timings.xmldocMs = $xmlDocOutcome.processResult.durationMs
+
+                if ($null -ne $openCliOutcome.artifactObject) {
+                    Write-JsonFile -Path (Join-Path $OutputRoot 'opencli.json') -InputObject $openCliOutcome.artifactObject
+                    $result.artifacts.opencliArtifact = 'opencli.json'
+                }
+
+                if ($null -ne $xmlDocOutcome.artifactText) {
+                    Write-TextFile -Path (Join-Path $OutputRoot 'xmldoc.xml') -Content $xmlDocOutcome.artifactText
+                    $result.artifacts.xmldocArtifact = 'xmldoc.xml'
+                }
+
+                $result.introspection.opencli = [ordered]@{
+                    status = $openCliOutcome.status
+                    classification = $openCliOutcome.classification
+                    message = $openCliOutcome.message
+                }
+                $result.introspection.xmldoc = [ordered]@{
+                    status = $xmlDocOutcome.status
+                    classification = $xmlDocOutcome.classification
+                    message = $xmlDocOutcome.message
+                }
+
+                $result.steps.opencli = Get-OutcomeMetadata -Outcome $openCliOutcome -ArtifactPath $result.artifacts.opencliArtifact
+                $result.steps.xmldoc = Get-OutcomeMetadata -Outcome $xmlDocOutcome -ArtifactPath $result.artifacts.xmldocArtifact
+
+                $successfulOutcomes = @($openCliOutcome, $xmlDocOutcome | Where-Object { $_.status -eq 'ok' })
+                $retryableOutcomes = @($openCliOutcome, $xmlDocOutcome | Where-Object { $_.status -ne 'ok' -and $_.dispositionHint -eq 'retryable-failure' })
+                $deterministicOutcomes = @($openCliOutcome, $xmlDocOutcome | Where-Object { $_.status -ne 'ok' -and $_.dispositionHint -eq 'terminal-failure' })
+
+                if ($successfulOutcomes.Count -eq 2) {
+                    $result.disposition = 'success'
+                    $result.retryEligible = $false
+                    $result.phase = 'complete'
+                    $result.classification = 'spectre-cli-confirmed'
+                }
+                elseif ($successfulOutcomes.Count -eq 1 -and $retryableOutcomes.Count -eq 0) {
+                    $successName = $successfulOutcomes[0].commandName
+                    $result.disposition = 'success'
+                    $result.retryEligible = $false
+                    $result.phase = 'complete'
+                    $result.classification = if ($successName -eq 'opencli') { 'spectre-cli-opencli-only' } else { 'spectre-cli-xmldoc-only' }
+                }
+                elseif ($retryableOutcomes.Count -gt 0) {
+                    $primaryFailure = $retryableOutcomes[0]
+                    $result.disposition = 'retryable-failure'
+                    $result.retryEligible = $true
+                    $result.phase = $primaryFailure.commandName
+                    $result.classification = $primaryFailure.classification
+                    $result.failureMessage = $primaryFailure.message
+                }
+                elseif ($deterministicOutcomes.Count -gt 0) {
+                    $primaryFailure = $deterministicOutcomes[0]
+                    $result.disposition = 'terminal-failure'
+                    $result.retryEligible = $false
+                    $result.phase = $primaryFailure.commandName
+                    $result.classification = $primaryFailure.classification
+                    $result.failureMessage = $primaryFailure.message
                 }
                 else {
-                    $openCliDocument = $openCliResult.stdout | ConvertFrom-Json
-                    Write-JsonFile -Path (Join-Path $OutputRoot 'opencli.json') -InputObject $openCliDocument
-                    $result.artifacts.opencliArtifact = 'opencli.json'
-                    $result.steps.opencli = Get-StepMetadata -Result $openCliResult -ArtifactPath 'opencli.json'
-
-                    $xmlDocResult = Invoke-ProcessCapture -FilePath $commandPath -ArgumentList @('cli', 'xmldoc') -WorkingDirectory $TempRoot -TimeoutSeconds 300
-                    $result.timings.xmldocMs = $xmlDocResult.durationMs
-                    if ($xmlDocResult.timedOut -or $xmlDocResult.exitCode -ne 0) {
-                        $result.steps.xmldoc = Get-StepMetadata -Result $xmlDocResult
-                        $result.phase = 'xmldoc'
-                        $result.classification = if ($xmlDocResult.timedOut) { 'xmldoc-timeout' } else { 'xmldoc-failed' }
-                        $result.failureMessage = if ($xmlDocResult.stderr) { $xmlDocResult.stderr.Trim() } else { $xmlDocResult.stdout.Trim() }
-                    }
-                    else {
-                        [xml]$null = $xmlDocResult.stdout
-                        Write-TextFile -Path (Join-Path $OutputRoot 'xmldoc.xml') -Content $xmlDocResult.stdout
-                        $result.artifacts.xmldocArtifact = 'xmldoc.xml'
-                        $result.steps.xmldoc = Get-StepMetadata -Result $xmlDocResult -ArtifactPath 'xmldoc.xml'
-                        $result.disposition = 'success'
-                        $result.retryEligible = $false
-                        $result.phase = 'complete'
-                        $result.classification = 'spectre-cli-confirmed'
-                    }
+                    $result.disposition = 'retryable-failure'
+                    $result.retryEligible = $true
+                    $result.phase = 'introspection'
+                    $result.classification = 'introspection-unresolved'
+                    $result.failureMessage = 'The tool did not yield a usable introspection result.'
                 }
             }
         }
@@ -346,7 +705,7 @@ catch {
 finally {
     $Timer.Stop()
     $result.timings.totalMs = [int][Math]::Round($Timer.Elapsed.TotalMilliseconds)
-    if ($result.disposition -eq 'retryable-failure') {
+    if ($result.disposition -in @('retryable-failure', 'terminal-failure')) {
         $result.failureSignature = Get-FailureSignature -Phase $result.phase -Classification $result.classification -Message $result.failureMessage
     }
 

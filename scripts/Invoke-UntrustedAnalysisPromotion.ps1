@@ -122,6 +122,7 @@ function New-SyntheticFailureResult {
         toolSettingsPath = $null
         publishedAt = $null
         detection = [ordered]@{ hasSpectreConsole = $false; hasSpectreConsoleCli = $false; matchedPackageEntries = @(); matchedDependencyIds = @() }
+        introspection = [ordered]@{ opencli = $null; xmldoc = $null }
         timings = [ordered]@{ totalMs = $null; installMs = $null; opencliMs = $null; xmldocMs = $null }
         steps = [ordered]@{ install = $null; opencli = $null; xmldoc = $null }
         artifacts = [ordered]@{ opencliArtifact = $null; xmldocArtifact = $null }
@@ -176,8 +177,22 @@ function Write-SuccessArtifacts {
     $openCliPath = Join-Path $versionRoot 'opencli.json'
     $xmlDocPath = Join-Path $versionRoot 'xmldoc.xml'
 
-    Write-JsonFile -Path $openCliPath -InputObject (Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact) -Raw | ConvertFrom-Json)
-    Write-TextFile -Path $xmlDocPath -Content (Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.xmldocArtifact) -Raw)
+    $hasOpenCliArtifact = $ArtifactDirectory -and $Result.artifacts.opencliArtifact -and (Test-Path (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact))
+    $hasXmlDocArtifact = $ArtifactDirectory -and $Result.artifacts.xmldocArtifact -and (Test-Path (Join-Path $ArtifactDirectory $Result.artifacts.xmldocArtifact))
+
+    if ($hasOpenCliArtifact) {
+        Write-JsonFile -Path $openCliPath -InputObject (Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact) -Raw | ConvertFrom-Json)
+    }
+    else {
+        Remove-Item -Path $openCliPath -Force -ErrorAction SilentlyContinue
+    }
+
+    if ($hasXmlDocArtifact) {
+        Write-TextFile -Path $xmlDocPath -Content (Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.xmldocArtifact) -Raw)
+    }
+    else {
+        Remove-Item -Path $xmlDocPath -Force -ErrorAction SilentlyContinue
+    }
 
     $steps = [ordered]@{
         install = $Result.steps.install
@@ -207,7 +222,7 @@ function Write-SuccessArtifacts {
         source = $Result.source
         batchId = $Result.batchId
         attempt = $Result.attempt
-        status = 'ok'
+        status = if ($hasOpenCliArtifact -and $hasXmlDocArtifact) { 'ok' } else { 'partial' }
         evaluatedAt = $Result.analyzedAt
         publishedAt = Convert-ToIsoTimestamp $Result.publishedAt
         packageUrl = $Result.packageUrl
@@ -219,12 +234,13 @@ function Write-SuccessArtifacts {
         runner = $Result.runner
         toolSettingsPath = $Result.toolSettingsPath
         detection = $Result.detection
+        introspection = if ($Result.PSObject.Properties.Name -contains 'introspection') { $Result.introspection } else { $null }
         timings = $Result.timings
         steps = $steps
         artifacts = [ordered]@{
             metadataPath = Get-RelativeRepositoryPath -Path $metadataPath
-            opencliPath = Get-RelativeRepositoryPath -Path $openCliPath
-            xmldocPath = Get-RelativeRepositoryPath -Path $xmlDocPath
+            opencliPath = if ($hasOpenCliArtifact) { Get-RelativeRepositoryPath -Path $openCliPath } else { $null }
+            xmldocPath = if ($hasXmlDocArtifact) { Get-RelativeRepositoryPath -Path $xmlDocPath } else { $null }
         }
     }
 
@@ -298,8 +314,18 @@ foreach ($item in $Plan.items) {
     if ($result.disposition -eq 'success') {
         $openCliExists = $artifactDir -and $result.artifacts.opencliArtifact -and (Test-Path (Join-Path $artifactDir $result.artifacts.opencliArtifact))
         $xmlDocExists = $artifactDir -and $result.artifacts.xmldocArtifact -and (Test-Path (Join-Path $artifactDir $result.artifacts.xmldocArtifact))
-        if (-not ($openCliExists -and $xmlDocExists)) {
-            $result = New-SyntheticFailureResult -Item $item -Attempt $result.attempt -Classification 'missing-success-artifact' -Message 'Success result did not include both opencli.json and xmldoc.xml.'
+        $declaredMissing = @()
+        if ($result.artifacts.opencliArtifact -and -not $openCliExists) { $declaredMissing += $result.artifacts.opencliArtifact }
+        if ($result.artifacts.xmldocArtifact -and -not $xmlDocExists) { $declaredMissing += $result.artifacts.xmldocArtifact }
+
+        if ($declaredMissing.Count -gt 0 -or -not ($openCliExists -or $xmlDocExists)) {
+            $message = if ($declaredMissing.Count -gt 0) {
+                'Success result declared artifact(s) that were not uploaded: ' + ($declaredMissing -join ', ')
+            } else {
+                'Success result did not include either opencli.json or xmldoc.xml.'
+            }
+
+            $result = New-SyntheticFailureResult -Item $item -Attempt $result.attempt -Classification 'missing-success-artifact' -Message $message
             $artifactDir = $null
         }
     }
