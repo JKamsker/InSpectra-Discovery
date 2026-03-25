@@ -201,7 +201,12 @@ function Write-SuccessArtifacts {
             foreach ($property in $Result.steps.opencli.PSObject.Properties) {
                 $clone[$property.Name] = $property.Value
             }
-            $clone.path = Get-RelativeRepositoryPath -Path $openCliPath
+            if ($hasOpenCliArtifact) {
+                $clone.path = Get-RelativeRepositoryPath -Path $openCliPath
+            }
+            else {
+                $clone.Remove('path')
+            }
             $clone
         } else { $null }
         xmldoc = if ($Result.steps.xmldoc) {
@@ -209,7 +214,12 @@ function Write-SuccessArtifacts {
             foreach ($property in $Result.steps.xmldoc.PSObject.Properties) {
                 $clone[$property.Name] = $property.Value
             }
-            $clone.path = Get-RelativeRepositoryPath -Path $xmlDocPath
+            if ($hasXmlDocArtifact) {
+                $clone.path = Get-RelativeRepositoryPath -Path $xmlDocPath
+            }
+            else {
+                $clone.Remove('path')
+            }
             $clone
         } else { $null }
     }

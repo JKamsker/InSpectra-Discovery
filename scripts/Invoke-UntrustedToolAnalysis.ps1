@@ -294,16 +294,6 @@ function Get-IntrospectionClassification {
     }
 
     if (Test-MatchesAnyPattern -Text $Text -Patterns @(
-        '(?is)\b(no|missing)\b.*\b(config|configuration)\b',
-        '(?is)\bconfiguration\b',
-        '(?is)\b(required option|required argument)\b',
-        '(?is)\bmust be specified\b',
-        '(?is)\bnot enough arguments\b'
-    )) {
-        return 'requires-configuration'
-    }
-
-    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
         '(?is)\b(unable to load shared library|cannot open shared object file|dllnotfoundexception|could not load file or assembly|libsecret)\b'
     )) {
         return 'environment-missing-dependency'
@@ -313,6 +303,16 @@ function Get-IntrospectionClassification {
         '(?is)\b(checking your credentials|credential|authenticate|authentication|device code|sign in|login|log in|open (?:the )?browser)\b'
     )) {
         return 'requires-interactive-authentication'
+    }
+
+    if (Test-MatchesAnyPattern -Text $Text -Patterns @(
+        '(?is)\b(no|missing)\b.*\b(config|configuration)\b',
+        '(?is)\bconfiguration\b',
+        '(?is)\b(required option|required argument)\b',
+        '(?is)\bmust be specified\b',
+        '(?is)\bnot enough arguments\b'
+    )) {
+        return 'requires-configuration'
     }
 
     return $null
