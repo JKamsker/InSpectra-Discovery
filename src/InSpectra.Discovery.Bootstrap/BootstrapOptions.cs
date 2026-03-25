@@ -4,6 +4,7 @@ internal sealed class BootstrapOptions
     public const string DefaultPrefixAlphabet = "abcdefghijklmnopqrstuvwxyz0123456789";
     public const string DefaultServiceIndexUrl = "https://api.nuget.org/v3/index.json";
 
+    public bool Json { get; init; }
     public string OutputPath { get; init; } = DefaultOutputPath;
     public string PrefixAlphabet { get; init; } = DefaultPrefixAlphabet;
     public string ServiceIndexUrl { get; init; } = DefaultServiceIndexUrl;
@@ -20,9 +21,9 @@ internal sealed class BootstrapOptions
 
             switch (arg)
             {
-                case "--help":
-                case "-h":
-                    throw new ArgumentException("Help requested.");
+                case "--json":
+                    options = options.WithJson();
+                    break;
                 case "--output":
                     options = options.WithOutputPath(ReadValue(args, ref index, arg));
                     break;
@@ -39,25 +40,16 @@ internal sealed class BootstrapOptions
                     options = options.WithConcurrency(ReadPositiveInt(args, ref index, arg));
                     break;
                 default:
-                    throw new ArgumentException($"Unknown argument '{arg}'.");
+                    throw new CliUsageException($"Unknown option '{arg}' for 'index build'.", HelpTopic.IndexBuild, options.Json);
             }
         }
 
         return options;
     }
 
-    public static void WriteUsage(TextWriter writer)
-    {
-        writer.WriteLine("Usage: dotnet run --project src/InSpectra.Discovery.Bootstrap -- [options]");
-        writer.WriteLine("  --output <path>            Output JSON path.");
-        writer.WriteLine("  --concurrency <number>     Metadata fetch concurrency. Default: 12.");
-        writer.WriteLine("  --page-size <number>       Autocomplete page size. Default: 1000.");
-        writer.WriteLine("  --prefix-alphabet <chars>  Prefix alphabet used for ID enumeration.");
-        writer.WriteLine("  --service-index <url>      NuGet V3 service index URL.");
-    }
-
     private BootstrapOptions WithConcurrency(int value) => new()
     {
+        Json = Json,
         OutputPath = OutputPath,
         PrefixAlphabet = PrefixAlphabet,
         ServiceIndexUrl = ServiceIndexUrl,
@@ -67,6 +59,7 @@ internal sealed class BootstrapOptions
 
     private BootstrapOptions WithOutputPath(string value) => new()
     {
+        Json = Json,
         OutputPath = value,
         PrefixAlphabet = PrefixAlphabet,
         ServiceIndexUrl = ServiceIndexUrl,
@@ -76,6 +69,7 @@ internal sealed class BootstrapOptions
 
     private BootstrapOptions WithPageSize(int value) => new()
     {
+        Json = Json,
         OutputPath = OutputPath,
         PrefixAlphabet = PrefixAlphabet,
         ServiceIndexUrl = ServiceIndexUrl,
@@ -85,6 +79,7 @@ internal sealed class BootstrapOptions
 
     private BootstrapOptions WithPrefixAlphabet(string value) => new()
     {
+        Json = Json,
         OutputPath = OutputPath,
         PrefixAlphabet = value,
         ServiceIndexUrl = ServiceIndexUrl,
@@ -94,9 +89,20 @@ internal sealed class BootstrapOptions
 
     private BootstrapOptions WithServiceIndex(string value) => new()
     {
+        Json = Json,
         OutputPath = OutputPath,
         PrefixAlphabet = PrefixAlphabet,
         ServiceIndexUrl = value,
+        PageSize = PageSize,
+        MetadataConcurrency = MetadataConcurrency,
+    };
+
+    private BootstrapOptions WithJson() => new()
+    {
+        Json = true,
+        OutputPath = OutputPath,
+        PrefixAlphabet = PrefixAlphabet,
+        ServiceIndexUrl = ServiceIndexUrl,
         PageSize = PageSize,
         MetadataConcurrency = MetadataConcurrency,
     };
@@ -106,17 +112,20 @@ internal sealed class BootstrapOptions
         var value = ReadValue(args, ref index, argName);
         return int.TryParse(value, out var parsed) && parsed > 0
             ? parsed
-            : throw new ArgumentException($"Expected a positive integer after '{argName}'.");
+            : throw new CliUsageException($"Expected a positive integer after '{argName}'.", HelpTopic.IndexBuild, ContainsJson(args));
     }
 
     private static string ReadValue(string[] args, ref int index, string argName)
     {
         if (index + 1 >= args.Length)
         {
-            throw new ArgumentException($"Expected a value after '{argName}'.");
+            throw new CliUsageException($"Expected a value after '{argName}'.", HelpTopic.IndexBuild, ContainsJson(args));
         }
 
         index++;
         return args[index];
     }
+
+    private static bool ContainsJson(IEnumerable<string> args)
+        => args.Any(arg => string.Equals(arg, "--json", StringComparison.OrdinalIgnoreCase));
 }

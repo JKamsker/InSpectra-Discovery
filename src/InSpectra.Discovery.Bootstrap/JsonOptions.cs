@@ -5,6 +5,7 @@ internal static class JsonOptions
 {
     public static readonly JsonSerializerOptions Default = new()
     {
+        PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,

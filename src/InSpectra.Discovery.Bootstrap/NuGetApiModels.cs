@@ -64,3 +64,18 @@ internal sealed record CatalogEntry(
     [property: JsonPropertyName("published")] DateTimeOffset? Published,
     [property: JsonPropertyName("readmeUrl")] string? ReadmeUrl,
     [property: JsonPropertyName("version")] string Version);
+
+internal sealed record CatalogLeaf(
+    [property: JsonPropertyName("@id")] string Id,
+    [property: JsonPropertyName("packageEntries")] IReadOnlyList<CatalogPackageEntry>? PackageEntries,
+    [property: JsonPropertyName("dependencyGroups")] IReadOnlyList<CatalogDependencyGroup>? DependencyGroups);
+
+internal sealed record CatalogPackageEntry(
+    [property: JsonPropertyName("fullName")] string FullName,
+    [property: JsonPropertyName("name")] string Name);
+
+internal sealed record CatalogDependencyGroup(
+    [property: JsonPropertyName("dependencies")] IReadOnlyList<CatalogDependency>? Dependencies);
+
+internal sealed record CatalogDependency(
+    [property: JsonPropertyName("id")] string Id);

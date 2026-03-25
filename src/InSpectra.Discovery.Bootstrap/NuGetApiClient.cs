@@ -53,6 +53,9 @@ internal sealed class NuGetApiClient
     public Task<RegistrationPage> GetRegistrationPageAsync(string pageUrl, CancellationToken cancellationToken)
         => GetJsonAsync<RegistrationPage>(pageUrl, cancellationToken);
 
+    public Task<CatalogLeaf> GetCatalogLeafAsync(string catalogEntryUrl, CancellationToken cancellationToken)
+        => GetJsonAsync<CatalogLeaf>(catalogEntryUrl, cancellationToken);
+
     public async Task<int> GetSearchTotalHitsAsync(string searchUrl, CancellationToken cancellationToken)
     {
         var response = await SearchAsync(searchUrl, string.Empty, skip: 0, take: 1, packageType: "dotnettool", cancellationToken);

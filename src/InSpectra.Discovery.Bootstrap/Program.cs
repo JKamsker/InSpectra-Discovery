@@ -6,19 +6,6 @@ return exitCode;
 
 static async Task<int> RunAsync(string[] args)
 {
-    BootstrapOptions options;
-
-    try
-    {
-        options = BootstrapOptions.Parse(args);
-    }
-    catch (ArgumentException ex)
-    {
-        Console.Error.WriteLine(ex.Message);
-        BootstrapOptions.WriteUsage(Console.Error);
-        return 1;
-    }
-
     using var cancellationSource = new CancellationTokenSource();
     Console.CancelKeyPress += (_, eventArgs) =>
     {
@@ -26,38 +13,125 @@ static async Task<int> RunAsync(string[] args)
         cancellationSource.Cancel();
     };
 
-    using var handler = new HttpClientHandler
-    {
-        AutomaticDecompression = DecompressionMethods.All,
-    };
-
-    using var httpClient = new HttpClient(handler)
-    {
-        Timeout = TimeSpan.FromSeconds(90),
-    };
-
-    var apiClient = new NuGetApiClient(httpClient);
-    var bootstrapper = new CurrentDotnetToolIndexBootstrapper(apiClient);
+    var output = new CommandOutput(Console.Out, Console.Error);
+    var jsonRequested = args.Any(arg => string.Equals(arg, "--json", StringComparison.OrdinalIgnoreCase));
 
     try
     {
-        var snapshot = await bootstrapper.RunAsync(options, cancellationSource.Token);
-        var outputPath = Path.GetFullPath(options.OutputPath);
-        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+        var request = CommandLineParser.Parse(args);
+        switch (request)
+        {
+            case HelpCommandRequest help:
+                output.WriteHelp(help.Topic);
+                return 0;
+            case VersionCommandRequest:
+                output.WriteVersion();
+                return 0;
+        }
 
-        await using var outputStream = File.Create(outputPath);
-        await JsonSerializer.SerializeAsync(outputStream, snapshot, JsonOptions.Default, cancellationSource.Token);
-        Console.WriteLine($"Wrote {snapshot.Packages.Count} packages to {outputPath}");
-        return 0;
+        using var handler = new HttpClientHandler
+        {
+            AutomaticDecompression = DecompressionMethods.All,
+        };
+
+        using var httpClient = new HttpClient(handler)
+        {
+            Timeout = TimeSpan.FromSeconds(90),
+        };
+
+        var apiClient = new NuGetApiClient(httpClient);
+
+        return request switch
+        {
+            IndexBuildCommandRequest build => await RunIndexBuildAsync(apiClient, output, build.Options, cancellationSource.Token),
+            FilterSpectreConsoleCommandRequest filter => await RunSpectreFilterAsync(apiClient, output, filter.Options, cancellationSource.Token),
+            _ => throw new InvalidOperationException($"Unsupported command type '{request.GetType().Name}'."),
+        };
+    }
+    catch (CliUsageException ex)
+    {
+        return await output.WriteUsageErrorAsync(ex, cancellationSource.Token);
     }
     catch (OperationCanceledException)
     {
-        Console.Error.WriteLine("Bootstrap canceled.");
-        return 1;
+        return await output.WriteErrorAsync("canceled", "Operation canceled.", 10, jsonRequested, cancellationSource.Token);
+    }
+    catch (FileNotFoundException ex)
+    {
+        return await output.WriteErrorAsync("not-found", ex.Message, 5, jsonRequested, cancellationSource.Token);
     }
     catch (Exception ex)
     {
-        Console.Error.WriteLine(ex.ToString());
-        return 1;
+        return await output.WriteErrorAsync("error", ex.Message, 1, jsonRequested, cancellationSource.Token, ex);
     }
+}
+
+static async Task<int> RunIndexBuildAsync(
+    NuGetApiClient apiClient,
+    CommandOutput output,
+    BootstrapOptions options,
+    CancellationToken cancellationToken)
+{
+    var bootstrapper = new CurrentDotnetToolIndexBootstrapper(apiClient);
+    var snapshot = await bootstrapper.RunAsync(
+        options,
+        options.Json ? null : output.WriteProgress,
+        cancellationToken);
+
+    var outputPath = Path.GetFullPath(options.OutputPath);
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+
+    await using var outputStream = File.Create(outputPath);
+    await JsonSerializer.SerializeAsync(outputStream, snapshot, JsonOptions.Default, cancellationToken);
+
+    return await output.WriteSuccessAsync(
+        new IndexBuildCommandSummary(
+            Command: "index build",
+            OutputPath: outputPath,
+            PackageCount: snapshot.Packages.Count,
+            SortOrder: snapshot.Source.SortOrder),
+        [
+            new SummaryRow("Command", "index build"),
+            new SummaryRow("Packages", snapshot.Packages.Count.ToString()),
+            new SummaryRow("Sort order", snapshot.Source.SortOrder),
+            new SummaryRow("Output", outputPath),
+        ],
+        options.Json,
+        cancellationToken);
+}
+
+static async Task<int> RunSpectreFilterAsync(
+    NuGetApiClient apiClient,
+    CommandOutput output,
+    SpectreConsoleFilterOptions options,
+    CancellationToken cancellationToken)
+{
+    var filter = new SpectreConsoleCatalogFilter(apiClient);
+    var snapshot = await filter.RunAsync(
+        options,
+        options.Json ? null : output.WriteProgress,
+        cancellationToken);
+
+    var outputPath = Path.GetFullPath(options.OutputPath);
+    Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+
+    await using var outputStream = File.Create(outputPath);
+    await JsonSerializer.SerializeAsync(outputStream, snapshot, JsonOptions.Default, cancellationToken);
+
+    return await output.WriteSuccessAsync(
+        new SpectreConsoleFilterCommandSummary(
+            Command: "filter spectre-console",
+            InputPath: snapshot.InputPath,
+            OutputPath: outputPath,
+            ScannedPackageCount: snapshot.ScannedPackageCount,
+            MatchedPackageCount: snapshot.PackageCount),
+        [
+            new SummaryRow("Command", "filter spectre-console"),
+            new SummaryRow("Input", snapshot.InputPath),
+            new SummaryRow("Scanned", snapshot.ScannedPackageCount.ToString()),
+            new SummaryRow("Matched", snapshot.PackageCount.ToString()),
+            new SummaryRow("Output", outputPath),
+        ],
+        options.Json,
+        cancellationToken);
 }

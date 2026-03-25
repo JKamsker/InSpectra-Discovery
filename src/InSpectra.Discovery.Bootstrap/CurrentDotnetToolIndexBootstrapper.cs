@@ -10,19 +10,22 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
         _apiClient = apiClient;
     }
 
-    public async Task<DotnetToolIndexSnapshot> RunAsync(BootstrapOptions options, CancellationToken cancellationToken)
+    public async Task<DotnetToolIndexSnapshot> RunAsync(
+        BootstrapOptions options,
+        Action<string>? reportProgress,
+        CancellationToken cancellationToken)
     {
         var resources = await _apiClient.GetServiceResourcesAsync(options.ServiceIndexUrl, cancellationToken);
         var autocompleteUrl = resources.GetRequiredResource("SearchAutocompleteService/3.5.0");
         var searchUrl = resources.GetRequiredResource("SearchQueryService/3.5.0");
         var registrationBaseUrl = resources.GetRequiredResource("RegistrationsBaseUrl/Versioned", "RegistrationsBaseUrl/3.6.0");
 
-        Console.WriteLine("Fetching expected dotnet-tool package count from search...");
+        reportProgress?.Invoke("Fetching expected dotnet-tool package count from search...");
         var expectedCount = await _apiClient.GetSearchTotalHitsAsync(searchUrl, cancellationToken);
 
-        Console.WriteLine("Enumerating package IDs from autocomplete...");
-        var packageIds = await EnumeratePackageIdsAsync(autocompleteUrl, options, cancellationToken);
-        Console.WriteLine($"Enumerated {packageIds.Count} unique package IDs.");
+        reportProgress?.Invoke("Enumerating package IDs from autocomplete...");
+        var packageIds = await EnumeratePackageIdsAsync(autocompleteUrl, options, reportProgress, cancellationToken);
+        reportProgress?.Invoke($"Enumerated {packageIds.Count} unique package IDs.");
 
         if (packageIds.Count != expectedCount)
         {
@@ -31,8 +34,8 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
                 "Update the prefix alphabet or investigate changed NuGet search behavior before trusting this snapshot.");
         }
 
-        Console.WriteLine("Fetching registration metadata and download counts...");
-        var packages = await BuildPackageIndexAsync(packageIds, searchUrl, registrationBaseUrl, options, cancellationToken);
+        reportProgress?.Invoke("Fetching registration metadata and download counts...");
+        var packages = await BuildPackageIndexAsync(packageIds, searchUrl, registrationBaseUrl, options, reportProgress, cancellationToken);
 
         return new DotnetToolIndexSnapshot(
             GeneratedAtUtc: DateTimeOffset.UtcNow,
@@ -52,6 +55,7 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
     private async Task<HashSet<string>> EnumeratePackageIdsAsync(
         string autocompleteUrl,
         BootstrapOptions options,
+        Action<string>? reportProgress,
         CancellationToken cancellationToken)
     {
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -86,7 +90,7 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
                 skip += response.Data.Count;
             }
 
-            Console.WriteLine($"  Prefix '{prefix}' yielded {totalHits} hits.");
+            reportProgress?.Invoke($"  Prefix '{prefix}' yielded {totalHits} hits.");
         }
 
         return ids;
@@ -97,6 +101,7 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
         string searchUrl,
         string registrationBaseUrl,
         BootstrapOptions options,
+        Action<string>? reportProgress,
         CancellationToken cancellationToken)
     {
         var results = new ConcurrentBag<DotnetToolIndexEntry>();
@@ -118,7 +123,7 @@ internal sealed class CurrentDotnetToolIndexBootstrapper
                 var current = Interlocked.Increment(ref completed);
                 if (current == packageList.Length || current % 250 == 0)
                 {
-                    Console.WriteLine($"  Loaded {current}/{packageList.Length} package records.");
+                    reportProgress?.Invoke($"  Loaded {current}/{packageList.Length} package records.");
                 }
             });
 
