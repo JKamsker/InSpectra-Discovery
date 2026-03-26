@@ -18,7 +18,6 @@ on:
 permissions:
   actions: read
   contents: write
-  pull-requests: write
 
 concurrency:
   group: promote-untrusted-${{ github.event.inputs.analysis_run_id || github.event.workflow_run.id }}
@@ -66,13 +65,6 @@ jobs:
           "analysis_run_url=$($run.url)" >> $env:GITHUB_OUTPUT
           "head_branch=$($run.headBranch)" >> $env:GITHUB_OUTPUT
 
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-          persist-credentials: true
-          ref: ${{ steps.source.outputs.head_branch }}
-
       - name: Download workflow artifacts
         shell: pwsh
         env:
@@ -84,115 +76,149 @@ jobs:
             --repo ${{ github.repository }} `
             --dir $downloadRoot
 
+      - name: Resolve promotion plan
+        id: plan
+        shell: pwsh
+        run: |
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'untrusted-download'
+          $expectedPath = Get-ChildItem -Path $downloadRoot -Filter 'expected.json' -Recurse |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $expectedPath) {
+            throw "expected.json was not found under '$downloadRoot'."
+          }
+
+          $plan = Get-Content $expectedPath -Raw | ConvertFrom-Json
+          $targetBranch = if (
+            $plan.PSObject.Properties.Name -contains 'targetBranch' -and
+            -not [string]::IsNullOrWhiteSpace([string]$plan.targetBranch)
+          ) {
+            [string]$plan.targetBranch
+          }
+          else {
+            'main'
+          }
+
+          $batchId = [string]$plan.batchId
+          $releaseTag = ('untrusted-analysis-{0}-{1}' -f $batchId, '${{ steps.source.outputs.analysis_run_id }}').ToLowerInvariant()
+
+          "batch_id=$batchId" >> $env:GITHUB_OUTPUT
+          "target_branch=$targetBranch" >> $env:GITHUB_OUTPUT
+          "release_tag=$releaseTag" >> $env:GITHUB_OUTPUT
+          "release_title=Promote untrusted analysis $batchId" >> $env:GITHUB_OUTPUT
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ steps.plan.outputs.target_branch }}
+
       - name: Promote analysis outputs
         id: promote
         shell: pwsh
         run: |
           $downloadRoot = Join-Path $env:RUNNER_TEMP 'untrusted-download'
           $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
-          $bodyPath = Join-Path $env:RUNNER_TEMP 'promotion-body.md'
           ./scripts/Invoke-UntrustedAnalysisPromotion.ps1 `
             -DownloadRoot $downloadRoot `
             -SummaryOutputPath $summaryPath
 
           $summary = Get-Content $summaryPath -Raw | ConvertFrom-Json
-          ./scripts/Write-UntrustedPromotionPullRequestBody.ps1 `
-            -SummaryPath $summaryPath `
-            -WorkflowRunUrl '${{ steps.source.outputs.analysis_run_url }}' `
-            -BodyOutputPath $bodyPath
-
-          "batch_id=$($summary.batchId)" >> $env:GITHUB_OUTPUT
           "success_count=$($summary.successCount)" >> $env:GITHUB_OUTPUT
           "terminal_negative_count=$($summary.terminalNegativeCount)" >> $env:GITHUB_OUTPUT
           "retryable_failure_count=$($summary.retryableFailureCount)" >> $env:GITHUB_OUTPUT
           "terminal_failure_count=$($summary.terminalFailureCount)" >> $env:GITHUB_OUTPUT
           "missing_count=$($summary.missingCount)" >> $env:GITHUB_OUTPUT
-          "target_branch=$($summary.targetBranch)" >> $env:GITHUB_OUTPUT
-          "body_path=$bodyPath" >> $env:GITHUB_OUTPUT
-          "pr_branch=automation/untrusted-$($summary.batchId)-${{ steps.source.outputs.analysis_run_id }}" >> $env:GITHUB_OUTPUT
+          "summary_path=$summaryPath" >> $env:GITHUB_OUTPUT
 
-      - name: Create pull request
-        id: cpr
-        continue-on-error: true
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.promote.outputs.pr_branch }}
-          base: ${{ steps.promote.outputs.target_branch }}
-          delete-branch: true
-          add-paths: |
-            index/**
-            state/**
-          commit-message: |
-            chore(index): promote untrusted analysis ${{ steps.promote.outputs.batch_id }}
-
-            Promote artifact-only analysis results for an untrusted batch.
-          title: "chore(index): promote untrusted analysis ${{ steps.promote.outputs.batch_id }}"
-          body-path: ${{ steps.promote.outputs.body_path }}
-
-      - name: Resolve pull request
-        id: pr
-        if: ${{ always() }}
+      - name: Write promotion notes
+        id: notes
         shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $outputPath = Join-Path $env:RUNNER_TEMP 'promotion-pr.json'
-          ./scripts/Ensure-UntrustedPromotionPullRequest.ps1 `
-            -Repository '${{ github.repository }}' `
-            -Branch '${{ steps.promote.outputs.pr_branch }}' `
-            -BaseBranch '${{ steps.promote.outputs.target_branch }}' `
-            -Title 'chore(index): promote untrusted analysis ${{ steps.promote.outputs.batch_id }}' `
-            -BodyPath '${{ steps.promote.outputs.body_path }}' `
-            -ExistingPullRequestNumber '${{ steps.cpr.outputs.pull-request-number }}' `
-            -ExistingPullRequestUrl '${{ steps.cpr.outputs.pull-request-url }}' `
-            -OutputPath $outputPath
-
-          $pr = Get-Content $outputPath -Raw | ConvertFrom-Json
-          "pull_request_number=$($pr.number)" >> $env:GITHUB_OUTPUT
-          "pull_request_url=$($pr.url)" >> $env:GITHUB_OUTPUT
-          "pull_request_operation=$($pr.operation)" >> $env:GITHUB_OUTPUT
-
-      - name: Publish non-success follow-up comments
-        id: followups
-        if: ${{ steps.pr.outputs.pull_request_url != '' }}
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
-          $commentIndexPath = Join-Path $env:RUNNER_TEMP 'promotion-comment-index.json'
-          ./scripts/Publish-UntrustedPromotionComments.ps1 `
-            -SummaryPath $summaryPath `
-            -Repository '${{ github.repository }}' `
-            -PullRequestNumber '${{ steps.pr.outputs.pull_request_number }}' `
-            -WorkflowRunUrl '${{ steps.source.outputs.analysis_run_url }}' `
-            -CommentIndexOutputPath $commentIndexPath
-
-          "comment_index_path=$commentIndexPath" >> $env:GITHUB_OUTPUT
-
-      - name: Update pull request body with follow-up links
-        if: ${{ steps.pr.outputs.pull_request_url != '' }}
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
-          $bodyPath = Join-Path $env:RUNNER_TEMP 'promotion-body.md'
+          $bodyPath = Join-Path $env:RUNNER_TEMP 'promotion-notes.md'
           ./scripts/Write-UntrustedPromotionPullRequestBody.ps1 `
             -SummaryPath $summaryPath `
             -WorkflowRunUrl '${{ steps.source.outputs.analysis_run_url }}' `
-            -BodyOutputPath $bodyPath `
-            -CommentIndexPath '${{ steps.followups.outputs.comment_index_path }}'
+            -BodyOutputPath $bodyPath
 
-          gh pr edit '${{ steps.pr.outputs.pull_request_number }}' `
-            --repo '${{ github.repository }}' `
-            --body-file $bodyPath
+          "body_path=$bodyPath" >> $env:GITHUB_OUTPUT
 
-      - name: Report pull request result
+      - name: Commit promoted outputs directly to target branch
+        id: commit
         shell: pwsh
         run: |
-          Write-Host "Pull request operation: ${{ steps.pr.outputs.pull_request_operation }}"
-          if ('${{ steps.pr.outputs.pull_request_url }}') {
-            Write-Host "Pull request URL: ${{ steps.pr.outputs.pull_request_url }}"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index state
+
+          git diff --cached --quiet --exit-code
+          if ($LASTEXITCODE -eq 0) {
+            $currentSha = (git rev-parse HEAD).Trim()
+            "commit_created=false" >> $env:GITHUB_OUTPUT
+            "commit_sha=$currentSha" >> $env:GITHUB_OUTPUT
+            Write-Host "No promotion changes to commit on ${{ steps.plan.outputs.target_branch }}."
+            exit 0
+          }
+
+          git commit -m "chore(index): promote untrusted analysis ${{ steps.plan.outputs.batch_id }}"
+          git push origin "HEAD:${{ steps.plan.outputs.target_branch }}"
+
+          $commitSha = (git rev-parse HEAD).Trim()
+          "commit_created=true" >> $env:GITHUB_OUTPUT
+          "commit_sha=$commitSha" >> $env:GITHUB_OUTPUT
+          Write-Host "Pushed promotion commit $commitSha to ${{ steps.plan.outputs.target_branch }}."
+
+      - name: Create GitHub release
+        id: release
+        if: ${{ steps.commit.outputs.commit_created == 'true' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $repository = '${{ github.repository }}'
+          $tag = '${{ steps.plan.outputs.release_tag }}'
+          $title = '${{ steps.plan.outputs.release_title }}'
+          $target = '${{ steps.commit.outputs.commit_sha }}'
+          $bodyPath = '${{ steps.notes.outputs.body_path }}'
+          $summaryPath = '${{ steps.promote.outputs.summary_path }}'
+
+          $existing = $null
+          try {
+            $existing = gh release view $tag --repo $repository --json url | ConvertFrom-Json
+          }
+          catch {
+            $existing = $null
+          }
+
+          if ($existing) {
+            gh release edit $tag `
+              --repo $repository `
+              --title $title `
+              --notes-file $bodyPath | Out-Null
+            $releaseOperation = 'updated'
+          }
+          else {
+            gh release create $tag $summaryPath `
+              --repo $repository `
+              --target $target `
+              --title $title `
+              --notes-file $bodyPath | Out-Null
+            $releaseOperation = 'created'
+          }
+
+          $release = gh release view $tag --repo $repository --json url | ConvertFrom-Json
+          "release_url=$($release.url)" >> $env:GITHUB_OUTPUT
+          "release_operation=$releaseOperation" >> $env:GITHUB_OUTPUT
+
+      - name: Report promotion result
+        shell: pwsh
+        run: |
+          Write-Host "Target branch: ${{ steps.plan.outputs.target_branch }}"
+          Write-Host "Commit created: ${{ steps.commit.outputs.commit_created }}"
+          Write-Host "Commit SHA: ${{ steps.commit.outputs.commit_sha }}"
+          if ('${{ steps.release.outputs.release_url }}') {
+            Write-Host "Release operation: ${{ steps.release.outputs.release_operation }}"
+            Write-Host "Release URL: ${{ steps.release.outputs.release_url }}"
           }

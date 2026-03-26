@@ -37,7 +37,16 @@ $commentIndex = @{}
 
 if (-not [string]::IsNullOrWhiteSpace($CommentIndexPath) -and (Test-Path $CommentIndexPath)) {
     foreach ($entry in @(Get-Content $CommentIndexPath -Raw | ConvertFrom-Json)) {
-        $commentIndex["$($entry.packageId.ToLowerInvariant())|$($entry.version.ToLowerInvariant())"] = [string]$entry.commentUrl
+        $commentUrl = if ($entry.PSObject.Properties.Name -contains 'commentUrl') {
+            [string]$entry.commentUrl
+        }
+        else {
+            $null
+        }
+
+        if (-not [string]::IsNullOrWhiteSpace($commentUrl)) {
+            $commentIndex["$($entry.packageId.ToLowerInvariant())|$($entry.version.ToLowerInvariant())"] = $commentUrl
+        }
     }
 }
 
