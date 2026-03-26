@@ -51,6 +51,8 @@ if (-not [string]::IsNullOrWhiteSpace($CommentIndexPath) -and (Test-Path $Commen
 }
 
 $nonSuccessItems = @($summary.nonSuccessItems)
+$createdPackages = @($summary.createdPackages)
+$updatedPackages = @($summary.updatedPackages)
 $bodyLines = @(
     ('Promote the completed untrusted analysis batch {0}{1}{0}.' -f $mdTick, $summary.batchId),
     '',
@@ -63,9 +65,35 @@ $bodyLines = @(
     ('- Retryable failure: {0}{1}{0}' -f $mdTick, $summary.retryableFailureCount),
     ('- Terminal failure: {0}{1}{0}' -f $mdTick, $summary.terminalFailureCount),
     ('- Missing artifacts: {0}{1}{0}' -f $mdTick, $summary.missingCount),
-    '',
-    'Non-success details:'
+    ''
 )
+
+if ($createdPackages.Count -gt 0) {
+    $bodyLines += 'Created packages:'
+    foreach ($item in $createdPackages | Sort-Object packageId, version) {
+        $bodyLines += ('- {0} `{1}`' -f $item.packageId, $item.version)
+    }
+
+    $bodyLines += ''
+}
+
+if ($updatedPackages.Count -gt 0) {
+    $bodyLines += 'Updated packages:'
+    foreach ($item in $updatedPackages | Sort-Object packageId, version) {
+        $previousVersion = if ([string]::IsNullOrWhiteSpace([string]$item.previousVersion)) {
+            '?'
+        }
+        else {
+            [string]$item.previousVersion
+        }
+
+        $bodyLines += ('- {0} `{1}` -> `{2}`' -f $item.packageId, $previousVersion, $item.version)
+    }
+
+    $bodyLines += ''
+}
+
+$bodyLines += 'Non-success details:'
 
 if ($nonSuccessItems.Count -eq 0) {
     $bodyLines += '- None.'

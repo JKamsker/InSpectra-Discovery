@@ -90,6 +90,11 @@ function Get-StatePath {
     return Join-Path $StateRoot "packages/$LowerId/$LowerVersion.json"
 }
 
+function Get-PackageIndexPath {
+    param([string]$LowerId)
+    return Join-Path $PackagesRoot "$LowerId/index.json"
+}
+
 function Get-BackoffHours {
     param([int]$Attempt)
     if ($Attempt -le 1) { return 1 }
@@ -391,6 +396,8 @@ $summary = [ordered]@{
     retryableFailureCount = 0
     terminalFailureCount = 0
     missingCount = 0
+    createdPackages = @()
+    updatedPackages = @()
     nonSuccessItems = @()
 }
 
@@ -420,6 +427,8 @@ foreach ($item in $Plan.items) {
 
     $existingStatePath = Get-StatePath -LowerId $item.packageId.ToLowerInvariant() -LowerVersion $item.version.ToLowerInvariant()
     $existingState = if (Test-Path $existingStatePath) { Get-Content $existingStatePath -Raw | ConvertFrom-Json } else { $null }
+    $existingPackageIndexPath = Get-PackageIndexPath -LowerId $item.packageId.ToLowerInvariant()
+    $existingPackageIndex = if (Test-Path $existingPackageIndexPath) { Get-Content $existingPackageIndexPath -Raw | ConvertFrom-Json } else { $null }
     $indexedPaths = if ($result.disposition -eq 'success') { Write-SuccessArtifacts -Result $result -ArtifactDirectory $artifactDir } else { $null }
     $stateRecord = Update-StateRecord -ExistingState $existingState -Result $result -IndexedPaths $indexedPaths
     Write-JsonFile -Path $existingStatePath -InputObject $stateRecord
@@ -429,6 +438,22 @@ foreach ($item in $Plan.items) {
         'terminal-negative' { $summary.terminalNegativeCount++ }
         'retryable-failure' { $summary.retryableFailureCount++ }
         'terminal-failure' { $summary.terminalFailureCount++ }
+    }
+
+    if ($stateRecord.currentStatus -eq 'success') {
+        if (-not $existingPackageIndex) {
+            $summary.createdPackages += [ordered]@{
+                packageId = $result.packageId
+                version = $result.version
+            }
+        }
+        elseif (-not [string]::Equals([string]$existingPackageIndex.latestVersion, [string]$result.version, [System.StringComparison]::OrdinalIgnoreCase)) {
+            $summary.updatedPackages += [ordered]@{
+                packageId = $result.packageId
+                previousVersion = [string]$existingPackageIndex.latestVersion
+                version = $result.version
+            }
+        }
     }
 
     if ($stateRecord.currentStatus -ne 'success') {
