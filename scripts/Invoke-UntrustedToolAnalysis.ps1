@@ -711,8 +711,13 @@ try {
     $dependencyIds = @(
         $dependencyGroups |
             ForEach-Object { @(Get-OptionalPropertyValue -InputObject $_ -Name 'dependencies') } |
-            Where-Object { $_.id -like 'Spectre.Console*' } |
-            Select-Object -ExpandProperty id -Unique
+            ForEach-Object {
+                $dependencyId = [string](Get-OptionalPropertyValue -InputObject $_ -Name 'id')
+                if (-not [string]::IsNullOrWhiteSpace($dependencyId) -and $dependencyId -like 'Spectre.Console*') {
+                    $dependencyId
+                }
+            } |
+            Select-Object -Unique
     )
 
     $result.detection.hasSpectreConsole = @($detectionEntries | Where-Object { $_ -like '*Spectre.Console.dll' }).Count -gt 0
