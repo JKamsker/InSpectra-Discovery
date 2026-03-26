@@ -141,7 +141,7 @@ internal sealed class DotnetToolCatalogDeltaDiscoverer
                 }
 
                 var leaf = await _apiClient.GetCatalogLeafAsync(item.Id, token);
-                if (IsDotnetTool(leaf))
+                if (DotnetToolPackageType.IsDotnetTool(leaf))
                 {
                     affected[item.PackageId] = 0;
                 }
@@ -266,10 +266,6 @@ internal sealed class DotnetToolCatalogDeltaDiscoverer
 
     private static bool IsPackageDelete(string type)
         => type.Contains("PackageDelete", StringComparison.OrdinalIgnoreCase);
-
-    private static bool IsDotnetTool(CatalogLeaf leaf)
-        => (leaf.PackageTypes ?? [])
-            .Any(packageType => string.Equals(packageType.Name, "DotnetTool", StringComparison.OrdinalIgnoreCase));
 
     private static async Task<T> LoadJsonAsync<T>(string path, CancellationToken cancellationToken)
     {

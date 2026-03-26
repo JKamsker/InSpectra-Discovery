@@ -32,6 +32,12 @@ internal sealed class DotnetToolIndexEntryResolver
             return null;
         }
 
+        var latestCatalogLeaf = await _apiClient.GetCatalogLeafAsync(latestLeaf.CatalogEntry.Id, cancellationToken);
+        if (!DotnetToolPackageType.IsDotnetTool(latestCatalogLeaf))
+        {
+            return null;
+        }
+
         var totalDownloads = await _apiClient.GetPackageTotalDownloadsAsync(searchUrl, packageId, cancellationToken);
         return CreateEntry(packageId, registrationIndex, latestLeaf, totalDownloads, versionCount);
     }
