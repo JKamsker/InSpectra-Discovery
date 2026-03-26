@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Model>
+  <!--INIT-->
+  <Command Name="init" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.InitCommand" 
+Settings="SwarmBender.Cli.Commands.InitCommand+Settings">
+    <Description>Initialize project root or a specific stack 
+scaffold.</Description>
+    <Parameters>
+      <Argument Name="STACK_ID" Position="0" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Optional stack id. If omitted, initializes the root 
+scaffold.</Description>
+      </Argument>
+      <Option Short="" Long="dry-run" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Show what would be created without writing 
+files.</Description>
+      </Option>
+      <Option Short="e" Long="env,environments" Value="ENV" Required="false" 
+Kind="vector" ClrType="System.String[]">
+        <Description>Environment names (comma-separated or multiple flags). 
+Default: dev,prod</Description>
+      </Option>
+      <Option Short="" Long="no-aliases" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Stack mode: do not create aliases.yml stub.</Description>
+      </Option>
+      <Option Short="" Long="no-defs" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Stack mode: do not create stack-level 
+secrets.yml/configs.yml stubs.</Description>
+      </Option>
+      <Option Short="" Long="no-global-defs" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Do not create global baseline stubs under 
+stacks/all/&lt;env&gt;.</Description>
+      </Option>
+      <Option Short="" Long="path" Value="DIR" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Root directory to initialize (default: current 
+directory).</Description>
+      </Option>
+      <Option Short="" Long="quiet" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Suppress non-essential output.</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--VALIDATE-->
+  <Command Name="validate" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.ValidateCommand" 
+Settings="SwarmBender.Cli.Commands.ValidateCommand+Settings">
+    <Description>Validate a stack (or all stacks) against policies and basic 
+schema.</Description>
+    <Parameters>
+      <Argument Name="STACK_ID" Position="0" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Optional stack id. If omitted, validates all stacks under 
+'stacks/'.</Description>
+      </Argument>
+      <Option Short="" Long="details" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Print detailed errors and warnings after the summary 
+table.</Description>
+      </Option>
+      <Option Short="e" Long="env,environments" Value="ENV" Required="false" 
+Kind="vector" ClrType="System.String[]">
+        <Description>Filter environments (comma-separated or multiple flags). If
+omitted, auto-detect under stacks/all/.</Description>
+      </Option>
+      <Option Short="" Long="out" Value="FILE" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Write a combined JSON report to this file (optional). 
+Per-stack JSONs are saved under ops/reports/preflight/.</Description>
+      </Option>
+      <Option Short="" Long="path" Value="DIR" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Root directory (default: current directory).</Description>
+      </Option>
+      <Option Short="" Long="quiet" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Suppress non-essential output.</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--RENDER-->
+  <Command Name="render" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.RenderCommand" 
+Settings="SwarmBender.Cli.Commands.RenderCommand+Settings">
+    <Description>Render final stack.yml for one or more 
+environments.</Description>
+    <Parameters>
+      <Argument Name="STACK_ID" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>Stack id under stacks/&lt;STACK_ID&gt;.</Description>
+      </Argument>
+      <Option Short="" Long="appsettings-mode" Value="ENV|CONFIG" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>How to consume appsettings*.json: 'env' (flatten to env 
+vars) or 'config' (generate swarm config &amp; mount). Default: 
+env.</Description>
+      </Option>
+      <Option Short="" Long="appsettings-target" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>When --appsettings-mode=config, mount target path inside 
+the container (default: /app/appsettings.json).</Description>
+      </Option>
+      <Option Short="" Long="dry-run" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Show actions without writing files.</Description>
+      </Option>
+      <Option Short="e" Long="env,environments" Value="ENV" Required="false" 
+Kind="vector" ClrType="System.String[]">
+        <Description>Environment names (comma-separated or multiple 
+flags).</Description>
+      </Option>
+      <Option Short="" Long="no-history" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Do not write a history snapshot under 
+ops/state/history.</Description>
+      </Option>
+      <Option Short="" Long="out-dir" Value="DIR" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Output directory (default: ops/state/last).</Description>
+      </Option>
+      <Option Short="" Long="path" Value="DIR" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Root directory (default: current directory).</Description>
+      </Option>
+      <Option Short="" Long="preview" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Print rendered YAML to stdout.</Description>
+      </Option>
+      <Option Short="" Long="quiet" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Suppress non-essential output.</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SECRETS-->
+  <Command Name="secrets" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <Description>Manage Swarm secrets lifecycle 
+(sync/prune/doctor).</Description>
+    <!--SYNC-->
+    <Command Name="sync" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.Secrets.SecretsSyncCommand" 
+Settings="SwarmBender.Cli.Commands.Secrets.SecretsSyncSettings">
+      <Description>Sync secrets from providers into Docker Swarm and write 
+secrets map.</Description>
+      <Parameters>
+        <Option Short="" Long="dry-run" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+          <Description>Do not create anything; only preview and write 
+nothing.</Description>
+        </Option>
+        <Option Short="e" Long="env" Value="ENV" Required="false" Kind="scalar" 
+ClrType="System.String">
+          <Description>Environment (e.g., dev|stg|prod).</Description>
+        </Option>
+        <Option Short="" Long="quiet" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+          <Description>Suppress verbose output.</Description>
+        </Option>
+        <Option Short="" Long="root" Value="PATH" Required="false" Kind="scalar"
+ClrType="System.String">
+          <Description>Root path (defaults to current directory).</Description>
+        </Option>
+        <Option Short="" Long="service" Value="NAME" Required="false" 
+Kind="vector" ClrType="System.String[]">
+          <Description>Optional service filter(s); repeatable.</Description>
+        </Option>
+        <Option Short="s" Long="stack" Value="STACK_ID" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Optional stack id (for future filtering).</Description>
+        </Option>
+        <Option Short="t" Long="tenant" Value="SCOPE" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Scope/tenant (default: global).</Description>
+        </Option>
+        <Option Short="" Long="version-mode" Value="MODE" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Override version mode 
+(kv-version|content-sha|hmac).</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--PRUNE-->
+    <Command Name="prune" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.SecretsPruneCommand+Exec" 
+Settings="SwarmBender.Cli.Commands.SecretsPruneCommand+Settings">
+      <Description>Prune old secret versions based on retain 
+policy.</Description>
+      <Parameters>
+        <Option Short="" Long="dry-run" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+          <Description>Do not delete anything; just show what would be 
+removed.</Description>
+        </Option>
+        <Option Short="e" Long="env" Value="ENV" Required="false" Kind="scalar" 
+ClrType="System.String">
+          <Description>Environment name (e.g., prod, dev).</Description>
+        </Option>
+        <Option Short="k" Long="keep" Value="N" Required="false" Kind="scalar" 
+ClrType="System.Int32">
+          <Description>Keep latest N versions per key (default: 
+2).</Description>
+        </Option>
+        <Option Short="" Long="report" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Optional YAML report output path (e.g., 
+ops/reports/prune.yml).</Description>
+        </Option>
+        <Option Short="t" Long="scope" Value="SCOPE" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Optional logical scope/tenant (e.g., global, 
+sso).</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--DOCTOR-->
+    <Command Name="doctor" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.SecretsDoctorCommand+Exec" 
+Settings="SwarmBender.Cli.Commands.SecretsDoctorCommand+Settings">
+      <Description>Check consistency between secrets-map and Docker 
+Engine.</Description>
+      <Parameters>
+        <Option Short="e" Long="env" Value="ENV" Required="false" Kind="scalar" 
+ClrType="System.String">
+          <Description>Environment name (e.g., prod, dev).</Description>
+        </Option>
+        <Option Short="" Long="map" Value="PATH" Required="false" Kind="scalar" 
+ClrType="System.String">
+          <Description>Optional secrets map path (defaults to 
+ops/vars/secrets-map.&lt;env&gt;.yml).</Description>
+        </Option>
+        <Option Short="" Long="root" Value="PATH" Required="false" Kind="scalar"
+ClrType="System.String">
+          <Description>Project root path (defaults to current working 
+directory).</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--ROTATE-->
+    <Command Name="rotate" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.Secrets.SecretsRotateCommand" 
+Settings="SwarmBender.Cli.Commands.Secrets.SecretsRotateCommand+Settings">
+      <Parameters>
+        <Option Short="" Long="dry-run" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+          <Description>Do not create or delete anything; just 
+preview</Description>
+        </Option>
+        <Option Short="e" Long="env" Value="ENV" Required="false" Kind="scalar" 
+ClrType="System.String">
+          <Description>Environment name (e.g., prod, dev)</Description>
+        </Option>
+        <Option Short="" Long="keep" Value="N" Required="false" Kind="scalar" 
+ClrType="System.Int32">
+          <Description>Keep at most N old versions on engine (default: 
+0)</Description>
+        </Option>
+        <Option Short="k" Long="key" Value="KEY" Required="false" Kind="vector" 
+ClrType="System.String[]">
+          <Description>Key to rotate (repeatable)</Description>
+        </Option>
+        <Option Short="" Long="match" Value="GLOB_OR_REGEX" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Match keys in the provided JSON. Glob (*,?) or 
+/regex/.</Description>
+        </Option>
+        <Option Short="q" Long="quiet" Value="NULL" Required="false" Kind="flag"
+ClrType="System.Boolean">
+          <Description>Suppress console output</Description>
+        </Option>
+        <Option Short="" Long="root" Value="PATH" Required="false" Kind="scalar"
+ClrType="System.String">
+          <Description>Project root path (defaults to current working 
+directory)</Description>
+        </Option>
+        <Option Short="" Long="scope" Value="SCOPE" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Rotation scope: global | stack | service (default: 
+global)</Description>
+        </Option>
+        <Option Short="" Long="service" Value="NAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Service name (required if scope=service)</Description>
+        </Option>
+        <Option Short="" Long="stack" Value="STACK_ID" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Stack id (required if scope=stack or 
+scope=service)</Description>
+        </Option>
+        <Option Short="" Long="stdin" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+          <Description>Read values JSON from STDIN</Description>
+        </Option>
+        <Option Short="" Long="values" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>JSON file with { "KEY": "value" }</Description>
+        </Option>
+        <Option Short="" Long="version-mode" Value="MODE" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Version mode: content-sha | timestamp | serial (default: 
+content-sha)</Description>
+        </Option>
+      </Parameters>
+    </Command>
+  </Command>
+  <!--UTILS-->
+  <Command Name="utils" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <!--UTILS-->
+    <Command Name="utils" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.Utils.UtilsCommand" 
+Settings="Spectre.Console.Cli.CommandSettings" />
+    <!--INFISICAL-->
+    <Command Name="infisical" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+      <!--UPLOAD-->
+      <Command Name="upload" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.Utils.Infisical.InfisicalUploadCommand" 
+Settings="SwarmBender.Cli.Commands.Utils.Infisical.InfisicalUploadCommand+Settin
+gs">
+        <Parameters>
+          <Option Short="" Long="dry-run" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+            <Description>Do not call Infisical. Just print what would be 
+uploaded.</Description>
+          </Option>
+          <Option Short="e" Long="env" Value="ENV" Required="false" 
+Kind="scalar" ClrType="System.String">
+            <Description>Environment name (e.g., prod, dev).</Description>
+          </Option>
+          <Option Short="" Long="from" Value="APPSETTINGS_JSON" Required="false"
+Kind="scalar" ClrType="System.String">
+            <Description>Path to appsettings JSON to upload.</Description>
+          </Option>
+          <Option Short="" Long="include" Value="PATTERNS" Required="false" 
+Kind="scalar" ClrType="System.String">
+            <Description>Comma-separated wildcard patterns to include (overrides
+provider include).</Description>
+          </Option>
+          <Option Short="" Long="root" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+            <Description>Project root (defaults to current 
+directory).</Description>
+          </Option>
+          <Option Short="s" Long="scope" Value="SCOPE" Required="false" 
+Kind="scalar" ClrType="System.String">
+            <Description>Scope for path templating (e.g., global, 
+sso).</Description>
+          </Option>
+        </Parameters>
+      </Command>
+      <!--INIT-->
+      <Command Name="init" IsBranch="false" 
+ClrType="SwarmBender.Cli.Commands.Utils.Infisical.InfisicalInitCommand" 
+Settings="SwarmBender.Cli.Commands.Utils.Infisical.InfisicalInitCommand+Settings
+">
+        <Parameters>
+          <Option Short="" Long="config" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+            <Description>Custom config path (defaults to 
+ops/vars/providers/infisical.yml)</Description>
+          </Option>
+          <Option Short="" Long="root" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+            <Description>Project root path (defaults to current 
+directory)</Description>
+          </Option>
+          <Option Short="" Long="yes" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+            <Description>Overwrite without asking</Description>
+          </Option>
+        </Parameters>
+      </Command>
+    </Command>
+  </Command>
+</Model>

@@ -1,0 +1,2254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Model>
+  <!--SERVICE-->
+  <Command Name="service" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <Description>Service lifecycle management: start, stop, 
+status.</Description>
+    <!--START-->
+    <Command Name="start" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.ServiceStartCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>Start the ExcelMCP Service if not already 
+running.</Description>
+    </Command>
+    <!--STOP-->
+    <Command Name="stop" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.ServiceStopCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>Gracefully stop the ExcelMCP Service.</Description>
+    </Command>
+    <!--STATUS-->
+    <Command Name="status" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.ServiceStatusCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>Show service status (running, PID, sessions, 
+uptime).</Description>
+    </Command>
+  </Command>
+  <!--BATCH-->
+  <Command Name="batch" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.BatchCommand" 
+Settings="Sbroenne.ExcelMcp.CLI.Commands.BatchCommand+Settings">
+    <Description>Execute multiple commands from a JSON file or stdin. Outputs 
+NDJSON (one result per line).</Description>
+    <Parameters>
+      <Option Short="i" Long="input" Value="FILE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>JSON file with command array. Use '-' for stdin (NDJSON, 
+one command per line). If omitted, reads from stdin.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Default session ID for all commands. Overridden by 
+per-command sessionId. Auto-captured from session.open/create if not 
+set.</Description>
+      </Option>
+      <Option Short="" Long="stop-on-error" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Stop execution on first error (default: continue all 
+commands).</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SESSION-->
+  <Command Name="session" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <Description>Session management. WORKFLOW: open -&gt; use sessionId -&gt; 
+close (--save to persist).</Description>
+    <!--CREATE-->
+    <Command Name="create" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.SessionCreateCommand" 
+Settings="Sbroenne.ExcelMcp.CLI.Commands.SessionCreateCommand+Settings">
+      <Description>Create a new Excel file, open it, and create a 
+session.</Description>
+      <Parameters>
+        <Argument Name="FILE" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>Path to the new Excel file to create</Description>
+        </Argument>
+        <Option Short="" Long="timeout" Value="SECONDS" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+          <Description>Session timeout in seconds</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--OPEN-->
+    <Command Name="open" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.SessionOpenCommand" 
+Settings="Sbroenne.ExcelMcp.CLI.Commands.SessionOpenCommand+Settings">
+      <Description>Open an Excel file and create a session.</Description>
+      <Parameters>
+        <Argument Name="FILE" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>Path to the Excel file to open</Description>
+        </Argument>
+        <Option Short="" Long="timeout" Value="SECONDS" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+          <Description>Session timeout in seconds</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--CLOSE-->
+    <Command Name="close" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.SessionCloseCommand" 
+Settings="Sbroenne.ExcelMcp.CLI.Commands.SessionCloseCommand+Settings">
+      <Description>Close a session. Use --save to persist changes.</Description>
+      <Parameters>
+        <Option Short="" Long="save" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+          <Description>Save changes before closing</Description>
+        </Option>
+        <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Session ID to close</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--LIST-->
+    <Command Name="list" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.SessionListCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>List active sessions.</Description>
+    </Command>
+    <!--SAVE-->
+    <Command Name="save" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Commands.SessionSaveCommand" 
+Settings="Sbroenne.ExcelMcp.CLI.Commands.SessionSaveCommand+Settings">
+      <Description>Save a session without closing it.</Description>
+      <Parameters>
+        <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Session ID to save</Description>
+        </Option>
+      </Parameters>
+    </Command>
+  </Command>
+  <!--CALCULATIONMODE-->
+  <Command Name="calculationmode" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.CalculationCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Calculation+CliSettings">
+    <Description>Control Excel recalculation (automatic vs manual). Set manual 
+mode before bulk writes for faster performance, then recalculate once at the 
+end.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="mode" Value="MODE" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Target calculation mode (required for: 
+set-mode)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="range-address" Value="RANGEADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Range address (required for Range scope)</Description>
+      </Option>
+      <Option Short="" Long="scope" Value="SCOPE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Scope: Workbook, Sheet, or Range (required for: 
+calculate)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Sheet name (required for Sheet/Range scope)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--CHART-->
+  <Command Name="chart" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.ChartCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Chart+CliSettings">
+    <Description>Chart lifecycle - create, read, move, and delete embedded 
+charts. CRITICAL - AVOID OVERLAPPING DATA: 1. Check used range first with range 
+get-used-range 2. Position chart BELOW or to the RIGHT of data 3. NEVER place 
+charts at default position (0,0) - it overlaps data! POSITIONING: left/top in 
+points (72 points = 1 inch). Use fit-to-range to position chart within a cell 
+range like 'F2:K15'. CHART TYPES: 70+ types available including Column, Line, 
+Pie, Bar, Area, XY Scatter. CREATE OPTIONS: - create-from-range: Create from 
+cell range (e.g., 'A1:D10') - create-from-table: Create from Excel Table (uses 
+table's data range) - create-from-pivottable: Create linked PivotChart Use 
+chartconfig for series, titles, legends, styles, placement mode.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="chart-name" Value="CHARTNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the chart (or shape name) (required for: read, 
+delete, move, fit-to-range)</Description>
+      </Option>
+      <Option Short="" Long="chart-type" Value="CHARTTYPE" Required="false" 
+Kind="scalar" 
+ClrType="System.Nullable`1[[Sbroenne.ExcelMcp.Core.Commands.Chart.ChartType, 
+Sbroenne.ExcelMcp.Core, Version=1.0.0.0, Culture=neutral, 
+PublicKeyToken=null]]">
+        <Description>Type of chart to create (required for: create-from-range, 
+create-from-table, create-from-pivottable)</Description>
+      </Option>
+      <Option Short="" Long="height" Value="HEIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib,
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Chart height in points</Description>
+      </Option>
+      <Option Short="" Long="left" Value="LEFT" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Left position in points from worksheet edge (required for: 
+create-from-range, create-from-table, create-from-pivottable)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="pivot-table-name" Value="PIVOTTABLENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the source PivotTable (required for: 
+create-from-pivottable)</Description>
+      </Option>
+      <Option Short="" Long="range-address" Value="RANGEADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Range to fit the chart to (e.g., A1:D10) (required for: 
+fit-to-range)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Target worksheet name (required for: create-from-range, 
+create-from-table, create-from-pivottable, fit-to-range)</Description>
+      </Option>
+      <Option Short="" Long="source-range" Value="SOURCERANGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Data range for the chart (e.g., A1:D10) (required for: 
+create-from-range)</Description>
+      </Option>
+      <Option Short="" Long="table-name" Value="TABLENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the Excel Table (required for: 
+create-from-table)</Description>
+      </Option>
+      <Option Short="" Long="top" Value="TOP" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Top position in points from worksheet edge (required for: 
+create-from-range, create-from-table, create-from-pivottable)</Description>
+      </Option>
+      <Option Short="" Long="width" Value="WIDTH" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Chart width in points</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--CHARTCONFIG-->
+  <Command Name="chartconfig" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.ChartConfigCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+ChartConfig+CliSettings">
+    <Description>Chart configuration - data source, series, type, title, axis 
+labels, legend, and styling. SERIES MANAGEMENT: - add-series: Add data series 
+with valuesRange (required) and optional categoryRange - remove-series: Remove 
+series by 1-based index - set-source-range: Replace entire chart data source 
+TITLES AND LABELS: - set-title: Set chart title (empty string hides title) - 
+set-axis-title: Set axis labels (Category, Value, CategorySecondary, 
+ValueSecondary) CHART STYLES: 1-48 (built-in Excel styles with different color 
+schemes) DATA LABELS: Show values, percentages, series/category names. 
+Positions: Center, InsideEnd, InsideBase, OutsideEnd, BestFit. TRENDLINES: 
+Linear, Exponential, Logarithmic, Polynomial (order 2-6), Power, MovingAverage. 
+PLACEMENT MODE: - 1: Move and size with cells - 2: Move but don't size with 
+cells - 3: Don't move or size with cells (free floating) Use chart for lifecycle
+operations (create, delete, move, fit-to-range).</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="axis" Value="AXIS" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[Sbroenne.ExcelMcp.Core.Commands.Chart.ChartAxisType,
+Sbroenne.ExcelMcp.Core, Version=1.0.0.0, Culture=neutral, 
+PublicKeyToken=null]]">
+        <Description>Which axis to set title for (Category, Value, SeriesAxis) 
+(required for: set-axis-title, get-axis-number-format, set-axis-number-format, 
+get-axis-scale, set-axis-scale, set-gridlines)</Description>
+      </Option>
+      <Option Short="" Long="backward" Value="BACKWARD" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib,
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Periods to extend backward</Description>
+      </Option>
+      <Option Short="" Long="category-range" Value="CATEGORYRANGE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Optional range for category labels (e.g., 
+A2:A10)</Description>
+      </Option>
+      <Option Short="" Long="chart-name" Value="CHARTNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the chart (required)</Description>
+      </Option>
+      <Option Short="" Long="chart-type" Value="CHARTTYPE" Required="false" 
+Kind="scalar" 
+ClrType="System.Nullable`1[[Sbroenne.ExcelMcp.Core.Commands.Chart.ChartType, 
+Sbroenne.ExcelMcp.Core, Version=1.0.0.0, Culture=neutral, 
+PublicKeyToken=null]]">
+        <Description>New chart type to apply (required for: 
+set-chart-type)</Description>
+      </Option>
+      <Option Short="" Long="display-equation" Value="DISPLAYEQUATION" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Display trendline equation on chart</Description>
+      </Option>
+      <Option Short="" Long="display-r-squared" Value="DISPLAYRSQUARED" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Display R-squared value on chart</Description>
+      </Option>
+      <Option Short="" Long="forward" Value="FORWARD" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib,
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Periods to extend forward</Description>
+      </Option>
+      <Option Short="" Long="intercept" Value="INTERCEPT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib,
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Force trendline through specific Y-intercept</Description>
+      </Option>
+      <Option Short="" Long="invert-if-negative" Value="INVERTIFNEGATIVE" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Invert colors for negative values</Description>
+      </Option>
+      <Option Short="" Long="label-position" Value="LABELPOSITION" 
+Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[Sbroenne.ExcelMcp.Core.Commands.Chart.DataLabelPosit
+ion, Sbroenne.ExcelMcp.Core, Version=1.0.0.0, Culture=neutral, 
+PublicKeyToken=null]]">
+        <Description>Position of data labels relative to data 
+points</Description>
+      </Option>
+      <Option Short="" Long="legend-position" Value="LEGENDPOSITION" 
+Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[Sbroenne.ExcelMcp.Core.Commands.Chart.LegendPosition
+, Sbroenne.ExcelMcp.Core, Version=1.0.0.0, Culture=neutral, 
+PublicKeyToken=null]]">
+        <Description>Optional position for the legend</Description>
+      </Option>
+      <Option Short="" Long="major-unit" Value="MAJORUNIT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib,
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Major gridline interval (null for auto)</Description>
+      </Option>
+      <Option Short="" Long="marker-background-color" 
+Value="MARKERBACKGROUNDCOLOR" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Marker fill color (#RRGGBB)</Description>
+      </Option>
+      <Option Short="" Long="marker-foreground-color" 
+Value="MARKERFOREGROUNDCOLOR" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Marker border color (#RRGGBB)</Description>
+      </Option>
+      <Option Short="" Long="marker-size" Value="MARKERSIZE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Marker size in points (2-72)</Description>
+      </Option>
+      <Option Short="" Long="marker-style" Value="MARKERSTYLE" Required="false" 
+Kind="scalar" 
+ClrType="System.Nullable`1[[Sbroenne.ExcelMcp.Core.Commands.Chart.MarkerStyle, 
+Sbroenne.ExcelMcp.Core, Version=1.0.0.0, Culture=neutral, 
+PublicKeyToken=null]]">
+        <Description>Marker shape style</Description>
+      </Option>
+      <Option Short="" Long="maximum-scale" Value="MAXIMUMSCALE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Double, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Maximum axis value (null for auto)</Description>
+      </Option>
+      <Option Short="" Long="minimum-scale" Value="MINIMUMSCALE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Double, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Minimum axis value (null for auto)</Description>
+      </Option>
+      <Option Short="" Long="minor-unit" Value="MINORUNIT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib,
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Minor gridline interval (null for auto)</Description>
+      </Option>
+      <Option Short="" Long="name" Value="NAME" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Custom name for the trendline</Description>
+      </Option>
+      <Option Short="" Long="number-format" Value="NUMBERFORMAT" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Excel number format code (e.g., "$#,##0", "0.00%") 
+(required for: set-axis-number-format)</Description>
+      </Option>
+      <Option Short="" Long="order" Value="ORDER" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Polynomial order (2-6, for Polynomial type)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="period" Value="PERIOD" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Moving average period (for MovingAverage 
+type)</Description>
+      </Option>
+      <Option Short="" Long="placement" Value="PLACEMENT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Placement mode: 1=MoveAndSize, 2=Move, 3=FreeFloating 
+(required for: set-placement)</Description>
+      </Option>
+      <Option Short="" Long="separator" Value="SEPARATOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Separator string between label components</Description>
+      </Option>
+      <Option Short="" Long="series-index" Value="SERIESINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based index of the series to remove (required for: 
+remove-series, set-series-format, list-trendlines, add-trendline, 
+delete-trendline, set-trendline)</Description>
+      </Option>
+      <Option Short="" Long="series-name" Value="SERIESNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Display name for the series (required for: 
+add-series)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="show-bubble-size" Value="SHOWBUBBLESIZE" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show bubble size (bubble charts)</Description>
+      </Option>
+      <Option Short="" Long="show-category-name" Value="SHOWCATEGORYNAME" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show category name on labels</Description>
+      </Option>
+      <Option Short="" Long="show-major" Value="SHOWMAJOR" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show major gridlines (null to keep current)</Description>
+      </Option>
+      <Option Short="" Long="show-minor" Value="SHOWMINOR" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show minor gridlines (null to keep current)</Description>
+      </Option>
+      <Option Short="" Long="show-percentage" Value="SHOWPERCENTAGE" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show percentage values (pie/doughnut charts)</Description>
+      </Option>
+      <Option Short="" Long="show-series-name" Value="SHOWSERIESNAME" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show series name on labels</Description>
+      </Option>
+      <Option Short="" Long="show-value" Value="SHOWVALUE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show data values on labels</Description>
+      </Option>
+      <Option Short="" Long="source-range" Value="SOURCERANGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New data source range (e.g., Sheet1!A1:D10) (required for: 
+set-source-range)</Description>
+      </Option>
+      <Option Short="" Long="style-id" Value="STYLEID" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Excel chart style ID (1-48 for most chart types) (required 
+for: set-style)</Description>
+      </Option>
+      <Option Short="" Long="title" Value="TITLE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Title text to display (required for: set-title, 
+set-axis-title)</Description>
+      </Option>
+      <Option Short="" Long="trendline-index" Value="TRENDLINEINDEX" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based index of the trendline to delete (required for: 
+delete-trendline, set-trendline)</Description>
+      </Option>
+      <Option Short="" Long="type" Value="TYPE" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[Sbroenne.ExcelMcp.Core.Commands.Chart.TrendlineType,
+Sbroenne.ExcelMcp.Core, Version=1.0.0.0, Culture=neutral, 
+PublicKeyToken=null]]">
+        <Description>Type of trendline (Linear, Exponential, etc.) (required 
+for: add-trendline)</Description>
+      </Option>
+      <Option Short="" Long="values-range" Value="VALUESRANGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Range containing series values (e.g., B2:B10) (required 
+for: add-series)</Description>
+      </Option>
+      <Option Short="" Long="visible" Value="VISIBLE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>True to show legend, false to hide (required for: 
+show-legend)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--CONDITIONALFORMAT-->
+  <Command Name="conditionalformat" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.ConditionalFormatCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+ConditionalFormat+CliSetti
+ngs">
+    <Description>Conditional formatting - visual rules based on cell values. 
+TYPES: cellValue (requires operatorType+formula1), expression (formula only). 
+FORMAT: interiorColor/fontColor as #RRGGBB, fontBold/Italic, borderStyle/Color. 
+OPERATORS: equal, notEqual, greater, less, greaterEqual, lessEqual, between, 
+notBetween. For 'between' and 'notBetween', both formula1 and formula2 are 
+required.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="border-color" Value="BORDERCOLOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Border color (#RRGGBB or color index)</Description>
+      </Option>
+      <Option Short="" Long="border-style" Value="BORDERSTYLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Border style: none, continuous, dash, dot, 
+etc.</Description>
+      </Option>
+      <Option Short="" Long="font-bold" Value="FONTBOLD" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Bold font</Description>
+      </Option>
+      <Option Short="" Long="font-color" Value="FONTCOLOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Font color (#RRGGBB or color index)</Description>
+      </Option>
+      <Option Short="" Long="font-italic" Value="FONTITALIC" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Italic font</Description>
+      </Option>
+      <Option Short="" Long="formula1" Value="FORMULA1" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>First formula/value for condition</Description>
+      </Option>
+      <Option Short="" Long="formula2" Value="FORMULA2" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Second formula/value (for between/notBetween)</Description>
+      </Option>
+      <Option Short="" Long="interior-color" Value="INTERIORCOLOR" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Fill color (#RRGGBB or color index)</Description>
+      </Option>
+      <Option Short="" Long="interior-pattern" Value="INTERIORPATTERN" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Interior pattern (1=Solid, -4142=None, 9=Gray50, 
+etc.)</Description>
+      </Option>
+      <Option Short="" Long="operator-type" Value="OPERATORTYPE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>XlFormatConditionOperator: equal, notEqual, greater, less, 
+greaterEqual, lessEqual, between, notBetween</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="range-address" Value="RANGEADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Range address (A1 notation or named range) 
+(required)</Description>
+      </Option>
+      <Option Short="" Long="rule-type" Value="RULETYPE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Rule type: cellValue, expression (required for: 
+add-rule)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Sheet name (empty for active sheet) 
+(required)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--CONNECTION-->
+  <Command Name="connection" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.ConnectionCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Connection+CliSettings">
+    <Description>Data connections (OLEDB, ODBC, ODC import). TEXT/WEB/CSV: Use 
+powerquery instead. Power Query connections auto-redirect to powerquery. 
+TIMEOUT: 5 min auto-timeout for refresh/load-to.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="background-query" Value="BACKGROUNDQUERY" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Run query in background (null to keep 
+current)</Description>
+      </Option>
+      <Option Short="" Long="command-text" Value="COMMANDTEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>SQL query or table name</Description>
+      </Option>
+      <Option Short="" Long="connection-name" Value="CONNECTIONNAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the connection to view (required for: view, create,
+refresh, delete, load-to, get-properties, set-properties, test)</Description>
+      </Option>
+      <Option Short="" Long="connection-string" Value="CONNECTIONSTRING" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>OLEDB or ODBC connection string (required for: 
+create)</Description>
+      </Option>
+      <Option Short="" Long="description" Value="DESCRIPTION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Optional description for the connection</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="refresh-on-file-open" Value="REFRESHONFILEOPEN" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Refresh when file opens (null to keep 
+current)</Description>
+      </Option>
+      <Option Short="" Long="refresh-period" Value="REFRESHPERIOD" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Auto-refresh interval in minutes (null to keep 
+current)</Description>
+      </Option>
+      <Option Short="" Long="save-password" Value="SAVEPASSWORD" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Save password in connection (null to keep 
+current)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Target worksheet name (required for: load-to)</Description>
+      </Option>
+      <Option Short="" Long="timeout" Value="TIMEOUT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.TimeSpan, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Optional timeout for the refresh operation</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--DATAMODEL-->
+  <Command Name="datamodel" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.DataModelCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+DataModel+CliSettings">
+    <Description>Data Model (Power Pivot) - DAX measures and table management. 
+CRITICAL: WORKSHEET TABLES AND DATA MODEL ARE SEPARATE! - After table append 
+changes, Data Model still has OLD data - MUST call refresh to sync changes - 
+Power Query refresh auto-syncs (no manual refresh needed) PREREQUISITE: Tables 
+must be added to the Data Model first. Use table add-to-datamodel for worksheet 
+tables, or powerquery to import and load data directly to the Data Model. DAX 
+MEASURES: - Create with DAX formulas like 'SUM(Sales[[Amount]])' - DAX formulas 
+are auto-formatted on CREATE/UPDATE via Dax.Formatter (SQLBI) - Read operations 
+return raw DAX as stored DAX EVALUATE QUERIES: - Use evaluate to execute DAX 
+EVALUATE queries against the Data Model - Returns tabular results from queries 
+like 'EVALUATE TableName' - Supports complex DAX: SUMMARIZE, FILTER, 
+CALCULATETABLE, TOPN, etc. DMV (DYNAMIC MANAGEMENT VIEW) QUERIES: - Use 
+execute-dmv to query Data Model metadata via SQL-like syntax - Syntax: SELECT * 
+FROM $SYSTEM.SchemaRowset (ONLY SELECT * supported) - Use 
+DISCOVER_SCHEMA_ROWSETS to list all available DMVs Use datamodelrel for 
+relationships between tables.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="dax-formula" Value="DAXFORMULA" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>DAX formula for the measure (will be auto-formatted) 
+(required for: create-measure)</Description>
+      </Option>
+      <Option Short="" Long="dax-formula-file" Value="DAXFORMULAFILE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Path to file containing daxFormula</Description>
+      </Option>
+      <Option Short="" Long="dax-query" Value="DAXQUERY" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>DAX EVALUATE query (e.g., "EVALUATE 'TableName'" or 
+"EVALUATE SUMMARIZE(...)") (required for: evaluate)</Description>
+      </Option>
+      <Option Short="" Long="dax-query-file" Value="DAXQUERYFILE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Path to file containing daxQuery</Description>
+      </Option>
+      <Option Short="" Long="description" Value="DESCRIPTION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Optional: Description of the measure</Description>
+      </Option>
+      <Option Short="" Long="dmv-query" Value="DMVQUERY" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>DMV query in SQL-like syntax (e.g., "SELECT * FROM 
+$SYSTEM.TMSCHEMA_TABLES") (required for: execute-dmv)</Description>
+      </Option>
+      <Option Short="" Long="dmv-query-file" Value="DMVQUERYFILE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Path to file containing dmvQuery</Description>
+      </Option>
+      <Option Short="" Long="format-type" Value="FORMATTYPE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Optional: Format type (Currency, Decimal, Percentage, 
+General)</Description>
+      </Option>
+      <Option Short="" Long="measure-name" Value="MEASURENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the measure to get (required for: read, 
+delete-measure, create-measure, update-measure)</Description>
+      </Option>
+      <Option Short="" Long="new-name" Value="NEWNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New name for the table (required for: 
+rename-table)</Description>
+      </Option>
+      <Option Short="" Long="old-name" Value="OLDNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Current name of the table (required for: 
+rename-table)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="table-name" Value="TABLENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the table to list columns from (required for: 
+list-columns, read-table, delete-table, create-measure)</Description>
+      </Option>
+      <Option Short="" Long="timeout" Value="TIMEOUT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.TimeSpan, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Optional: Timeout for the refresh operation</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--DATAMODELRELATIONSHIP-->
+  <Command Name="datamodelrelationship" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.DataModelRelCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+DataModelRel+CliSettings">
+    <Description>Data Model relationships - link tables for cross-table DAX 
+calculations. CRITICAL: Deleting or recreating tables removes ALL their 
+relationships. Use list-relationships before table operations to backup, then 
+recreate relationships after schema changes. RELATIONSHIP REQUIREMENTS: - Both 
+tables must exist in the Data Model first - Columns must have compatible data 
+types - fromTable/fromColumn = many-side (detail table, foreign key) - 
+toTable/toColumn = one-side (lookup table, primary key) ACTIVE VS INACTIVE: - 
+Only ONE active relationship can exist between two tables - Use active=false 
+when creating alternative paths - DAX USERELATIONSHIP() activates inactive 
+relationships</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="active" Value="ACTIVE" Required="false" Kind="flag"
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether the relationship should be active (default: true) 
+(required for: update-relationship)</Description>
+      </Option>
+      <Option Short="" Long="from-column" Value="FROMCOLUMN" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Source column name (required for: read-relationship, 
+create-relationship, update-relationship, delete-relationship)</Description>
+      </Option>
+      <Option Short="" Long="from-table" Value="FROMTABLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Source table name (required for: read-relationship, 
+create-relationship, update-relationship, delete-relationship)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="to-column" Value="TOCOLUMN" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Target column name (required for: read-relationship, 
+create-relationship, update-relationship, delete-relationship)</Description>
+      </Option>
+      <Option Short="" Long="to-table" Value="TOTABLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Target table name (required for: read-relationship, 
+create-relationship, update-relationship, delete-relationship)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--DIAG-->
+  <Command Name="diag" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.DiagCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Diag+CliSettings">
+    <Description>Diagnostic commands for testing CLI/MCP infrastructure without 
+Excel. These commands validate parameter parsing, routing, JSON serialization, 
+and error handling — no Excel COM session needed.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="count" Value="COUNT" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Required integer parameter (required for: 
+validate-params)</Description>
+      </Option>
+      <Option Short="" Long="label" Value="LABEL" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Optional label parameter</Description>
+      </Option>
+      <Option Short="" Long="message" Value="MESSAGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>The message to echo back (required) (required for: 
+echo)</Description>
+      </Option>
+      <Option Short="" Long="name" Value="NAME" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Required name parameter (required for: 
+validate-params)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="tag" Value="TAG" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Optional tag to include in the response</Description>
+      </Option>
+      <Option Short="" Long="verbose" Value="VERBOSE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Optional boolean flag (default: false)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--NAMEDRANGE-->
+  <Command Name="namedrange" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.NamedRangeCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+NamedRange+CliSettings">
+    <Description>Named ranges for formulas/parameters. CREATE/UPDATE: value is 
+cell reference (e.g., 'Sheet1!$A$1'). WRITE: value is data to store. TIP: 
+range(rangeAddress=namedRangeName) for bulk data read/write.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="name" Value="NAME" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Name of the named range (required for: write, read, update,
+create, delete)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="reference" Value="REFERENCE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New cell reference (e.g., Sheet1!$A$1:$B$10) (required for:
+update, create)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="value" Value="VALUE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Value to set (required for: write)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--PIVOTTABLE-->
+  <Command Name="pivottable" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.PivotTableCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+PivotTable+CliSettings">
+    <Description>PivotTable lifecycle management: create from various sources, 
+list, read details, refresh, and delete. Use pivottablefield for field 
+operations, pivottablecalc for calculated fields and layout. BEST PRACTICE: Use 
+'list' before creating. Prefer 'refresh' or field modifications over 
+delete+recreate. Delete+recreate loses field configurations, filters, sorting, 
+and custom layouts. REFRESH: Call 'refresh' after configuring fields with 
+pivottablefield to update the visual display. This is especially important for 
+OLAP/Data Model PivotTables where field operations are structural only and don't
+automatically trigger a visual refresh. CREATE OPTIONS: - 'create-from-range': 
+Use source sheet and range address for data range - 'create-from-table': Use an 
+Excel Table (ListObject) as source - 'create-from-datamodel': Use a Power Pivot 
+Data Model table as source</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="destination-cell" Value="DESTINATIONCELL" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Destination cell address (e.g., "A1") (required for: 
+create-from-range, create-from-table, create-from-datamodel)</Description>
+      </Option>
+      <Option Short="" Long="destination-sheet" Value="DESTINATIONSHEET" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Destination worksheet name (required for: 
+create-from-range, create-from-table, create-from-datamodel)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="pivot-table-name" Value="PIVOTTABLENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the PivotTable (required for: read, 
+create-from-range, create-from-table, create-from-datamodel, delete, 
+refresh)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="source-range" Value="SOURCERANGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Source range address (e.g., "A1:F100") (required for: 
+create-from-range)</Description>
+      </Option>
+      <Option Short="" Long="source-sheet" Value="SOURCESHEET" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Source worksheet name (required for: 
+create-from-range)</Description>
+      </Option>
+      <Option Short="" Long="table-name" Value="TABLENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the Excel Table (required for: create-from-table, 
+create-from-datamodel)</Description>
+      </Option>
+      <Option Short="" Long="timeout" Value="TIMEOUT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.TimeSpan, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Optional timeout for the refresh operation</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--PIVOTTABLECALC-->
+  <Command Name="pivottablecalc" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.PivotTableCalcCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+PivotTableCalc+CliSettings
+">
+    <Description>PivotTable calculated fields/members, layout configuration, and
+data extraction. Use pivottable for lifecycle, pivottablefield for field 
+placement. CALCULATED FIELDS (for regular PivotTables): - Create custom fields 
+using formulas like '=Revenue-Cost' or '=Quantity*UnitPrice' - Can reference 
+existing fields by name - After creating, use pivottablefield add-value-field to
+add to Values area - For complex multi-table calculations, prefer DAX measures 
+with datamodel CALCULATED MEMBERS (for OLAP/Data Model PivotTables only): - 
+Create using MDX expressions - Member types: Member, Set, Measure LAYOUT 
+OPTIONS: - 0 = Compact (default, fields in single column) - 1 = Tabular (each 
+field in separate column - best for export/analysis) - 2 = Outline (hierarchical
+with expand/collapse)</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="display-folder" Value="DISPLAYFOLDER" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Display folder path for organizing measures 
+(optional)</Description>
+      </Option>
+      <Option Short="" Long="field-name" Value="FIELDNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the calculated field (required for: 
+create-calculated-field, delete-calculated-field, set-subtotals)</Description>
+      </Option>
+      <Option Short="" Long="formula" Value="FORMULA" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Formula using field references (e.g., "=Revenue-Cost") 
+(required for: create-calculated-field, create-calculated-member)</Description>
+      </Option>
+      <Option Short="" Long="member-name" Value="MEMBERNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the calculated member (MDX naming format) 
+(required for: create-calculated-member, delete-calculated-member)</Description>
+      </Option>
+      <Option Short="" Long="number-format" Value="NUMBERFORMAT" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Number format code for the calculated member 
+(optional)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="pivot-table-name" Value="PIVOTTABLENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the PivotTable (required)</Description>
+      </Option>
+      <Option Short="" Long="row-layout" Value="ROWLAYOUT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Layout form: 0=Compact, 1=Tabular, 2=Outline (required for:
+set-layout)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="show-column-grand-totals" 
+Value="SHOWCOLUMNGRANDTOTALS" Required="false" Kind="flag" 
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show column grand totals (right summary column) (required 
+for: set-grand-totals)</Description>
+      </Option>
+      <Option Short="" Long="show-row-grand-totals" Value="SHOWROWGRANDTOTALS" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show row grand totals (bottom summary row) (required for: 
+set-grand-totals)</Description>
+      </Option>
+      <Option Short="" Long="show-subtotals" Value="SHOWSUBTOTALS" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>True to show automatic subtotals, false to hide (required 
+for: set-subtotals)</Description>
+      </Option>
+      <Option Short="" Long="solve-order" Value="SOLVEORDER" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Solve order for calculation precedence (default: 
+0)</Description>
+      </Option>
+      <Option Short="" Long="type" Value="TYPE" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Type of calculated member (Member, Set, or 
+Measure)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--PIVOTTABLEFIELD-->
+  <Command Name="pivottablefield" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.PivotTableFieldCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+PivotTableField+CliSetting
+s">
+    <Description>PivotTable field management: add/remove/configure fields, 
+filtering, sorting, and grouping. Use pivottable for lifecycle, pivottablecalc 
+for calculated fields and layout. IMPORTANT: Field operations modify structure 
+only. Call pivottable refresh after configuring fields to update the visual 
+display, especially for OLAP/Data Model PivotTables. FIELD AREAS: - Row fields: 
+Group data by categories (add-row-field) - Column fields: Create column headers 
+(add-column-field) - Value fields: Aggregate numeric data with Sum, Count, 
+Average, etc. (add-value-field) - Filter fields: Add report-level filters 
+(add-filter-field) AGGREGATION FUNCTIONS: Sum, Count, Average, Max, Min, 
+Product, CountNumbers, StdDev, StdDevP, Var, VarP GROUPING: - Date fields: Group
+by Days, Months, Quarters, Years (group-by-date) - Numeric fields: Group by 
+ranges with start/end/interval (group-by-numeric) NUMBER FORMAT: Use US format 
+codes like '#,##0.00' for currency or '0.00%' for percentages.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="aggregation-function" Value="AGGREGATIONFUNCTION" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Aggregation function (for Regular and OLAP auto-create 
+mode) (required for: set-field-function)</Description>
+      </Option>
+      <Option Short="" Long="custom-name" Value="CUSTOMNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Optional custom name for the field/measure (required for: 
+set-field-name)</Description>
+      </Option>
+      <Option Short="" Long="direction" Value="DIRECTION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Sort direction</Description>
+      </Option>
+      <Option Short="" Long="end-value" Value="ENDVALUE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib,
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Ending value (null = use field maximum)</Description>
+      </Option>
+      <Option Short="" Long="field-name" Value="FIELDNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the field to add (required for: add-row-field, 
+add-column-field, add-value-field, add-filter-field, remove-field, 
+set-field-function, set-field-name, set-field-format, set-field-filter, 
+sort-field, group-by-date, group-by-numeric)</Description>
+      </Option>
+      <Option Short="" Long="interval" Value="INTERVAL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Grouping interval (Months, Quarters, Years) (required for: 
+group-by-date)</Description>
+      </Option>
+      <Option Short="" Long="interval-size" Value="INTERVALSIZE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Double, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Size of each group (e.g., 100 for groups of 100) (required 
+for: group-by-numeric)</Description>
+      </Option>
+      <Option Short="" Long="number-format" Value="NUMBERFORMAT" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Number format string (required for: 
+set-field-format)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="pivot-table-name" Value="PIVOTTABLENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the PivotTable (required)</Description>
+      </Option>
+      <Option Short="" Long="position" Value="POSITION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Optional position in row area (1-based)</Description>
+      </Option>
+      <Option Short="" Long="selected-values" Value="SELECTEDVALUES" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Values to show (others will be hidden) (required for: 
+set-field-filter) (JSON format)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="start" Value="START" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Starting value (null = use field minimum)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--POWERQUERY-->
+  <Command Name="powerquery" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.PowerQueryCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+PowerQuery+CliSettings">
+    <Description>Power Query M code and data loading. TEST-FIRST DEVELOPMENT 
+WORKFLOW (BEST PRACTICE): 1. evaluate - Test M code WITHOUT persisting (catches 
+syntax errors, validates sources, shows data preview) 2. create/update - Store 
+VALIDATED query in workbook 3. refresh/load-to - Load data to destination Skip 
+evaluate only for trivial literal tables. IF CREATE/UPDATE FAILS: Use evaluate 
+to get the actual M engine error message, fix code, retry. DATETIME COLUMNS: 
+Always include Table.TransformColumnTypes() in M code to set column types 
+explicitly. Without explicit types, dates may be stored as numbers and Data 
+Model relationships may fail. DESTINATIONS: 'worksheet' (default), 'data-model' 
+(for DAX), 'both', 'connection-only'. Use 'data-model' to load to Power Pivot, 
+then use datamodel to create DAX measures. TARGET CELL: targetCellAddress places
+tables without clearing sheet. TIMEOUT: 5 min auto-timeout for refresh/load. For
+network queries, use timeout=120 or higher. timeout=0 is INVALID - must be 
+greater than zero.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="load-destination" Value="LOADDESTINATION" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Load destination mode (required for: load-to)</Description>
+      </Option>
+      <Option Short="" Long="m-code" Value="MCODE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Raw M code (inline string) (required for: create, update, 
+evaluate)</Description>
+      </Option>
+      <Option Short="" Long="m-code-file" Value="MCODEFILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to file containing mCode</Description>
+      </Option>
+      <Option Short="" Long="new-name" Value="NEWNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New name for the query (required for: rename)</Description>
+      </Option>
+      <Option Short="" Long="old-name" Value="OLDNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Current name of the query (required for: 
+rename)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="query-name" Value="QUERYNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the query to view (required for: view, refresh, 
+get-load-config, delete, create, update, load-to, unload)</Description>
+      </Option>
+      <Option Short="" Long="refresh" Value="REFRESH" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to refresh data after update (default: 
+true)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="target-cell-address" Value="TARGETCELLADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Optional target cell address for worksheet loads (e.g., 
+"B5"). Required when loading to an existing worksheet with other 
+data.</Description>
+      </Option>
+      <Option Short="" Long="target-sheet" Value="TARGETSHEET" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Target worksheet name (required for LoadToTable and 
+LoadToBoth; defaults to query name when omitted)</Description>
+      </Option>
+      <Option Short="" Long="timeout" Value="TIMEOUT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.TimeSpan, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Maximum time to wait for refresh (required for: 
+refresh)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--RANGE-->
+  <Command Name="range" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.RangeCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Range+CliSettings">
+    <Description>Core range operations: get/set values and formulas, copy 
+ranges, clear content, and discover data regions. Use rangeedit for 
+insert/delete/find/sort. Use rangeformat for styling/validation. Use rangelink 
+for hyperlinks and cell protection. Calculation mode and explicit recalculation 
+are handled by calculationmode. BEST PRACTICE: Use 'get-values' to check 
+existing data before overwriting. Use 'clear-contents' (not 'clear-all') to 
+preserve cell formatting when clearing data. set-values preserves existing 
+formatting; use set-number-format after if format change needed. DATA FORMAT: 
+values and formulas are 2D JSON arrays representing rows and columns. Example: 
+[[[[row1col1, row1col2]], [[row2col1, row2col2]]]] Single cell returns 
+[[[[value]]]] (always 2D). REQUIRED PARAMETERS: - sheetName + rangeAddress for 
+cell operations (e.g., sheetName='Sheet1', rangeAddress='A1:D10') - For named 
+ranges, use sheetName='' (empty string) and rangeAddress='MyNamedRange' COPY 
+OPERATIONS: Specify source and target sheet/range for copy operations. NUMBER 
+FORMATS: Use US locale format codes (e.g., '#,##0.00', 'mm/dd/yyyy', 
+'0.00%').</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="cell-address" Value="CELLADDRESS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Single cell address (e.g., 'B5') - expands to contiguous 
+data region around this cell (required for: get-current-region)</Description>
+      </Option>
+      <Option Short="" Long="format-code" Value="FORMATCODE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Number format code in US locale (e.g., '#,##0.00' for 
+numbers, 'mm/dd/yyyy' for dates, '0.00%' for percentages, 'General' for default,
+'@' for text) (required for: set-number-format)</Description>
+      </Option>
+      <Option Short="" Long="formats" Value="FORMATS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>2D array of format codes - same dimensions as target range 
+(e.g., [[[['#,##0.00', '0.00%']], [['mm/dd/yyyy', 'General']]]]). Optional if 
+formatsFile is provided. (JSON format)</Description>
+      </Option>
+      <Option Short="" Long="formats-file" Value="FORMATSFILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSON file containing 2D array of format codes. 
+Alternative to inline formats parameter.</Description>
+      </Option>
+      <Option Short="" Long="formulas" Value="FORMULAS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>2D array of formulas to set - include '=' prefix (e.g., 
+[[[['=A1+B1', '=SUM(A:A)']], [['=C1*2', '=AVERAGE(B:B)']]]]). Optional if 
+formulasFile is provided. (JSON format)</Description>
+      </Option>
+      <Option Short="" Long="formulas-file" Value="FORMULASFILE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSON file containing the formulas as a 2D array. 
+Alternative to inline formulas parameter.</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="range-address" Value="RANGEADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Cell range address (e.g., 'A1', 'A1:D10', 'B:D') or named 
+range name (e.g., 'SalesData') (required for: get-values, set-values, 
+get-formulas, set-formulas, clear-all, clear-contents, clear-formats, 
+get-number-formats, set-number-format, set-number-formats, 
+get-info)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the worksheet containing the range - REQUIRED for 
+cell addresses, use empty string for named ranges only (required for: 
+get-values, set-values, get-formulas, set-formulas, clear-all, clear-contents, 
+clear-formats, get-number-formats, set-number-format, set-number-formats, 
+get-used-range, get-current-region, get-info)</Description>
+      </Option>
+      <Option Short="" Long="source-range" Value="SOURCERANGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Source range address for copy operations (e.g., 'A1:D10') 
+(required for: copy, copy-values, copy-formulas)</Description>
+      </Option>
+      <Option Short="" Long="source-sheet" Value="SOURCESHEET" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Source worksheet name for copy operations (required for: 
+copy, copy-values, copy-formulas)</Description>
+      </Option>
+      <Option Short="" Long="target-range" Value="TARGETRANGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Target range address - can be single cell for paste 
+destination (e.g., 'A1') (required for: copy, copy-values, 
+copy-formulas)</Description>
+      </Option>
+      <Option Short="" Long="target-sheet" Value="TARGETSHEET" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Target worksheet name for copy operations (required for: 
+copy, copy-values, copy-formulas)</Description>
+      </Option>
+      <Option Short="" Long="values" Value="VALUES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>2D array of values to set - rows are outer array, columns 
+are inner array (e.g., [[[[1,2,3]],[[4,5,6]]]] for 2 rows x 3 cols). Optional if
+valuesFile is provided. (JSON format)</Description>
+      </Option>
+      <Option Short="" Long="values-file" Value="VALUESFILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSON or CSV file containing the values. JSON: 2D 
+array. CSV: rows/columns. Alternative to inline values parameter.</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--RANGEEDIT-->
+  <Command Name="rangeedit" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.RangeEditCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+RangeEdit+CliSettings">
+    <Description>Range editing operations: insert/delete cells, rows, and 
+columns; find/replace text; sort data. Use range for values/formulas/copy/clear 
+operations. INSERT/DELETE CELLS: Specify shift direction to control how 
+surrounding cells move. - Insert: 'Down' or 'Right' - Delete: 'Up' or 'Left' 
+INSERT/DELETE ROWS: Use row range like '5:10' to insert/delete rows 5-10. 
+INSERT/DELETE COLUMNS: Use column range like 'B:D' to insert/delete columns B-D.
+FIND/REPLACE: Search within the specified range with optional case/cell 
+matching. - Find returns up to 10 matching cell addresses with total count. - 
+Replace modifies all matches by default. SORT: Specify sortColumns as array of 
+{columnIndex: 1, ascending: true} objects. Column indices are 1-based relative 
+to the range.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="delete-shift" Value="DELETESHIFT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Direction to shift remaining cells: 'Up' or 'Left' 
+(required for: delete-cells)</Description>
+      </Option>
+      <Option Short="" Long="find-options" Value="FINDOPTIONS" Required="false" 
+Kind="scalar" ClrType="Sbroenne.ExcelMcp.Core.Commands.Range.FindOptions">
+        <Description>Search options: matchCase (default: false), matchEntireCell
+(default: false), searchFormulas (default: true) (required for: 
+find)</Description>
+      </Option>
+      <Option Short="" Long="find-value" Value="FINDVALUE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Text or value to search for (required for: 
+replace)</Description>
+      </Option>
+      <Option Short="" Long="has-headers" Value="HASHEADERS" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether the range has a header row to exclude from sorting 
+(default: true)</Description>
+      </Option>
+      <Option Short="" Long="insert-shift" Value="INSERTSHIFT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Direction to shift existing cells: 'Down' or 'Right' 
+(required for: insert-cells)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="range-address" Value="RANGEADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Cell range address where cells will be inserted (e.g., 
+'A1:D10') (required)</Description>
+      </Option>
+      <Option Short="" Long="replace-options" Value="REPLACEOPTIONS" 
+Required="false" Kind="scalar" 
+ClrType="Sbroenne.ExcelMcp.Core.Commands.Range.ReplaceOptions">
+        <Description>Replace options: matchCase (default: false), 
+matchEntireCell (default: false), replaceAll (default: true) (required for: 
+replace)</Description>
+      </Option>
+      <Option Short="" Long="replace-value" Value="REPLACEVALUE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Text or value to replace matches with (required for: 
+replace)</Description>
+      </Option>
+      <Option Short="" Long="search-value" Value="SEARCHVALUE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Text or value to search for (required for: 
+find)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the worksheet containing the range 
+(required)</Description>
+      </Option>
+      <Option Short="" Long="sort-columns" Value="SORTCOLUMNS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Array of sort specifications: [[{columnIndex: 1, ascending:
+true}, ...]] - columnIndex is 1-based relative to range (required for: sort) 
+(JSON format)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--RANGEFORMAT-->
+  <Command Name="rangeformat" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.RangeFormatCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+RangeFormat+CliSettings">
+    <Description>Range formatting operations: apply styles, set 
+fonts/colors/borders, add data validation, merge cells, auto-fit dimensions. Use
+range for values/formulas/copy/clear operations. STYLES: Use built-in style 
+names like 'Heading 1', 'Good', 'Bad', 'Currency', 'Percent', etc. For 
+consistent, professional formatting, prefer set-style with built-in styles over 
+format-range. FONT/COLOR FORMATTING: Specify individual formatting properties: -
+Colors as hex '#RRGGBB' (e.g., '#FF0000' for red, '#00FF00' for green) - Font 
+sizes as points (e.g., 12, 14, 16) - Alignment: 'left', 'center', 'right' 
+(horizontal), 'top', 'middle', 'bottom' (vertical) DATA VALIDATION: Restrict 
+cell input with validation rules: - Types: 'list', 'whole', 'decimal', 'date', 
+'time', 'textLength', 'custom' - For list validation, formula1 is the list 
+source (e.g., '=$A$1:$A$10' or '"Option1,Option2,Option3"') - Operators: 
+'between', 'notBetween', 'equal', 'notEqual', 'greaterThan', 'lessThan', 
+'greaterThanOrEqual', 'lessThanOrEqual' MERGE: Combines cells into one. Only 
+top-left cell value is preserved.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="bold" Value="BOLD" Required="false" Kind="flag" 
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to apply bold formatting</Description>
+      </Option>
+      <Option Short="" Long="border-color" Value="BORDERCOLOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Border color as hex '#RRGGBB'</Description>
+      </Option>
+      <Option Short="" Long="border-style" Value="BORDERSTYLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Border line style (e.g., 'thin', 'medium', 'thick', 
+'dashed', 'dotted')</Description>
+      </Option>
+      <Option Short="" Long="border-weight" Value="BORDERWEIGHT" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Border weight (e.g., 'hairline', 'thin', 'medium', 
+'thick')</Description>
+      </Option>
+      <Option Short="" Long="error-message" Value="ERRORMESSAGE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Text for the error alert popup</Description>
+      </Option>
+      <Option Short="" Long="error-style" Value="ERRORSTYLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Error alert style: 'stop' (prevents entry), 'warning' 
+(allows override), 'information' (allows entry)</Description>
+      </Option>
+      <Option Short="" Long="error-title" Value="ERRORTITLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Title for the error alert popup</Description>
+      </Option>
+      <Option Short="" Long="fill-color" Value="FILLCOLOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Cell fill (background) color as hex '#RRGGBB' (e.g., 
+'#FFFF00' for yellow)</Description>
+      </Option>
+      <Option Short="" Long="font-color" Value="FONTCOLOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Font (foreground) color as hex '#RRGGBB' (e.g., '#FF0000' 
+for red)</Description>
+      </Option>
+      <Option Short="" Long="font-name" Value="FONTNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Font family name (e.g., 'Arial', 'Calibri', 'Times New 
+Roman')</Description>
+      </Option>
+      <Option Short="" Long="font-size" Value="FONTSIZE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Double, System.Private.CoreLib,
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Font size in points (e.g., 10, 11, 12, 14, 
+16)</Description>
+      </Option>
+      <Option Short="" Long="formula1" Value="FORMULA1" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>First validation formula/value - for list validation use 
+range '=$A$1:$A$10' or inline '"A,B,C"'</Description>
+      </Option>
+      <Option Short="" Long="formula2" Value="FORMULA2" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Second validation formula/value - required only for 
+'between' and 'notBetween' operators</Description>
+      </Option>
+      <Option Short="" Long="horizontal-alignment" Value="HORIZONTALALIGNMENT" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Horizontal text alignment: 'left', 'center', 'right', 
+'justify', 'fill'</Description>
+      </Option>
+      <Option Short="" Long="ignore-blank" Value="IGNOREBLANK" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to allow blank cells in validation (default: 
+true)</Description>
+      </Option>
+      <Option Short="" Long="input-message" Value="INPUTMESSAGE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Text for the input message popup</Description>
+      </Option>
+      <Option Short="" Long="input-title" Value="INPUTTITLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Title for the input message popup</Description>
+      </Option>
+      <Option Short="" Long="italic" Value="ITALIC" Required="false" Kind="flag"
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to apply italic formatting</Description>
+      </Option>
+      <Option Short="" Long="orientation" Value="ORIENTATION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Text rotation in degrees (-90 to 90, or 255 for 
+vertical)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="range-address" Value="RANGEADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Cell range address (e.g., 'A1:D10') 
+(required)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the worksheet containing the range 
+(required)</Description>
+      </Option>
+      <Option Short="" Long="show-dropdown" Value="SHOWDROPDOWN" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to show dropdown arrow for list validation 
+(default: true)</Description>
+      </Option>
+      <Option Short="" Long="show-error-alert" Value="SHOWERRORALERT" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to show error alert on invalid input (default: 
+true)</Description>
+      </Option>
+      <Option Short="" Long="show-input-message" Value="SHOWINPUTMESSAGE" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to show input message when cell is selected 
+(default: false)</Description>
+      </Option>
+      <Option Short="" Long="style-name" Value="STYLENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Built-in or custom style name (e.g., 'Heading 1', 'Good', 
+'Bad', 'Currency', 'Percent'). Use 'Normal' to reset. (required for: 
+set-style)</Description>
+      </Option>
+      <Option Short="" Long="underline" Value="UNDERLINE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to apply underline formatting</Description>
+      </Option>
+      <Option Short="" Long="validation-operator" Value="VALIDATIONOPERATOR" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Validation comparison operator: 'between', 'notBetween', 
+'equal', 'notEqual', 'greaterThan', 'lessThan', 'greaterThanOrEqual', 
+'lessThanOrEqual'</Description>
+      </Option>
+      <Option Short="" Long="validation-type" Value="VALIDATIONTYPE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Data validation type: 'list', 'whole', 'decimal', 'date', 
+'time', 'textLength', 'custom' (required for: validate-range)</Description>
+      </Option>
+      <Option Short="" Long="vertical-alignment" Value="VERTICALALIGNMENT" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Vertical text alignment: 'top', 'middle', 'bottom', 
+'justify'</Description>
+      </Option>
+      <Option Short="" Long="wrap-text" Value="WRAPTEXT" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to wrap text within cells</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--RANGELINK-->
+  <Command Name="rangelink" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.RangeLinkCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+RangeLink+CliSettings">
+    <Description>Hyperlink and cell protection operations for Excel ranges. Use 
+range for values/formulas, rangeformat for styling. HYPERLINKS: - 
+'add-hyperlink': Add a clickable hyperlink to a cell (URL can be web, file, or 
+mailto) - 'remove-hyperlink': Remove hyperlink(s) from cells while keeping the 
+cell content - 'list-hyperlinks': Get all hyperlinks on a worksheet - 
+'get-hyperlink': Get hyperlink details for a specific cell CELL PROTECTION: - 
+'set-cell-lock': Lock or unlock cells (only effective when sheet protection is 
+enabled) - 'get-cell-lock': Check if cells are locked Note: Cell locking only 
+takes effect when the worksheet is protected.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="cell-address" Value="CELLADDRESS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Single cell address (e.g., 'A1') (required for: 
+add-hyperlink, get-hyperlink)</Description>
+      </Option>
+      <Option Short="" Long="display-text" Value="DISPLAYTEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Text to display in the cell (optional, defaults to 
+URL)</Description>
+      </Option>
+      <Option Short="" Long="locked" Value="LOCKED" Required="false" Kind="flag"
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Lock status: true = locked (protected when sheet protection
+enabled), false = unlocked (editable) (required for: 
+set-cell-lock)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="range-address" Value="RANGEADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Cell range address to remove hyperlinks from (e.g., 
+'A1:D10') (required for: remove-hyperlink, set-cell-lock, 
+get-cell-lock)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the worksheet (required)</Description>
+      </Option>
+      <Option Short="" Long="tooltip" Value="TOOLTIP" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Tooltip text shown on hover (optional)</Description>
+      </Option>
+      <Option Short="" Long="url" Value="URL" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Hyperlink URL (web: 'https://...', file: 'file:///...', 
+email: 'mailto:...') (required for: add-hyperlink)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SCREENSHOT-->
+  <Command Name="screenshot" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.ScreenshotCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Screenshot+CliSettings">
+    <Description>Capture Excel worksheet content as images for visual 
+verification. Uses Excel's built-in rendering (CopyPicture) to capture ranges as
+PNG images. Captures formatting, conditional formatting, charts, and all visual 
+elements. ACTIONS: - capture: Capture a specific range as an image - 
+capture-sheet: Capture the entire used area of a worksheet RETURNS: 
+Base64-encoded PNG image data with dimensions metadata. For MCP: returned as 
+inline ImageContent. For CLI: saved to file.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="range-address" Value="RANGEADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Range to capture (e.g., "A1:F20")</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Worksheet name (null for active sheet)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SLICER-->
+  <Command Name="slicer" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.SlicerCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Slicer+CliSettings">
+    <Description>Slicer visual filters for PivotTables and Excel Tables. 
+PIVOTTABLE SLICERS: create-slicer, list-slicers, set-slicer-selection, 
+delete-slicer. TABLE SLICERS: create-table-slicer, list-table-slicers, 
+set-table-slicer-selection, delete-table-slicer. NAMING: Auto-generate 
+descriptive names like {FieldName}Slicer (e.g., RegionSlicer). SELECTION: 
+selectedItems as list of strings. Empty list clears filter (shows all items). 
+Set clearFirst=false to add to existing selection.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="clear-first" Value="CLEARFIRST" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>If true, clears existing selection before setting new items
+(default: true)</Description>
+      </Option>
+      <Option Short="" Long="column-name" Value="COLUMNNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the column to use for the slicer (required for: 
+create-table-slicer)</Description>
+      </Option>
+      <Option Short="" Long="destination-sheet" Value="DESTINATIONSHEET" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Worksheet where slicer will be placed (required for: 
+create-slicer, create-table-slicer)</Description>
+      </Option>
+      <Option Short="" Long="field-name" Value="FIELDNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the field to use for the slicer (required for: 
+create-slicer)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="pivot-table-name" Value="PIVOTTABLENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the PivotTable to create slicer for (required for: 
+create-slicer)</Description>
+      </Option>
+      <Option Short="" Long="position" Value="POSITION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Top-left cell position for the slicer (e.g., "H2") 
+(required for: create-slicer, create-table-slicer)</Description>
+      </Option>
+      <Option Short="" Long="selected-items" Value="SELECTEDITEMS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Items to select (show in PivotTable) (required for: 
+set-slicer-selection, set-table-slicer-selection) (JSON format)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slicer-name" Value="SLICERNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the new slicer (required for: create-slicer, 
+set-slicer-selection, delete-slicer, create-table-slicer, 
+set-table-slicer-selection, delete-table-slicer)</Description>
+      </Option>
+      <Option Short="" Long="table-name" Value="TABLENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the Excel Table (required for: 
+create-table-slicer)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--TABLE-->
+  <Command Name="table" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.TableCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Table+CliSettings">
+    <Description>Excel Tables (ListObjects) - lifecycle and data operations. 
+Tables provide structured references, automatic formatting, and Data Model 
+integration. BEST PRACTICE: Use 'list' to check existing tables before creating.
+Prefer 'append'/'resize'/'rename' over delete+recreate to preserve references. 
+WARNING: Deleting tables used as PivotTable sources or in Data Model 
+relationships will break those objects. DATA MODEL WORKFLOW: To analyze 
+worksheet data with DAX/Power Pivot: 1. Create or identify an Excel Table on a 
+worksheet 2. Use 'add-to-datamodel' to add the table to Power Pivot 3. Then use 
+datamodel to create DAX measures on it DAX-BACKED TABLES: Create tables 
+populated by DAX EVALUATE queries: - 'create-from-dax': Create a new table 
+backed by a DAX query (e.g., SUMMARIZE, FILTER) - 'update-dax': Update the DAX 
+query for an existing DAX-backed table - 'get-dax': Get the DAX query info for a
+table (check if it's DAX-backed) Related: tablecolumn (filter/sort/columns), 
+datamodel (DAX measures, evaluate queries)</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="column-name" Value="COLUMNNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the column to set total function on (required for: 
+set-column-total)</Description>
+      </Option>
+      <Option Short="" Long="dax-query" Value="DAXQUERY" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>DAX EVALUATE query (e.g., 'EVALUATE Sales' or 'EVALUATE 
+SUMMARIZE(...)') (required for: create-from-dax, update-dax)</Description>
+      </Option>
+      <Option Short="" Long="has-headers" Value="HASHEADERS" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>True if first row contains column headers (default: 
+true)</Description>
+      </Option>
+      <Option Short="" Long="new-name" Value="NEWNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New name for the table (must be unique in workbook) 
+(required for: rename)</Description>
+      </Option>
+      <Option Short="" Long="new-range" Value="NEWRANGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New range address (e.g., 'A1:F20') (required for: 
+resize)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="range" Value="RANGE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Cell range address for the table (e.g., 'A1:D10') (required
+for: create)</Description>
+      </Option>
+      <Option Short="" Long="rows" Value="ROWS" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>2D array of row data to append - column order must match 
+table columns. Optional if rowsFile is provided. (JSON format)</Description>
+      </Option>
+      <Option Short="" Long="rows-file" Value="ROWSFILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSON or CSV file containing the rows to append. 
+JSON: 2D array. CSV: rows/columns. Alternative to inline rows 
+parameter.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the worksheet to create the table on (required for:
+create, create-from-dax)</Description>
+      </Option>
+      <Option Short="" Long="show-totals" Value="SHOWTOTALS" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>True to show totals row, false to hide (required for: 
+toggle-totals)</Description>
+      </Option>
+      <Option Short="" Long="table-name" Value="TABLENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the new table (must be unique in workbook) 
+(required for: create, rename, delete, read, resize, toggle-totals, 
+set-column-total, append, get-data, set-style, add-to-data-model, 
+create-from-dax, update-dax, get-dax)</Description>
+      </Option>
+      <Option Short="" Long="table-style" Value="TABLESTYLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Table style name (e.g., 'TableStyleMedium2', 
+'TableStyleLight1'). Optional. (required for: set-style)</Description>
+      </Option>
+      <Option Short="" Long="target-cell" Value="TARGETCELL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Target cell address for table placement (default: 
+'A1')</Description>
+      </Option>
+      <Option Short="" Long="total-function" Value="TOTALFUNCTION" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Totals function name: Sum, Count, Average, Min, Max, 
+CountNums, StdDev, Var, None (required for: set-column-total)</Description>
+      </Option>
+      <Option Short="" Long="visible-only" Value="VISIBLEONLY" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>True to return only visible (non-filtered) rows; false for 
+all rows (default: false)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--TABLECOLUMN-->
+  <Command Name="tablecolumn" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.TableColumnCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+TableColumn+CliSettings">
+    <Description>Table column, filtering, and sorting operations for Excel 
+Tables (ListObjects). Use table for table-level lifecycle and data operations. 
+FILTERING: - 'apply-filter': Simple criteria filter (e.g., "&gt;100", "=Active",
+"&lt;&gt;Closed") - 'apply-filter-values': Filter by exact values (provide list 
+of values to include) - 'clear-filters': Remove all active filters - 
+'get-filters': See current filter state SORTING: - 'sort': Single column sort 
+(ascending/descending) - 'sort-multi': Multi-column sort (provide list of 
+{columnName, ascending} objects) COLUMN MANAGEMENT: - 
+'add-column'/'remove-column'/'rename-column': Modify table structure NUMBER 
+FORMATS: Use US locale format codes (e.g., '#,##0.00', '0%', 
+'yyyy-mm-dd')</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="ascending" Value="ASCENDING" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Sort order: true = ascending (A-Z, 0-9), false = descending
+(default: true)</Description>
+      </Option>
+      <Option Short="" Long="column-name" Value="COLUMNNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the column to filter (required for: apply-filter, 
+apply-filter-values, add-column, remove-column, sort, get-column-number-format, 
+set-column-number-format)</Description>
+      </Option>
+      <Option Short="" Long="criteria" Value="CRITERIA" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Filter criteria string (e.g., '&gt;100', '=Active', 
+'&lt;&gt;Closed') (required for: apply-filter)</Description>
+      </Option>
+      <Option Short="" Long="format-code" Value="FORMATCODE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Number format code in US locale (e.g., '#,##0.00', '0%', 
+'yyyy-mm-dd') (required for: set-column-number-format)</Description>
+      </Option>
+      <Option Short="" Long="new-name" Value="NEWNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New column name (required for: rename-column)</Description>
+      </Option>
+      <Option Short="" Long="old-name" Value="OLDNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Current column name (required for: 
+rename-column)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="position" Value="POSITION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based column position (optional, defaults to end of 
+table)</Description>
+      </Option>
+      <Option Short="" Long="region" Value="REGION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Table region: 'Data', 'Headers', 'Totals', or 'All' 
+(required for: get-structured-reference)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sort-columns" Value="SORTCOLUMNS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>List of sort specifications: [[{columnName: 'Col1', 
+ascending: true}, ...]] - applied in order (required for: sort-multi) (JSON 
+format)</Description>
+      </Option>
+      <Option Short="" Long="table-name" Value="TABLENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the Excel table (required)</Description>
+      </Option>
+      <Option Short="" Long="values" Value="VALUES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>List of exact values to include in the filter (required 
+for: apply-filter-values) (JSON format)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--VBA-->
+  <Command Name="vba" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.VbaCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Vba+CliSettings">
+    <Description>VBA scripts (requires .xlsm and VBA trust enabled). 
+PREREQUISITES: - Workbook must be macro-enabled (.xlsm) - VBA trust must be 
+enabled for automation RUN: procedureName format is 'Module.Procedure' (e.g., 
+'Module1.MySub').</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="module-name" Value="MODULENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the VBA module (required for: view, import, update,
+delete)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="parameters" Value="PARAMETERS" Required="false" 
+Kind="vector" ClrType="System.String[]">
+        <Description>Optional parameters to pass to the procedure (required for:
+run)</Description>
+      </Option>
+      <Option Short="" Long="procedure-name" Value="PROCEDURENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the procedure to run (e.g., "Module1.MySub") 
+(required for: run)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="timeout" Value="TIMEOUT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.TimeSpan, 
+System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Optional timeout for execution</Description>
+      </Option>
+      <Option Short="" Long="vba-code" Value="VBACODE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>VBA code to import (required for: import, 
+update)</Description>
+      </Option>
+      <Option Short="" Long="vba-code-file" Value="VBACODEFILE" Required="false"
+Kind="scalar" ClrType="System.String">
+        <Description>Path to file containing vbaCode</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--WORKSHEET-->
+  <Command Name="worksheet" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.SheetCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+Sheet+CliSettings">
+    <Description>Worksheet lifecycle management: create, rename, copy, delete, 
+move, list sheets. Use range for data operations. Use sheetstyle for tab colors 
+and visibility. ATOMIC OPERATIONS: 'copy-to-file' and 'move-to-file' don't 
+require a session - they open/close files automatically. POSITIONING: For 
+'move', 'copy-to-file', 'move-to-file' - use 'before' OR 'after' (not both) to 
+position the sheet relative to another. If neither specified, moves to 
+end.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="after-sheet" Value="AFTERSHEET" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Optional: Name of sheet to position after</Description>
+      </Option>
+      <Option Short="" Long="before-sheet" Value="BEFORESHEET" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Optional: Name of sheet to position before</Description>
+      </Option>
+      <Option Short="" Long="file-path" Value="FILEPATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Optional file path when batch contains multiple workbooks. 
+If omitted, uses primary workbook.</Description>
+      </Option>
+      <Option Short="" Long="new-name" Value="NEWNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New name for the worksheet (required for: 
+rename)</Description>
+      </Option>
+      <Option Short="" Long="old-name" Value="OLDNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Current name of the worksheet (required for: 
+rename)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the new worksheet (required for: create, delete, 
+move)</Description>
+      </Option>
+      <Option Short="" Long="source-file" Value="SOURCEFILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Full path to the source workbook (required for: 
+copy-to-file, move-to-file)</Description>
+      </Option>
+      <Option Short="" Long="source-name" Value="SOURCENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the source worksheet (required for: 
+copy)</Description>
+      </Option>
+      <Option Short="" Long="source-sheet" Value="SOURCESHEET" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the sheet to copy (required for: copy-to-file, 
+move-to-file)</Description>
+      </Option>
+      <Option Short="" Long="target-file" Value="TARGETFILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Full path to the target workbook (required for: 
+copy-to-file, move-to-file)</Description>
+      </Option>
+      <Option Short="" Long="target-name" Value="TARGETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the copied worksheet (required for: 
+copy)</Description>
+      </Option>
+      <Option Short="" Long="target-sheet-name" Value="TARGETSHEETNAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Optional: New name for the copied sheet (default: keeps 
+original name)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--WORKSHEETSTYLE-->
+  <Command Name="worksheetstyle" IsBranch="false" 
+ClrType="Sbroenne.ExcelMcp.CLI.Generated.SheetStyleCommand" 
+Settings="Sbroenne.ExcelMcp.Generated.ServiceRegistry+SheetStyle+CliSettings">
+    <Description>Worksheet styling operations for tab colors and visibility. Use
+sheet for lifecycle operations (create, rename, copy, delete, move). TAB COLORS:
+Use RGB values (0-255 each) to set custom tab colors for visual organization. 
+VISIBILITY LEVELS: - 'visible': Normal visible sheet - 'hidden': Hidden but 
+accessible via Format &gt; Sheet &gt; Unhide - 'veryhidden': Only accessible via
+VBA (protection against casual unhiding)</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="blue" Value="BLUE" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Blue color component (0-255) (required for: 
+set-tab-color)</Description>
+      </Option>
+      <Option Short="" Long="green" Value="GREEN" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Green color component (0-255) (required for: 
+set-tab-color)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="red" Value="RED" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Red color component (0-255) (required for: 
+set-tab-color)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="sheet-name" Value="SHEETNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the worksheet to color (required)</Description>
+      </Option>
+      <Option Short="" Long="visibility" Value="VISIBILITY" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Visibility level: 'visible', 'hidden', or 'veryhidden' 
+(required for: set-visibility)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+</Model>
