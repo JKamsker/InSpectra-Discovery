@@ -13,6 +13,54 @@ InSpectra-Discovery is an automated pipeline that:
 4. **Maintains** a versioned index of analyzed tools with metadata, CLI structure, and documentation artifacts.
 5. **Runs continuously** via GitHub Actions workflows that detect new/updated packages and queue them for analysis.
 
+## Pipeline overview
+
+```mermaid
+flowchart TD
+    subgraph Discovery["Discovery (scheduled 5x daily)"]
+        NuGet[(NuGet V3 Catalog)]
+        Bootstrap["index build / index delta"]
+        NuGet -->|poll catalog| Bootstrap
+        Bootstrap --> Snapshot["dotnet-tools snapshot"]
+    end
+
+    subgraph Filtering
+        Snapshot --> Filter["filter spectre-console-cli"]
+        Filter -->|"inspect NuPkg
+dependencies"| Filtered["Spectre.Console.Cli tools"]
+    end
+
+    subgraph Analysis["Analysis (GitHub Actions)"]
+        Filtered --> Queue["Analysis queue"]
+        Queue --> Dispatch["dispatch-discovery-queue-analysis"]
+        Dispatch -->|batch slices| Analyze["analyze-untrusted-batch"]
+        Analyze -->|"install tool
+extract --opencli
+extract xmldoc"| Results["Analysis results"]
+    end
+
+    subgraph Promotion
+        Results --> Promote["promote-untrusted-analysis-results"]
+        Promote --> Index["index/"]
+    end
+
+    subgraph Artifacts["Index artifacts (per package/version)"]
+        Index --> metadata.json
+        Index --> opencli.json
+        Index --> xmldoc.xml
+        Index --> all.json["all.json (manifest)"]
+    end
+
+    all.json --->|feeds| InSpectra["InSpectra (main repo)"]
+
+    style Discovery fill:#1a3a4a,stroke:#4aa3c5,color:#e0e0e0
+    style Filtering fill:#3a2a10,stroke:#c98a2e,color:#e0e0e0
+    style Analysis fill:#3a1525,stroke:#c44a6c,color:#e0e0e0
+    style Promotion fill:#1a3a1a,stroke:#4a9a4a,color:#e0e0e0
+    style Artifacts fill:#2a1a3a,stroke:#8a5aaa,color:#e0e0e0
+    style InSpectra fill:#3a3510,stroke:#c9a82e,color:#e0e0e0,stroke-width:2px
+```
+
 ## Repository structure
 
 ```
