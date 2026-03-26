@@ -1,0 +1,984 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Model>
+  <!--DEFAULT COMMAND-->
+  <Command Name="__default_command" IsBranch="false" IsDefault="true" 
+ClrType="Fleece.Cli.Tui.TuiCommand" Settings="Fleece.Cli.Tui.TuiSettings" />
+  <!--CREATE-->
+  <Command Name="create" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.CreateCommand" 
+Settings="Fleece.Cli.Settings.CreateSettings">
+    <Description>Create a new issue. Run without options to open an interactive 
+editor with a YAML template.</Description>
+    <Parameters>
+      <Option Short="a" Long="assign" Value="USER" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Username to assign the issue to</Description>
+      </Option>
+      <Option Short="" Long="commit" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Commit changes to git after creating issue</Description>
+      </Option>
+      <Option Short="d" Long="description" Value="DESC" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Issue description</Description>
+      </Option>
+      <Option Short="e" Long="execution-mode" Value="MODE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Execution mode for child issues: series (default), 
+parallel</Description>
+      </Option>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+      <Option Short="" Long="linked-issues" Value="ISSUES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Comma-separated linked issue IDs</Description>
+      </Option>
+      <Option Short="" Long="parent-issues" Value="ISSUES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Comma-separated parent issue IDs with optional sort order 
+(e.g., abc123,def456:bbb)</Description>
+      </Option>
+      <Option Short="p" Long="priority" Value="PRIORITY" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Priority 1-5 (1=highest)</Description>
+      </Option>
+      <Option Short="" Long="push" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Push to remote after committing (implies 
+--commit)</Description>
+      </Option>
+      <Option Short="s" Long="status" Value="STATUS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Initial status (default: open)</Description>
+      </Option>
+      <Option Short="" Long="tags" Value="TAGS" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Comma-separated tags (no whitespace allowed in 
+tags)</Description>
+      </Option>
+      <Option Short="t" Long="title" Value="TITLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Issue title (required)</Description>
+      </Option>
+      <Option Short="y" Long="type" Value="TYPE" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Issue type: task, bug, chore, feature, idea, verify 
+(required)</Description>
+      </Option>
+      <Option Short="b" Long="working-branch" Value="BRANCH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Working branch ID (valid Git branch name characters 
+only)</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="create" />
+      <Example commandLine="create" />
+      <Example commandLine="--title" />
+      <Example commandLine="Fix login bug" />
+      <Example commandLine="--type" />
+      <Example commandLine="bug" />
+      <Example commandLine="-p" />
+      <Example commandLine="1" />
+    </Examples>
+  </Command>
+  <!--LIST-->
+  <Command Name="list" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.ListCommand" 
+Settings="Fleece.Cli.Settings.ListSettings">
+    <Description>List issues with optional filters</Description>
+    <Parameters>
+      <Option Short="a" Long="all" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Show all issues including all statuses</Description>
+      </Option>
+      <Option Short="" Long="assigned" Value="USER" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Filter by assignee</Description>
+      </Option>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+      <Option Short="" Long="linked-pr" Value="PR" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Filter by linked PR number (checks hsp-linked-pr 
+tags)</Description>
+      </Option>
+      <Option Short="" Long="me" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Filter to issues assigned to current user</Description>
+      </Option>
+      <Option Short="" Long="next" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Display as a bottom-up task graph showing approximate task 
+ordering</Description>
+      </Option>
+      <Option Short="" Long="one-line" Value="NULL" Required="false" Kind="flag"
+ClrType="System.Boolean">
+        <Description>Output each issue on a single line: &lt;id&gt; 
+&lt;status&gt; &lt;type&gt; &lt;title&gt;</Description>
+      </Option>
+      <Option Short="p" Long="priority" Value="PRIORITY" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Filter by priority</Description>
+      </Option>
+      <Option Short="" Long="search" Value="QUERY" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Search using query syntax (e.g., 'status:open type:bug 
+login')</Description>
+      </Option>
+      <Option Short="s" Long="status" Value="STATUS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Filter by status: draft, open, progress, review, complete, 
+archived, closed</Description>
+      </Option>
+      <Option Short="" Long="strict" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Fail with exit code 1 if schema warnings are 
+detected</Description>
+      </Option>
+      <Option Short="" Long="sync-status" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Show git sync status for each issue (~=synced, +=committed,
+*=local)</Description>
+      </Option>
+      <Option Short="" Long="tag" Value="TAG" Required="false" Kind="vector" 
+ClrType="System.String[]">
+        <Description>Filter by tag (can specify multiple times)</Description>
+      </Option>
+      <Option Short="" Long="tag-key" Value="KEY=VALUE" Required="false" 
+Kind="vector" ClrType="System.String[]">
+        <Description>Filter by keyed tag (e.g., project=frontend). Can specify 
+multiple times.</Description>
+      </Option>
+      <Option Short="" Long="tree" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Display issues in a tree view based on parent-child 
+relationships</Description>
+      </Option>
+      <Option Short="" Long="tree-root" Value="ID" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Scope tree view to descendants of this issue ID (implies 
+--tree)</Description>
+      </Option>
+      <Option Short="y" Long="type" Value="TYPE" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Filter by type: task, bug, chore, feature, idea, 
+verify</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="list" />
+      <Example commandLine="--status" />
+      <Example commandLine="open" />
+      <Example commandLine="--type" />
+      <Example commandLine="bug" />
+      <Example commandLine="list" />
+      <Example commandLine="--tree" />
+      <Example commandLine="list" />
+      <Example commandLine="--tree" />
+      <Example commandLine="--tree-root" />
+      <Example commandLine="abc123" />
+      <Example commandLine="list" />
+      <Example commandLine="--next" />
+    </Examples>
+  </Command>
+  <!--EDIT-->
+  <Command Name="edit" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.EditCommand" 
+Settings="Fleece.Cli.Settings.EditSettings">
+    <Description>Edit an existing issue. Run with only an ID to open an 
+interactive editor with the issue's current values.</Description>
+    <Parameters>
+      <Argument Name="ID" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>Issue ID to edit</Description>
+      </Argument>
+      <Option Short="a" Long="assign" Value="USER" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New assignee username</Description>
+      </Option>
+      <Option Short="d" Long="description" Value="DESC" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New description</Description>
+      </Option>
+      <Option Short="e" Long="execution-mode" Value="MODE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Execution mode for child issues: series, 
+parallel</Description>
+      </Option>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+      <Option Short="" Long="linked-issues" Value="ISSUES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Replace linked issue IDs (comma-separated)</Description>
+      </Option>
+      <Option Short="p" Long="priority" Value="PRIORITY" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>New priority 1-5</Description>
+      </Option>
+      <Option Short="s" Long="status" Value="STATUS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New status: draft, open, progress, review, complete, 
+archived, closed</Description>
+      </Option>
+      <Option Short="" Long="tags" Value="TAGS" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Replace tags (comma-separated, no whitespace allowed in 
+tags)</Description>
+      </Option>
+      <Option Short="t" Long="title" Value="TITLE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New title</Description>
+      </Option>
+      <Option Short="y" Long="type" Value="TYPE" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>New type: task, bug, chore, feature, idea, 
+verify</Description>
+      </Option>
+      <Option Short="b" Long="working-branch" Value="BRANCH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New working branch ID (valid Git branch name characters 
+only)</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="edit" />
+      <Example commandLine="abc123" />
+      <Example commandLine="edit" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--status" />
+      <Example commandLine="complete" />
+    </Examples>
+  </Command>
+  <!--DELETE-->
+  <Command Name="delete" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.DeleteCommand" 
+Settings="Fleece.Cli.Settings.DeleteSettings">
+    <Description>Delete an issue by ID</Description>
+    <Parameters>
+      <Argument Name="ID" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>Issue ID to delete</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="delete" />
+      <Example commandLine="abc123" />
+    </Examples>
+  </Command>
+  <!--CLEAN-->
+  <Command Name="clean" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.CleanCommand" 
+Settings="Fleece.Cli.Settings.CleanSettings">
+    <Description>Permanently remove deleted issues and create tombstone 
+records</Description>
+    <Parameters>
+      <Option Short="" Long="dry-run" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Show what would be cleaned without making 
+changes</Description>
+      </Option>
+      <Option Short="" Long="include-archived" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Also clean issues with Archived status</Description>
+      </Option>
+      <Option Short="" Long="include-closed" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Also clean issues with Closed status</Description>
+      </Option>
+      <Option Short="" Long="include-complete" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Also clean issues with Complete status</Description>
+      </Option>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="no-strip-refs" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Do not strip references to cleaned issues from remaining 
+issues</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="clean" />
+      <Example commandLine="clean" />
+      <Example commandLine="--dry-run" />
+      <Example commandLine="clean" />
+      <Example commandLine="--include-complete" />
+      <Example commandLine="--include-archived" />
+    </Examples>
+  </Command>
+  <!--SHOW-->
+  <Command Name="show" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.ShowCommand" 
+Settings="Fleece.Cli.Settings.ShowSettings">
+    <Description>Show all details of an issue</Description>
+    <Parameters>
+      <Argument Name="ID" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>Issue ID to display</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="show" />
+      <Example commandLine="abc123" />
+      <Example commandLine="show" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--json" />
+    </Examples>
+  </Command>
+  <!--SEARCH-->
+  <Command Name="search" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.SearchCommand" 
+Settings="Fleece.Cli.Settings.SearchSettings">
+    <Description>Search issues by text</Description>
+    <Parameters>
+      <Argument Name="QUERY" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>Text to search for. Use key:value syntax to search keyed 
+tags (e.g., 'project:frontend')</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="search" />
+      <Example commandLine="login" />
+    </Examples>
+  </Command>
+  <!--DIFF-->
+  <Command Name="diff" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.DiffCommand" 
+Settings="Fleece.Cli.Settings.DiffSettings">
+    <Description>Compare two JSONL issue files</Description>
+    <Parameters>
+      <Argument Name="FILE1" Position="0" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>First JSONL file to compare</Description>
+      </Argument>
+      <Argument Name="FILE2" Position="1" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Second JSONL file to compare</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="diff" />
+      <Example commandLine="file1.jsonl" />
+      <Example commandLine="file2.jsonl" />
+    </Examples>
+  </Command>
+  <!--MERGE-->
+  <Command Name="merge" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.MergeCommand" 
+Settings="Fleece.Cli.Settings.MergeSettings">
+    <Description>Find and merge duplicate issues</Description>
+    <Parameters>
+      <Option Short="" Long="dry-run" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Show what would be merged without making 
+changes</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="merge" />
+      <Example commandLine="merge" />
+      <Example commandLine="--dry-run" />
+    </Examples>
+  </Command>
+  <!--MIGRATE-->
+  <Command Name="migrate" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.MigrateCommand" 
+Settings="Fleece.Cli.Settings.MigrateSettings">
+    <Description>Migrate issues to property-level timestamps 
+format</Description>
+    <Parameters>
+      <Option Short="" Long="dry-run" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Check if migration is needed without making 
+changes</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="migrate" />
+      <Example commandLine="migrate" />
+      <Example commandLine="--dry-run" />
+    </Examples>
+  </Command>
+  <!--INSTALL-->
+  <Command Name="install" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.InstallCommand" 
+Settings="Fleece.Cli.Settings.InstallSettings">
+    <Description>Install Claude Code hooks</Description>
+  </Command>
+  <!--PRIME-->
+  <Command Name="prime" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.PrimeCommand" 
+Settings="Fleece.Cli.Settings.PrimeSettings">
+    <Description>Print LLM instructions for issue tracking</Description>
+    <Parameters>
+      <Argument Name="topic" Position="0" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Topic to display help for (hierarchy, commands, statuses, 
+sync, json, questions, next, tree, merge)</Description>
+      </Argument>
+    </Parameters>
+    <Examples>
+      <Example commandLine="prime" />
+      <Example commandLine="prime" />
+      <Example commandLine="workflow" />
+      <Example commandLine="prime" />
+      <Example commandLine="commands" />
+    </Examples>
+  </Command>
+  <!--QUESTION-->
+  <Command Name="question" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.QuestionCommand" 
+Settings="Fleece.Cli.Settings.QuestionSettings">
+    <Description>Manage questions on an issue</Description>
+    <Parameters>
+      <Argument Name="ID" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>Issue ID</Description>
+      </Argument>
+      <Option Short="" Long="answer" Value="QUESTION_ID" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Answer a question (use with --text)</Description>
+      </Option>
+      <Option Short="" Long="ask" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Ask a new question</Description>
+      </Option>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="list" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>List all questions on the issue</Description>
+      </Option>
+      <Option Short="" Long="text" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Answer text (use with --answer)</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="question" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--list" />
+      <Example commandLine="question" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--ask" />
+      <Example commandLine="What is the expected behavior?" />
+      <Example commandLine="question" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--answer" />
+      <Example commandLine="Q12345" />
+      <Example commandLine="--text" />
+      <Example commandLine="It should return a 200 status" />
+    </Examples>
+  </Command>
+  <!--VALIDATE-->
+  <Command Name="validate" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.ValidateCommand" 
+Settings="Fleece.Cli.Settings.ValidateSettings">
+    <Description>Validate issue dependencies for cycles</Description>
+    <Parameters>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output results as JSON</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="validate" />
+      <Example commandLine="validate" />
+      <Example commandLine="--json" />
+    </Examples>
+  </Command>
+  <!--COMMIT-->
+  <Command Name="commit" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.CommitCommand" 
+Settings="Fleece.Cli.Settings.CommitSettings">
+    <Description>Commit fleece changes to git</Description>
+    <Parameters>
+      <Option Short="" Long="ci" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Allow CI to run (omits [skip ci] from commit 
+message)</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="m" Long="message" Value="MESSAGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Commit message (default: 'Update fleece 
+issues')</Description>
+      </Option>
+      <Option Short="" Long="push" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Push to remote after committing</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="commit" />
+      <Example commandLine="commit" />
+      <Example commandLine="-m" />
+      <Example commandLine="Add new issues" />
+      <Example commandLine="commit" />
+      <Example commandLine="--push" />
+      <Example commandLine="commit" />
+      <Example commandLine="--ci" />
+    </Examples>
+  </Command>
+  <!--DEPENDENCY-->
+  <Command Name="dependency" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.DependencyCommand" 
+Settings="Fleece.Cli.Settings.DependencySettings">
+    <Description>Add or remove parent-child dependency between 
+issues</Description>
+    <Parameters>
+      <Option Short="" Long="after" Value="ID" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Place after this sibling in sort order</Description>
+      </Option>
+      <Option Short="" Long="before" Value="ID" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Place before this sibling in sort order</Description>
+      </Option>
+      <Option Short="" Long="child" Value="ID" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Child issue ID</Description>
+      </Option>
+      <Option Short="" Long="first" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Place at the beginning of the sort order</Description>
+      </Option>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="last" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Place at the end of the sort order</Description>
+      </Option>
+      <Option Short="" Long="parent" Value="ID" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Parent issue ID</Description>
+      </Option>
+      <Option Short="" Long="remove" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Remove the dependency instead of adding it</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="dependency" />
+      <Example commandLine="--parent" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--child" />
+      <Example commandLine="def456" />
+      <Example commandLine="dependency" />
+      <Example commandLine="--parent" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--child" />
+      <Example commandLine="def456" />
+      <Example commandLine="--remove" />
+      <Example commandLine="dependency" />
+      <Example commandLine="--parent" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--child" />
+      <Example commandLine="def456" />
+      <Example commandLine="--first" />
+      <Example commandLine="dependency" />
+      <Example commandLine="--parent" />
+      <Example commandLine="abc123" />
+      <Example commandLine="--child" />
+      <Example commandLine="def456" />
+      <Example commandLine="--after" />
+      <Example commandLine="ghi789" />
+    </Examples>
+  </Command>
+  <!--NEXT-->
+  <Command Name="next" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.NextCommand" 
+Settings="Fleece.Cli.Settings.NextSettings">
+    <Description>Find issues that can be worked on next based on dependencies 
+and execution mode</Description>
+    <Parameters>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+      <Option Short="" Long="one-line" Value="NULL" Required="false" Kind="flag"
+ClrType="System.Boolean">
+        <Description>Output each issue on a single line: &lt;id&gt; 
+&lt;status&gt; &lt;group&gt; &lt;type&gt; &lt;title&gt;</Description>
+      </Option>
+      <Option Short="p" Long="parent" Value="PARENT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Show next issues only under this parent</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="next" />
+      <Example commandLine="next" />
+      <Example commandLine="--parent" />
+      <Example commandLine="abc123" />
+      <Example commandLine="next" />
+      <Example commandLine="--json" />
+    </Examples>
+  </Command>
+  <!--CONFIG-->
+  <Command Name="config" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.ConfigCommand" 
+Settings="Fleece.Cli.Settings.ConfigSettings">
+    <Description>View and modify Fleece configuration settings</Description>
+    <Parameters>
+      <Option Short="" Long="get" Value="KEY" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Get a configuration value by key</Description>
+      </Option>
+      <Option Short="g" Long="global" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Operate on global settings (~/.fleece/settings.json) 
+instead of local</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="l" Long="list" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>List all settings with their values and 
+sources</Description>
+      </Option>
+      <Option Short="" Long="path" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Show the path to the settings file</Description>
+      </Option>
+      <Option Short="" Long="set" Value="KEY_VALUE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Set a configuration value (format: key=value). Use empty 
+value to clear.</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="config" />
+      <Example commandLine="--list" />
+      <Example commandLine="config" />
+      <Example commandLine="--get" />
+      <Example commandLine="autoMerge" />
+      <Example commandLine="config" />
+      <Example commandLine="--set" />
+      <Example commandLine="identity=John Doe" />
+      <Example commandLine="config" />
+      <Example commandLine="--global" />
+      <Example commandLine="--set" />
+      <Example commandLine="autoMerge=true" />
+    </Examples>
+  </Command>
+  <!--OPEN-->
+  <Command Name="open" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.OpenCommand" 
+Settings="Fleece.Cli.Settings.StatusSettings">
+    <Description>Set issue status to open</Description>
+    <Parameters>
+      <Argument Name="IDs" Position="0" Required="true" Kind="vector" 
+ClrType="System.String[]">
+        <Description>One or more issue IDs to update</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="open" />
+      <Example commandLine="abc123" />
+      <Example commandLine="open" />
+      <Example commandLine="abc123" />
+      <Example commandLine="def456" />
+    </Examples>
+  </Command>
+  <!--PROGRESS-->
+  <Command Name="progress" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.ProgressCommand" 
+Settings="Fleece.Cli.Settings.StatusSettings">
+    <Description>Set issue status to progress</Description>
+    <Parameters>
+      <Argument Name="IDs" Position="0" Required="true" Kind="vector" 
+ClrType="System.String[]">
+        <Description>One or more issue IDs to update</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="progress" />
+      <Example commandLine="abc123" />
+      <Example commandLine="progress" />
+      <Example commandLine="abc123" />
+      <Example commandLine="def456" />
+    </Examples>
+  </Command>
+  <!--REVIEW-->
+  <Command Name="review" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.ReviewCommand" 
+Settings="Fleece.Cli.Settings.StatusSettings">
+    <Description>Set issue status to review</Description>
+    <Parameters>
+      <Argument Name="IDs" Position="0" Required="true" Kind="vector" 
+ClrType="System.String[]">
+        <Description>One or more issue IDs to update</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="review" />
+      <Example commandLine="abc123" />
+      <Example commandLine="review" />
+      <Example commandLine="abc123" />
+      <Example commandLine="def456" />
+    </Examples>
+  </Command>
+  <!--COMPLETE-->
+  <Command Name="complete" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.CompleteCommand" 
+Settings="Fleece.Cli.Settings.StatusSettings">
+    <Description>Set issue status to complete</Description>
+    <Parameters>
+      <Argument Name="IDs" Position="0" Required="true" Kind="vector" 
+ClrType="System.String[]">
+        <Description>One or more issue IDs to update</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="complete" />
+      <Example commandLine="abc123" />
+      <Example commandLine="complete" />
+      <Example commandLine="abc123" />
+      <Example commandLine="def456" />
+    </Examples>
+  </Command>
+  <!--ARCHIVED-->
+  <Command Name="archived" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.ArchivedCommand" 
+Settings="Fleece.Cli.Settings.StatusSettings">
+    <Description>Set issue status to archived</Description>
+    <Parameters>
+      <Argument Name="IDs" Position="0" Required="true" Kind="vector" 
+ClrType="System.String[]">
+        <Description>One or more issue IDs to update</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="archived" />
+      <Example commandLine="abc123" />
+      <Example commandLine="archived" />
+      <Example commandLine="abc123" />
+      <Example commandLine="def456" />
+    </Examples>
+  </Command>
+  <!--CLOSED-->
+  <Command Name="closed" IsBranch="false" 
+ClrType="Fleece.Cli.Commands.ClosedCommand" 
+Settings="Fleece.Cli.Settings.StatusSettings">
+    <Description>Set issue status to closed</Description>
+    <Parameters>
+      <Argument Name="IDs" Position="0" Required="true" Kind="vector" 
+ClrType="System.String[]">
+        <Description>One or more issue IDs to update</Description>
+      </Argument>
+      <Option Short="i" Long="issues" Value="FILE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSONL issues file to use instead of the default 
+.fleece/issues_*.jsonl</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output as JSON</Description>
+      </Option>
+      <Option Short="" Long="json-verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Output as JSON with all metadata fields</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="closed" />
+      <Example commandLine="abc123" />
+      <Example commandLine="closed" />
+      <Example commandLine="abc123" />
+      <Example commandLine="def456" />
+    </Examples>
+  </Command>
+</Model>
