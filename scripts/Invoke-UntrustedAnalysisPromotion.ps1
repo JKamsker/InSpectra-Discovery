@@ -189,13 +189,17 @@ function Update-StateRecord {
     $sameSignature = $ExistingState -and $ExistingState.lastFailureSignature -and $ExistingState.lastFailureSignature -eq $Result.failureSignature
     $consecutiveFailures = if ($Result.disposition -eq 'retryable-failure') { if ($sameSignature) { [int]$ExistingState.consecutiveFailureCount + 1 } else { 1 } } else { 0 }
     $attemptCount = [int]$Result.attempt
+    $allowTerminalEscalation = -not (
+        $Result.disposition -eq 'retryable-failure' -and
+        $Result.classification -eq 'environment-missing-runtime'
+    )
 
     $status = switch ($Result.disposition) {
         'success' { 'success'; break }
         'terminal-negative' { 'terminal-negative'; break }
         'terminal-failure' { 'terminal-failure'; break }
         default {
-            if ($consecutiveFailures -ge 3) { 'terminal-failure' } else { 'retryable-failure' }
+            if ($allowTerminalEscalation -and $consecutiveFailures -ge 3) { 'terminal-failure' } else { 'retryable-failure' }
         }
     }
 

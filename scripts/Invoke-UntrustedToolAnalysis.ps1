@@ -448,8 +448,12 @@ function Invoke-IntrospectionCommand {
 
     if ($result.timedOut) {
         $status = 'timed-out'
-        if ($classification -in @('requires-configuration', 'environment-missing-dependency', 'environment-missing-runtime', 'requires-interactive-authentication', 'requires-interactive-input', 'unsupported-platform')) {
+        if ($classification -in @('requires-configuration', 'environment-missing-dependency', 'requires-interactive-authentication', 'requires-interactive-input', 'unsupported-platform')) {
             $dispositionHint = 'terminal-failure'
+        }
+        elseif ($classification -eq 'environment-missing-runtime') {
+            # Runner images change over time; keep missing runtimes retryable so a later run can recover.
+            $dispositionHint = 'retryable-failure'
         }
         else {
             $classification = 'timeout'
@@ -467,7 +471,7 @@ function Invoke-IntrospectionCommand {
     }
     elseif ($classification) {
         $status = if ($classification -eq 'unsupported-command') { 'unsupported' } else { 'failed' }
-        $dispositionHint = 'terminal-failure'
+        $dispositionHint = if ($classification -eq 'environment-missing-runtime') { 'retryable-failure' } else { 'terminal-failure' }
         if (-not $message -and $parse.error) {
             $message = $parse.error
         }
