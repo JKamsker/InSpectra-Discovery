@@ -58,6 +58,21 @@ function Write-TextFile {
     [System.IO.File]::WriteAllText($Path, $Content, [System.Text.UTF8Encoding]::new($false))
 }
 
+function Get-NuGetRegistrationLeafVersion {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Version
+    )
+
+    $normalized = $Version.Trim().ToLowerInvariant()
+    $buildMetadataIndex = $normalized.IndexOf('+')
+    if ($buildMetadataIndex -ge 0) {
+        $normalized = $normalized.Substring(0, $buildMetadataIndex)
+    }
+
+    return $normalized
+}
+
 function Invoke-ProcessCapture {
     param(
         [Parameter(Mandatory = $true)]
@@ -267,7 +282,31 @@ New-Item -ItemType Directory -Path $TempRoot -Force | Out-Null
 try {
     $lowerId = $PackageId.ToLowerInvariant()
     $lowerVersion = $Version.ToLowerInvariant()
-    $leafUrl = "https://api.nuget.org/v3/registration5-gz-semver2/$lowerId/$lowerVersion.json"
+    $env:HOME = Join-Path $TempRoot 'home'
+    $env:DOTNET_CLI_HOME = Join-Path $TempRoot 'dotnet-home'
+    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+    $env:DOTNET_NOLOGO = '1'
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+    $env:NUGET_PACKAGES = Join-Path $TempRoot 'nuget-packages'
+    $env:NUGET_HTTP_CACHE_PATH = Join-Path $TempRoot 'nuget-http-cache'
+    $env:XDG_CONFIG_HOME = Join-Path $TempRoot 'xdg-config'
+    $env:XDG_CACHE_HOME = Join-Path $TempRoot 'xdg-cache'
+    $env:XDG_DATA_HOME = Join-Path $TempRoot 'xdg-data'
+
+    foreach ($directory in @(
+        $env:HOME,
+        $env:DOTNET_CLI_HOME,
+        $env:NUGET_PACKAGES,
+        $env:NUGET_HTTP_CACHE_PATH,
+        $env:XDG_CONFIG_HOME,
+        $env:XDG_CACHE_HOME,
+        $env:XDG_DATA_HOME
+    )) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    }
+
+    $registrationLeafVersion = Get-NuGetRegistrationLeafVersion -Version $Version
+    $leafUrl = "https://api.nuget.org/v3/registration5-gz-semver2/$lowerId/$registrationLeafVersion.json"
     $leaf = Invoke-RestMethod -Uri $leafUrl
     $catalogEntryUrl = [string]$leaf.catalogEntry
     $catalogLeaf = Invoke-RestMethod -Uri $catalogEntryUrl

@@ -65,6 +65,39 @@ function Write-TextFile {
     [System.IO.File]::WriteAllText($Path, $Content, [System.Text.UTF8Encoding]::new($false))
 }
 
+function Get-OptionalPropertyValue {
+    param(
+        [AllowNull()][object]$InputObject,
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+
+    if ($InputObject.PSObject.Properties.Name -contains $Name) {
+        return $InputObject.$Name
+    }
+
+    return $null
+}
+
+function Get-NuGetRegistrationLeafVersion {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Version
+    )
+
+    $normalized = $Version.Trim().ToLowerInvariant()
+    $buildMetadataIndex = $normalized.IndexOf('+')
+    if ($buildMetadataIndex -ge 0) {
+        $normalized = $normalized.Substring(0, $buildMetadataIndex)
+    }
+
+    return $normalized
+}
+
 function Get-TextLength {
     param([AllowNull()][string]$Value)
     if ($null -eq $Value) { return 0 }
@@ -642,9 +675,22 @@ try {
     $env:FORCE_COLOR = '0'
     $env:TERM = 'dumb'
 
+    foreach ($directory in @(
+        $env:HOME,
+        $env:DOTNET_CLI_HOME,
+        $env:NUGET_PACKAGES,
+        $env:NUGET_HTTP_CACHE_PATH,
+        $env:XDG_CONFIG_HOME,
+        $env:XDG_CACHE_HOME,
+        $env:XDG_DATA_HOME
+    )) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    }
+
     $lowerId = $PackageId.ToLowerInvariant()
     $lowerVersion = $Version.ToLowerInvariant()
-    $leafUrl = "https://api.nuget.org/v3/registration5-gz-semver2/$lowerId/$lowerVersion.json"
+    $registrationLeafVersion = Get-NuGetRegistrationLeafVersion -Version $Version
+    $leafUrl = "https://api.nuget.org/v3/registration5-gz-semver2/$lowerId/$registrationLeafVersion.json"
     $leaf = Invoke-RestMethod -Uri $leafUrl
     $catalogLeaf = Invoke-RestMethod -Uri ([string]$leaf.catalogEntry)
 
@@ -664,7 +710,7 @@ try {
 
     $dependencyIds = @(
         $dependencyGroups |
-            ForEach-Object { @($_.dependencies) } |
+            ForEach-Object { @(Get-OptionalPropertyValue -InputObject $_ -Name 'dependencies') } |
             Where-Object { $_.id -like 'Spectre.Console*' } |
             Select-Object -ExpandProperty id -Unique
     )
