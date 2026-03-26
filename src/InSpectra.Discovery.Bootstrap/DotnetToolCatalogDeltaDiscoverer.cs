@@ -1,15 +1,15 @@
-using System.Collections.Concurrent;
 using System.Text.Json;
 
 internal sealed class DotnetToolCatalogDeltaDiscoverer
 {
     private readonly NuGetApiClient _apiClient;
-    private readonly DotnetToolIndexEntryResolver _entryResolver;
+    private readonly DotnetToolCatalogDeltaChangeResolver _changeResolver;
 
     public DotnetToolCatalogDeltaDiscoverer(NuGetApiClient apiClient)
     {
         _apiClient = apiClient;
-        _entryResolver = new DotnetToolIndexEntryResolver(apiClient);
+        var entryResolver = new DotnetToolIndexEntryResolver(apiClient);
+        _changeResolver = new DotnetToolCatalogDeltaChangeResolver(apiClient, entryResolver);
     }
 
     public async Task<DotnetToolDeltaComputation> RunAsync(
@@ -39,8 +39,13 @@ internal sealed class DotnetToolCatalogDeltaDiscoverer
             .ToArray();
 
         var pageItems = await LoadCatalogPageItemsAsync(relevantPages, effectiveCatalogSinceUtc, reportProgress, cancellationToken);
-        var affectedPackageIds = await GetAffectedPackageIdsAsync(pageItems, baselineLookup, options.Concurrency, reportProgress, cancellationToken);
-        var changes = await ResolveChangesAsync(
+        var affectedPackageIds = await _changeResolver.GetAffectedPackageIdsAsync(
+            pageItems,
+            baselineLookup,
+            options.Concurrency,
+            reportProgress,
+            cancellationToken);
+        var changes = await _changeResolver.ResolveChangesAsync(
             affectedPackageIds,
             baselineLookup,
             searchUrl,
@@ -107,120 +112,6 @@ internal sealed class DotnetToolCatalogDeltaDiscoverer
         return results;
     }
 
-    private async Task<HashSet<string>> GetAffectedPackageIdsAsync(
-        IReadOnlyList<CatalogPageItem> pageItems,
-        IReadOnlyDictionary<string, DotnetToolIndexEntry> baselineLookup,
-        int concurrency,
-        Action<string>? reportProgress,
-        CancellationToken cancellationToken)
-    {
-        var affected = new ConcurrentDictionary<string, byte>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var deleted in pageItems.Where(item => IsPackageDelete(item.Type)))
-        {
-            if (baselineLookup.ContainsKey(deleted.PackageId))
-            {
-                affected[deleted.PackageId] = 0;
-            }
-        }
-
-        var detailItems = pageItems.Where(item => !IsPackageDelete(item.Type)).ToArray();
-        await Parallel.ForEachAsync(
-            detailItems,
-            new ParallelOptions
-            {
-                CancellationToken = cancellationToken,
-                MaxDegreeOfParallelism = concurrency,
-            },
-            async (item, token) =>
-            {
-                if (baselineLookup.ContainsKey(item.PackageId))
-                {
-                    affected[item.PackageId] = 0;
-                    return;
-                }
-
-                var leaf = await _apiClient.GetCatalogLeafAsync(item.Id, token);
-                if (DotnetToolPackageType.IsDotnetTool(leaf))
-                {
-                    affected[item.PackageId] = 0;
-                }
-            });
-
-        reportProgress?.Invoke($"Identified {affected.Count} affected package IDs.");
-        return affected.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private async Task<IReadOnlyList<DotnetToolDeltaEntry>> ResolveChangesAsync(
-        IReadOnlyCollection<string> affectedPackageIds,
-        IReadOnlyDictionary<string, DotnetToolIndexEntry> baselineLookup,
-        string searchUrl,
-        string registrationBaseUrl,
-        int concurrency,
-        Action<string>? reportProgress,
-        CancellationToken cancellationToken)
-    {
-        var changes = new ConcurrentBag<DotnetToolDeltaEntry>();
-        await Parallel.ForEachAsync(
-            affectedPackageIds,
-            new ParallelOptions
-            {
-                CancellationToken = cancellationToken,
-                MaxDegreeOfParallelism = concurrency,
-            },
-            async (packageId, token) =>
-            {
-                baselineLookup.TryGetValue(packageId, out var previous);
-                var current = await _entryResolver.TryResolveLatestListedAsync(packageId, searchUrl, registrationBaseUrl, token);
-                var change = TryCreateChange(previous, current);
-                if (change is not null)
-                {
-                    changes.Add(change);
-                }
-            });
-
-        reportProgress?.Invoke($"Resolved {changes.Count} effective latest-version changes.");
-        return changes.ToArray();
-    }
-
-    private static DotnetToolDeltaEntry? TryCreateChange(DotnetToolIndexEntry? previous, DotnetToolIndexEntry? current)
-    {
-        if (previous is null && current is not null)
-        {
-            return new DotnetToolDeltaEntry(
-                current.PackageId,
-                "added",
-                null,
-                current.LatestVersion,
-                null,
-                DeltaStateProjection.Project(current));
-        }
-
-        if (previous is not null && current is null)
-        {
-            return new DotnetToolDeltaEntry(
-                previous.PackageId,
-                "removed",
-                previous.LatestVersion,
-                null,
-                DeltaStateProjection.Project(previous),
-                null);
-        }
-
-        if (previous is not null && current is not null && !string.Equals(previous.LatestVersion, current.LatestVersion, StringComparison.OrdinalIgnoreCase))
-        {
-            return new DotnetToolDeltaEntry(
-                previous.PackageId,
-                "latest-version-changed",
-                previous.LatestVersion,
-                current.LatestVersion,
-                DeltaStateProjection.Project(previous),
-                DeltaStateProjection.Project(current));
-        }
-
-        return null;
-    }
-
     private static DotnetToolIndexSnapshot ApplyChanges(
         DotnetToolIndexSnapshot currentSnapshot,
         IReadOnlyList<DotnetToolDeltaEntry> changes,
@@ -263,9 +154,6 @@ internal sealed class DotnetToolCatalogDeltaDiscoverer
             Packages = orderedPackages,
         };
     }
-
-    private static bool IsPackageDelete(string type)
-        => type.Contains("PackageDelete", StringComparison.OrdinalIgnoreCase);
 
     private static async Task<T> LoadJsonAsync<T>(string path, CancellationToken cancellationToken)
     {

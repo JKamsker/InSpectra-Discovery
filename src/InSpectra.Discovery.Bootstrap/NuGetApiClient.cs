@@ -70,6 +70,12 @@ internal sealed class NuGetApiClient
 
     public async Task<long> GetPackageTotalDownloadsAsync(string searchUrl, string packageId, CancellationToken cancellationToken)
     {
+        var totalDownloads = await TryGetPackageTotalDownloadsAsync(searchUrl, packageId, cancellationToken);
+        return totalDownloads ?? throw new InvalidOperationException($"Could not resolve search metadata for '{packageId}'.");
+    }
+
+    public async Task<long?> TryGetPackageTotalDownloadsAsync(string searchUrl, string packageId, CancellationToken cancellationToken)
+    {
         var queries = new[]
         {
             $"packageid:{packageId}",
@@ -89,7 +95,7 @@ internal sealed class NuGetApiClient
             }
         }
 
-        throw new InvalidOperationException($"Could not resolve search metadata for '{packageId}'.");
+        return null;
     }
 
     public async Task DownloadFileAsync(string url, string destinationPath, CancellationToken cancellationToken)

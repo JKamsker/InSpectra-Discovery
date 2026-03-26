@@ -24,22 +24,62 @@ internal sealed class DotnetToolIndexEntryResolver
         string registrationBaseUrl,
         CancellationToken cancellationToken)
     {
+        var resolution = await ResolveLatestListedCoreAsync(
+            packageId,
+            searchUrl,
+            registrationBaseUrl,
+            skipOnMissingSearchMetadata: false,
+            cancellationToken);
+        return resolution.Entry;
+    }
+
+    public Task<DotnetToolIndexResolution> TryResolveLatestListedNonFatalAsync(
+        string packageId,
+        string searchUrl,
+        string registrationBaseUrl,
+        CancellationToken cancellationToken)
+        => ResolveLatestListedCoreAsync(
+            packageId,
+            searchUrl,
+            registrationBaseUrl,
+            skipOnMissingSearchMetadata: true,
+            cancellationToken);
+
+    private async Task<DotnetToolIndexResolution> ResolveLatestListedCoreAsync(
+        string packageId,
+        string searchUrl,
+        string registrationBaseUrl,
+        bool skipOnMissingSearchMetadata,
+        CancellationToken cancellationToken)
+    {
         var registrationIndex = await _apiClient.GetRegistrationIndexAsync(registrationBaseUrl, packageId, cancellationToken);
         var versionCount = registrationIndex.Items.Sum(page => page.Count);
         var latestLeaf = await FindLatestListedLeafAsync(registrationIndex, cancellationToken);
         if (latestLeaf is null)
         {
-            return null;
+            return DotnetToolIndexResolution.Resolved(null);
         }
 
         var latestCatalogLeaf = await _apiClient.GetCatalogLeafAsync(latestLeaf.CatalogEntry.Id, cancellationToken);
         if (!DotnetToolPackageType.IsDotnetTool(latestCatalogLeaf))
         {
-            return null;
+            return DotnetToolIndexResolution.Resolved(null);
         }
 
-        var totalDownloads = await _apiClient.GetPackageTotalDownloadsAsync(searchUrl, packageId, cancellationToken);
-        return CreateEntry(packageId, registrationIndex, latestLeaf, totalDownloads, versionCount);
+        var totalDownloads = await _apiClient.TryGetPackageTotalDownloadsAsync(searchUrl, packageId, cancellationToken);
+        if (totalDownloads is null)
+        {
+            if (skipOnMissingSearchMetadata)
+            {
+                return DotnetToolIndexResolution.Skip(
+                    $"Could not resolve search metadata for '{packageId}'.");
+            }
+
+            throw new InvalidOperationException($"Could not resolve search metadata for '{packageId}'.");
+        }
+
+        return DotnetToolIndexResolution.Resolved(
+            CreateEntry(packageId, registrationIndex, latestLeaf, totalDownloads.Value, versionCount));
     }
 
     private async Task<RegistrationLeaf?> FindLatestListedLeafAsync(
