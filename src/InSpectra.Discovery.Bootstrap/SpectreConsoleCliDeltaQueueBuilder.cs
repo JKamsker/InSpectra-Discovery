@@ -57,7 +57,9 @@ internal sealed class SpectreConsoleCliDeltaQueueBuilder
                         Current: current is null ? null : DeltaStateProjection.Project(current)));
                 }
 
-                if (current?.Detection.HasSpectreConsoleCli == true && subsetChangeKind is not null)
+                if (current is not null
+                    && SpectreConsoleCatalogInspector.ShouldInclude(SpectreConsoleFilterMode.SpectreConsoleCliOnly, current.Detection)
+                    && subsetChangeKind is not null)
                 {
                     queueItems.Add(new SpectreConsoleCliQueueItem(
                         PackageId: current.PackageId,
@@ -129,8 +131,10 @@ internal sealed class SpectreConsoleCliDeltaQueueBuilder
         SpectreConsoleToolEntry? previous,
         SpectreConsoleToolEntry? current)
     {
-        var previousMatches = previous?.Detection.HasSpectreConsoleCli == true;
-        var currentMatches = current?.Detection.HasSpectreConsoleCli == true;
+        var previousMatches = previous is not null
+            && SpectreConsoleCatalogInspector.ShouldInclude(SpectreConsoleFilterMode.SpectreConsoleCliOnly, previous.Detection);
+        var currentMatches = current is not null
+            && SpectreConsoleCatalogInspector.ShouldInclude(SpectreConsoleFilterMode.SpectreConsoleCliOnly, current.Detection);
 
         return (previousMatches, currentMatches) switch
         {

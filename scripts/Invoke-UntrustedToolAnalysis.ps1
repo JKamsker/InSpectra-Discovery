@@ -98,6 +98,59 @@ function Get-NuGetRegistrationLeafVersion {
     return $normalized
 }
 
+function Get-FirstXmlNodeValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [xml]$Document,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Xpaths
+    )
+
+    foreach ($xpath in $Xpaths) {
+        $node = $Document.SelectSingleNode($xpath)
+        if ($null -eq $node) {
+            continue
+        }
+
+        $value = if ($node -is [System.Xml.XmlAttribute]) { $node.Value } else { $node.InnerText }
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+            return $value.Trim()
+        }
+    }
+
+    return $null
+}
+
+function Get-DotnetToolCommandDescriptor {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ToolSettingsFile
+    )
+
+    [xml]$toolSettings = Get-Content -Path $ToolSettingsFile -Raw
+
+    $command = Get-FirstXmlNodeValue -Document $toolSettings -Xpaths @(
+        "//*[local-name()='Command'][1]/@Name",
+        "//*[local-name()='ToolCommandName'][1]",
+        "//*[local-name()='CommandName'][1]"
+    )
+    $entryPoint = Get-FirstXmlNodeValue -Document $toolSettings -Xpaths @(
+        "//*[local-name()='Command'][1]/@EntryPoint",
+        "//*[local-name()='EntryPoint'][1]"
+    )
+    $runner = Get-FirstXmlNodeValue -Document $toolSettings -Xpaths @(
+        "//*[local-name()='Command'][1]/@Runner",
+        "//*[local-name()='Runner'][1]"
+    )
+
+    return [ordered]@{
+        command = $command
+        entryPoint = $entryPoint
+        runner = $runner
+    }
+}
+
 function Get-TextLength {
     param([AllowNull()][string]$Value)
     if ($null -eq $Value) { return 0 }
@@ -494,13 +547,18 @@ function Invoke-IntrospectionCommand {
         }
         $message = if ($preferredMessage) { $preferredMessage } else { 'Command timed out.' }
     }
-    elseif ($result.exitCode -eq 0 -and $parse.success) {
+    elseif ($parse.success) {
         $status = 'ok'
-        $classification = if ($ExpectedFormat -eq 'json') { 'json-ready' } else { 'xml-ready' }
+        $classification = if ($ExpectedFormat -eq 'json') {
+            if ($result.exitCode -eq 0) { 'json-ready' } else { 'json-ready-with-nonzero-exit' }
+        }
+        else {
+            if ($result.exitCode -eq 0) { 'xml-ready' } else { 'xml-ready-with-nonzero-exit' }
+        }
         $dispositionHint = 'success'
         $artifactObject = $parse.document
         $artifactText = $parse.artifactText
-        $message = $null
+        $message = if ($result.exitCode -eq 0) { $null } else { $preferredMessage }
     }
     elseif ($classification) {
         $status = if ($classification -eq 'unsupported-command') { 'unsupported' } else { 'failed' }
@@ -670,10 +728,20 @@ try {
     $env:XDG_CONFIG_HOME = Join-Path $TempRoot 'xdg-config'
     $env:XDG_CACHE_HOME = Join-Path $TempRoot 'xdg-cache'
     $env:XDG_DATA_HOME = Join-Path $TempRoot 'xdg-data'
+    $env:XDG_RUNTIME_DIR = Join-Path $TempRoot 'xdg-runtime'
+    $env:TMPDIR = Join-Path $TempRoot 'tmp'
+    $env:TMP = $env:TMPDIR
+    $env:TEMP = $env:TMPDIR
+    $env:USERPROFILE = $env:HOME
+    $env:APPDATA = $env:XDG_CONFIG_HOME
+    $env:LOCALAPPDATA = $env:XDG_DATA_HOME
     $env:CI = 'true'
     $env:NO_COLOR = '1'
     $env:FORCE_COLOR = '0'
     $env:TERM = 'dumb'
+    $env:GCM_CREDENTIAL_STORE = 'none'
+    $env:GCM_INTERACTIVE = 'never'
+    $env:GIT_TERMINAL_PROMPT = '0'
 
     foreach ($directory in @(
         $env:HOME,
@@ -682,7 +750,9 @@ try {
         $env:NUGET_HTTP_CACHE_PATH,
         $env:XDG_CONFIG_HOME,
         $env:XDG_CACHE_HOME,
-        $env:XDG_DATA_HOME
+        $env:XDG_DATA_HOME,
+        $env:XDG_RUNTIME_DIR,
+        $env:TMPDIR
     )) {
         New-Item -ItemType Directory -Path $directory -Force | Out-Null
     }
@@ -746,10 +816,14 @@ try {
         }
 
         $result.toolSettingsPath = ([System.IO.Path]::GetRelativePath($packageDir, $toolSettingsFile)) -replace '\\', '/'
-        [xml]$toolSettings = Get-Content $toolSettingsFile
-        $result.command = [string]$toolSettings.DotNetCliTool.Commands.Command.Name
-        $result.entryPoint = [string]$toolSettings.DotNetCliTool.Commands.Command.EntryPoint
-        $result.runner = [string]$toolSettings.DotNetCliTool.Commands.Command.Runner
+        $toolDescriptor = Get-DotnetToolCommandDescriptor -ToolSettingsFile $toolSettingsFile
+        $result.command = [string]$toolDescriptor.command
+        $result.entryPoint = [string]$toolDescriptor.entryPoint
+        $result.runner = [string]$toolDescriptor.runner
+
+        if ([string]::IsNullOrWhiteSpace($result.command)) {
+            throw "DotnetToolSettings.xml did not contain a usable command name for package '$PackageId' version '$Version'."
+        }
 
         $installDirectory = Join-Path $TempRoot 'tool'
         $installResult = Invoke-ProcessCapture -FilePath 'dotnet' -ArgumentList @('tool', 'install', $PackageId, '--version', $Version, '--tool-path', $installDirectory) -WorkingDirectory $TempRoot -TimeoutSeconds $InstallTimeoutSeconds

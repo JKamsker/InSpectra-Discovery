@@ -55,6 +55,135 @@ function Get-OptionalPropertyValue {
     return $null
 }
 
+function Convert-ToDateTimeOffsetOrNull {
+    param([AllowNull()][object]$Value)
+
+    if ($null -eq $Value -or [string]::IsNullOrWhiteSpace([string]$Value)) {
+        return $null
+    }
+
+    return [DateTimeOffset]$Value
+}
+
+function Get-PackageIndexPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LowerId
+    )
+
+    return Join-Path $RepositoryRoot "index/packages/$LowerId/index.json"
+}
+
+function Get-PackageIndexRecord {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$LowerId,
+
+        [Parameter(Mandatory = $true)]
+        [hashtable]$Cache
+    )
+
+    if ($Cache.ContainsKey($LowerId)) {
+        return $Cache[$LowerId]
+    }
+
+    $path = Get-PackageIndexPath -LowerId $LowerId
+    $value = if (Test-Path $path) { Read-JsonFile -Path $path } else { $null }
+    $Cache[$LowerId] = $value
+    return $value
+}
+
+function Get-IndexedVersionRecord {
+    param(
+        [AllowNull()][object]$PackageIndex,
+        [Parameter(Mandatory = $true)]
+        [string]$Version
+    )
+
+    if ($null -eq $PackageIndex) {
+        return $null
+    }
+
+    foreach ($record in @($PackageIndex.versions)) {
+        if ([string](Get-OptionalPropertyValue -InputObject $record -Name 'version') -eq $Version) {
+            return $record
+        }
+    }
+
+    return $null
+}
+
+function Get-LatestIndexedVersionRecord {
+    param(
+        [AllowNull()][object]$PackageIndex,
+        [AllowNull()][string]$LatestVersion
+    )
+
+    if ($null -eq $PackageIndex) {
+        return $null
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($LatestVersion)) {
+        $matchingLatest = Get-IndexedVersionRecord -PackageIndex $PackageIndex -Version $LatestVersion
+        if ($matchingLatest) {
+            return $matchingLatest
+        }
+    }
+
+    return @(
+        @($PackageIndex.versions) |
+            Sort-Object `
+                @{ Expression = {
+                    $publishedAt = Convert-ToDateTimeOffsetOrNull (Get-OptionalPropertyValue -InputObject $_ -Name 'publishedAt')
+                    if ($null -ne $publishedAt) { $publishedAt } else { [DateTimeOffset]::MinValue }
+                }; Descending = $true }, `
+                @{ Expression = {
+                    $evaluatedAt = Convert-ToDateTimeOffsetOrNull (Get-OptionalPropertyValue -InputObject $_ -Name 'evaluatedAt')
+                    if ($null -ne $evaluatedAt) { $evaluatedAt } else { [DateTimeOffset]::MinValue }
+                }; Descending = $true } |
+            Select-Object -First 1
+    )[0]
+}
+
+function Test-HasValidCurrentIndex {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Entry,
+
+        [AllowNull()][object]$IndexedSummary,
+
+        [AllowNull()][object]$PackageIndex
+    )
+
+    $knownVersion = [string]$Entry.latestVersion
+    if ($IndexedSummary -and ([string]$IndexedSummary.latestVersion -eq $knownVersion)) {
+        return $true
+    }
+
+    if ($null -eq $PackageIndex) {
+        return $false
+    }
+
+    if (Get-IndexedVersionRecord -PackageIndex $PackageIndex -Version $knownVersion) {
+        return $true
+    }
+
+    $knownPublishedAt = Convert-ToDateTimeOffsetOrNull (Get-OptionalPropertyValue -InputObject $Entry -Name 'publishedAtUtc')
+    if ($null -eq $knownPublishedAt) {
+        return $false
+    }
+
+    $latestIndexedRecord = Get-LatestIndexedVersionRecord -PackageIndex $PackageIndex -LatestVersion ([string](Get-OptionalPropertyValue -InputObject $IndexedSummary -Name 'latestVersion'))
+    $indexedPublishedAt = if ($latestIndexedRecord) {
+        Convert-ToDateTimeOffsetOrNull (Get-OptionalPropertyValue -InputObject $latestIndexedRecord -Name 'publishedAt')
+    }
+    else {
+        $null
+    }
+
+    return $null -ne $indexedPublishedAt -and $indexedPublishedAt -ge $knownPublishedAt
+}
+
 $base = Read-JsonFile -Path (Join-Path $RepositoryRoot 'artifacts/index/dotnet-tools.spectre-console-cli.json')
 $delta = Read-JsonFile -Path (Join-Path $RepositoryRoot 'state/discovery/dotnet-tools.spectre-console-cli.delta.json')
 $all = Read-JsonFile -Path (Join-Path $RepositoryRoot 'index/all.json')
@@ -137,12 +266,14 @@ foreach ($package in @($all.packages)) {
 $items = New-Object System.Collections.Generic.List[object]
 $noIndexCount = 0
 $outdatedIndexCount = 0
+$packageIndexCache = @{}
 
 foreach ($entry in ($knownById.Values | Where-Object { $_ -and $_.packageId -and $_.latestVersion } | Sort-Object @{ Expression = { if ($_.totalDownloads) { [long]$_.totalDownloads } else { -1L } }; Descending = $true }, packageId)) {
     $lowerId = $entry.packageId.ToLowerInvariant()
     $indexed = if ($indexById.ContainsKey($lowerId)) { $indexById[$lowerId] } else { $null }
+    $packageIndex = Get-PackageIndexRecord -LowerId $lowerId -Cache $packageIndexCache
 
-    if ($indexed -and ([string]$indexed.latestVersion -eq [string]$entry.latestVersion)) {
+    if (Test-HasValidCurrentIndex -Entry $entry -IndexedSummary $indexed -PackageIndex $packageIndex) {
         continue
     }
 

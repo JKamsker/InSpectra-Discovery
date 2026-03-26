@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 internal sealed record NuGetServiceIndex(
@@ -86,7 +87,7 @@ internal sealed record CatalogLeaf(
     [property: JsonPropertyName("@id")] string Id,
     [property: JsonPropertyName("packageEntries")] IReadOnlyList<CatalogPackageEntry>? PackageEntries,
     [property: JsonPropertyName("dependencyGroups")] IReadOnlyList<CatalogDependencyGroup>? DependencyGroups,
-    [property: JsonPropertyName("packageTypes")] IReadOnlyList<CatalogPackageType>? PackageTypes);
+    [property: JsonPropertyName("packageTypes")] JsonElement? PackageTypes);
 
 internal sealed record CatalogPackageEntry(
     [property: JsonPropertyName("fullName")] string FullName,

@@ -41,7 +41,7 @@ internal sealed class SpectreConsoleCatalogInspector
         => mode switch
         {
             SpectreConsoleFilterMode.AnySpectreConsole => detection.HasSpectreConsole || detection.HasSpectreConsoleCli,
-            SpectreConsoleFilterMode.SpectreConsoleCliOnly => detection.HasSpectreConsoleCli,
+            SpectreConsoleFilterMode.SpectreConsoleCliOnly => HasConfirmedCliEvidence(detection),
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
         };
 
@@ -75,6 +75,17 @@ internal sealed class SpectreConsoleCatalogInspector
             SpectreConsoleFilterMode.SpectreConsoleCliOnly => detection.HasSpectreConsoleCli,
             _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
         };
+
+    private static bool HasConfirmedCliEvidence(SpectreConsoleDetection detection)
+    {
+        if (!detection.HasSpectreConsoleCli)
+        {
+            return false;
+        }
+
+        return detection.MatchedDependencyIds.Any(id => string.Equals(id, "Spectre.Console.Cli", StringComparison.OrdinalIgnoreCase))
+            || detection.PackageInspection.HasToolAssemblyReferencingSpectreConsoleCli;
+    }
 
     private static SpectreConsoleDetection Detect(CatalogLeaf catalogLeaf)
     {

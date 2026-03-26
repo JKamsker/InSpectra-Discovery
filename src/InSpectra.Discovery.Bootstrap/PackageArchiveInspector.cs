@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Text.Json;
+using System.Xml.Linq;
 
 internal sealed class PackageArchiveInspector
 {
@@ -42,6 +43,12 @@ internal sealed class PackageArchiveInspector
         var spectreConsoleCliDependencyVersions = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
         var spectreConsoleAssemblies = new List<SpectreAssemblyVersionInfo>();
         var spectreConsoleCliAssemblies = new List<SpectreAssemblyVersionInfo>();
+        var toolSettingsPaths = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var toolCommandNames = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var toolEntryPointPaths = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var toolDirectories = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var toolAssembliesReferencingSpectreConsole = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        var toolAssembliesReferencingSpectreConsoleCli = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var entry in archive.Entries)
         {
@@ -49,6 +56,31 @@ internal sealed class PackageArchiveInspector
             {
                 depsFilePaths.Add(entry.FullName);
                 ReadDependencyVersions(entry, spectreConsoleDependencyVersions, spectreConsoleCliDependencyVersions);
+                continue;
+            }
+
+            if (string.Equals(entry.Name, "DotnetToolSettings.xml", StringComparison.OrdinalIgnoreCase))
+            {
+                toolSettingsPaths.Add(entry.FullName);
+                var toolDirectory = GetArchiveDirectory(entry.FullName);
+                if (!string.IsNullOrWhiteSpace(toolDirectory))
+                {
+                    toolDirectories.Add(toolDirectory);
+                }
+
+                foreach (var command in ReadToolCommands(entry))
+                {
+                    if (!string.IsNullOrWhiteSpace(command.CommandName))
+                    {
+                        toolCommandNames.Add(command.CommandName);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(command.EntryPointPath))
+                    {
+                        toolEntryPointPaths.Add(command.EntryPointPath);
+                    }
+                }
+
                 continue;
             }
 
@@ -64,6 +96,28 @@ internal sealed class PackageArchiveInspector
             }
         }
 
+        if (toolDirectories.Count > 0)
+        {
+            foreach (var entry in archive.Entries)
+            {
+                if (!IsToolManagedAssembly(entry, toolDirectories))
+                {
+                    continue;
+                }
+
+                var references = ReadAssemblyReferences(entry);
+                if (references.HasSpectreConsole)
+                {
+                    toolAssembliesReferencingSpectreConsole.Add(entry.FullName);
+                }
+
+                if (references.HasSpectreConsoleCli)
+                {
+                    toolAssembliesReferencingSpectreConsoleCli.Add(entry.FullName);
+                }
+            }
+        }
+
         return new SpectrePackageInspection(
             DepsFilePaths: depsFilePaths.ToArray(),
             SpectreConsoleDependencyVersions: spectreConsoleDependencyVersions.ToArray(),
@@ -73,7 +127,12 @@ internal sealed class PackageArchiveInspector
                 .ToArray(),
             SpectreConsoleCliAssemblies: spectreConsoleCliAssemblies
                 .OrderBy(assembly => assembly.Path, StringComparer.OrdinalIgnoreCase)
-                .ToArray());
+                .ToArray(),
+            ToolSettingsPaths: toolSettingsPaths.ToArray(),
+            ToolCommandNames: toolCommandNames.ToArray(),
+            ToolEntryPointPaths: toolEntryPointPaths.ToArray(),
+            ToolAssembliesReferencingSpectreConsole: toolAssembliesReferencingSpectreConsole.ToArray(),
+            ToolAssembliesReferencingSpectreConsoleCli: toolAssembliesReferencingSpectreConsoleCli.ToArray());
     }
 
     private static void ReadDependencyVersions(
@@ -148,6 +207,81 @@ internal sealed class PackageArchiveInspector
             InformationalVersion: informationalVersion);
     }
 
+    private static IReadOnlyList<ToolCommandDescriptor> ReadToolCommands(ZipArchiveEntry entry)
+    {
+        using var stream = entry.Open();
+        var document = XDocument.Load(stream);
+        var toolDirectory = GetArchiveDirectory(entry.FullName);
+        var fallbackCommandName = GetFirstDescendantValue(document, "ToolCommandName", "CommandName");
+        var fallbackEntryPoint = GetFirstDescendantValue(document, "EntryPoint");
+
+        var commands = document
+            .Descendants()
+            .Where(element => string.Equals(element.Name.LocalName, "Command", StringComparison.OrdinalIgnoreCase))
+            .Select(element => new ToolCommandDescriptor(
+                CommandName: GetAttributeValue(element, "Name") ?? fallbackCommandName,
+                EntryPointPath: NormalizeArchivePath(toolDirectory, GetAttributeValue(element, "EntryPoint") ?? fallbackEntryPoint)))
+            .Where(command => !string.IsNullOrWhiteSpace(command.CommandName) || !string.IsNullOrWhiteSpace(command.EntryPointPath))
+            .ToArray();
+
+        if (commands.Length > 0)
+        {
+            return commands;
+        }
+
+        if (string.IsNullOrWhiteSpace(fallbackCommandName) && string.IsNullOrWhiteSpace(fallbackEntryPoint))
+        {
+            return [];
+        }
+
+        return
+        [
+            new ToolCommandDescriptor(
+                CommandName: fallbackCommandName,
+                EntryPointPath: NormalizeArchivePath(toolDirectory, fallbackEntryPoint))
+        ];
+    }
+
+    private static (bool HasSpectreConsole, bool HasSpectreConsoleCli) ReadAssemblyReferences(ZipArchiveEntry entry)
+    {
+        try
+        {
+            using var sourceStream = entry.Open();
+            using var memoryStream = new MemoryStream();
+            sourceStream.CopyTo(memoryStream);
+            memoryStream.Position = 0;
+
+            using var peReader = new PEReader(memoryStream, PEStreamOptions.LeaveOpen);
+            if (!peReader.HasMetadata)
+            {
+                return (false, false);
+            }
+
+            var reader = peReader.GetMetadataReader();
+            var hasSpectreConsole = false;
+            var hasSpectreConsoleCli = false;
+
+            foreach (var handle in reader.AssemblyReferences)
+            {
+                var name = reader.GetString(reader.GetAssemblyReference(handle).Name);
+                if (string.Equals(name, "Spectre.Console", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasSpectreConsole = true;
+                }
+                else if (string.Equals(name, "Spectre.Console.Cli", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasSpectreConsoleCli = true;
+                }
+            }
+
+            return (hasSpectreConsole, hasSpectreConsoleCli);
+        }
+        catch (BadImageFormatException)
+        {
+            return (false, false);
+        }
+    }
+
     private static bool TryParsePackageVersion(string key, string packageId, out string version)
     {
         var prefix = packageId + "/";
@@ -205,4 +339,82 @@ internal sealed class PackageArchiveInspector
         var typeName = reader.GetString(nameHandle);
         return string.IsNullOrEmpty(typeNamespace) ? typeName : $"{typeNamespace}.{typeName}";
     }
+
+    private static string GetArchiveDirectory(string path)
+    {
+        var normalized = path.Replace('\\', '/');
+        var index = normalized.LastIndexOf('/');
+        return index >= 0 ? normalized[..index] : string.Empty;
+    }
+
+    private static string? NormalizeArchivePath(string baseDirectory, string? relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return null;
+        }
+
+        var segments = new List<string>();
+        if (!string.IsNullOrWhiteSpace(baseDirectory))
+        {
+            segments.AddRange(baseDirectory.Split('/', StringSplitOptions.RemoveEmptyEntries));
+        }
+
+        foreach (var segment in relativePath.Replace('\\', '/').Split('/', StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (segment == ".")
+            {
+                continue;
+            }
+
+            if (segment == "..")
+            {
+                if (segments.Count > 0)
+                {
+                    segments.RemoveAt(segments.Count - 1);
+                }
+
+                continue;
+            }
+
+            segments.Add(segment);
+        }
+
+        return string.Join("/", segments);
+    }
+
+    private static string? GetAttributeValue(XElement element, string name)
+        => element.Attributes().FirstOrDefault(attribute => string.Equals(attribute.Name.LocalName, name, StringComparison.OrdinalIgnoreCase))?.Value;
+
+    private static string? GetFirstDescendantValue(XContainer container, params string[] localNames)
+    {
+        var match = container
+            .Descendants()
+            .FirstOrDefault(element => localNames.Any(name => string.Equals(element.Name.LocalName, name, StringComparison.OrdinalIgnoreCase)));
+
+        return match is null ? null : match.Value.Trim();
+    }
+
+    private static bool IsToolManagedAssembly(ZipArchiveEntry entry, IReadOnlySet<string> toolDirectories)
+    {
+        if (!entry.FullName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
+            && !entry.FullName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (string.Equals(entry.Name, "Spectre.Console.dll", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(entry.Name, "Spectre.Console.Cli.dll", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return toolDirectories.Any(directory =>
+            entry.FullName.StartsWith(directory + "/", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(entry.FullName, directory, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private sealed record ToolCommandDescriptor(
+        string? CommandName,
+        string? EntryPointPath);
 }

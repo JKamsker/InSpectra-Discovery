@@ -73,6 +73,246 @@ function Get-NuGetRegistrationLeafVersion {
     return $normalized
 }
 
+function Get-FirstXmlNodeValue {
+    param(
+        [Parameter(Mandatory = $true)]
+        [xml]$Document,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$Xpaths
+    )
+
+    foreach ($xpath in $Xpaths) {
+        $node = $Document.SelectSingleNode($xpath)
+        if ($null -eq $node) {
+            continue
+        }
+
+        $value = if ($node -is [System.Xml.XmlAttribute]) { $node.Value } else { $node.InnerText }
+        if (-not [string]::IsNullOrWhiteSpace($value)) {
+            return $value.Trim()
+        }
+    }
+
+    return $null
+}
+
+function Get-DotnetToolCommandDescriptor {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ToolSettingsFile
+    )
+
+    [xml]$toolSettings = Get-Content -Path $ToolSettingsFile -Raw
+
+    $command = Get-FirstXmlNodeValue -Document $toolSettings -Xpaths @(
+        "//*[local-name()='Command'][1]/@Name",
+        "//*[local-name()='ToolCommandName'][1]",
+        "//*[local-name()='CommandName'][1]"
+    )
+    $entryPoint = Get-FirstXmlNodeValue -Document $toolSettings -Xpaths @(
+        "//*[local-name()='Command'][1]/@EntryPoint",
+        "//*[local-name()='EntryPoint'][1]"
+    )
+    $runner = Get-FirstXmlNodeValue -Document $toolSettings -Xpaths @(
+        "//*[local-name()='Command'][1]/@Runner",
+        "//*[local-name()='Runner'][1]"
+    )
+
+    return [ordered]@{
+        command = $command
+        entryPoint = $entryPoint
+        runner = $runner
+    }
+}
+
+function Normalize-ConsoleText {
+    param([AllowNull()][string]$Value)
+
+    if ([string]::IsNullOrEmpty($Value)) {
+        return $null
+    }
+
+    $normalized = $Value -replace '^\uFEFF', ''
+    $escape = [regex]::Escape([string][char]27)
+    $normalized = $normalized -replace ($escape + '\[[0-?]*[ -/]*[@-~]'), ''
+    $normalized = $normalized -replace ($escape + '[@-_]'), ''
+    $normalized = $normalized -replace "`0", ''
+
+    return $normalized.Trim()
+}
+
+function Get-BalancedJsonSegment {
+    param([AllowNull()][string]$Text)
+
+    if ([string]::IsNullOrWhiteSpace($Text)) {
+        return $null
+    }
+
+    $start = $null
+    for ($i = 0; $i -lt $Text.Length; $i++) {
+        $char = $Text[$i]
+        if ($char -eq '{' -or $char -eq '[') {
+            $start = $i
+            break
+        }
+    }
+
+    if ($null -eq $start) {
+        return $null
+    }
+
+    $stack = [System.Collections.Generic.Stack[char]]::new()
+    $inString = $false
+    $escapeNext = $false
+
+    for ($i = $start; $i -lt $Text.Length; $i++) {
+        $char = $Text[$i]
+
+        if ($escapeNext) {
+            $escapeNext = $false
+            continue
+        }
+
+        if ($inString) {
+            if ($char -eq '\') {
+                $escapeNext = $true
+            }
+            elseif ($char -eq '"') {
+                $inString = $false
+            }
+
+            continue
+        }
+
+        if ($char -eq '"') {
+            $inString = $true
+            continue
+        }
+
+        if ($char -eq '{') {
+            $stack.Push('}')
+            continue
+        }
+
+        if ($char -eq '[') {
+            $stack.Push(']')
+            continue
+        }
+
+        if (($char -eq '}' -or $char -eq ']') -and $stack.Count -gt 0 -and $stack.Peek() -eq $char) {
+            $null = $stack.Pop()
+            if ($stack.Count -eq 0) {
+                return $Text.Substring($start, ($i - $start) + 1).Trim()
+            }
+        }
+    }
+
+    return $null
+}
+
+function Try-ParseJsonPayload {
+    param([AllowNull()][string]$Text)
+
+    $normalized = Normalize-ConsoleText $Text
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return [ordered]@{
+            success = $false
+            document = $null
+            artifactText = $null
+            error = 'Output was empty.'
+        }
+    }
+
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    $candidates.Add($normalized)
+
+    $firstBrace = $normalized.IndexOf('{')
+    $firstBracket = $normalized.IndexOf('[')
+    $startIndex = @($firstBrace, $firstBracket) | Where-Object { $_ -ge 0 } | Sort-Object | Select-Object -First 1
+    if ($null -ne $startIndex -and $startIndex -gt 0) {
+        $candidate = $normalized.Substring($startIndex).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+            $candidates.Add($candidate)
+        }
+    }
+
+    $balancedCandidate = Get-BalancedJsonSegment -Text $normalized
+    if (-not [string]::IsNullOrWhiteSpace($balancedCandidate) -and -not $candidates.Contains($balancedCandidate)) {
+        $candidates.Add($balancedCandidate)
+    }
+
+    $lastError = $null
+    foreach ($candidate in $candidates) {
+        try {
+            return [ordered]@{
+                success = $true
+                document = $candidate | ConvertFrom-Json
+                artifactText = $candidate
+                error = $null
+            }
+        }
+        catch {
+            $lastError = $_.Exception.Message
+        }
+    }
+
+    return [ordered]@{
+        success = $false
+        document = $null
+        artifactText = $null
+        error = if ($lastError) { $lastError } else { 'JSON parsing failed.' }
+    }
+}
+
+function Try-ParseXmlPayload {
+    param([AllowNull()][string]$Text)
+
+    $normalized = Normalize-ConsoleText $Text
+    if ([string]::IsNullOrWhiteSpace($normalized)) {
+        return [ordered]@{
+            success = $false
+            document = $null
+            artifactText = $null
+            error = 'Output was empty.'
+        }
+    }
+
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    $candidates.Add($normalized)
+
+    $firstAngle = $normalized.IndexOf('<')
+    if ($firstAngle -gt 0) {
+        $candidate = $normalized.Substring($firstAngle).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($candidate)) {
+            $candidates.Add($candidate)
+        }
+    }
+
+    $lastError = $null
+    foreach ($candidate in $candidates) {
+        try {
+            [xml]$document = $candidate
+            return [ordered]@{
+                success = $true
+                document = $document
+                artifactText = $candidate
+                error = $null
+            }
+        }
+        catch {
+            $lastError = $_.Exception.Message
+        }
+    }
+
+    return [ordered]@{
+        success = $false
+        document = $null
+        artifactText = $null
+        error = if ($lastError) { $lastError } else { 'XML parsing failed.' }
+    }
+}
+
 function Invoke-ProcessCapture {
     param(
         [Parameter(Mandatory = $true)]
@@ -292,6 +532,20 @@ try {
     $env:XDG_CONFIG_HOME = Join-Path $TempRoot 'xdg-config'
     $env:XDG_CACHE_HOME = Join-Path $TempRoot 'xdg-cache'
     $env:XDG_DATA_HOME = Join-Path $TempRoot 'xdg-data'
+    $env:XDG_RUNTIME_DIR = Join-Path $TempRoot 'xdg-runtime'
+    $env:TMPDIR = Join-Path $TempRoot 'tmp'
+    $env:TMP = $env:TMPDIR
+    $env:TEMP = $env:TMPDIR
+    $env:USERPROFILE = $env:HOME
+    $env:APPDATA = $env:XDG_CONFIG_HOME
+    $env:LOCALAPPDATA = $env:XDG_DATA_HOME
+    $env:CI = 'true'
+    $env:NO_COLOR = '1'
+    $env:FORCE_COLOR = '0'
+    $env:TERM = 'dumb'
+    $env:GCM_CREDENTIAL_STORE = 'none'
+    $env:GCM_INTERACTIVE = 'never'
+    $env:GIT_TERMINAL_PROMPT = '0'
 
     foreach ($directory in @(
         $env:HOME,
@@ -300,7 +554,9 @@ try {
         $env:NUGET_HTTP_CACHE_PATH,
         $env:XDG_CONFIG_HOME,
         $env:XDG_CACHE_HOME,
-        $env:XDG_DATA_HOME
+        $env:XDG_DATA_HOME,
+        $env:XDG_RUNTIME_DIR,
+        $env:TMPDIR
     )) {
         New-Item -ItemType Directory -Path $directory -Force | Out-Null
     }
@@ -328,16 +584,20 @@ try {
 
     $packageRelativeToolSettingsPath = ([System.IO.Path]::GetRelativePath($packageDir, $toolSettingsFile)) -replace '\\', '/'
 
-    [xml]$toolSettings = Get-Content $toolSettingsFile
-    $commandName = [string]$toolSettings.DotNetCliTool.Commands.Command.Name
-    $entryPoint = [string]$toolSettings.DotNetCliTool.Commands.Command.EntryPoint
-    $runner = [string]$toolSettings.DotNetCliTool.Commands.Command.Runner
+    $toolDescriptor = Get-DotnetToolCommandDescriptor -ToolSettingsFile $toolSettingsFile
+    $commandName = [string]$toolDescriptor.command
+    $entryPoint = [string]$toolDescriptor.entryPoint
+    $runner = [string]$toolDescriptor.runner
+
+    if ([string]::IsNullOrWhiteSpace($commandName)) {
+        throw "DotnetToolSettings.xml did not contain a usable command name for package '$PackageId' version '$Version'."
+    }
 
     $installDirectory = Join-Path $TempRoot 'tool'
     $installResult = Invoke-ProcessCapture `
         -FilePath 'dotnet' `
         -ArgumentList @('tool', 'install', $PackageId, '--version', $Version, '--tool-path', $installDirectory) `
-        -WorkingDirectory $RepositoryRoot
+        -WorkingDirectory $TempRoot
 
     $commandPath = $null
     $openCliResult = $null
@@ -348,17 +608,20 @@ try {
 
     if ($installResult.exitCode -eq 0) {
         $commandPath = Resolve-CommandPath -ToolDirectory $installDirectory -CommandName $commandName
-        $openCliResult = Invoke-ProcessCapture -FilePath $commandPath -ArgumentList @('cli', 'opencli') -WorkingDirectory $RepositoryRoot
-        $xmlDocResult = Invoke-ProcessCapture -FilePath $commandPath -ArgumentList @('cli', 'xmldoc') -WorkingDirectory $RepositoryRoot
+        $openCliResult = Invoke-ProcessCapture -FilePath $commandPath -ArgumentList @('cli', 'opencli') -WorkingDirectory $TempRoot
+        $xmlDocResult = Invoke-ProcessCapture -FilePath $commandPath -ArgumentList @('cli', 'xmldoc') -WorkingDirectory $TempRoot
     }
 
-    if ($openCliResult -and $openCliResult.exitCode -eq 0) {
-        $openCliDocument = $openCliResult.stdout | ConvertFrom-Json
+    $openCliParse = if ($openCliResult) { Try-ParseJsonPayload -Text $openCliResult.stdout } else { $null }
+    $xmlDocParse = if ($xmlDocResult) { Try-ParseXmlPayload -Text $xmlDocResult.stdout } else { $null }
+
+    if ($openCliParse -and $openCliParse.success) {
+        $openCliDocument = $openCliParse.document
         $openCliSource = 'tool-output'
     }
 
-    if ($xmlDocResult -and $xmlDocResult.exitCode -eq 0) {
-        $validatedXmlDoc = [xml]$xmlDocResult.stdout
+    if ($xmlDocParse -and $xmlDocParse.success) {
+        $validatedXmlDoc = $xmlDocParse.document
     }
 
     if ($null -eq $openCliDocument -and $null -ne $validatedXmlDoc) {
@@ -406,7 +669,7 @@ try {
     }
 
     if ($xmlDocPath) {
-        Write-TextFile -Path $xmlDocPath -Content $xmlDocResult.stdout
+        Write-TextFile -Path $xmlDocPath -Content $xmlDocParse.artifactText
     }
 
     $EvaluationTimer.Stop()
