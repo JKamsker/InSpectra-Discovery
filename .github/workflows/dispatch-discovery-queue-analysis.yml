@@ -178,6 +178,36 @@ jobs:
             throw "Timed out waiting for workflow '$WorkflowFile' run '$DisplayTitle' on branch '$Branch'."
           }
 
+          function Get-CompletedWorkflowRunSummary {
+            param(
+              [Parameter(Mandatory = $true)]
+              [string]$Repository,
+
+              [Parameter(Mandatory = $true)]
+              [string]$RunId,
+
+              [int]$TimeoutSeconds = 120
+            )
+
+            $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
+            while ([DateTimeOffset]::UtcNow -lt $deadline) {
+              $summary = gh run view $RunId `
+                --repo $Repository `
+                --json conclusion,status,url | ConvertFrom-Json
+
+              if (
+                $summary.status -eq 'completed' -and
+                -not [string]::IsNullOrWhiteSpace([string]$summary.conclusion)
+              ) {
+                return $summary
+              }
+
+              Start-Sleep -Seconds 5
+            }
+
+            throw "Timed out waiting for run '$RunId' to report a final conclusion."
+          }
+
           $repository = '${{ github.repository }}'
           $workflowRef = '${{ github.ref_name }}'
           $targetBranch = '${{ matrix.targetBranch }}'
@@ -209,12 +239,13 @@ jobs:
 
           Write-Host "Watching analysis run $($analysisRun.databaseId): $($analysisRun.url)"
           gh run watch $analysisRun.databaseId --repo $repository --exit-status
+          $analysisWatchExitCode = $LASTEXITCODE
 
-          $analysisSummary = gh run view $analysisRun.databaseId `
-            --repo $repository `
-            --json conclusion,url | ConvertFrom-Json
+          $analysisSummary = Get-CompletedWorkflowRunSummary `
+            -Repository $repository `
+            -RunId $analysisRun.databaseId
 
-          if ($analysisSummary.conclusion -ne 'success') {
+          if ($analysisWatchExitCode -ne 0 -or $analysisSummary.conclusion -ne 'success') {
             throw "Analysis run '$($analysisRun.databaseId)' completed with conclusion '$($analysisSummary.conclusion)'."
           }
 
@@ -235,6 +266,15 @@ jobs:
 
           Write-Host "Watching promotion run $($promotionRun.databaseId): $($promotionRun.url)"
           gh run watch $promotionRun.databaseId --repo $repository --exit-status
+          $promotionWatchExitCode = $LASTEXITCODE
+
+          $promotionSummary = Get-CompletedWorkflowRunSummary `
+            -Repository $repository `
+            -RunId $promotionRun.databaseId
+
+          if ($promotionWatchExitCode -ne 0 -or $promotionSummary.conclusion -ne 'success') {
+            throw "Promotion run '$($promotionRun.databaseId)' completed with conclusion '$($promotionSummary.conclusion)'."
+          }
 
           $prBranch = "automation/untrusted-$batchId-$($analysisRun.databaseId)"
           $pullRequest = @(
