@@ -1,0 +1,2398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Model>
+  <!--SERVICE-->
+  <Command Name="service" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <Description>Service lifecycle management: start, stop, 
+status.</Description>
+    <!--START-->
+    <Command Name="start" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.ServiceStartCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>Start the PptMcp Service if not already 
+running.</Description>
+    </Command>
+    <!--STOP-->
+    <Command Name="stop" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.ServiceStopCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>Gracefully stop the PptMcp Service.</Description>
+    </Command>
+    <!--STATUS-->
+    <Command Name="status" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.ServiceStatusCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>Show service status (running, PID, sessions, 
+uptime).</Description>
+    </Command>
+  </Command>
+  <!--BATCH-->
+  <Command Name="batch" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.BatchCommand" 
+Settings="PptMcp.CLI.Commands.BatchCommand+Settings">
+    <Description>Execute multiple commands from a JSON file or stdin. Outputs 
+NDJSON (one result per line).</Description>
+    <Parameters>
+      <Option Short="i" Long="input" Value="FILE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>JSON file with command array. Use '-' for stdin (NDJSON, 
+one command per line). If omitted, reads from stdin.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Default session ID for all commands. Overridden by 
+per-command sessionId. Auto-captured from session.open/create if not 
+set.</Description>
+      </Option>
+      <Option Short="" Long="stop-on-error" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Stop execution on first error (default: continue all 
+commands).</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--DIAG-->
+  <Command Name="diag" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <Description>Diagnostic commands: ping, echo, validate-params.</Description>
+    <!--PING-->
+    <Command Name="ping" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.DiagPingCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>Ping the service to check connectivity.</Description>
+    </Command>
+    <!--ECHO-->
+    <Command Name="echo" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.DiagEchoCommand" 
+Settings="PptMcp.CLI.Commands.DiagEchoCommand+Settings">
+      <Description>Echo back a message (tests parameter passing).</Description>
+      <Parameters>
+        <Option Short="" Long="message" Value="MESSAGE" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Message to echo back</Description>
+        </Option>
+        <Option Short="" Long="tag" Value="TAG" Required="false" Kind="scalar" 
+ClrType="System.String">
+          <Description>Optional tag to include</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--VALIDATE-PARAMS-->
+    <Command Name="validate-params" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.DiagValidateParamsCommand" 
+Settings="PptMcp.CLI.Commands.DiagValidateParamsCommand+Settings">
+      <Description>Validate parameter types and defaults.</Description>
+      <Parameters>
+        <Option Short="" Long="count" Value="COUNT" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+          <Description>Count parameter</Description>
+        </Option>
+        <Option Short="" Long="label" Value="LABEL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Optional label</Description>
+        </Option>
+        <Option Short="" Long="name" Value="NAME" Required="false" Kind="scalar"
+ClrType="System.String">
+          <Description>Name parameter (required)</Description>
+        </Option>
+        <Option Short="" Long="verbose" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+          <Description>Verbose flag</Description>
+        </Option>
+      </Parameters>
+    </Command>
+  </Command>
+  <!--SESSION-->
+  <Command Name="session" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <Description>Session management. WORKFLOW: open -&gt; use sessionId -&gt; 
+close (--save to persist).</Description>
+    <!--CREATE-->
+    <Command Name="create" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.SessionCreateCommand" 
+Settings="PptMcp.CLI.Commands.SessionCreateCommand+Settings">
+      <Description>Create a new PowerPoint file, open it, and create a 
+session.</Description>
+      <Parameters>
+        <Argument Name="FILE" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>Path to the new PowerPoint file to create</Description>
+        </Argument>
+        <Option Short="" Long="timeout" Value="SECONDS" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+          <Description>Session timeout in seconds</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--OPEN-->
+    <Command Name="open" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.SessionOpenCommand" 
+Settings="PptMcp.CLI.Commands.SessionOpenCommand+Settings">
+      <Description>Open a PowerPoint file and create a session.</Description>
+      <Parameters>
+        <Argument Name="FILE" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>Path to the PowerPoint file to open</Description>
+        </Argument>
+        <Option Short="" Long="timeout" Value="SECONDS" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+          <Description>Session timeout in seconds</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--CLOSE-->
+    <Command Name="close" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.SessionCloseCommand" 
+Settings="PptMcp.CLI.Commands.SessionCloseCommand+Settings">
+      <Description>Close a session. Use --save to persist changes.</Description>
+      <Parameters>
+        <Option Short="" Long="save" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+          <Description>Save changes before closing</Description>
+        </Option>
+        <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Session ID to close</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--LIST-->
+    <Command Name="list" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.SessionListCommand" 
+Settings="Spectre.Console.Cli.EmptyCommandSettings">
+      <Description>List active sessions.</Description>
+    </Command>
+    <!--SAVE-->
+    <Command Name="save" IsBranch="false" 
+ClrType="PptMcp.CLI.Commands.SessionSaveCommand" 
+Settings="PptMcp.CLI.Commands.SessionSaveCommand+Settings">
+      <Description>Save a session without closing it.</Description>
+      <Parameters>
+        <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Session ID to save</Description>
+        </Option>
+      </Parameters>
+    </Command>
+  </Command>
+  <!--ACCESSIBILITY-->
+  <Command Name="accessibility" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.AccessibilityCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Accessibility+CliSettings">
+    <Description>Accessibility audit: check alt text, title placeholders, 
+reading order.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-names" Value="SHAPENAMES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Comma-separated shape names in desired reading order 
+(required for: set-reading-order)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required for: get-reading-order, 
+set-reading-order)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--ANIMATION-->
+  <Command Name="animation" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.AnimationCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Animation+CliSettings">
+    <Description>Animation effect operations: list, add, remove, reorder effects
+on slides.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="delay" Value="DELAY" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Delay before start in seconds (required for: 
+set-timing)</Description>
+      </Option>
+      <Option Short="" Long="duration" Value="DURATION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Duration in seconds (required for: 
+set-timing)</Description>
+      </Option>
+      <Option Short="" Long="effect-index" Value="EFFECTINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based index of the effect in the animation sequence 
+(required for: remove, set-timing, reorder)</Description>
+      </Option>
+      <Option Short="" Long="effect-type" Value="EFFECTTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>MsoAnimEffect integer (e.g., 1=Appear, 2=Fly, 10=Fade, 
+16=Wipe) (required for: add)</Description>
+      </Option>
+      <Option Short="" Long="new-index" Value="NEWINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based target position in the sequence (required for: 
+reorder)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the target shape (required for: add)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="trigger-type" Value="TRIGGERTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=OnClick (default), 2=WithPrevious, 3=AfterPrevious 
+(required for: add, set-timing)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--BACKGROUND-->
+  <Command Name="background" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.BackgroundCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Background+CliSettings">
+    <Description>Slide background: get, set solid color, set image, reset to 
+master.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="color-hex" Value="COLORHEX" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Hex color string (#RRGGBB) (required for: 
+set-color)</Description>
+      </Option>
+      <Option Short="" Long="color1" Value="COLOR1" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>First gradient color as hex (#RRGGBB) (required for: 
+set-gradient)</Description>
+      </Option>
+      <Option Short="" Long="color2" Value="COLOR2" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Second gradient color as hex (#RRGGBB) (required for: 
+set-gradient)</Description>
+      </Option>
+      <Option Short="" Long="gradient-style" Value="GRADIENTSTYLE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Horizontal, 2=Vertical, 3=DiagonalUp, 4=DiagonalDown, 
+5=FromCorner, 6=FromCenter (required for: set-gradient)</Description>
+      </Option>
+      <Option Short="" Long="image-path" Value="IMAGEPATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to the image file (required for: 
+set-image)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--CHART-->
+  <Command Name="chart" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.ChartCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Chart+CliSettings">
+    <Description>Embedded chart operations: create, get info, set title, set 
+type, delete.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="axis-type" Value="AXISTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Axis type: 1=Category(X), 2=Value(Y) (required for: 
+set-axis-title)</Description>
+      </Option>
+      <Option Short="" Long="chart-type" Value="CHARTTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>XlChartType integer (e.g., 4=xlLine, 5=xlPie, 
+51=xlColumnClustered, -4169=xl3DColumn) (required for: create, 
+set-type)</Description>
+      </Option>
+      <Option Short="" Long="height" Value="HEIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Height in points (required for: create)</Description>
+      </Option>
+      <Option Short="" Long="left" Value="LEFT" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from left in points (required for: 
+create)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="position" Value="POSITION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Legend position: -4107=Bottom, -4131=Left, -4152=Right, 
+-4160=Top, -4161=TopRight (required for: set-legend)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the chart shape (required for: get-info, set-title,
+set-type, delete, set-data, set-legend, read-data, set-axis-title, 
+toggle-data-table)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="title" Value="TITLE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Title text for the axis (required for: set-title, 
+set-axis-title)</Description>
+      </Option>
+      <Option Short="" Long="top" Value="TOP" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from top in points (required for: 
+create)</Description>
+      </Option>
+      <Option Short="" Long="values" Value="VALUES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>2D array of values (rows × columns) (required for: 
+set-data) (JSON format)</Description>
+      </Option>
+      <Option Short="" Long="visible" Value="VISIBLE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether the legend is visible (required for: set-legend, 
+toggle-data-table)</Description>
+      </Option>
+      <Option Short="" Long="width" Value="WIDTH" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Width in points (required for: create)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--COMMENT-->
+  <Command Name="comment" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.CommentCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Comment+CliSettings">
+    <Description>Slide comments: list, add, delete.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="author" Value="AUTHOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Author name (required for: add)</Description>
+      </Option>
+      <Option Short="" Long="comment-index" Value="COMMENTINDEX" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based comment index (required for: delete)</Description>
+      </Option>
+      <Option Short="" Long="left" Value="LEFT" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Horizontal position in points (0 = top-left) (required for:
+add)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index, or 0 for all slides 
+(required)</Description>
+      </Option>
+      <Option Short="" Long="text" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Comment text (required for: add)</Description>
+      </Option>
+      <Option Short="" Long="top" Value="TOP" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Vertical position in points (0 = top-left) (required for: 
+add)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--CUSTOMSHOW-->
+  <Command Name="customshow" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.CustomshowCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Customshow+CliSettings">
+    <Description>Custom slide show management: list, create, delete, 
+run.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="show-name" Value="SHOWNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the custom show (required for: create, 
+delete)</Description>
+      </Option>
+      <Option Short="" Long="slide-indices" Value="SLIDEINDICES" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Comma-separated 1-based slide indices (e.g. "1,3,5") 
+(required for: create)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--DESIGN-->
+  <Command Name="design" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.DesignCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Design+CliSettings">
+    <Description>Design operations: themes, colors, fonts, and design knowledge 
+catalog. THEME OPERATIONS (require open presentation): - list, apply-theme, 
+get-colors, list-color-schemes, get-fonts DESIGN KNOWLEDGE CATALOG (query on 
+demand): - list-archetypes / get-archetype: primary unified archetype surface 
+with curated rules plus learned subtype/example coverage when local reference 
+data is available - list-palettes / get-palette: 8 color palettes with hex 
+values - list-style-profiles / get-style-profile: consulting/sales/startup 
+configurations - list-layout-grids / get-layout-grid: exact x/y/w/h positioning 
+coordinates - list-density-profiles / get-density-profile: D1-D5 content density
+rules - get-context-model: meeting type → audience → density mapping - 
+get-deck-sequence: canonical slide sequences (decision, pitch, review) - 
+get-slide-patterns: advanced consulting layout patterns - get-icon-shapes: 
+native shape icon catalog</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="archetype-id" Value="ARCHETYPEID" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Archetype id: big-number, kpi-card-dashboard, 
+operational-kpi, column-bar-chart, chart-insight-callout, framework, 
+simple-table, waterfall-chart, comparison, timeline-roadmap, process-diagram, 
+executive-summary, recommendations, quote, map, appendix, annotated-diagram, 
+chart-and-commentary, org-chart, title-slide (required for: 
+get-archetype)</Description>
+      </Option>
+      <Option Short="" Long="density-id" Value="DENSITYID" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Density id: D1, D2, D3, D4, D5 (required for: 
+get-density-profile)</Description>
+      </Option>
+      <Option Short="" Long="design-index" Value="DESIGNINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based design index (0 = first design) (required for: 
+get-colors, get-fonts)</Description>
+      </Option>
+      <Option Short="" Long="grid-id" Value="GRIDID" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Grid id: single-column, two-column-equal, two-column-60-40,
+three-column, four-column, grid-2x2, grid-3x2, big-number, kpi-3-cards, 
+kpi-4-cards, kpi-5-cards, chart-full, chart-callout, timeline, process-3-step, 
+section-divider, title-dark-hero (required for: get-layout-grid)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="palette-id" Value="PALETTEID" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Palette id: corporate-blue, slate-professional, 
+modern-tech, confident-bold, warm-coral, academic-neutral, nature-calm, 
+electric-minimal (required for: get-palette)</Description>
+      </Option>
+      <Option Short="" Long="profile-id" Value="PROFILEID" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Profile id: consulting, corporate, sales, startup, keynote,
+educational, academic, creative (required for: get-style-profile)</Description>
+      </Option>
+      <Option Short="" Long="sequence-id" Value="SEQUENCEID" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Sequence id: S1 (Decision), S2 (Performance Review), S3 
+(Pitch/Proposal), S4 (Transformation), S5 (Regulatory) (required for: 
+get-deck-sequence)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="theme-path" Value="THEMEPATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Full path to .thmx theme file (required for: 
+apply-theme)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--DOCPROPERTY-->
+  <Command Name="docproperty" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.DocpropertyCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Docproperty+CliSettings">
+    <Description>Document property management: read and write presentation 
+metadata like title, author, subject, keywords.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="author" Value="AUTHOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Author name (required for: set)</Description>
+      </Option>
+      <Option Short="" Long="category" Value="CATEGORY" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Category (required for: set)</Description>
+      </Option>
+      <Option Short="" Long="comments" Value="COMMENTS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Description or comments (required for: set)</Description>
+      </Option>
+      <Option Short="" Long="company" Value="COMPANY" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Company or organization name (required for: 
+set)</Description>
+      </Option>
+      <Option Short="" Long="keywords" Value="KEYWORDS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Keywords for search (comma-separated) (required for: 
+set)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="property-name" Value="PROPERTYNAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Custom property name (required for: get-custom, 
+set-custom)</Description>
+      </Option>
+      <Option Short="" Long="property-value" Value="PROPERTYVALUE" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Property value (string) (required for: 
+set-custom)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="subject" Value="SUBJECT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Subject or topic (required for: set)</Description>
+      </Option>
+      <Option Short="" Long="title" Value="TITLE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Presentation title (required for: set)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--EXPORT-->
+  <Command Name="export" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.ExportCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Export+CliSettings">
+    <Description>Export presentations to PDF, images, or other 
+formats.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="copies" Value="COPIES" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Number of copies (default: 1) (required for: 
+print)</Description>
+      </Option>
+      <Option Short="" Long="default-slide-seconds" Value="DEFAULTSLIDESECONDS" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Seconds per slide (default: 5) (required for: 
+to-video)</Description>
+      </Option>
+      <Option Short="" Long="destination-directory" Value="DESTINATIONDIRECTORY"
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Directory to save images (required for: 
+all-slides-to-images, extract-images)</Description>
+      </Option>
+      <Option Short="" Long="destination-path" Value="DESTINATIONPATH" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Output PDF file path (required for: to-pdf, slide-to-image,
+to-video, save-as, extract-text, save-copy)</Description>
+      </Option>
+      <Option Short="" Long="format" Value="FORMAT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Format code (1-7) (required for: save-as)</Description>
+      </Option>
+      <Option Short="" Long="from-slide" Value="FROMSLIDE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>First slide to print (0 = from beginning) (required for: 
+print)</Description>
+      </Option>
+      <Option Short="" Long="height" Value="HEIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Image height in pixels (default: 1080) (required for: 
+slide-to-image, all-slides-to-images)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="resolution" Value="RESOLUTION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=1080p, 2=720p, 3=480p (required for: 
+to-video)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required for: 
+slide-to-image)</Description>
+      </Option>
+      <Option Short="" Long="to-slide" Value="TOSLIDE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Last slide to print (0 = to end) (required for: 
+print)</Description>
+      </Option>
+      <Option Short="" Long="width" Value="WIDTH" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Image width in pixels (default: 1920) (required for: 
+slide-to-image, all-slides-to-images)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--FILE-->
+  <Command Name="file" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.FileCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+File+CliSettings">
+    <Description>File management commands for PowerPoint presentations. Handles 
+file validation and metadata retrieval.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="file-path" Value="FILEPATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to the .pptx or .pptm file (required)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--HEADERFOOTER-->
+  <Command Name="headerfooter" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.HeaderfooterCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Headerfooter+CliSettings">
+    <Description>Presentation headers and footers: get settings, set date/page 
+number/footer text.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="footer-text" Value="FOOTERTEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Footer text (null = don't change)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="show-date" Value="SHOWDATE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show date/time</Description>
+      </Option>
+      <Option Short="" Long="show-footer" Value="SHOWFOOTER" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show footer on slides</Description>
+      </Option>
+      <Option Short="" Long="show-slide-number" Value="SHOWSLIDENUMBER" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show slide numbers</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--HYPERLINK-->
+  <Command Name="hyperlink" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.HyperlinkCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Hyperlink+CliSettings">
+    <Description>Hyperlink management: add, remove, and get hyperlinks on shapes
+and text.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="address" Value="ADDRESS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>URL (https://...) or empty for slide link (required for: 
+add)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="screen-tip" Value="SCREENTIP" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Optional tooltip text shown on hover</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the shape to add hyperlink to (required for: add, 
+get, remove)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required for: add, get, 
+remove)</Description>
+      </Option>
+      <Option Short="" Long="sub-address" Value="SUBADDRESS" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Slide number for internal links (e.g. '3' to jump to slide 
+3), or empty</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--IMAGE-->
+  <Command Name="image" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.ImageCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Image+CliSettings">
+    <Description>Image operations: insert pictures into slides.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="brightness" Value="BRIGHTNESS" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Brightness value (0.0 to 1.0) (required for: 
+set-brightness-contrast)</Description>
+      </Option>
+      <Option Short="" Long="color-hex" Value="COLORHEX" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Hex color string (#RRGGBB) to make transparent (required 
+for: set-transparent-color)</Description>
+      </Option>
+      <Option Short="" Long="contrast" Value="CONTRAST" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Contrast value (0.0 to 1.0) (required for: 
+set-brightness-contrast)</Description>
+      </Option>
+      <Option Short="" Long="crop-bottom" Value="CROPBOTTOM" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Crop from bottom in points (0 = no crop) (required for: 
+crop)</Description>
+      </Option>
+      <Option Short="" Long="crop-left" Value="CROPLEFT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Crop from left in points (0 = no crop) (required for: 
+crop)</Description>
+      </Option>
+      <Option Short="" Long="crop-right" Value="CROPRIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Crop from right in points (0 = no crop) (required for: 
+crop)</Description>
+      </Option>
+      <Option Short="" Long="crop-top" Value="CROPTOP" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Crop from top in points (0 = no crop) (required for: 
+crop)</Description>
+      </Option>
+      <Option Short="" Long="height" Value="HEIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Height in points (0 = original) (required for: 
+insert)</Description>
+      </Option>
+      <Option Short="" Long="image-path" Value="IMAGEPATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to the image file (required for: insert)</Description>
+      </Option>
+      <Option Short="" Long="left" Value="LEFT" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from left in points (required for: 
+insert)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the picture shape (required for: crop, 
+set-brightness-contrast, set-transparent-color)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="top" Value="TOP" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from top in points (required for: 
+insert)</Description>
+      </Option>
+      <Option Short="" Long="width" Value="WIDTH" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Width in points (0 = original) (required for: 
+insert)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--MASTER-->
+  <Command Name="master" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.MasterCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Master+CliSettings">
+    <Description>Slide master and layout operations: list masters, list layouts,
+get placeholders.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="master-index" Value="MASTERINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide master index (required for: list-shapes, 
+edit-shape-text, list-layouts)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the shape to edit (required for: 
+edit-shape-text)</Description>
+      </Option>
+      <Option Short="" Long="text" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>New text content (required for: 
+edit-shape-text)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--MEDIA-->
+  <Command Name="media" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.MediaCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Media+CliSettings">
+    <Description>Media management: insert audio and video files into slides. 
+Supports linking or embedding media files.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="fade-in-seconds" Value="FADEINSECONDS" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Single, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Fade-in duration in seconds, null to leave 
+unchanged</Description>
+      </Option>
+      <Option Short="" Long="fade-out-seconds" Value="FADEOUTSECONDS" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Single, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Fade-out duration in seconds, null to leave 
+unchanged</Description>
+      </Option>
+      <Option Short="" Long="file-path" Value="FILEPATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Full path to the audio file (required for: insert-audio, 
+insert-video)</Description>
+      </Option>
+      <Option Short="" Long="height" Value="HEIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Height in points (0 = use video native height) (required 
+for: insert-video)</Description>
+      </Option>
+      <Option Short="" Long="left" Value="LEFT" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from left in points (required for: insert-audio, 
+insert-video)</Description>
+      </Option>
+      <Option Short="" Long="link-to-file" Value="LINKTOFILE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>If true, link to file instead of embedding (smaller file 
+size) (required for: insert-audio, insert-video)</Description>
+      </Option>
+      <Option Short="" Long="muted" Value="MUTED" Required="false" Kind="flag" 
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Mute state, null to leave unchanged</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="save-with-document" Value="SAVEWITHDOCUMENT" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>If true, save media with document when linking (required 
+for: insert-audio)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the media shape (required for: get-info, 
+set-playback)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="top" Value="TOP" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from top in points (required for: insert-audio, 
+insert-video)</Description>
+      </Option>
+      <Option Short="" Long="volume" Value="VOLUME" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Volume level (0.0 to 1.0), null to leave 
+unchanged</Description>
+      </Option>
+      <Option Short="" Long="width" Value="WIDTH" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Width in points (0 = use video native width) (required for:
+insert-video)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--NOTES-->
+  <Command Name="notes" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.NotesCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Notes+CliSettings">
+    <Description>Speaker notes: get, set, clear.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>(required for: get, set, clear, append)</Description>
+      </Option>
+      <Option Short="" Long="text" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>(required for: set, append)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--PAGESETUP-->
+  <Command Name="pagesetup" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.PagesetupCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Pagesetup+CliSettings">
+    <Description>Slide size and page setup operations.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="first-slide-number" Value="FIRSTSLIDENUMBER" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>The number to assign to the first slide (required for: 
+set-first-number)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-height" Value="SLIDEHEIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Slide height in points. 0 = don't change. (required for: 
+set-size)</Description>
+      </Option>
+      <Option Short="" Long="slide-width" Value="SLIDEWIDTH" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Slide width in points (1 inch = 72 points). 0 = don't 
+change. (required for: set-size)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--PLACEHOLDER-->
+  <Command Name="placeholder" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.PlaceholderCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Placeholder+CliSettings">
+    <Description>Slide placeholder operations: list available placeholders, fill
+text.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="image-path" Value="IMAGEPATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Absolute path to the image file (required for: 
+set-image)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="placeholder-index" Value="PLACEHOLDERINDEX" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based placeholder index (required for: set-text, 
+set-image)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="text" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Text to set (required for: set-text)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--PRINTOPTIONS-->
+  <Command Name="printoptions" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.PrintoptionsCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Printoptions+CliSettings">
+    <Description>Manage print options: output type, color mode, framing, 
+fit-to-page, hidden slides.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="color-type" Value="COLORTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Color, 2=Grayscale, 3=BlackWhite</Description>
+      </Option>
+      <Option Short="" Long="fit-to-page" Value="FITTOPAGE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to fit slides to page</Description>
+      </Option>
+      <Option Short="" Long="frame-slides" Value="FRAMESLIDES" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to frame slides when printing</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="output-type" Value="OUTPUTTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Slides, 2=TwoSlideHandouts, 3=ThreeSlideHandouts, 
+4=SixSlideHandouts, 5=NotesPages, 6=Outline</Description>
+      </Option>
+      <Option Short="" Long="print-hidden-slides" Value="PRINTHIDDENSLIDES" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to include hidden slides</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--PROOFING-->
+  <Command Name="proofing" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.ProofingCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Proofing+CliSettings">
+    <Description>Proofing and language operations: check spelling, get/set 
+language for text.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="language-id" Value="LANGUAGEID" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>MsoLanguageID value (e.g. 1033 for English US) (required 
+for: set-language)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Empty string for all shapes on slide, or specific shape 
+name (required for: set-language, get-language)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>0 for all slides, or specific 1-based slide index (required
+for: set-language, get-language)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SECTION-->
+  <Command Name="section" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.SectionCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Section+CliSettings">
+    <Description>Presentation section management: list, add, rename, delete, and
+move sections. Sections group slides for easier navigation and 
+organization.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="new-name" Value="NEWNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>New section name (required for: rename)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="section-index" Value="SECTIONINDEX" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based section index (required for: rename, 
+delete)</Description>
+      </Option>
+      <Option Short="" Long="section-name" Value="SECTIONNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the new section (required for: add)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index where the section starts (required for:
+add)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SHAPE-->
+  <Command Name="shape" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.ShapeCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Shape+CliSettings">
+    <Description>Shape management: list, read, create, move, resize, delete, 
+z-order.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="action-type" Value="ACTIONTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>0=None, 1=NextSlide, 2=PreviousSlide, 3=FirstSlide, 
+4=LastSlide, 7=Hyperlink (required for: set-action-settings)</Description>
+      </Option>
+      <Option Short="" Long="alt-text" Value="ALTTEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>(required for: set-alt-text)</Description>
+      </Option>
+      <Option Short="" Long="auto-shape-type" Value="AUTOSHAPETYPE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>MsoAutoShapeType integer (1=Rectangle, 9=Oval, etc.) 
+(required for: add-shape)</Description>
+      </Option>
+      <Option Short="" Long="auto-size" Value="AUTOSIZE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>0=None, 1=ShapeToFitText, 2=TextToFitShape (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="bevel-depth" Value="BEVELDEPTH" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Bevel top depth in points (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="bevel-type" Value="BEVELTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Bevel top type: 0=None, 1=Circle, 2=RelaxedInset, 3=Cross, 
+4=Angle, etc. (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="color-hex" Value="COLORHEX" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Hex color string like #FF0000 for red, or 'none' for no 
+fill (required for: set-fill, set-line, set-glow)</Description>
+      </Option>
+      <Option Short="" Long="color1" Value="COLOR1" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>First gradient color as hex (#RRGGBB) (required for: 
+set-gradient-fill)</Description>
+      </Option>
+      <Option Short="" Long="color2" Value="COLOR2" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Second gradient color as hex (#RRGGBB) (required for: 
+set-gradient-fill)</Description>
+      </Option>
+      <Option Short="" Long="connector-type" Value="CONNECTORTYPE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Straight, 2=Elbow, 3=Curve (required for: 
+add-connector)</Description>
+      </Option>
+      <Option Short="" Long="degrees" Value="DEGREES" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>(required for: set-rotation)</Description>
+      </Option>
+      <Option Short="" Long="end-shape-name" Value="ENDSHAPENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Ending shape name (required for: 
+add-connector)</Description>
+      </Option>
+      <Option Short="" Long="flip-type" Value="FLIPTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>0=Horizontal, 1=Vertical (required for: flip)</Description>
+      </Option>
+      <Option Short="" Long="font-name" Value="FONTNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Font name (e.g. "Arial") (required for: 
+add-text-effect)</Description>
+      </Option>
+      <Option Short="" Long="font-size" Value="FONTSIZE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Font size in points (required for: 
+add-text-effect)</Description>
+      </Option>
+      <Option Short="" Long="gradient-style" Value="GRADIENTSTYLE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Horizontal, 2=Vertical, 3=DiagonalUp, 4=DiagonalDown, 
+5=FromCorner, 6=FromCenter (required for: set-gradient-fill)</Description>
+      </Option>
+      <Option Short="" Long="height" Value="HEIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Height in points (required for: add-textbox, 
+add-shape)</Description>
+      </Option>
+      <Option Short="" Long="hyperlink-address" Value="HYPERLINKADDRESS" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>URL for actionType=7 (Hyperlink), ignored for other 
+types</Description>
+      </Option>
+      <Option Short="" Long="left" Value="LEFT" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from left in points (required for: add-textbox, 
+add-shape, add-text-effect)</Description>
+      </Option>
+      <Option Short="" Long="line-width" Value="LINEWIDTH" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Line width in points (default 0.75) (required for: 
+set-line)</Description>
+      </Option>
+      <Option Short="" Long="locked" Value="LOCKED" Required="false" Kind="flag"
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>True to lock aspect ratio, false to unlock (required for: 
+lock-aspect-ratio)</Description>
+      </Option>
+      <Option Short="" Long="margin-bottom" Value="MARGINBOTTOM" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Single, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Bottom margin in points (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="margin-left" Value="MARGINLEFT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Left margin in points (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="margin-right" Value="MARGINRIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Right margin in points (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="margin-top" Value="MARGINTOP" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Top margin in points (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="merge-type" Value="MERGETYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Union, 2=Combine, 3=Fragment, 4=Intersect, 5=Subtract 
+(required for: merge)</Description>
+      </Option>
+      <Option Short="" Long="offset-x" Value="OFFSETX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Shadow offset X in points (required for: 
+set-shadow)</Description>
+      </Option>
+      <Option Short="" Long="offset-y" Value="OFFSETY" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Shadow offset Y in points (required for: 
+set-shadow)</Description>
+      </Option>
+      <Option Short="" Long="opacity" Value="OPACITY" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Opacity value from 0.0 (fully transparent) to 1.0 (fully 
+opaque) (required for: set-opacity)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="preset-effect" Value="PRESETEFFECT" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>MsoPresetTextEffect integer (0-based preset index) 
+(required for: add-text-effect)</Description>
+      </Option>
+      <Option Short="" Long="radius" Value="RADIUS" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Glow radius in points (0 = remove glow) (required for: 
+set-glow, set-soft-edge)</Description>
+      </Option>
+      <Option Short="" Long="reflection-type" Value="REFLECTIONTYPE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>0=None, 1-9=msoReflectionType1 through msoReflectionType9 
+(required for: set-reflection)</Description>
+      </Option>
+      <Option Short="" Long="rotation-x" Value="ROTATIONX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>X-axis rotation in degrees (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="rotation-y" Value="ROTATIONY" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Y-axis rotation in degrees (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="rotation-z" Value="ROTATIONZ" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Z-axis rotation in degrees (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="scale-x" Value="SCALEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Width scale factor (e.g. 1.5 = 150%) (required for: 
+scale)</Description>
+      </Option>
+      <Option Short="" Long="scale-y" Value="SCALEY" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Height scale factor (e.g. 1.5 = 150%) (required for: 
+scale)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the shape (required for: read, move-resize, delete,
+z-order, set-fill, set-line, set-rotation, ungroup, set-alt-text, copy-to-slide,
+set-shadow, duplicate, flip, set-text-frame, set-gradient-fill, set-glow, 
+set-reflection, set-opacity, read-fill, read-line, set-action-settings, scale, 
+lock-aspect-ratio, set-soft-edge, read-shadow, set-3d)</Description>
+      </Option>
+      <Option Short="" Long="shape-names" Value="SHAPENAMES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Comma-separated list of shape names to group (required for:
+group, merge)</Description>
+      </Option>
+      <Option Short="" Long="shape-type" Value="SHAPETYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>MsoShapeType integer (1=AutoShape, 6=Group, 13=Picture, 
+14=Placeholder, 17=TextBox, etc.) (required for: find-by-type)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="source-shape-name" Value="SOURCESHAPENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the shape to copy formatting from (required for: 
+copy-formatting)</Description>
+      </Option>
+      <Option Short="" Long="start-shape-name" Value="STARTSHAPENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Starting shape name (required for: 
+add-connector)</Description>
+      </Option>
+      <Option Short="" Long="target-shape-name" Value="TARGETSHAPENAME" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Name of the shape to apply formatting to (required for: 
+copy-formatting)</Description>
+      </Option>
+      <Option Short="" Long="target-slide-index" Value="TARGETSLIDEINDEX" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based target slide index (required for: 
+copy-to-slide)</Description>
+      </Option>
+      <Option Short="" Long="text" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Initial text content (required for: add-textbox, 
+add-text-effect)</Description>
+      </Option>
+      <Option Short="" Long="top" Value="TOP" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from top in points (required for: add-textbox, 
+add-shape, add-text-effect)</Description>
+      </Option>
+      <Option Short="" Long="visible" Value="VISIBLE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Show or hide shadow (required for: 
+set-shadow)</Description>
+      </Option>
+      <Option Short="" Long="width" Value="WIDTH" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Width in points (required for: add-textbox, 
+add-shape)</Description>
+      </Option>
+      <Option Short="" Long="word-wrap" Value="WORDWRAP" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Enable/disable word wrap (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="z-order-cmd" Value="ZORDERCMD" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=BringToFront, 2=SendToBack, 3=BringForward, 
+4=SendBackward (required for: z-order)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SHAPEALIGN-->
+  <Command Name="shapealign" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.ShapealignCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Shapealign+CliSettings">
+    <Description>Shape alignment and distribution operations.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="align-type" Value="ALIGNTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Alignment type (0-5) (required for: align)</Description>
+      </Option>
+      <Option Short="" Long="distribute-type" Value="DISTRIBUTETYPE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>0=Horizontally, 1=Vertically (required for: 
+distribute)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-names" Value="SHAPENAMES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Comma-separated shape names (required)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SLIDE-->
+  <Command Name="slide" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.SlideCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Slide+CliSettings">
+    <Description>Slide lifecycle commands: list, read, create, duplicate, move, 
+delete.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="count" Value="COUNT" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Number of clones to create (required for: 
+clone-with-replace)</Description>
+      </Option>
+      <Option Short="" Long="destination-path" Value="DESTINATIONPATH" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Full path for the output PNG file (required for: 
+get-thumbnail)</Description>
+      </Option>
+      <Option Short="" Long="display" Value="DISPLAY" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to display master shapes (required for: 
+set-display-master)</Description>
+      </Option>
+      <Option Short="" Long="layout-name" Value="LAYOUTNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Layout name from the slide master (e.g. "Title Slide", 
+"Blank") (required for: create, apply-layout)</Description>
+      </Option>
+      <Option Short="" Long="name" Value="NAME" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>New name for the slide (required for: 
+set-name)</Description>
+      </Option>
+      <Option Short="" Long="new-position" Value="NEWPOSITION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based target position (required for: move)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="position" Value="POSITION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based insert position (0 = at end) (required for: 
+create)</Description>
+      </Option>
+      <Option Short="" Long="replace-text" Value="REPLACETEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Text to replace with in each clone (required for: 
+clone-with-replace)</Description>
+      </Option>
+      <Option Short="" Long="search-text" Value="SEARCHTEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Text to search for in each clone (required for: 
+clone-with-replace)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required for: read, duplicate, move, 
+delete, apply-layout, set-name, clone-with-replace, hide, unhide, get-thumbnail,
+set-display-master, copy)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SLIDEIMPORT-->
+  <Command Name="slideimport" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.SlideimportCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Slideimport+CliSettings">
+    <Description>Import slides from another presentation file.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="insert-at" Value="INSERTAT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position to insert (0 = at end) (required)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-indices" Value="SLIDEINDICES" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Comma-separated 1-based slide indices to import (empty = 
+all) (required)</Description>
+      </Option>
+      <Option Short="" Long="source-file-path" Value="SOURCEFILEPATH" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Path to the source .pptx file (required)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SLIDESHOW-->
+  <Command Name="slideshow" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.SlideshowCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Slideshow+CliSettings">
+    <Description>Slideshow presentation mode: start, stop, navigate, get 
+status.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="loop-until-stopped" Value="LOOPUNTILSTOPPED" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to loop the slideshow continuously (required for: 
+configure)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="show-type" Value="SHOWTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Speaker (full screen), 2=Browsed by individual (window), 
+3=Browsed at kiosk (loop) (required for: configure)</Description>
+      </Option>
+      <Option Short="" Long="show-with-animation" Value="SHOWWITHANIMATION" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to show animations during the slideshow (required 
+for: configure)</Description>
+      </Option>
+      <Option Short="" Long="show-with-narration" Value="SHOWWITHNARRATION" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to play narrations during the slideshow (required 
+for: configure)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based target slide index (required for: 
+goto-slide)</Description>
+      </Option>
+      <Option Short="" Long="start-slide" Value="STARTSLIDE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide to start from (0 = beginning) (required for: 
+start)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SLIDETABLE-->
+  <Command Name="slidetable" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.SlidetableCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Slidetable+CliSettings">
+    <Description>Table shape operations: create, read, write cells, add/delete 
+rows and columns, merge cells.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="color-hex" Value="COLORHEX" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Border color as hex (#RRGGBB) (required for: 
+set-cell-border)</Description>
+      </Option>
+      <Option Short="" Long="column" Value="COLUMN" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based column index (required for: write-cell, 
+delete-column, read-cell, format-cell, set-cell-border)</Description>
+      </Option>
+      <Option Short="" Long="columns" Value="COLUMNS" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Number of columns (required for: create)</Description>
+      </Option>
+      <Option Short="" Long="end-column" Value="ENDCOLUMN" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based end column (required for: 
+merge-cells)</Description>
+      </Option>
+      <Option Short="" Long="end-row" Value="ENDROW" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based end row (required for: merge-cells)</Description>
+      </Option>
+      <Option Short="" Long="fill-color" Value="FILLCOLOR" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Hex fill color (#RRGGBB) or null to skip</Description>
+      </Option>
+      <Option Short="" Long="font-bold" Value="FONTBOLD" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Set bold (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="font-size" Value="FONTSIZE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Set font size (0 = don't change) (required for: 
+format-cell)</Description>
+      </Option>
+      <Option Short="" Long="height" Value="HEIGHT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Height in points (required for: create)</Description>
+      </Option>
+      <Option Short="" Long="left" Value="LEFT" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from left in points (required for: 
+create)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="position" Value="POSITION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based position to insert (-1 = at end) (required for: 
+add-row, add-column)</Description>
+      </Option>
+      <Option Short="" Long="row" Value="ROW" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based row index (required for: write-cell, delete-row, 
+read-cell, format-cell, write-row, read-row, set-cell-border)</Description>
+      </Option>
+      <Option Short="" Long="rows" Value="ROWS" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Number of rows (required for: create)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the table shape (required for: read, write-cell, 
+add-row, add-column, delete-row, delete-column, merge-cells, read-cell, 
+format-cell, write-row, read-row, set-cell-border)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="start-column" Value="STARTCOLUMN" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based start column (required for: 
+merge-cells)</Description>
+      </Option>
+      <Option Short="" Long="start-row" Value="STARTROW" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based start row (required for: merge-cells)</Description>
+      </Option>
+      <Option Short="" Long="text-align" Value="TEXTALIGN" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Text alignment: left, center, right (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="top" Value="TOP" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Position from top in points (required for: 
+create)</Description>
+      </Option>
+      <Option Short="" Long="value" Value="VALUE" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Cell value to set (required for: write-cell)</Description>
+      </Option>
+      <Option Short="" Long="values" Value="VALUES" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Comma-separated values for the row (required for: 
+write-row)</Description>
+      </Option>
+      <Option Short="" Long="width" Value="WIDTH" Required="false" Kind="scalar"
+ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Width in points (required for: create, 
+set-cell-border)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--SMARTART-->
+  <Command Name="smartart" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.SmartartCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Smartart+CliSettings">
+    <Description>SmartArt diagram operations: create, add/remove nodes, change 
+layout.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="layout-index" Value="LAYOUTINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based index into Application.SmartArtLayouts (required 
+for: set-layout)</Description>
+      </Option>
+      <Option Short="" Long="node-index" Value="NODEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based index of the node to delete (required for: 
+delete-node, change-level)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="promote" Value="PROMOTE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>True to promote (decrease level), false to demote (increase
+level) (required for: change-level)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the SmartArt shape (required)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="style-index" Value="STYLEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based index into Application.SmartArtQuickStyles 
+(required for: set-style)</Description>
+      </Option>
+      <Option Short="" Long="text" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Text for the new node (required for: 
+add-node)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--TAG-->
+  <Command Name="tag" IsBranch="false" ClrType="PptMcp.CLI.Generated.TagCommand"
+Settings="PptMcp.Generated.ServiceRegistry+Tag+CliSettings">
+    <Description>Custom tags/metadata on slides and shapes.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Shape name (null/empty = slide-level tags)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="tag-name" Value="TAGNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Tag name (case-insensitive) (required for: set, 
+delete)</Description>
+      </Option>
+      <Option Short="" Long="tag-value" Value="TAGVALUE" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Tag value (required for: set)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--TEXT-->
+  <Command Name="text" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.TextCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Text+CliSettings">
+    <Description>Text operations within shapes: get, set, format, find, 
+replace.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="alignment" Value="ALIGNMENT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Alignment</Description>
+      </Option>
+      <Option Short="" Long="bold" Value="BOLD" Required="false" Kind="flag" 
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Bold</Description>
+      </Option>
+      <Option Short="" Long="bullet-character" Value="BULLETCHARACTER" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>Custom bullet character (e.g. "•", "→") - only used when 
+bulletType is 1</Description>
+      </Option>
+      <Option Short="" Long="bullet-type" Value="BULLETTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>0=None, 1=Unnumbered (bullets), 2=Numbered (required for: 
+set-bullets)</Description>
+      </Option>
+      <Option Short="" Long="case-type" Value="CASETYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Sentence, 2=Lower, 3=Upper, 4=Title, 5=Toggle (required 
+for: change-case)</Description>
+      </Option>
+      <Option Short="" Long="char-number" Value="CHARNUMBER" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Unicode/character code of the symbol (required for: 
+insert-symbol)</Description>
+      </Option>
+      <Option Short="" Long="character-spacing" Value="CHARACTERSPACING" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Single, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Character spacing in points (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="color" Value="COLOR" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Color</Description>
+      </Option>
+      <Option Short="" Long="date-time-format" Value="DATETIMEFORMAT" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>PpDateTimeFormat value (1-13) (required for: 
+insert-datetime)</Description>
+      </Option>
+      <Option Short="" Long="font-name" Value="FONTNAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Font name containing the symbol (e.g. "Wingdings") 
+(required for: insert-symbol)</Description>
+      </Option>
+      <Option Short="" Long="font-size" Value="FONTSIZE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>FontSize</Description>
+      </Option>
+      <Option Short="" Long="indent-level" Value="INDENTLEVEL" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Indent level 0-4 (required for: set-bullets)</Description>
+      </Option>
+      <Option Short="" Long="italic" Value="ITALIC" Required="false" Kind="flag"
+ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Italic</Description>
+      </Option>
+      <Option Short="" Long="line-spacing" Value="LINESPACING" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Line spacing in points (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="link-text" Value="LINKTEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Text to find and make into a hyperlink (required for: 
+insert-link)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="" Long="replace-text" Value="REPLACETEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Replacement text (required for: replace)</Description>
+      </Option>
+      <Option Short="" Long="search-text" Value="SEARCHTEXT" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Text to find (required for: find, replace)</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="shape-name" Value="SHAPENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Shape name (required for: get, set, format, 
+format-advanced, set-spacing, set-bullets, insert-link, change-case, 
+read-spacing, read-bullets, insert-symbol, insert-datetime, 
+insert-slide-number)</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>0 for all slides, or specific 1-based index 
+(required)</Description>
+      </Option>
+      <Option Short="" Long="space-after" Value="SPACEAFTER" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Space after paragraph in points (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="space-before" Value="SPACEBEFORE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Space before paragraph in points (null = don't 
+change)</Description>
+      </Option>
+      <Option Short="" Long="strikethrough" Value="STRIKETHROUGH" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Set strikethrough (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="subscript" Value="SUBSCRIPT" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Set subscript (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="superscript" Value="SUPERSCRIPT" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Set superscript (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="text" Value="TEXT" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>(required for: set)</Description>
+      </Option>
+      <Option Short="" Long="underline" Value="UNDERLINE" Required="false" 
+Kind="flag" ClrType="System.Nullable`1[[System.Boolean, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Set underline (null = don't change)</Description>
+      </Option>
+      <Option Short="" Long="url" Value="URL" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>URL for the hyperlink (required for: 
+insert-link)</Description>
+      </Option>
+      <Option Short="" Long="vertical-alignment" Value="VERTICALALIGNMENT" 
+Required="false" Kind="scalar" ClrType="System.String">
+        <Description>VerticalAlignment</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--TRANSITION-->
+  <Command Name="transition" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.TransitionCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Transition+CliSettings">
+    <Description>Slide transition effects: get, set, remove.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="advance-after-time" Value="ADVANCEAFTERTIME" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Single, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Auto-advance after N seconds (0 = disabled) (required for: 
+set)</Description>
+      </Option>
+      <Option Short="" Long="advance-on-click" Value="ADVANCEONCLICK" 
+Required="false" Kind="flag" ClrType="System.Nullable`1[[System.Boolean, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Whether to advance on mouse click (required for: 
+set)</Description>
+      </Option>
+      <Option Short="" Long="duration" Value="DURATION" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Single, System.Private.CoreLib,
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Duration in seconds (required for: set)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="slide-index" Value="SLIDEINDEX" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1-based slide index (required)</Description>
+      </Option>
+      <Option Short="" Long="transition-type" Value="TRANSITIONTYPE" 
+Required="false" Kind="scalar" ClrType="System.Nullable`1[[System.Int32, 
+System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, 
+PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>PpEntryEffect enum value (e.g. 3844=Fade, 3849=Push) 
+(required for: set)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--VBA-->
+  <Command Name="vba" IsBranch="false" ClrType="PptMcp.CLI.Generated.VbaCommand"
+Settings="PptMcp.Generated.ServiceRegistry+Vba+CliSettings">
+    <Description>VBA macro operations: list modules, view/import/delete code, 
+run macros. Requires VBA trust settings enabled in PowerPoint.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="" Long="code" Value="CODE" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>VBA code to import (required for: import)</Description>
+      </Option>
+      <Option Short="" Long="macro-name" Value="MACRONAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Fully qualified macro name (e.g., "Module1.MyMacro") 
+(required for: run)</Description>
+      </Option>
+      <Option Short="" Long="module-name" Value="MODULENAME" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name for the new module (required for: view, import, 
+delete)</Description>
+      </Option>
+      <Option Short="" Long="module-type" Value="MODULETYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Standard, 2=ClassModule (default: 1) (required for: 
+import)</Description>
+      </Option>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--WINDOW-->
+  <Command Name="window" IsBranch="false" 
+ClrType="PptMcp.CLI.Generated.WindowCommand" 
+Settings="PptMcp.Generated.ServiceRegistry+Window+CliSettings">
+    <Description>PowerPoint window management: get info, minimize, restore, 
+maximize.</Description>
+    <Parameters>
+      <Argument Name="ACTION" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>The action to perform</Description>
+      </Argument>
+      <Option Short="o" Long="output" Value="PATH" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Write output to file instead of stdout. For image results, 
+decodes and saves as binary file.</Description>
+      </Option>
+      <Option Short="s" Long="session" Value="SESSION" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Session ID from 'session open' command</Description>
+      </Option>
+      <Option Short="" Long="view-type" Value="VIEWTYPE" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>1=Normal, 2=Outline, 3=SlideSorter, 4=NotesPage, 
+5=SlideMaster (required for: set-view)</Description>
+      </Option>
+      <Option Short="" Long="zoom-percent" Value="ZOOMPERCENT" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Zoom percentage (e.g. 100 for 100%) (required for: 
+set-zoom)</Description>
+      </Option>
+    </Parameters>
+  </Command>
+</Model>
