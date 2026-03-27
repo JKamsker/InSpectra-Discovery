@@ -18,64 +18,18 @@ on:
 permissions:
   actions: read
   contents: write
+  packages: read
 
 concurrency:
   group: promote-untrusted-${{ github.event.inputs.analysis_run_id || github.event.workflow_run.id }}
   cancel-in-progress: false
 
 jobs:
-  tool:
-    runs-on: ubuntu-latest
-    outputs:
-      tool_version: ${{ steps.pack.outputs.tool_version }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Pack discovery tool
-        id: pack
-        shell: pwsh
-        run: |
-          $toolVersion = '0.0.0-ci.${{ github.run_id }}.${{ github.run_attempt }}'
-          dotnet pack src/InSpectra.Discovery.Tool/InSpectra.Discovery.Tool.csproj `
-            -c Release `
-            -p:Version=$toolVersion
-          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
-
-      - name: Upload discovery tool package
-        uses: actions/upload-artifact@v6
-        with:
-          name: inspectra-discovery-tool
-          path: artifacts/tool/*.nupkg
-          if-no-files-found: error
-          retention-days: 7
-
   promote:
-    needs: tool
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'cancelled' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Download discovery tool package
-        uses: actions/download-artifact@v6
-        with:
-          name: inspectra-discovery-tool
-          path: ${{ runner.temp }}/inspectra-tool
-
       - name: Resolve analysis run
         id: source
         shell: pwsh
@@ -94,7 +48,7 @@ jobs:
 
           $run = gh run view $analysisRunId `
             --repo '${{ github.repository }}' `
-            --json databaseId,url,status,conclusion,workflowName,headBranch | ConvertFrom-Json
+            --json databaseId,url,status,conclusion,workflowName,headBranch,headSha | ConvertFrom-Json
 
           if ($run.workflowName -ne 'Analyze Untrusted Batch') {
             throw "Run '$analysisRunId' is not an Analyze Untrusted Batch run."
@@ -111,6 +65,7 @@ jobs:
           "analysis_run_id=$analysisRunId" >> $env:GITHUB_OUTPUT
           "analysis_run_url=$($run.url)" >> $env:GITHUB_OUTPUT
           "head_branch=$($run.headBranch)" >> $env:GITHUB_OUTPUT
+          "head_sha=$($run.headSha)" >> $env:GITHUB_OUTPUT
 
       - name: Download workflow artifacts
         shell: pwsh
@@ -149,10 +104,21 @@ jobs:
           $batchId = [string]$plan.batchId
           $releaseTag = ('untrusted-analysis-{0}-{1}' -f $batchId, '${{ steps.source.outputs.analysis_run_id }}').ToLowerInvariant()
 
+          $toolVersionPath = Get-ChildItem -Path $downloadRoot -Filter 'tool-version.txt' -Recurse |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          $toolVersion = if ($toolVersionPath) {
+            (Get-Content $toolVersionPath -Raw).Trim()
+          }
+          else {
+            ''
+          }
+
           "batch_id=$batchId" >> $env:GITHUB_OUTPUT
           "target_branch=$targetBranch" >> $env:GITHUB_OUTPUT
           "release_tag=$releaseTag" >> $env:GITHUB_OUTPUT
           "release_title=Promote untrusted analysis $batchId" >> $env:GITHUB_OUTPUT
+          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
 
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -161,13 +127,20 @@ jobs:
           persist-credentials: true
           ref: ${{ steps.plan.outputs.target_branch }}
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
       - name: Install discovery tool
-        shell: pwsh
-        run: |
-          dotnet new tool-manifest --force
-          dotnet tool install InSpectra.Discovery.Tool `
-            --version '${{ needs.tool.outputs.tool_version }}' `
-            --add-source '${{ runner.temp }}/inspectra-tool'
+        uses: ./.github/actions/install-discovery-tool
+        with:
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          github-owner: ${{ github.repository_owner }}
+          tool-version: ${{ steps.plan.outputs.tool_version }}
+          tool-ref: ${{ steps.source.outputs.head_sha }}
+          tool-branch: ${{ steps.source.outputs.head_branch }}
 
       - name: Promote analysis outputs
         id: promote
@@ -175,7 +148,7 @@ jobs:
         run: |
           $downloadRoot = Join-Path $env:RUNNER_TEMP 'untrusted-download'
           $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
-          $summary = dotnet tool run inspectra-discovery -- `
+          $summary = inspectra-discovery `
             promotion apply-untrusted `
             --download-root $downloadRoot `
             --summary-output $summaryPath `
@@ -198,7 +171,7 @@ jobs:
         run: |
           $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
           $bodyPath = Join-Path $env:RUNNER_TEMP 'promotion-notes.md'
-          dotnet tool run inspectra-discovery -- `
+          inspectra-discovery `
             promotion write-notes `
             --summary $summaryPath `
             --workflow-run-url '${{ steps.source.outputs.analysis_run_url }}' `
@@ -209,7 +182,7 @@ jobs:
       - name: Regenerate fully indexed documentation report
         shell: pwsh
         run: |
-          dotnet tool run inspectra-discovery -- docs fully-indexed-report
+          inspectra-discovery docs fully-indexed-report
 
       - name: Commit promoted outputs directly to target branch
         id: commit

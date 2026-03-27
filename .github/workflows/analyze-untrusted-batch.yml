@@ -46,49 +46,14 @@ on:
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: analyze-untrusted-${{ inputs.batch_id || github.event.client_payload.batch_id }}
   cancel-in-progress: false
 
 jobs:
-  tool:
-    runs-on: ubuntu-latest
-    outputs:
-      tool_version: ${{ steps.pack.outputs.tool_version }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 1
-          persist-credentials: false
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v5
-        with:
-          dotnet-version: 10.0.x
-
-      - name: Pack discovery tool
-        id: pack
-        shell: pwsh
-        run: |
-          $toolVersion = '0.0.0-ci.${{ github.run_id }}.${{ github.run_attempt }}'
-          dotnet pack src/InSpectra.Discovery.Tool/InSpectra.Discovery.Tool.csproj `
-            -c Release `
-            -p:Version=$toolVersion
-          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
-
-      - name: Upload discovery tool package
-        uses: actions/upload-artifact@v6
-        with:
-          name: inspectra-discovery-tool
-          path: artifacts/tool/*.nupkg
-          if-no-files-found: error
-          retention-days: 7
-
   plan:
-    needs: tool
     runs-on: ubuntu-latest
     outputs:
       batch_id: ${{ steps.plan.outputs.batch_id }}
@@ -99,7 +64,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Setup .NET
@@ -107,19 +72,13 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Download discovery tool package
-        uses: actions/download-artifact@v6
-        with:
-          name: inspectra-discovery-tool
-          path: ${{ runner.temp }}/inspectra-tool
-
       - name: Install discovery tool
-        shell: pwsh
-        run: |
-          dotnet new tool-manifest --force
-          dotnet tool install InSpectra.Discovery.Tool `
-            --version '${{ needs.tool.outputs.tool_version }}' `
-            --add-source '${{ runner.temp }}/inspectra-tool'
+        id: install_tool
+        uses: ./.github/actions/install-discovery-tool
+        with:
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          github-owner: ${{ github.repository_owner }}
 
       - name: Build batch plan
         id: plan
@@ -256,7 +215,6 @@ jobs:
           }
 
           $argumentList = @(
-            'tool', 'run', 'inspectra-discovery', '--',
             'queue', 'untrusted-batch-plan',
             '--queue', $materializedQueuePath,
             '--batch-id', $batchId,
@@ -274,7 +232,7 @@ jobs:
             $argumentList += '--force-reanalyze'
           }
 
-          $plan = dotnet @argumentList | ConvertFrom-Json
+          $plan = inspectra-discovery @argumentList | ConvertFrom-Json
           if (-not $plan.ok) {
             throw $plan.error.message
           }
@@ -286,17 +244,26 @@ jobs:
           ((@($plan.items) | ConvertTo-Json -Compress -AsArray) ?? '[]') >> $env:GITHUB_OUTPUT
           "EOF" >> $env:GITHUB_OUTPUT
 
+      - name: Write workflow metadata
+        shell: pwsh
+        run: |
+          Set-Content `
+            -Path (Join-Path $env:RUNNER_TEMP 'tool-version.txt') `
+            -Value '${{ steps.install_tool.outputs.tool_version }}' `
+            -Encoding UTF8NoBOM
+
       - name: Upload expected plan
         uses: actions/upload-artifact@v6
         with:
           name: plan-${{ steps.plan.outputs.batch_id }}
-          path: ${{ runner.temp }}/expected.json
+          path: |
+            ${{ runner.temp }}/expected.json
+            ${{ runner.temp }}/tool-version.txt
           if-no-files-found: error
           retention-days: 7
 
   analyze:
     needs:
-      - tool
       - plan
     if: ${{ needs.plan.outputs.selected_count != '0' }}
     runs-on: ${{ matrix.runsOn }}
@@ -312,7 +279,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Setup .NET
@@ -332,26 +299,19 @@ jobs:
           dotnet --list-sdks
           dotnet --list-runtimes
 
-      - name: Download discovery tool package
-        uses: actions/download-artifact@v6
-        with:
-          name: inspectra-discovery-tool
-          path: ${{ runner.temp }}/inspectra-tool
-
       - name: Install discovery tool
-        shell: pwsh
-        run: |
-          dotnet new tool-manifest --force
-          dotnet tool install InSpectra.Discovery.Tool `
-            --version '${{ needs.tool.outputs.tool_version }}' `
-            --add-source '${{ runner.temp }}/inspectra-tool'
+        uses: ./.github/actions/install-discovery-tool
+        with:
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          github-owner: ${{ github.repository_owner }}
 
       - name: Analyze package
         shell: pwsh
         env:
           RESULT_ROOT: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
         run: |
-          dotnet tool run inspectra-discovery -- `
+          inspectra-discovery `
             analysis run-untrusted `
             --package-id '${{ matrix.packageId }}' `
             --version '${{ matrix.version }}' `
