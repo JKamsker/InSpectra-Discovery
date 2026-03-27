@@ -22,6 +22,7 @@ $GeneratedAt = [DateTimeOffset]::UtcNow
 $EvaluationTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 . (Join-Path $PSScriptRoot 'OpenCliSynthesis.ps1')
+. (Join-Path $PSScriptRoot 'OpenCliMetrics.ps1')
 
 function Write-JsonFile {
     param(
@@ -734,7 +735,7 @@ try {
             }
     )
 
-    $packageSummaries = @(
+    $unsortedPackageSummaries = @(
         $versionRecords |
             Group-Object packageId |
             ForEach-Object {
@@ -749,9 +750,9 @@ try {
                 Sync-LatestDirectory -VersionDirectory $latestRecord.versionDirectoryFullPath -LatestDirectory $latestDirectory
                 Write-JsonFile -Path $summaryPath -InputObject $summary
                 $summary
-            } |
-            Sort-Object packageId
+            }
     )
+    $packageSummaries = Sort-PackageSummariesForAllIndex -PackageSummaries $unsortedPackageSummaries -RepositoryRoot $RepositoryRoot
 
     $allIndex = [ordered]@{
         schemaVersion = 1

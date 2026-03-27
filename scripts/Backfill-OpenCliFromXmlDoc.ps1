@@ -9,6 +9,7 @@ $IndexRoot = Join-Path $RepositoryRoot 'index'
 $PackagesRoot = Join-Path $IndexRoot 'packages'
 
 . (Join-Path $PSScriptRoot 'OpenCliSynthesis.ps1')
+. (Join-Path $PSScriptRoot 'OpenCliMetrics.ps1')
 
 function Write-JsonFile {
     param([string]$Path, [object]$InputObject)
@@ -98,7 +99,7 @@ function Rebuild-Indexes {
             }
     )
 
-    $packageSummaries = @(
+    $unsortedPackageSummaries = @(
         $versionRecords |
             Group-Object packageId |
             ForEach-Object {
@@ -112,9 +113,9 @@ function Rebuild-Indexes {
                 Sync-LatestDirectory -VersionDirectory $latestRecord.versionDirectoryFullPath -LatestDirectory $latestDirectory
                 Write-JsonFile -Path $summaryPath -InputObject $summary
                 $summary
-            } |
-            Sort-Object packageId
+            }
     )
+    $packageSummaries = Sort-PackageSummariesForAllIndex -PackageSummaries $unsortedPackageSummaries -RepositoryRoot $RepositoryRoot
 
     Write-JsonFile -Path (Join-Path $IndexRoot 'all.json') -InputObject ([ordered]@{
         schemaVersion = 1
