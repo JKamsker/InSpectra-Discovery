@@ -52,7 +52,43 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  tool:
+    runs-on: ubuntu-latest
+    outputs:
+      tool_version: ${{ steps.pack.outputs.tool_version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack discovery tool
+        id: pack
+        shell: pwsh
+        run: |
+          $toolVersion = '0.0.0-ci.${{ github.run_id }}.${{ github.run_attempt }}'
+          dotnet pack src/InSpectra.Discovery.Tool/InSpectra.Discovery.Tool.csproj `
+            -c Release `
+            -p:Version=$toolVersion
+          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
+
+      - name: Upload discovery tool package
+        uses: actions/upload-artifact@v6
+        with:
+          name: inspectra-discovery-tool
+          path: artifacts/tool/*.nupkg
+          if-no-files-found: error
+          retention-days: 7
+
   plan:
+    needs: tool
     runs-on: ubuntu-latest
     outputs:
       batch_id: ${{ steps.plan.outputs.batch_id }}
@@ -65,6 +101,25 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download discovery tool package
+        uses: actions/download-artifact@v6
+        with:
+          name: inspectra-discovery-tool
+          path: ${{ runner.temp }}/inspectra-tool
+
+      - name: Install discovery tool
+        shell: pwsh
+        run: |
+          dotnet new tool-manifest --force
+          dotnet tool install InSpectra.Discovery.Tool `
+            --version '${{ needs.tool.outputs.tool_version }}' `
+            --add-source '${{ runner.temp }}/inspectra-tool'
 
       - name: Build batch plan
         id: plan
@@ -200,9 +255,31 @@ jobs:
             $arguments.ForceReanalyze = $true
           }
 
-          ./scripts/Export-UntrustedBatchPlan.ps1 @arguments
+          $argumentList = @(
+            'tool', 'run', 'inspectra-discovery', '--',
+            'queue', 'untrusted-batch-plan',
+            '--queue', $materializedQueuePath,
+            '--batch-id', $batchId,
+            '--output', $planPath,
+            '--offset', $offset,
+            '--target-branch', $targetBranch,
+            '--json'
+          )
 
-          $plan = Get-Content $planPath -Raw | ConvertFrom-Json
+          if ($null -ne $take) {
+            $argumentList += @('--take', $take)
+          }
+
+          if ($forceReanalyze) {
+            $argumentList += '--force-reanalyze'
+          }
+
+          $plan = dotnet @argumentList | ConvertFrom-Json
+          if (-not $plan.ok) {
+            throw $plan.error.message
+          }
+
+          $plan = $plan.data
           "batch_id=$($plan.batchId)" >> $env:GITHUB_OUTPUT
           "selected_count=$($plan.selectedCount)" >> $env:GITHUB_OUTPUT
           "matrix<<EOF" >> $env:GITHUB_OUTPUT
@@ -218,7 +295,9 @@ jobs:
           retention-days: 7
 
   analyze:
-    needs: plan
+    needs:
+      - tool
+      - plan
     if: ${{ needs.plan.outputs.selected_count != '0' }}
     runs-on: ${{ matrix.runsOn }}
     timeout-minutes: 25
@@ -253,18 +332,33 @@ jobs:
           dotnet --list-sdks
           dotnet --list-runtimes
 
+      - name: Download discovery tool package
+        uses: actions/download-artifact@v6
+        with:
+          name: inspectra-discovery-tool
+          path: ${{ runner.temp }}/inspectra-tool
+
+      - name: Install discovery tool
+        shell: pwsh
+        run: |
+          dotnet new tool-manifest --force
+          dotnet tool install InSpectra.Discovery.Tool `
+            --version '${{ needs.tool.outputs.tool_version }}' `
+            --add-source '${{ runner.temp }}/inspectra-tool'
+
       - name: Analyze package
         shell: pwsh
         env:
           RESULT_ROOT: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
         run: |
-          ./scripts/Invoke-UntrustedToolAnalysis.ps1 `
-            -PackageId '${{ matrix.packageId }}' `
-            -Version '${{ matrix.version }}' `
-            -OutputRoot $env:RESULT_ROOT `
-            -BatchId '${{ needs.plan.outputs.batch_id }}' `
-            -Attempt ${{ matrix.attempt }} `
-            -Source 'analyze-untrusted-batch'
+          dotnet tool run inspectra-discovery -- `
+            analysis run-untrusted `
+            --package-id '${{ matrix.packageId }}' `
+            --version '${{ matrix.version }}' `
+            --output-root $env:RESULT_ROOT `
+            --batch-id '${{ needs.plan.outputs.batch_id }}' `
+            --attempt ${{ matrix.attempt }} `
+            --source 'analyze-untrusted-batch'
 
       - name: Upload analysis artifact
         if: always()
