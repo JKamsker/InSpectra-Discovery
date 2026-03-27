@@ -41,12 +41,14 @@ public sealed class PromotionApplyCommandServiceTests
                             ["packageId"] = "Existing.Tool",
                             ["latestVersion"] = "1.0.0",
                             ["totalDownloads"] = 4321,
+                            ["projectUrl"] = "https://github.com/example/existing.tool",
                         },
                         new JsonObject
                         {
                             ["packageId"] = "Sample.Tool",
                             ["latestVersion"] = "1.2.3",
                             ["totalDownloads"] = 1234,
+                            ["projectUrl"] = "https://sample.tool.example",
                         },
                     },
                 });
@@ -143,6 +145,8 @@ public sealed class PromotionApplyCommandServiceTests
                     ["packageContentUrl"] = "https://nuget.test/sample.tool.1.2.3.nupkg",
                     ["registrationLeafUrl"] = "https://nuget.test/registration/sample.tool/1.2.3.json",
                     ["catalogEntryUrl"] = "https://nuget.test/catalog/sample.tool.1.2.3.json",
+                    ["projectUrl"] = "https://sample.tool.example",
+                    ["sourceRepositoryUrl"] = "https://github.com/example/sample.tool.git",
                     ["publishedAt"] = "2026-03-27T00:30:00Z",
                     ["command"] = "sample",
                     ["entryPoint"] = "sample.dll",
@@ -214,13 +218,21 @@ public sealed class PromotionApplyCommandServiceTests
 
             var existingPackageIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "existing.tool", "index.json"));
             Assert.Equal(4321L, existingPackageIndex["totalDownloads"]?.GetValue<long>());
+            Assert.Equal("https://www.nuget.org/packages/Existing.Tool", existingPackageIndex["links"]?["nuget"]?.GetValue<string>());
+            Assert.Equal("https://github.com/example/existing.tool", existingPackageIndex["links"]?["project"]?.GetValue<string>());
+            Assert.Equal("https://github.com/example/existing.tool", existingPackageIndex["links"]?["source"]?.GetValue<string>());
 
             var samplePackageIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "index.json"));
             Assert.Equal(1234L, samplePackageIndex["totalDownloads"]?.GetValue<long>());
+            Assert.Equal("https://www.nuget.org/packages/Sample.Tool", samplePackageIndex["links"]?["nuget"]?.GetValue<string>());
+            Assert.Equal("https://sample.tool.example", samplePackageIndex["links"]?["project"]?.GetValue<string>());
+            Assert.Equal("https://github.com/example/sample.tool", samplePackageIndex["links"]?["source"]?.GetValue<string>());
 
             var allIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "all.json"));
             Assert.Equal(4321L, FindPackage(allIndex, "Existing.Tool")["totalDownloads"]?.GetValue<long>());
             Assert.Equal(1234L, FindPackage(allIndex, "Sample.Tool")["totalDownloads"]?.GetValue<long>());
+            Assert.Equal("https://github.com/example/existing.tool", FindPackage(allIndex, "Existing.Tool")["links"]?["source"]?.GetValue<string>());
+            Assert.Equal("https://github.com/example/sample.tool", FindPackage(allIndex, "Sample.Tool")["links"]?["source"]?.GetValue<string>());
 
             var browserIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "index.json"));
             Assert.Equal(4321L, FindPackage(browserIndex, "Existing.Tool")["totalDownloads"]?.GetValue<long>());

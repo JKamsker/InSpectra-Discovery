@@ -2,6 +2,32 @@ using System.Text.Json.Nodes;
 
 internal sealed class DocsCommandService
 {
+    public async Task<int> RebuildIndexesAsync(
+        string repositoryRoot,
+        bool writeBrowserIndex,
+        bool json,
+        CancellationToken cancellationToken)
+    {
+        var root = RepositoryPathResolver.ResolveRepositoryRoot(repositoryRoot);
+        var result = RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex);
+        var output = ToolRuntime.CreateOutput();
+
+        return await output.WriteSuccessAsync(
+            new
+            {
+                packageCount = result.PackageCount,
+                allIndexPath = result.AllIndexPath,
+                browserIndexPath = result.BrowserIndexPath,
+            },
+            [
+                new SummaryRow("Packages", result.PackageCount.ToString()),
+                new SummaryRow("All index", result.AllIndexPath),
+                new SummaryRow("Browser index", result.BrowserIndexPath ?? "skipped"),
+            ],
+            json,
+            cancellationToken);
+    }
+
     public async Task<int> BuildBrowserIndexAsync(
         string repositoryRoot,
         string allIndexPath,
@@ -16,6 +42,7 @@ internal sealed class DocsCommandService
             ?? throw new InvalidOperationException($"Manifest '{allIndexFile}' is empty.");
         var packageNodes = allIndex["packages"]?.AsArray() ?? [];
         var packages = new List<object>();
+        var now = DateTimeOffset.UtcNow;
 
         foreach (var packageNode in packageNodes)
         {
@@ -43,10 +70,17 @@ internal sealed class DocsCommandService
             });
         }
 
+        var createdAt = ResolveDocumentCreatedAt(
+            outputFile,
+            allIndex["createdAt"]?.GetValue<string>() ?? allIndex["generatedAt"]?.GetValue<string>(),
+            now);
+
         var browserIndex = new
         {
             schemaVersion = 1,
-            generatedAt = DateTimeOffset.UtcNow,
+            createdAt,
+            updatedAt = now,
+            generatedAt = now,
             packageCount = packages.Count,
             packages,
         };
@@ -193,6 +227,30 @@ internal sealed class DocsCommandService
             "partial" => "partial",
             _ => latestStatus ?? string.Empty,
         };
+
+    private static DateTimeOffset ResolveDocumentCreatedAt(string outputFile, string? fallback, DateTimeOffset now)
+    {
+        if (File.Exists(outputFile))
+        {
+            var existing = JsonNode.Parse(File.ReadAllText(outputFile))?.AsObject();
+            if (DateTimeOffset.TryParse(existing?["createdAt"]?.GetValue<string>(), out var parsedCreatedAt))
+            {
+                return parsedCreatedAt.ToUniversalTime();
+            }
+
+            if (DateTimeOffset.TryParse(existing?["generatedAt"]?.GetValue<string>(), out var parsedGeneratedAt))
+            {
+                return parsedGeneratedAt.ToUniversalTime();
+            }
+        }
+
+        if (DateTimeOffset.TryParse(fallback, out var parsedFallback))
+        {
+            return parsedFallback.ToUniversalTime();
+        }
+
+        return now;
+    }
 
     private static void AddCommandStats(DocumentationStats stats, string parentPath, JsonArray? commands)
     {

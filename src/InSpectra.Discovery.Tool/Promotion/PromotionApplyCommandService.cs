@@ -10,8 +10,7 @@ internal sealed class PromotionApplyCommandService
         CancellationToken cancellationToken)
     {
         var repositoryRoot = RepositoryPathResolver.ResolveRepositoryRoot();
-        var indexRoot = Path.Combine(repositoryRoot, "index");
-        var packagesRoot = Path.Combine(indexRoot, "packages");
+        var packagesRoot = Path.Combine(repositoryRoot, "index", "packages");
         var stateRoot = Path.Combine(repositoryRoot, "state");
         var now = DateTimeOffset.UtcNow;
         var downloadDirectory = Path.GetFullPath(downloadRoot);
@@ -141,7 +140,7 @@ internal sealed class PromotionApplyCommandService
             }
         }
 
-        RebuildIndexes(repositoryRoot, indexRoot, packagesRoot);
+        RepositoryPackageIndexBuilder.Rebuild(repositoryRoot, writeBrowserIndex: true);
 
         if (!string.IsNullOrWhiteSpace(summaryOutputPath))
         {
@@ -281,12 +280,14 @@ internal sealed class PromotionApplyCommandService
             ["attempt"] = result["attempt"]?.GetValue<int?>(),
             ["status"] = hasOpenCliArtifact && hasXmlDocArtifact ? "ok" : "partial",
             ["evaluatedAt"] = result["analyzedAt"]?.GetValue<string>(),
-            ["publishedAt"] = ToIsoTimestamp(result["publishedAt"]),
+            ["publishedAt"] = RepositoryPackageIndexBuilder.ToIsoTimestamp(result["publishedAt"]),
             ["packageUrl"] = result["packageUrl"]?.GetValue<string>(),
             ["totalDownloads"] = result["totalDownloads"]?.GetValue<long?>(),
             ["packageContentUrl"] = result["packageContentUrl"]?.GetValue<string>(),
             ["registrationLeafUrl"] = result["registrationLeafUrl"]?.GetValue<string>(),
             ["catalogEntryUrl"] = result["catalogEntryUrl"]?.GetValue<string>(),
+            ["projectUrl"] = result["projectUrl"]?.GetValue<string>(),
+            ["sourceRepositoryUrl"] = result["sourceRepositoryUrl"]?.GetValue<string>(),
             ["command"] = result["command"]?.GetValue<string>(),
             ["entryPoint"] = result["entryPoint"]?.GetValue<string>(),
             ["runner"] = result["runner"]?.GetValue<string>(),
@@ -359,154 +360,6 @@ internal sealed class PromotionApplyCommandService
                 : existingState?["lastSuccessfulAt"]?.GetValue<string>(),
             ["indexedPaths"] = indexedPaths?.DeepClone(),
         };
-    }
-
-    private static void RebuildIndexes(string repositoryRoot, string indexRoot, string packagesRoot)
-    {
-        var versionRecords = Directory.GetFiles(packagesRoot, "metadata.json", SearchOption.AllDirectories)
-            .Where(path => !string.Equals(Path.GetFileName(Path.GetDirectoryName(path)), "latest", StringComparison.OrdinalIgnoreCase))
-            .Select(path => new
-            {
-                Metadata = JsonNode.Parse(File.ReadAllText(path))?.AsObject(),
-                VersionDirectory = Path.GetDirectoryName(path)!,
-            })
-            .Where(item => item.Metadata is not null)
-            .Select(item => item!)
-            .ToList();
-
-        var currentTotalDownloads = LoadCurrentTotalDownloadLookup(repositoryRoot);
-        var unsortedPackageSummaries = new List<JsonObject>();
-        foreach (var packageGroup in versionRecords.GroupBy(item => item.Metadata!["packageId"]?.GetValue<string>() ?? string.Empty, StringComparer.OrdinalIgnoreCase))
-        {
-            var orderedRecords = packageGroup
-                .OrderByDescending(item => ParseDateTime(item.Metadata!["publishedAt"]?.GetValue<string>()))
-                .ThenByDescending(item => ParseDateTime(item.Metadata!["evaluatedAt"]?.GetValue<string>()))
-                .ToList();
-            var latestRecord = orderedRecords[0];
-            var lowerId = (latestRecord.Metadata!["packageId"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant();
-            var summaryPath = Path.Combine(packagesRoot, lowerId, "index.json");
-            var existingSummary = File.Exists(summaryPath)
-                ? JsonNode.Parse(File.ReadAllText(summaryPath))?.AsObject()
-                : null;
-            var summary = BuildPackageSummary(
-                repositoryRoot,
-                packageGroup.Select(item => item.Metadata!).ToList(),
-                currentTotalDownloads,
-                existingSummary);
-            SyncLatestDirectory(latestRecord.VersionDirectory, Path.Combine(packagesRoot, lowerId, "latest"));
-            RepositoryPathResolver.WriteJsonFile(summaryPath, summary);
-            unsortedPackageSummaries.Add(summary);
-        }
-
-        var packageSummaries = OpenCliMetrics.SortPackageSummariesForAllIndex(unsortedPackageSummaries, repositoryRoot);
-        var allIndex = new JsonObject
-        {
-            ["schemaVersion"] = 1,
-            ["generatedAt"] = DateTimeOffset.UtcNow.ToString("O"),
-            ["packageCount"] = packageSummaries.Count,
-            ["packages"] = new JsonArray(packageSummaries.Select(summary => (JsonNode)summary).ToArray()),
-        };
-        var allIndexPath = Path.Combine(indexRoot, "all.json");
-        RepositoryPathResolver.WriteJsonFile(allIndexPath, allIndex);
-        WriteBrowserIndex(allIndex, Path.Combine(indexRoot, "index.json"));
-    }
-
-    private static JsonObject BuildPackageSummary(
-        string repositoryRoot,
-        IReadOnlyList<JsonObject> records,
-        IReadOnlyDictionary<string, long> currentTotalDownloads,
-        JsonObject? existingSummary)
-    {
-        var ordered = records
-            .OrderByDescending(record => ParseDateTime(record["publishedAt"]?.GetValue<string>()))
-            .ThenByDescending(record => ParseDateTime(record["evaluatedAt"]?.GetValue<string>()))
-            .ToList();
-        var latest = ordered[0];
-        var packageId = latest["packageId"]?.GetValue<string>();
-        var lowerId = (latest["packageId"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant();
-        var totalDownloads = ResolvePackageTotalDownloads(packageId, ordered, currentTotalDownloads, existingSummary);
-
-        return new JsonObject
-        {
-            ["schemaVersion"] = 1,
-            ["packageId"] = packageId,
-            ["trusted"] = latest["trusted"]?.GetValue<bool?>(),
-            ["totalDownloads"] = totalDownloads,
-            ["latestVersion"] = latest["version"]?.GetValue<string>(),
-            ["latestStatus"] = latest["status"]?.GetValue<string>(),
-            ["latestPaths"] = new JsonObject
-            {
-                ["metadataPath"] = $"index/packages/{lowerId}/latest/metadata.json",
-                ["opencliPath"] = latest["artifacts"]?["opencliPath"]?.GetValue<string>() is { Length: > 0 } ? $"index/packages/{lowerId}/latest/opencli.json" : null,
-                ["xmldocPath"] = latest["artifacts"]?["xmldocPath"]?.GetValue<string>() is { Length: > 0 } ? $"index/packages/{lowerId}/latest/xmldoc.xml" : null,
-            },
-            ["versions"] = new JsonArray(ordered.Select(record => (JsonNode)new JsonObject
-            {
-                ["version"] = record["version"]?.GetValue<string>(),
-                ["publishedAt"] = ToIsoTimestamp(record["publishedAt"]),
-                ["evaluatedAt"] = ToIsoTimestamp(record["evaluatedAt"]),
-                ["status"] = record["status"]?.GetValue<string>(),
-                ["command"] = record["command"]?.GetValue<string>(),
-                ["timings"] = record["timings"]?.DeepClone(),
-                ["paths"] = record["artifacts"]?.DeepClone(),
-            }).ToArray()),
-        };
-    }
-
-    private static void SyncLatestDirectory(string versionDirectory, string latestDirectory)
-    {
-        Directory.CreateDirectory(latestDirectory);
-        foreach (var artifactName in new[] { "metadata.json", "opencli.json", "xmldoc.xml" })
-        {
-            var sourcePath = Path.Combine(versionDirectory, artifactName);
-            var targetPath = Path.Combine(latestDirectory, artifactName);
-            if (File.Exists(sourcePath))
-            {
-                File.Copy(sourcePath, targetPath, overwrite: true);
-            }
-            else if (File.Exists(targetPath))
-            {
-                File.Delete(targetPath);
-            }
-        }
-    }
-
-    private static void WriteBrowserIndex(JsonObject allIndex, string outputPath)
-    {
-        var packages = new JsonArray();
-        foreach (var package in allIndex["packages"]?.AsArray().OfType<JsonObject>() ?? [])
-        {
-            var latestVersionRecord = package["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault();
-            var packageId = package["packageId"]?.GetValue<string>() ?? string.Empty;
-            var latestVersion = package["latestVersion"]?.GetValue<string>() ?? string.Empty;
-            packages.Add(new JsonObject
-            {
-                ["packageId"] = packageId,
-                ["commandName"] = latestVersionRecord?["command"]?.GetValue<string>(),
-                ["versionCount"] = package["versions"]?.AsArray().Count ?? 0,
-                ["latestVersion"] = latestVersion,
-                ["completeness"] = package["latestStatus"]?.GetValue<string>() switch
-                {
-                    "ok" => "full",
-                    "partial" => "partial",
-                    var other => other,
-                },
-                ["packageIconUrl"] = string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(latestVersion)
-                    ? null
-                    : $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLowerInvariant()}/{latestVersion.ToLowerInvariant()}/icon",
-                ["totalDownloads"] = package["totalDownloads"]?.GetValue<long?>(),
-                ["commandCount"] = package["commandCount"]?.GetValue<int?>() ?? 0,
-                ["commandGroupCount"] = package["commandGroupCount"]?.GetValue<int?>() ?? 0,
-            });
-        }
-
-        RepositoryPathResolver.WriteJsonFile(outputPath, new JsonObject
-        {
-            ["schemaVersion"] = 1,
-            ["generatedAt"] = DateTimeOffset.UtcNow.ToString("O"),
-            ["packageCount"] = packages.Count,
-            ["packages"] = packages,
-        });
     }
 
     private static void IncrementSummaryCount(JsonObject summary, string? status)
@@ -625,63 +478,6 @@ internal sealed class PromotionApplyCommandService
         }
     }
 
-    private static IReadOnlyDictionary<string, long> LoadCurrentTotalDownloadLookup(string repositoryRoot)
-    {
-        var snapshotPath = Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json");
-        if (!File.Exists(snapshotPath))
-        {
-            return new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        var snapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))?.AsObject();
-        var packages = snapshot?["packages"]?.AsArray();
-        if (packages is null)
-        {
-            return new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-        }
-
-        var lookup = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-        foreach (var package in packages.OfType<JsonObject>())
-        {
-            var packageId = package["packageId"]?.GetValue<string>();
-            var totalDownloads = package["totalDownloads"]?.GetValue<long?>();
-            if (string.IsNullOrWhiteSpace(packageId) || totalDownloads is null)
-            {
-                continue;
-            }
-
-            lookup[packageId] = totalDownloads.Value;
-        }
-
-        return lookup;
-    }
-
-    private static long? ResolvePackageTotalDownloads(
-        string? packageId,
-        IReadOnlyList<JsonObject> orderedRecords,
-        IReadOnlyDictionary<string, long> currentTotalDownloads,
-        JsonObject? existingSummary)
-    {
-        if (!string.IsNullOrWhiteSpace(packageId) && currentTotalDownloads.TryGetValue(packageId, out var latestTotalDownloads))
-        {
-            return latestTotalDownloads;
-        }
-
-        var historicalTotalDownloads = orderedRecords
-            .Select(record => record["totalDownloads"]?.GetValue<long?>())
-            .Where(value => value is not null)
-            .Select(value => value!.Value)
-            .DefaultIfEmpty()
-            .Max();
-
-        if (historicalTotalDownloads > 0 || orderedRecords.Any(record => record["totalDownloads"] is not null))
-        {
-            return historicalTotalDownloads;
-        }
-
-        return existingSummary?["totalDownloads"]?.GetValue<long?>();
-    }
-
     private static string GetNonSuccessReason(JsonObject result, JsonObject stateRecord)
         => result["failureMessage"]?.GetValue<string>() ??
            stateRecord["lastFailureMessage"]?.GetValue<string>() ??
@@ -713,12 +509,4 @@ internal sealed class PromotionApplyCommandService
             _ => 24,
         };
 
-    private static string? ToIsoTimestamp(JsonNode? value)
-    {
-        var text = value?.GetValue<string>();
-        return string.IsNullOrWhiteSpace(text) ? null : ParseDateTime(text).ToUniversalTime().ToString("O");
-    }
-
-    private static DateTimeOffset ParseDateTime(string? value)
-        => DateTimeOffset.TryParse(value, out var parsed) ? parsed : DateTimeOffset.MinValue;
 }
