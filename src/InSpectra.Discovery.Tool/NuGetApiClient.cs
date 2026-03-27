@@ -4,11 +4,6 @@ using System.Text.Json;
 
 internal sealed class NuGetApiClient
 {
-    private static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        PropertyNameCaseInsensitive = true,
-    };
-
     private readonly HttpClient _httpClient;
 
     public NuGetApiClient(HttpClient httpClient)
@@ -18,13 +13,13 @@ internal sealed class NuGetApiClient
     }
 
     public Task<NuGetServiceIndex> GetServiceResourcesAsync(string serviceIndexUrl, CancellationToken cancellationToken)
-        => GetJsonAsync<NuGetServiceIndex>(serviceIndexUrl, cancellationToken);
+        => GetJsonAsync(serviceIndexUrl, NuGetCatalogJsonParser.ParseServiceIndex, cancellationToken);
 
     public Task<CatalogIndex> GetCatalogIndexAsync(string catalogIndexUrl, CancellationToken cancellationToken)
-        => GetJsonAsync<CatalogIndex>(catalogIndexUrl, cancellationToken);
+        => GetJsonAsync(catalogIndexUrl, NuGetCatalogJsonParser.ParseCatalogIndex, cancellationToken);
 
     public Task<CatalogPage> GetCatalogPageAsync(string pageUrl, CancellationToken cancellationToken)
-        => GetJsonAsync<CatalogPage>(pageUrl, cancellationToken);
+        => GetJsonAsync(pageUrl, NuGetCatalogJsonParser.ParseCatalogPage, cancellationToken);
 
     public Task<SearchResponse> SearchAsync(
         string searchUrl,
@@ -33,8 +28,9 @@ internal sealed class NuGetApiClient
         int take,
         string packageType,
         CancellationToken cancellationToken)
-        => GetJsonAsync<SearchResponse>(
+        => GetJsonAsync(
             $"{searchUrl}?q={Uri.EscapeDataString(query)}&skip={skip}&take={take}&prerelease=true&semVerLevel=2.0.0&packageType={packageType}",
+            NuGetSearchJsonParser.ParseSearchResponse,
             cancellationToken);
 
     public Task<AutocompleteResponse> AutocompleteAsync(
@@ -44,8 +40,9 @@ internal sealed class NuGetApiClient
         int take,
         string packageType,
         CancellationToken cancellationToken)
-        => GetJsonAsync<AutocompleteResponse>(
+        => GetJsonAsync(
             $"{autocompleteUrl}?q={Uri.EscapeDataString(query)}&skip={skip}&take={take}&prerelease=true&semVerLevel=2.0.0&packageType={packageType}",
+            NuGetSearchJsonParser.ParseAutocompleteResponse,
             cancellationToken);
 
     public Task<RegistrationIndex> GetRegistrationIndexAsync(
@@ -57,16 +54,16 @@ internal sealed class NuGetApiClient
             cancellationToken);
 
     public Task<RegistrationIndex> GetRegistrationIndexByUrlAsync(string registrationIndexUrl, CancellationToken cancellationToken)
-        => GetJsonAsync<RegistrationIndex>(registrationIndexUrl, cancellationToken);
+        => GetJsonAsync(registrationIndexUrl, NuGetRegistrationJsonParser.ParseRegistrationIndex, cancellationToken);
 
     public Task<RegistrationPage> GetRegistrationPageAsync(string pageUrl, CancellationToken cancellationToken)
-        => GetJsonAsync<RegistrationPage>(pageUrl, cancellationToken);
+        => GetJsonAsync(pageUrl, NuGetRegistrationJsonParser.ParseRegistrationPage, cancellationToken);
 
     public Task<RegistrationLeafDocument> GetRegistrationLeafAsync(string leafUrl, CancellationToken cancellationToken)
-        => GetJsonAsync<RegistrationLeafDocument>(leafUrl, cancellationToken);
+        => GetJsonAsync(leafUrl, NuGetRegistrationJsonParser.ParseRegistrationLeaf, cancellationToken);
 
     public Task<CatalogLeaf> GetCatalogLeafAsync(string catalogEntryUrl, CancellationToken cancellationToken)
-        => GetJsonAsync<CatalogLeaf>(catalogEntryUrl, cancellationToken);
+        => GetJsonAsync(catalogEntryUrl, NuGetCatalogJsonParser.ParseCatalogLeaf, cancellationToken);
 
     public async Task<int> GetSearchTotalHitsAsync(string searchUrl, CancellationToken cancellationToken)
     {
@@ -137,7 +134,10 @@ internal sealed class NuGetApiClient
         throw new InvalidOperationException($"Exhausted retries for '{url}'.");
     }
 
-    private async Task<T> GetJsonAsync<T>(string url, CancellationToken cancellationToken)
+    private async Task<T> GetJsonAsync<T>(
+        string url,
+        Func<JsonElement, T> parser,
+        CancellationToken cancellationToken)
     {
         var delay = TimeSpan.FromSeconds(2);
 
@@ -158,8 +158,8 @@ internal sealed class NuGetApiClient
 
             try
             {
-                var value = await JsonSerializer.DeserializeAsync<T>(stream, SerializerOptions, cancellationToken);
-                return value ?? throw new InvalidOperationException($"Received an empty JSON payload from '{url}'.");
+                using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+                return parser(document.RootElement);
             }
             catch (JsonException ex)
             {
