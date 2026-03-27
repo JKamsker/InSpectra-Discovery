@@ -44,7 +44,7 @@ internal static class RepositoryPathResolver
     public static void WriteJsonFile<T>(string path, T value)
     {
         EnsureParentDirectory(path);
-        var json = System.Text.Json.JsonSerializer.Serialize(value, JsonOptions.Default);
+        var json = System.Text.Json.JsonSerializer.Serialize(value, JsonOptions.RepositoryFiles);
         File.WriteAllText(path, json + Environment.NewLine, new UTF8Encoding(false));
     }
 

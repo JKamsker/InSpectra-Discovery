@@ -16,7 +16,7 @@ internal sealed class CatalogCommandService
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
         await using var outputStream = File.Create(outputPath);
-        await JsonSerializer.SerializeAsync(outputStream, snapshot, JsonOptions.Default, cancellationToken);
+        await JsonSerializer.SerializeAsync(outputStream, snapshot, JsonOptions.RepositoryFiles, cancellationToken);
 
         return await output.WriteSuccessAsync(
             new IndexBuildCommandSummary(
@@ -130,7 +130,7 @@ internal sealed class CatalogCommandService
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 
         await using var outputStream = File.Create(outputPath);
-        await JsonSerializer.SerializeAsync(outputStream, snapshot, JsonOptions.Default, cancellationToken);
+        await JsonSerializer.SerializeAsync(outputStream, snapshot, JsonOptions.RepositoryFiles, cancellationToken);
 
         return await output.WriteSuccessAsync(
             new SpectreConsoleFilterCommandSummary(
@@ -154,6 +154,6 @@ internal sealed class CatalogCommandService
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
         await using var outputStream = File.Create(outputPath);
-        await JsonSerializer.SerializeAsync(outputStream, value, JsonOptions.Default, cancellationToken);
+        await JsonSerializer.SerializeAsync(outputStream, value, JsonOptions.RepositoryFiles, cancellationToken);
     }
 }
