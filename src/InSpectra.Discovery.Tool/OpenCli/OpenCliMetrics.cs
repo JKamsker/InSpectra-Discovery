@@ -14,15 +14,15 @@ internal static class OpenCliMetrics
 
     public static OpenCliMetricsResult GetFromDocument(JsonNode? openCliDocument)
     {
-        if (openCliDocument is null)
+        if (openCliDocument is not JsonObject root)
         {
             return OpenCliMetricsResult.Empty;
         }
 
         var state = new MetricsState();
-        AddOptionMetrics(state, openCliDocument["options"] as JsonArray);
-        AddArgumentMetrics(state, openCliDocument["arguments"] as JsonArray);
-        AddCommandMetrics(state, openCliDocument["commands"] as JsonArray);
+        AddOptionMetrics(state, root["options"] as JsonArray);
+        AddArgumentMetrics(state, root["arguments"] as JsonArray);
+        AddCommandMetrics(state, root["commands"] as JsonArray);
 
         var documentedItemCount =
             state.DescribedCommandCount +
