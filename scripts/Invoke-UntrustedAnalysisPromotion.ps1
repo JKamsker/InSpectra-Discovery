@@ -376,6 +376,10 @@ function Rebuild-Indexes {
         packageCount = $packageSummaries.Count
         packages = $packageSummaries
     })
+
+    & (Join-Path $PSScriptRoot 'New-BrowserIndex.ps1') `
+        -AllIndexPath (Join-Path $IndexRoot 'all.json') `
+        -OutputPath (Join-Path $IndexRoot 'index.json')
 }
 
 $DownloadDirectory = Resolve-Path $DownloadRoot

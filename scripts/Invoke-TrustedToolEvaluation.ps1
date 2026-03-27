@@ -762,6 +762,9 @@ try {
     }
 
     Write-JsonFile -Path (Join-Path $IndexRoot 'all.json') -InputObject $allIndex
+    & (Join-Path $PSScriptRoot 'New-BrowserIndex.ps1') `
+        -AllIndexPath (Join-Path $IndexRoot 'all.json') `
+        -OutputPath (Join-Path $IndexRoot 'index.json')
 
     Write-Host "Evaluated $PackageId $Version"
     Write-Host "Version metadata: $(Get-RelativeRepositoryPath -Path $metadataPath)"
