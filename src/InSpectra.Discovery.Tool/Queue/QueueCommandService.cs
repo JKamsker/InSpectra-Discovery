@@ -104,7 +104,7 @@ internal sealed class QueueCommandService
             var runnerHint = GetHistoricalRunnerHint(root, packageId);
             var registrationIndexUrl = package["registrationUrl"]?.GetValue<string>()
                 ?? $"https://api.nuget.org/v3/registration5-gz-semver2/{packageId.ToLowerInvariant()}/index.json";
-            var registrationIndex = await scope.Client.GetJsonByUrlAsync<RegistrationIndex>(registrationIndexUrl, cancellationToken);
+            var registrationIndex = await scope.Client.GetRegistrationIndexByUrlAsync(registrationIndexUrl, cancellationToken);
             foreach (var leaf in await GetRegistrationLeavesAsync(scope.Client, registrationIndex, cancellationToken))
             {
                 var version = leaf.CatalogEntry.Version;
@@ -295,12 +295,12 @@ internal sealed class QueueCommandService
             cancellationToken);
     }
 
-    private static async Task<IReadOnlyList<RegistrationLeaf>> GetRegistrationLeavesAsync(
+    private static async Task<IReadOnlyList<RegistrationPageLeaf>> GetRegistrationLeavesAsync(
         NuGetApiClient client,
         RegistrationIndex index,
         CancellationToken cancellationToken)
     {
-        var leaves = new List<RegistrationLeaf>();
+        var leaves = new List<RegistrationPageLeaf>();
         foreach (var page in index.Items)
         {
             if (page.Items is { Count: > 0 })

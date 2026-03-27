@@ -37,6 +37,7 @@ internal sealed class DocsCommandService
                 packageIconUrl = string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(latestVersion)
                     ? null
                     : $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLowerInvariant()}/{latestVersion.ToLowerInvariant()}/icon",
+                totalDownloads = package["totalDownloads"]?.GetValue<long?>(),
                 commandCount = package["commandCount"]?.GetValue<int?>() ?? 0,
                 commandGroupCount = package["commandGroupCount"]?.GetValue<int?>() ?? 0,
             });

@@ -44,13 +44,13 @@ internal sealed class AnalysisCommandService
             var lowerId = packageId.ToLowerInvariant();
             var normalizedVersion = NormalizeVersionForRegistrationLeaf(version);
             var leafUrl = $"https://api.nuget.org/v3/registration5-gz-semver2/{lowerId}/{normalizedVersion}.json";
-            var registrationLeaf = await scope.Client.GetJsonByUrlAsync<RegistrationLeaf>(leafUrl, cancellationToken);
-            var catalogLeaf = await scope.Client.GetCatalogLeafAsync(registrationLeaf.CatalogEntry.Id, cancellationToken);
+            var registrationLeaf = await scope.Client.GetRegistrationLeafAsync(leafUrl, cancellationToken);
+            var catalogLeaf = await scope.Client.GetCatalogLeafAsync(registrationLeaf.CatalogEntryUrl, cancellationToken);
 
             result["registrationLeafUrl"] = leafUrl;
-            result["catalogEntryUrl"] = registrationLeaf.CatalogEntry.Id;
+            result["catalogEntryUrl"] = registrationLeaf.CatalogEntryUrl;
             result["packageContentUrl"] = registrationLeaf.PackageContent;
-            result["publishedAt"] = registrationLeaf.CatalogEntry.Published?.ToUniversalTime().ToString("O");
+            result["publishedAt"] = registrationLeaf.Published?.ToUniversalTime().ToString("O");
 
             var detection = BuildDetection(catalogLeaf);
             result["detection"] = detection.ToJsonObject();
@@ -163,6 +163,7 @@ internal sealed class AnalysisCommandService
             ["failureMessage"] = null,
             ["failureSignature"] = null,
             ["packageUrl"] = $"https://www.nuget.org/packages/{packageId}/{version}",
+            ["totalDownloads"] = null,
             ["packageContentUrl"] = null,
             ["registrationLeafUrl"] = null,
             ["catalogEntryUrl"] = null,

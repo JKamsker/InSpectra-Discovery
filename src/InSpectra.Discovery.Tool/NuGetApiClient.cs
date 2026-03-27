@@ -52,18 +52,21 @@ internal sealed class NuGetApiClient
         string registrationBaseUrl,
         string packageId,
         CancellationToken cancellationToken)
-        => GetJsonAsync<RegistrationIndex>(
+        => GetRegistrationIndexByUrlAsync(
             $"{registrationBaseUrl.TrimEnd('/')}/{packageId.ToLowerInvariant()}/index.json",
             cancellationToken);
+
+    public Task<RegistrationIndex> GetRegistrationIndexByUrlAsync(string registrationIndexUrl, CancellationToken cancellationToken)
+        => GetJsonAsync<RegistrationIndex>(registrationIndexUrl, cancellationToken);
 
     public Task<RegistrationPage> GetRegistrationPageAsync(string pageUrl, CancellationToken cancellationToken)
         => GetJsonAsync<RegistrationPage>(pageUrl, cancellationToken);
 
+    public Task<RegistrationLeafDocument> GetRegistrationLeafAsync(string leafUrl, CancellationToken cancellationToken)
+        => GetJsonAsync<RegistrationLeafDocument>(leafUrl, cancellationToken);
+
     public Task<CatalogLeaf> GetCatalogLeafAsync(string catalogEntryUrl, CancellationToken cancellationToken)
         => GetJsonAsync<CatalogLeaf>(catalogEntryUrl, cancellationToken);
-
-    public Task<T> GetJsonByUrlAsync<T>(string url, CancellationToken cancellationToken)
-        => GetJsonAsync<T>(url, cancellationToken);
 
     public async Task<int> GetSearchTotalHitsAsync(string searchUrl, CancellationToken cancellationToken)
     {
@@ -153,8 +156,17 @@ internal sealed class NuGetApiClient
             response.EnsureSuccessStatusCode();
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
 
-            var value = await JsonSerializer.DeserializeAsync<T>(stream, SerializerOptions, cancellationToken);
-            return value ?? throw new InvalidOperationException($"Received an empty JSON payload from '{url}'.");
+            try
+            {
+                var value = await JsonSerializer.DeserializeAsync<T>(stream, SerializerOptions, cancellationToken);
+                return value ?? throw new InvalidOperationException($"Received an empty JSON payload from '{url}'.");
+            }
+            catch (JsonException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to deserialize JSON from '{url}' as {typeof(T).Name}: {ex.Message}",
+                    ex);
+            }
         }
 
         throw new InvalidOperationException($"Exhausted retries for '{url}'.");

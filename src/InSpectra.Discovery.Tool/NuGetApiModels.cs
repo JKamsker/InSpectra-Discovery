@@ -61,16 +61,23 @@ internal sealed record RegistrationIndex(
 internal sealed record RegistrationPageReference(
     [property: JsonPropertyName("@id")] string Id,
     [property: JsonPropertyName("count")] int Count,
-    [property: JsonPropertyName("items")] IReadOnlyList<RegistrationLeaf>? Items);
+    [property: JsonPropertyName("items")] IReadOnlyList<RegistrationPageLeaf>? Items);
 
 internal sealed record RegistrationPage(
-    [property: JsonPropertyName("items")] IReadOnlyList<RegistrationLeaf> Items);
+    [property: JsonPropertyName("items")] IReadOnlyList<RegistrationPageLeaf> Items);
 
-internal sealed record RegistrationLeaf(
+internal sealed record RegistrationPageLeaf(
     [property: JsonPropertyName("@id")] string? Id,
     [property: JsonPropertyName("commitTimeStamp")] DateTimeOffset CommitTimeStamp,
     [property: JsonPropertyName("catalogEntry")] CatalogEntry CatalogEntry,
     [property: JsonPropertyName("packageContent")] string PackageContent);
+
+internal sealed record RegistrationLeafDocument(
+    [property: JsonPropertyName("@id")] string? Id,
+    [property: JsonPropertyName("catalogEntry")] string CatalogEntryUrl,
+    [property: JsonPropertyName("listed")] bool? Listed,
+    [property: JsonPropertyName("packageContent")] string PackageContent,
+    [property: JsonPropertyName("published")] DateTimeOffset? Published);
 
 internal sealed record CatalogEntry(
     [property: JsonPropertyName("@id")] string Id,

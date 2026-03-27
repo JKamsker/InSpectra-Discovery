@@ -82,7 +82,7 @@ internal sealed class DotnetToolIndexEntryResolver
             CreateEntry(packageId, registrationIndex, latestLeaf, totalDownloads.Value, versionCount));
     }
 
-    private async Task<RegistrationLeaf?> FindLatestListedLeafAsync(
+    private async Task<RegistrationPageLeaf?> FindLatestListedLeafAsync(
         RegistrationIndex registrationIndex,
         CancellationToken cancellationToken)
     {
@@ -106,7 +106,7 @@ internal sealed class DotnetToolIndexEntryResolver
     private static DotnetToolIndexEntry CreateEntry(
         string packageId,
         RegistrationIndex registrationIndex,
-        RegistrationLeaf leaf,
+        RegistrationPageLeaf leaf,
         long totalDownloads,
         int versionCount)
     {

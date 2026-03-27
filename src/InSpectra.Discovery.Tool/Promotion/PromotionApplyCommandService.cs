@@ -63,6 +63,7 @@ internal sealed class PromotionApplyCommandService
                     "No result artifact was uploaded for this matrix item.",
                     plan["batchId"]?.GetValue<string>() ?? string.Empty,
                     now);
+            MergePlanItemIntoResult(item, result);
             var artifactDirectory = hasResultArtifact ? resultEntry.ArtifactDirectory : null;
             if (!hasResultArtifact)
             {
@@ -282,6 +283,7 @@ internal sealed class PromotionApplyCommandService
             ["evaluatedAt"] = result["analyzedAt"]?.GetValue<string>(),
             ["publishedAt"] = ToIsoTimestamp(result["publishedAt"]),
             ["packageUrl"] = result["packageUrl"]?.GetValue<string>(),
+            ["totalDownloads"] = result["totalDownloads"]?.GetValue<long?>(),
             ["packageContentUrl"] = result["packageContentUrl"]?.GetValue<string>(),
             ["registrationLeafUrl"] = result["registrationLeafUrl"]?.GetValue<string>(),
             ["catalogEntryUrl"] = result["catalogEntryUrl"]?.GetValue<string>(),
@@ -372,6 +374,7 @@ internal sealed class PromotionApplyCommandService
             .Select(item => item!)
             .ToList();
 
+        var currentTotalDownloads = LoadCurrentTotalDownloadLookup(repositoryRoot);
         var unsortedPackageSummaries = new List<JsonObject>();
         foreach (var packageGroup in versionRecords.GroupBy(item => item.Metadata!["packageId"]?.GetValue<string>() ?? string.Empty, StringComparer.OrdinalIgnoreCase))
         {
@@ -380,9 +383,16 @@ internal sealed class PromotionApplyCommandService
                 .ThenByDescending(item => ParseDateTime(item.Metadata!["evaluatedAt"]?.GetValue<string>()))
                 .ToList();
             var latestRecord = orderedRecords[0];
-            var summary = BuildPackageSummary(repositoryRoot, packageGroup.Select(item => item.Metadata!).ToList());
             var lowerId = (latestRecord.Metadata!["packageId"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant();
             var summaryPath = Path.Combine(packagesRoot, lowerId, "index.json");
+            var existingSummary = File.Exists(summaryPath)
+                ? JsonNode.Parse(File.ReadAllText(summaryPath))?.AsObject()
+                : null;
+            var summary = BuildPackageSummary(
+                repositoryRoot,
+                packageGroup.Select(item => item.Metadata!).ToList(),
+                currentTotalDownloads,
+                existingSummary);
             SyncLatestDirectory(latestRecord.VersionDirectory, Path.Combine(packagesRoot, lowerId, "latest"));
             RepositoryPathResolver.WriteJsonFile(summaryPath, summary);
             unsortedPackageSummaries.Add(summary);
@@ -401,20 +411,27 @@ internal sealed class PromotionApplyCommandService
         WriteBrowserIndex(allIndex, Path.Combine(indexRoot, "index.json"));
     }
 
-    private static JsonObject BuildPackageSummary(string repositoryRoot, IReadOnlyList<JsonObject> records)
+    private static JsonObject BuildPackageSummary(
+        string repositoryRoot,
+        IReadOnlyList<JsonObject> records,
+        IReadOnlyDictionary<string, long> currentTotalDownloads,
+        JsonObject? existingSummary)
     {
         var ordered = records
             .OrderByDescending(record => ParseDateTime(record["publishedAt"]?.GetValue<string>()))
             .ThenByDescending(record => ParseDateTime(record["evaluatedAt"]?.GetValue<string>()))
             .ToList();
         var latest = ordered[0];
+        var packageId = latest["packageId"]?.GetValue<string>();
         var lowerId = (latest["packageId"]?.GetValue<string>() ?? string.Empty).ToLowerInvariant();
+        var totalDownloads = ResolvePackageTotalDownloads(packageId, ordered, currentTotalDownloads, existingSummary);
 
         return new JsonObject
         {
             ["schemaVersion"] = 1,
-            ["packageId"] = latest["packageId"]?.GetValue<string>(),
+            ["packageId"] = packageId,
             ["trusted"] = latest["trusted"]?.GetValue<bool?>(),
+            ["totalDownloads"] = totalDownloads,
             ["latestVersion"] = latest["version"]?.GetValue<string>(),
             ["latestStatus"] = latest["status"]?.GetValue<string>(),
             ["latestPaths"] = new JsonObject
@@ -477,6 +494,7 @@ internal sealed class PromotionApplyCommandService
                 ["packageIconUrl"] = string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(latestVersion)
                     ? null
                     : $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLowerInvariant()}/{latestVersion.ToLowerInvariant()}/icon",
+                ["totalDownloads"] = package["totalDownloads"]?.GetValue<long?>(),
                 ["commandCount"] = package["commandCount"]?.GetValue<int?>() ?? 0,
                 ["commandGroupCount"] = package["commandGroupCount"]?.GetValue<int?>() ?? 0,
             });
@@ -558,6 +576,7 @@ internal sealed class PromotionApplyCommandService
             ["failureMessage"] = message,
             ["failureSignature"] = $"infra|{classification}|{message}",
             ["packageUrl"] = item["packageUrl"]?.GetValue<string>(),
+            ["totalDownloads"] = item["totalDownloads"]?.GetValue<long?>(),
             ["packageContentUrl"] = item["packageContentUrl"]?.GetValue<string>(),
             ["registrationLeafUrl"] = null,
             ["catalogEntryUrl"] = item["catalogEntryUrl"]?.GetValue<string>(),
@@ -597,6 +616,71 @@ internal sealed class PromotionApplyCommandService
                 ["xmldocArtifact"] = null,
             },
         };
+
+    private static void MergePlanItemIntoResult(JsonObject item, JsonObject result)
+    {
+        if (result["totalDownloads"] is null && item["totalDownloads"] is not null)
+        {
+            result["totalDownloads"] = item["totalDownloads"]?.DeepClone();
+        }
+    }
+
+    private static IReadOnlyDictionary<string, long> LoadCurrentTotalDownloadLookup(string repositoryRoot)
+    {
+        var snapshotPath = Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json");
+        if (!File.Exists(snapshotPath))
+        {
+            return new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var snapshot = JsonNode.Parse(File.ReadAllText(snapshotPath))?.AsObject();
+        var packages = snapshot?["packages"]?.AsArray();
+        if (packages is null)
+        {
+            return new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        var lookup = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+        foreach (var package in packages.OfType<JsonObject>())
+        {
+            var packageId = package["packageId"]?.GetValue<string>();
+            var totalDownloads = package["totalDownloads"]?.GetValue<long?>();
+            if (string.IsNullOrWhiteSpace(packageId) || totalDownloads is null)
+            {
+                continue;
+            }
+
+            lookup[packageId] = totalDownloads.Value;
+        }
+
+        return lookup;
+    }
+
+    private static long? ResolvePackageTotalDownloads(
+        string? packageId,
+        IReadOnlyList<JsonObject> orderedRecords,
+        IReadOnlyDictionary<string, long> currentTotalDownloads,
+        JsonObject? existingSummary)
+    {
+        if (!string.IsNullOrWhiteSpace(packageId) && currentTotalDownloads.TryGetValue(packageId, out var latestTotalDownloads))
+        {
+            return latestTotalDownloads;
+        }
+
+        var historicalTotalDownloads = orderedRecords
+            .Select(record => record["totalDownloads"]?.GetValue<long?>())
+            .Where(value => value is not null)
+            .Select(value => value!.Value)
+            .DefaultIfEmpty()
+            .Max();
+
+        if (historicalTotalDownloads > 0 || orderedRecords.Any(record => record["totalDownloads"] is not null))
+        {
+            return historicalTotalDownloads;
+        }
+
+        return existingSummary?["totalDownloads"]?.GetValue<long?>();
+    }
 
     private static string GetNonSuccessReason(JsonObject result, JsonObject stateRecord)
         => result["failureMessage"]?.GetValue<string>() ??
