@@ -1,8 +1,7 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 internal sealed record NuGetServiceIndex(
-    [property: JsonPropertyName("resources")] IReadOnlyList<NuGetServiceResource> Resources)
+    IReadOnlyList<NuGetServiceResource> Resources)
 {
     public string GetRequiredResource(params string[] preferredTypes)
     {
@@ -22,99 +21,99 @@ internal sealed record NuGetServiceIndex(
 }
 
 internal sealed record NuGetServiceResource(
-    [property: JsonPropertyName("@id")] string Id,
-    [property: JsonPropertyName("@type")] string Type);
+    string Id,
+    string Type);
 
 internal sealed record CatalogIndex(
-    [property: JsonPropertyName("items")] IReadOnlyList<CatalogPageReference> Items);
+    IReadOnlyList<CatalogPageReference> Items);
 
 internal sealed record CatalogPageReference(
-    [property: JsonPropertyName("@id")] string Id,
-    [property: JsonPropertyName("commitTimeStamp")] DateTimeOffset CommitTimeStamp);
+    string Id,
+    DateTimeOffset CommitTimeStamp);
 
 internal sealed record CatalogPage(
-    [property: JsonPropertyName("items")] IReadOnlyList<CatalogPageItem> Items);
+    IReadOnlyList<CatalogPageItem> Items);
 
 internal sealed record CatalogPageItem(
-    [property: JsonPropertyName("@id")] string Id,
-    [property: JsonPropertyName("@type")] string Type,
-    [property: JsonPropertyName("commitTimeStamp")] DateTimeOffset CommitTimeStamp,
-    [property: JsonPropertyName("nuget:id")] string PackageId,
-    [property: JsonPropertyName("nuget:version")] string PackageVersion);
+    string Id,
+    string Type,
+    DateTimeOffset CommitTimeStamp,
+    string PackageId,
+    string PackageVersion);
 
 internal sealed record SearchResponse(
-    [property: JsonPropertyName("totalHits")] int TotalHits,
-    [property: JsonPropertyName("data")] IReadOnlyList<SearchPackage> Data);
+    int TotalHits,
+    IReadOnlyList<SearchPackage> Data);
 
 internal sealed record SearchPackage(
-    [property: JsonPropertyName("id")] string Id,
-    [property: JsonPropertyName("totalDownloads")] long TotalDownloads);
+    string Id,
+    long TotalDownloads);
 
 internal sealed record AutocompleteResponse(
-    [property: JsonPropertyName("totalHits")] int TotalHits,
-    [property: JsonPropertyName("data")] IReadOnlyList<string> Data);
+    int TotalHits,
+    IReadOnlyList<string> Data);
 
 internal sealed record RegistrationIndex(
-    [property: JsonPropertyName("@id")] string Id,
-    [property: JsonPropertyName("items")] IReadOnlyList<RegistrationPageReference> Items);
+    string Id,
+    IReadOnlyList<RegistrationPageReference> Items);
 
 internal sealed record RegistrationPageReference(
-    [property: JsonPropertyName("@id")] string Id,
-    [property: JsonPropertyName("count")] int Count,
-    [property: JsonPropertyName("items")] IReadOnlyList<RegistrationPageLeaf>? Items);
+    string Id,
+    int Count,
+    IReadOnlyList<RegistrationPageLeaf>? Items);
 
 internal sealed record RegistrationPage(
-    [property: JsonPropertyName("items")] IReadOnlyList<RegistrationPageLeaf> Items);
+    IReadOnlyList<RegistrationPageLeaf> Items);
 
 internal sealed record RegistrationPageLeaf(
-    [property: JsonPropertyName("@id")] string? Id,
-    [property: JsonPropertyName("commitTimeStamp")] DateTimeOffset CommitTimeStamp,
-    [property: JsonPropertyName("catalogEntry")] CatalogEntry CatalogEntry,
-    [property: JsonPropertyName("packageContent")] string PackageContent);
+    string? Id,
+    DateTimeOffset CommitTimeStamp,
+    CatalogEntry CatalogEntry,
+    string PackageContent);
 
 internal sealed record RegistrationLeafDocument(
-    [property: JsonPropertyName("@id")] string? Id,
-    [property: JsonPropertyName("catalogEntry")] string CatalogEntryUrl,
-    [property: JsonPropertyName("listed")] bool? Listed,
-    [property: JsonPropertyName("packageContent")] string PackageContent,
-    [property: JsonPropertyName("published")] DateTimeOffset? Published);
+    string? Id,
+    string CatalogEntryUrl,
+    bool? Listed,
+    string PackageContent,
+    DateTimeOffset? Published);
 
 internal sealed record CatalogRepository(
-    [property: JsonPropertyName("type")] string? Type,
-    [property: JsonPropertyName("url")] string? Url,
-    [property: JsonPropertyName("commit")] string? Commit);
+    string? Type,
+    string? Url,
+    string? Commit);
 
 internal sealed record CatalogEntry(
-    [property: JsonPropertyName("@id")] string Id,
-    [property: JsonPropertyName("authors")] string? Authors,
-    [property: JsonPropertyName("description")] string? Description,
-    [property: JsonPropertyName("licenseExpression")] string? LicenseExpression,
-    [property: JsonPropertyName("licenseUrl")] string? LicenseUrl,
-    [property: JsonPropertyName("listed")] bool? Listed,
-    [property: JsonPropertyName("projectUrl")] string? ProjectUrl,
-    [property: JsonPropertyName("published")] DateTimeOffset? Published,
-    [property: JsonPropertyName("repository")] CatalogRepository? Repository,
-    [property: JsonPropertyName("readmeUrl")] string? ReadmeUrl,
-    [property: JsonPropertyName("version")] string Version);
+    string Id,
+    string? Authors,
+    string? Description,
+    string? LicenseExpression,
+    string? LicenseUrl,
+    bool? Listed,
+    string? ProjectUrl,
+    DateTimeOffset? Published,
+    CatalogRepository? Repository,
+    string? ReadmeUrl,
+    string Version);
 
 internal sealed record CatalogLeaf(
-    [property: JsonPropertyName("@id")] string Id,
-    [property: JsonPropertyName("projectUrl")] string? ProjectUrl,
-    [property: JsonPropertyName("repository")] CatalogRepository? Repository,
-    [property: JsonPropertyName("packageEntries")] IReadOnlyList<CatalogPackageEntry>? PackageEntries,
-    [property: JsonPropertyName("dependencyGroups")] IReadOnlyList<CatalogDependencyGroup>? DependencyGroups,
-    [property: JsonPropertyName("packageTypes")] JsonElement? PackageTypes);
+    string Id,
+    string? ProjectUrl,
+    CatalogRepository? Repository,
+    IReadOnlyList<CatalogPackageEntry>? PackageEntries,
+    IReadOnlyList<CatalogDependencyGroup>? DependencyGroups,
+    JsonElement? PackageTypes);
 
 internal sealed record CatalogPackageEntry(
-    [property: JsonPropertyName("fullName")] string FullName,
-    [property: JsonPropertyName("name")] string Name);
+    string FullName,
+    string Name);
 
 internal sealed record CatalogPackageType(
-    [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("version")] string? Version);
+    string Name,
+    string? Version);
 
 internal sealed record CatalogDependencyGroup(
-    [property: JsonPropertyName("dependencies")] IReadOnlyList<CatalogDependency>? Dependencies);
+    IReadOnlyList<CatalogDependency>? Dependencies);
 
 internal sealed record CatalogDependency(
-    [property: JsonPropertyName("id")] string Id);
+    string Id);

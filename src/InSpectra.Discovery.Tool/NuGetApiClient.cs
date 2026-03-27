@@ -13,13 +13,22 @@ internal sealed class NuGetApiClient
     }
 
     public Task<NuGetServiceIndex> GetServiceResourcesAsync(string serviceIndexUrl, CancellationToken cancellationToken)
-        => GetJsonAsync(serviceIndexUrl, NuGetCatalogJsonParser.ParseServiceIndex, cancellationToken);
+        => GetJsonAsync<NuGetServiceIndexSpec, NuGetServiceIndex>(
+            serviceIndexUrl,
+            NuGetApiModelMapper.ToModel,
+            cancellationToken);
 
     public Task<CatalogIndex> GetCatalogIndexAsync(string catalogIndexUrl, CancellationToken cancellationToken)
-        => GetJsonAsync(catalogIndexUrl, NuGetCatalogJsonParser.ParseCatalogIndex, cancellationToken);
+        => GetJsonAsync<CatalogIndexSpec, CatalogIndex>(
+            catalogIndexUrl,
+            NuGetApiModelMapper.ToModel,
+            cancellationToken);
 
     public Task<CatalogPage> GetCatalogPageAsync(string pageUrl, CancellationToken cancellationToken)
-        => GetJsonAsync(pageUrl, NuGetCatalogJsonParser.ParseCatalogPage, cancellationToken);
+        => GetJsonAsync<CatalogPageSpec, CatalogPage>(
+            pageUrl,
+            NuGetApiModelMapper.ToModel,
+            cancellationToken);
 
     public Task<SearchResponse> SearchAsync(
         string searchUrl,
@@ -28,9 +37,9 @@ internal sealed class NuGetApiClient
         int take,
         string packageType,
         CancellationToken cancellationToken)
-        => GetJsonAsync(
+        => GetJsonAsync<SearchResponseSpec, SearchResponse>(
             $"{searchUrl}?q={Uri.EscapeDataString(query)}&skip={skip}&take={take}&prerelease=true&semVerLevel=2.0.0&packageType={packageType}",
-            NuGetSearchJsonParser.ParseSearchResponse,
+            NuGetApiModelMapper.ToModel,
             cancellationToken);
 
     public Task<AutocompleteResponse> AutocompleteAsync(
@@ -40,9 +49,9 @@ internal sealed class NuGetApiClient
         int take,
         string packageType,
         CancellationToken cancellationToken)
-        => GetJsonAsync(
+        => GetJsonAsync<AutocompleteResponseSpec, AutocompleteResponse>(
             $"{autocompleteUrl}?q={Uri.EscapeDataString(query)}&skip={skip}&take={take}&prerelease=true&semVerLevel=2.0.0&packageType={packageType}",
-            NuGetSearchJsonParser.ParseAutocompleteResponse,
+            NuGetApiModelMapper.ToModel,
             cancellationToken);
 
     public Task<RegistrationIndex> GetRegistrationIndexAsync(
@@ -54,16 +63,28 @@ internal sealed class NuGetApiClient
             cancellationToken);
 
     public Task<RegistrationIndex> GetRegistrationIndexByUrlAsync(string registrationIndexUrl, CancellationToken cancellationToken)
-        => GetJsonAsync(registrationIndexUrl, NuGetRegistrationJsonParser.ParseRegistrationIndex, cancellationToken);
+        => GetJsonAsync<RegistrationIndexSpec, RegistrationIndex>(
+            registrationIndexUrl,
+            NuGetApiModelMapper.ToModel,
+            cancellationToken);
 
     public Task<RegistrationPage> GetRegistrationPageAsync(string pageUrl, CancellationToken cancellationToken)
-        => GetJsonAsync(pageUrl, NuGetRegistrationJsonParser.ParseRegistrationPage, cancellationToken);
+        => GetJsonAsync<RegistrationPageSpec, RegistrationPage>(
+            pageUrl,
+            NuGetApiModelMapper.ToModel,
+            cancellationToken);
 
     public Task<RegistrationLeafDocument> GetRegistrationLeafAsync(string leafUrl, CancellationToken cancellationToken)
-        => GetJsonAsync(leafUrl, NuGetRegistrationJsonParser.ParseRegistrationLeaf, cancellationToken);
+        => GetJsonAsync<RegistrationLeafDocumentSpec, RegistrationLeafDocument>(
+            leafUrl,
+            NuGetApiModelMapper.ToModel,
+            cancellationToken);
 
     public Task<CatalogLeaf> GetCatalogLeafAsync(string catalogEntryUrl, CancellationToken cancellationToken)
-        => GetJsonAsync(catalogEntryUrl, NuGetCatalogJsonParser.ParseCatalogLeaf, cancellationToken);
+        => GetJsonAsync<CatalogLeafSpec, CatalogLeaf>(
+            catalogEntryUrl,
+            NuGetApiModelMapper.ToModel,
+            cancellationToken);
 
     public async Task<int> GetSearchTotalHitsAsync(string searchUrl, CancellationToken cancellationToken)
     {
@@ -134,10 +155,11 @@ internal sealed class NuGetApiClient
         throw new InvalidOperationException($"Exhausted retries for '{url}'.");
     }
 
-    private async Task<T> GetJsonAsync<T>(
+    private async Task<TModel> GetJsonAsync<TSpec, TModel>(
         string url,
-        Func<JsonElement, T> parser,
+        Func<TSpec, TModel> map,
         CancellationToken cancellationToken)
+        where TSpec : class
     {
         var delay = TimeSpan.FromSeconds(2);
 
@@ -158,13 +180,18 @@ internal sealed class NuGetApiClient
 
             try
             {
-                using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-                return parser(document.RootElement);
+                var spec = await JsonSerializer.DeserializeAsync<TSpec>(stream, cancellationToken: cancellationToken);
+                if (spec is null)
+                {
+                    throw new JsonException("JSON payload was null.");
+                }
+
+                return map(spec);
             }
             catch (JsonException ex)
             {
                 throw new InvalidOperationException(
-                    $"Failed to deserialize JSON from '{url}' as {typeof(T).Name}: {ex.Message}",
+                    $"Failed to deserialize JSON from '{url}' as {typeof(TModel).Name}: {ex.Message}",
                     ex);
             }
         }
