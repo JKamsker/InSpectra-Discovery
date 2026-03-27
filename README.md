@@ -19,13 +19,13 @@ InSpectra-Discovery is an automated pipeline that:
 flowchart TD
     subgraph Discovery["Discovery (scheduled 5x daily)"]
         NuGet[(NuGet V3 Catalog)]
-        Bootstrap["index build / index delta"]
-        NuGet -->|poll catalog| Bootstrap
-        Bootstrap --> Snapshot["dotnet-tools snapshot"]
+        Tool["catalog build / catalog delta discover"]
+        NuGet -->|poll catalog| Tool
+        Tool --> Snapshot["dotnet-tools snapshot"]
     end
 
     subgraph Filtering
-        Snapshot --> Filter["filter spectre-console-cli"]
+        Snapshot --> Filter["catalog filter spectre-console-cli"]
         Filter -->|"inspect NuPkg
 dependencies"| Filtered["Spectre.Console.Cli tools"]
     end
@@ -64,8 +64,8 @@ extract xmldoc"| Results["Analysis results"]
 ## Repository structure
 
 ```
-src/InSpectra.Discovery.Bootstrap/   # .NET 8 console app (discovery & filtering)
-scripts/                             # PowerShell automation (analysis, promotion, backfill)
+src/InSpectra.Discovery.Tool/        # .NET 8 tool/CLI (discovery, analysis, promotion)
+scripts/                             # Legacy/manual PowerShell helpers
 .github/workflows/                   # CI/CD pipelines (scheduled discovery, batch analysis)
 index/                               # Output: analyzed tool index (all.json + per-package artifacts)
 state/                               # Persistent state (catalog cursors, queues, deltas)
@@ -76,16 +76,16 @@ tests/                               # xUnit tests
 
 ### Discovery
 
-The bootstrap app enumerates NuGet's autocomplete and registration APIs to build a snapshot of all dotnet-tool packages, enriched with download counts:
+The discovery tool enumerates NuGet's autocomplete and registration APIs to build a snapshot of all dotnet-tool packages, enriched with download counts:
 
 ```bash
-dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --concurrency 16
+dotnet run --project src/InSpectra.Discovery.Tool -- catalog build --concurrency 16
 ```
 
 Incremental updates use the NuGet catalog cursor to detect only new or changed packages:
 
 ```bash
-dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta
+dotnet run --project src/InSpectra.Discovery.Tool -- catalog delta discover
 ```
 
 ### Filtering
@@ -93,19 +93,15 @@ dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta
 Packages are filtered to those that depend on `Spectre.Console.Cli`, inspecting NuPkg archives for dependency evidence:
 
 ```bash
-dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli --concurrency 16
+dotnet run --project src/InSpectra.Discovery.Tool -- catalog filter spectre-console-cli --concurrency 16
 ```
 
 ### Analysis
 
-Discovered tools are analyzed via PowerShell scripts that install each tool, extract its CLI structure, and parse XML documentation:
+Discovered tools are analyzed via the discovery CLI, which installs each tool in a sandbox, extracts its CLI structure, and parses XML documentation:
 
 ```powershell
-# Single trusted tool
-pwsh -File scripts/Invoke-TrustedToolEvaluation.ps1 -PackageId JellyfinCli -Version 0.1.16 -Source workflow-dispatch -Trusted
-
-# Batch untrusted analysis
-pwsh -File scripts/Invoke-UntrustedToolAnalysis.ps1 -BatchPlanPath config/untrusted-batches/batch.json
+dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-untrusted --package-id JellyfinCli --version 0.1.16 --output-root artifacts/analysis/jellyfincli --batch-id manual
 ```
 
 ### Output artifacts
@@ -132,8 +128,8 @@ A global manifest at `index/all.json` lists all indexed packages with their late
 
 ## Prerequisites
 
-- .NET 8.0 SDK
-- PowerShell 7+
+- .NET 10.0 SDK
+- PowerShell 7+ for legacy/manual scripts only
 
 ## Building and testing
 

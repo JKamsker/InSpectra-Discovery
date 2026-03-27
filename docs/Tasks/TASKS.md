@@ -12,19 +12,19 @@
 - [x] Narrow each broad discovery delta to changed `Spectre.Console.Cli` tools only, and emit a queue JSON that can feed later analysis runs directly.
 
 Command:
-`dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --concurrency 16`
+`dotnet run --project src/InSpectra.Discovery.Tool -- catalog build --concurrency 16`
 
 Output:
 `artifacts/index/dotnet-tools.current.json`
 
 Spectre filter:
-`dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console --concurrency 16`
+`dotnet run --project src/InSpectra.Discovery.Tool -- catalog filter spectre-console --concurrency 16`
 
 Filtered output:
 `artifacts/index/dotnet-tools.spectre-console.json`
 
 Spectre CLI filter:
-`dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli --concurrency 16`
+`dotnet run --project src/InSpectra.Discovery.Tool -- catalog filter spectre-console-cli --concurrency 16`
 
 Primary source snapshot:
 `artifacts/index/dotnet-tools.spectre-console-cli.json`
@@ -42,7 +42,7 @@ Latest alias:
 `index/packages/jellyfincli/latest/{metadata.json,opencli.json,xmldoc.xml}`
 
 Queue dispatch planner:
-`scripts/Export-DiscoveryQueueDispatchPlan.ps1`
+`inspectra-discovery queue dispatch-plan`
 
 Untrusted analysis workflow:
 `.github/workflows/analyze-untrusted-batch.yml`

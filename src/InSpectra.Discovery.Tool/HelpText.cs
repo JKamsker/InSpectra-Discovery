@@ -41,29 +41,29 @@ internal static class HelpText
     private static void WriteRoot(TextWriter writer)
     {
         writer.WriteLine("NAME");
-        writer.WriteLine("  InSpectra.Discovery.Bootstrap");
+        writer.WriteLine("  InSpectra.Discovery.Tool");
         writer.WriteLine();
         writer.WriteLine("USAGE");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- <command> [options]");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- <command> [options]");
         writer.WriteLine();
         writer.WriteLine("DESCRIPTION");
         writer.WriteLine("  Builds and derives NuGet .NET tool discovery indexes.");
         writer.WriteLine();
         writer.WriteLine("COMMON TASKS");
         writer.WriteLine("  Build the ranked current dotnet-tool index:");
-        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build");
+        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Tool -- index build");
         writer.WriteLine();
         writer.WriteLine("  Discover added or updated dotnet tools since the last catalog cursor:");
-        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta");
+        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Tool -- index delta");
         writer.WriteLine();
         writer.WriteLine("  Narrow the latest delta to changed Spectre.Console.Cli tools and queue them:");
-        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta-spectre-console-cli");
+        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Tool -- index delta-spectre-console-cli");
         writer.WriteLine();
         writer.WriteLine("  Write the Spectre.Console subset from an existing index:");
-        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console");
+        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Tool -- filter spectre-console");
         writer.WriteLine();
         writer.WriteLine("  Write the Spectre.Console.Cli subset from an existing index:");
-        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli");
+        writer.WriteLine("    dotnet run --project src/InSpectra.Discovery.Tool -- filter spectre-console-cli");
         writer.WriteLine();
         writer.WriteLine("COMMANDS");
         writer.WriteLine("  index build              Build the current ranked dotnet-tool index from NuGet.");
@@ -85,7 +85,7 @@ internal static class HelpText
         writer.WriteLine("  index build");
         writer.WriteLine();
         writer.WriteLine("USAGE");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build [options]");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index build [options]");
         writer.WriteLine();
         writer.WriteLine("DESCRIPTION");
         writer.WriteLine("  Enumerates current dotnet-tool package IDs from NuGet autocomplete, enriches");
@@ -100,8 +100,8 @@ internal static class HelpText
         writer.WriteLine("  --json                     Emit a machine-readable command summary to stdout.");
         writer.WriteLine();
         writer.WriteLine("EXAMPLES");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index build --output artifacts/index/tools.json --json");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index build");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index build --output artifacts/index/tools.json --json");
     }
 
     private static void WriteIndexDelta(TextWriter writer)
@@ -110,7 +110,7 @@ internal static class HelpText
         writer.WriteLine("  index delta");
         writer.WriteLine();
         writer.WriteLine("USAGE");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta [options]");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index delta [options]");
         writer.WriteLine();
         writer.WriteLine("DESCRIPTION");
         writer.WriteLine("  Walks the NuGet catalog from the saved cursor, finds dotnet-tool package IDs whose");
@@ -128,8 +128,8 @@ internal static class HelpText
         writer.WriteLine("  --json                     Emit a machine-readable command summary to stdout.");
         writer.WriteLine();
         writer.WriteLine("EXAMPLES");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta --seed-cursor-utc 2026-03-25T13:07:00Z --json");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index delta");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index delta --seed-cursor-utc 2026-03-25T13:07:00Z --json");
     }
 
     private static void WriteIndexDeltaSpectreConsoleCli(TextWriter writer)
@@ -138,7 +138,7 @@ internal static class HelpText
         writer.WriteLine("  index delta-spectre-console-cli");
         writer.WriteLine();
         writer.WriteLine("USAGE");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta-spectre-console-cli [options]");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index delta-spectre-console-cli [options]");
         writer.WriteLine();
         writer.WriteLine("DESCRIPTION");
         writer.WriteLine("  Reads the latest dotnet-tool delta, inspects only the changed package IDs for");
@@ -153,8 +153,8 @@ internal static class HelpText
         writer.WriteLine("  --json                 Emit a machine-readable command summary to stdout.");
         writer.WriteLine();
         writer.WriteLine("EXAMPLES");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta-spectre-console-cli");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- index delta-spectre-console-cli --json");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index delta-spectre-console-cli");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- index delta-spectre-console-cli --json");
     }
 
     private static void WriteFilter(TextWriter writer)
@@ -163,7 +163,7 @@ internal static class HelpText
         writer.WriteLine("  filter");
         writer.WriteLine();
         writer.WriteLine("USAGE");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter <command> [options]");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- filter <command> [options]");
         writer.WriteLine();
         writer.WriteLine("COMMANDS");
         writer.WriteLine("  spectre-console       Filter an index to packages with Spectre.Console evidence.");
@@ -176,7 +176,7 @@ internal static class HelpText
         writer.WriteLine("  filter spectre-console");
         writer.WriteLine();
         writer.WriteLine("USAGE");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console [options]");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- filter spectre-console [options]");
         writer.WriteLine();
         writer.WriteLine("DESCRIPTION");
         writer.WriteLine("  Reads the ranked dotnet-tool index, fetches each package's catalog entry, and");
@@ -190,8 +190,8 @@ internal static class HelpText
         writer.WriteLine("  --json                 Emit a machine-readable command summary to stdout.");
         writer.WriteLine();
         writer.WriteLine("EXAMPLES");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console --output artifacts/index/spectre.json --json");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- filter spectre-console");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- filter spectre-console --output artifacts/index/spectre.json --json");
     }
 
     private static void WriteFilterSpectreConsoleCli(TextWriter writer)
@@ -200,7 +200,7 @@ internal static class HelpText
         writer.WriteLine("  filter spectre-console-cli");
         writer.WriteLine();
         writer.WriteLine("USAGE");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli [options]");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- filter spectre-console-cli [options]");
         writer.WriteLine();
         writer.WriteLine("DESCRIPTION");
         writer.WriteLine("  Reads the ranked dotnet-tool index, fetches each package's catalog entry, and");
@@ -214,7 +214,7 @@ internal static class HelpText
         writer.WriteLine("  --json                 Emit a machine-readable command summary to stdout.");
         writer.WriteLine();
         writer.WriteLine("EXAMPLES");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli");
-        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Bootstrap -- filter spectre-console-cli --output artifacts/index/spectre-cli.json --json");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- filter spectre-console-cli");
+        writer.WriteLine("  dotnet run --project src/InSpectra.Discovery.Tool -- filter spectre-console-cli --output artifacts/index/spectre-cli.json --json");
     }
 }

@@ -44,7 +44,43 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  tool:
+    runs-on: ubuntu-latest
+    outputs:
+      tool_version: ${{ steps.pack.outputs.tool_version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack discovery tool
+        id: pack
+        shell: pwsh
+        run: |
+          $toolVersion = '0.0.0-ci.${{ github.run_id }}.${{ github.run_attempt }}'
+          dotnet pack src/InSpectra.Discovery.Tool/InSpectra.Discovery.Tool.csproj `
+            -c Release `
+            -p:Version=$toolVersion
+          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
+
+      - name: Upload discovery tool package
+        uses: actions/upload-artifact@v6
+        with:
+          name: inspectra-discovery-tool
+          path: artifacts/tool/*.nupkg
+          if-no-files-found: error
+          retention-days: 7
+
   discover:
+    needs: tool
     runs-on: ubuntu-latest
 
     steps:
@@ -111,17 +147,29 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
+
+      - name: Download discovery tool package
+        uses: actions/download-artifact@v6
+        with:
+          name: inspectra-discovery-tool
+          path: ${{ runner.temp }}/inspectra-tool
+
+      - name: Install discovery tool
+        shell: pwsh
+        run: |
+          dotnet new tool-manifest --force
+          dotnet tool install InSpectra.Discovery.Tool `
+            --version '${{ needs.tool.outputs.tool_version }}' `
+            --add-source '${{ runner.temp }}/inspectra-tool'
 
       - name: Run dotnet-tool delta discovery
         id: delta
         shell: pwsh
         run: |
           $args = @(
-            'run',
-            '--project', 'src/InSpectra.Discovery.Bootstrap',
-            '--',
-            'index', 'delta',
+            'tool', 'run', 'inspectra-discovery', '--',
+            'catalog', 'delta', 'discover',
             '--json',
             '--overlap-minutes', '${{ steps.resolve.outputs.overlap_minutes }}'
           )
@@ -172,8 +220,8 @@ jobs:
         id: spectre
         shell: pwsh
         run: |
-          $result = dotnet run --project src/InSpectra.Discovery.Bootstrap -- `
-            index delta-spectre-console-cli `
+          $result = dotnet tool run inspectra-discovery -- `
+            catalog delta queue-spectre-cli `
             --json | ConvertFrom-Json
 
           if (-not $result.ok) {
