@@ -48,7 +48,7 @@ jobs:
 
           $run = gh run view $analysisRunId `
             --repo '${{ github.repository }}' `
-            --json databaseId,url,status,conclusion,workflowName,headBranch,headSha | ConvertFrom-Json
+            --json databaseId,url,status,conclusion,workflowName,headBranch,headSha,createdAt | ConvertFrom-Json
 
           if ($run.workflowName -ne 'Analyze Untrusted Batch') {
             throw "Run '$analysisRunId' is not an Analyze Untrusted Batch run."
@@ -66,6 +66,7 @@ jobs:
           "analysis_run_url=$($run.url)" >> $env:GITHUB_OUTPUT
           "head_branch=$($run.headBranch)" >> $env:GITHUB_OUTPUT
           "head_sha=$($run.headSha)" >> $env:GITHUB_OUTPUT
+          "created_at=$($run.createdAt)" >> $env:GITHUB_OUTPUT
 
       - name: Download workflow artifacts
         shell: pwsh
@@ -102,7 +103,10 @@ jobs:
           }
 
           $batchId = [string]$plan.batchId
-          $releaseTag = ('untrusted-analysis-{0}-{1}' -f $batchId, '${{ steps.source.outputs.analysis_run_id }}').ToLowerInvariant()
+          $releaseMetadata = & "$PWD/eng/Get-UntrustedAnalysisReleaseMetadata.ps1" `
+            -BatchId $batchId `
+            -AnalysisRunId '${{ steps.source.outputs.analysis_run_id }}' `
+            -FallbackTimestamp '${{ steps.source.outputs.created_at }}' | ConvertFrom-Json
 
           $toolVersionPath = Get-ChildItem -Path $downloadRoot -Filter 'tool-version.txt' -Recurse |
             Select-Object -First 1 -ExpandProperty FullName
@@ -116,8 +120,10 @@ jobs:
 
           "batch_id=$batchId" >> $env:GITHUB_OUTPUT
           "target_branch=$targetBranch" >> $env:GITHUB_OUTPUT
-          "release_tag=$releaseTag" >> $env:GITHUB_OUTPUT
-          "release_title=Promote untrusted analysis $batchId" >> $env:GITHUB_OUTPUT
+          "release_tag=$($releaseMetadata.releaseTag)" >> $env:GITHUB_OUTPUT
+          "release_title=$($releaseMetadata.releaseTitle)" >> $env:GITHUB_OUTPUT
+          "release_tag_annotation=$($releaseMetadata.tagAnnotation)" >> $env:GITHUB_OUTPUT
+          "release_timestamp_iso=$($releaseMetadata.releaseTimestampIso)" >> $env:GITHUB_OUTPUT
           "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
 
       - name: Checkout repository
@@ -209,6 +215,49 @@ jobs:
           "commit_sha=$commitSha" >> $env:GITHUB_OUTPUT
           Write-Host "Pushed promotion commit $commitSha to ${{ steps.plan.outputs.target_branch }}."
 
+      - name: Ensure annotated release tag
+        shell: pwsh
+        run: |
+          $tag = '${{ steps.plan.outputs.release_tag }}'
+          $target = '${{ steps.commit.outputs.commit_sha }}'
+          $annotation = '${{ steps.plan.outputs.release_tag_annotation }}'
+          $tagTimestamp = '${{ steps.plan.outputs.release_timestamp_iso }}'
+
+          git fetch --force --tags origin
+
+          $objectType = @(git for-each-ref "refs/tags/$tag" --format='%(objecttype)')
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to inspect tag '$tag'."
+          }
+
+          $existingType = if ($objectType.Count -gt 0) { [string]$objectType[0] } else { '' }
+          if (-not [string]::IsNullOrWhiteSpace($existingType)) {
+            $existingTarget = (git rev-list -n 1 $tag).Trim()
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to resolve the commit for tag '$tag'."
+            }
+
+            if ($existingType -eq 'tag' -and $existingTarget -eq $target) {
+              Write-Host "Annotated tag '$tag' already points to $target."
+              exit 0
+            }
+
+            throw "Existing tag '$tag' is a $existingType object pointing to $existingTarget instead of $target."
+          }
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          $env:GIT_AUTHOR_NAME = 'github-actions[bot]'
+          $env:GIT_AUTHOR_EMAIL = '41898282+github-actions[bot]@users.noreply.github.com'
+          $env:GIT_AUTHOR_DATE = $tagTimestamp
+          $env:GIT_COMMITTER_NAME = 'github-actions[bot]'
+          $env:GIT_COMMITTER_EMAIL = '41898282+github-actions[bot]@users.noreply.github.com'
+          $env:GIT_COMMITTER_DATE = $tagTimestamp
+
+          git tag -a $tag $target -m $annotation
+          git push origin "refs/tags/$tag"
+
       - name: Create GitHub release
         id: release
         shell: pwsh
@@ -233,18 +282,25 @@ jobs:
           if ($existing) {
             gh release edit $tag `
               --repo $repository `
+              --tag $tag `
+              --target $target `
               --title $title `
               --notes-file $bodyPath | Out-Null
             $releaseOperation = 'updated'
           }
           else {
-            gh release create $tag $summaryPath `
+            gh release create $tag `
               --repo $repository `
               --target $target `
               --title $title `
-              --notes-file $bodyPath | Out-Null
+              --notes-file $bodyPath `
+              --verify-tag | Out-Null
             $releaseOperation = 'created'
           }
+
+          gh release upload $tag $summaryPath `
+            --repo $repository `
+            --clobber | Out-Null
 
           $release = gh release view $tag --repo $repository --json url | ConvertFrom-Json
           "release_url=$($release.url)" >> $env:GITHUB_OUTPUT
