@@ -51,6 +51,8 @@ internal sealed class AnalysisCommandService
             result["catalogEntryUrl"] = registrationLeaf.CatalogEntryUrl;
             result["packageContentUrl"] = registrationLeaf.PackageContent;
             result["publishedAt"] = registrationLeaf.Published?.ToUniversalTime().ToString("O");
+            result["projectUrl"] = catalogLeaf.ProjectUrl;
+            result["sourceRepositoryUrl"] = NormalizeRepositoryUrl(catalogLeaf.Repository?.Url);
 
             var detection = BuildDetection(catalogLeaf);
             result["detection"] = detection.ToJsonObject();
@@ -167,6 +169,8 @@ internal sealed class AnalysisCommandService
             ["packageContentUrl"] = null,
             ["registrationLeafUrl"] = null,
             ["catalogEntryUrl"] = null,
+            ["projectUrl"] = null,
+            ["sourceRepositoryUrl"] = null,
             ["publishedAt"] = null,
             ["command"] = null,
             ["entryPoint"] = null,
@@ -619,6 +623,24 @@ internal sealed class AnalysisCommandService
         var normalized = version.Trim().ToLowerInvariant();
         var buildMetadataIndex = normalized.IndexOf('+');
         return buildMetadataIndex >= 0 ? normalized[..buildMetadataIndex] : normalized;
+    }
+
+    private static string? NormalizeRepositoryUrl(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = value.Trim();
+        if (!Uri.TryCreate(normalized, UriKind.Absolute, out _))
+        {
+            return normalized;
+        }
+
+        return normalized.EndsWith(".git", StringComparison.OrdinalIgnoreCase)
+            ? normalized[..^4]
+            : normalized;
     }
 
     private static string? GetPreferredMessage(string? stdout, string? stderr)

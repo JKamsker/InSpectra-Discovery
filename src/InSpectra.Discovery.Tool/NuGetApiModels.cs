@@ -79,6 +79,11 @@ internal sealed record RegistrationLeafDocument(
     [property: JsonPropertyName("packageContent")] string PackageContent,
     [property: JsonPropertyName("published")] DateTimeOffset? Published);
 
+internal sealed record CatalogRepository(
+    [property: JsonPropertyName("type")] string? Type,
+    [property: JsonPropertyName("url")] string? Url,
+    [property: JsonPropertyName("commit")] string? Commit);
+
 internal sealed record CatalogEntry(
     [property: JsonPropertyName("@id")] string Id,
     [property: JsonPropertyName("authors")] string? Authors,
@@ -88,11 +93,14 @@ internal sealed record CatalogEntry(
     [property: JsonPropertyName("listed")] bool? Listed,
     [property: JsonPropertyName("projectUrl")] string? ProjectUrl,
     [property: JsonPropertyName("published")] DateTimeOffset? Published,
+    [property: JsonPropertyName("repository")] CatalogRepository? Repository,
     [property: JsonPropertyName("readmeUrl")] string? ReadmeUrl,
     [property: JsonPropertyName("version")] string Version);
 
 internal sealed record CatalogLeaf(
     [property: JsonPropertyName("@id")] string Id,
+    [property: JsonPropertyName("projectUrl")] string? ProjectUrl,
+    [property: JsonPropertyName("repository")] CatalogRepository? Repository,
     [property: JsonPropertyName("packageEntries")] IReadOnlyList<CatalogPackageEntry>? PackageEntries,
     [property: JsonPropertyName("dependencyGroups")] IReadOnlyList<CatalogDependencyGroup>? DependencyGroups,
     [property: JsonPropertyName("packageTypes")] JsonElement? PackageTypes);

@@ -29,6 +29,10 @@ public sealed class NuGetApiClientTests
                         "listed": true,
                         "projectUrl": "https://github.com/andresharpe/cute",
                         "published": "2026-03-27T13:24:43.773+01:00",
+                        "repository": {
+                          "type": "git",
+                          "url": "https://github.com/andresharpe/cute.git"
+                        },
                         "readmeUrl": "https://www.nuget.org/packages/cute/2.15.0#show-readme-container",
                         "version": "2.15.0"
                       },
@@ -47,6 +51,7 @@ public sealed class NuGetApiClientTests
         Assert.Equal("2.15.0", leaf.CatalogEntry.Version);
         Assert.True(leaf.CatalogEntry.Listed);
         Assert.Equal(PublishedAt.UtcDateTime, leaf.CatalogEntry.Published?.UtcDateTime);
+        Assert.Equal("https://github.com/andresharpe/cute.git", leaf.CatalogEntry.Repository?.Url);
         Assert.Equal(PackageContentUrl, leaf.PackageContent);
     }
 
