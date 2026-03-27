@@ -8,6 +8,7 @@ public sealed class NuGetApiClientTests
     private const string RegistrationPageUrl = "https://nuget.test/registration/cute/page/2.14.0/2.15.0.json";
     private const string RegistrationLeafUrl = "https://nuget.test/registration/cute/2.15.0.json";
     private const string CatalogEntryUrl = "https://nuget.test/catalog/cute.2.15.0.json";
+    private const string CatalogLeafUrl = "https://nuget.test/catalog/mstestx.console.0.37.0.json";
     private const string PackageContentUrl = "https://nuget.test/flat/cute.2.15.0.nupkg";
     private static readonly DateTimeOffset PublishedAt = DateTimeOffset.Parse("2026-03-27T13:24:43.773+01:00");
 
@@ -101,6 +102,36 @@ public sealed class NuGetApiClientTests
 
         Assert.Contains(RegistrationLeafUrl, exception.Message, StringComparison.Ordinal);
         Assert.Contains(nameof(RegistrationLeafDocument), exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GetCatalogLeafAsync_AllowsEmptyStringRepository()
+    {
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [CatalogLeafUrl] = """
+                {
+                  "@id": "https://nuget.test/catalog/mstestx.console.0.37.0.json",
+                  "projectUrl": "https://github.com/dotMorten/MSTestX",
+                  "repository": "",
+                  "packageTypes": [
+                    {
+                      "name": "DotnetTool"
+                    }
+                  ]
+                }
+                """,
+        }));
+        var client = new NuGetApiClient(httpClient);
+
+        var leaf = await client.GetCatalogLeafAsync(CatalogLeafUrl, CancellationToken.None);
+
+        Assert.Equal(CatalogLeafUrl, leaf.Id);
+        Assert.Equal("https://github.com/dotMorten/MSTestX", leaf.ProjectUrl);
+        Assert.Null(leaf.Repository);
+        Assert.True(leaf.PackageTypes.HasValue);
+        var packageType = Assert.Single(leaf.PackageTypes.Value.EnumerateArray());
+        Assert.Equal("DotnetTool", packageType.GetProperty("name").GetString());
     }
 
     private sealed class StubHttpMessageHandler : HttpMessageHandler

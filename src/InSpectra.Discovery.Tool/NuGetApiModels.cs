@@ -79,6 +79,7 @@ internal sealed record RegistrationLeafDocument(
     [property: JsonPropertyName("packageContent")] string PackageContent,
     [property: JsonPropertyName("published")] DateTimeOffset? Published);
 
+[JsonConverter(typeof(CatalogRepositoryJsonConverter))]
 internal sealed record CatalogRepository(
     [property: JsonPropertyName("type")] string? Type,
     [property: JsonPropertyName("url")] string? Url,
