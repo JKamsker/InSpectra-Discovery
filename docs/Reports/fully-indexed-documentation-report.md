@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-27 15:26:01+00:00
+Generated: 2026-03-27 21:02:03+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 154
+Packages in scope: 151
 
 Fully documented: 72
 
-Incomplete: 82
+Incomplete: 79
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -51,7 +51,6 @@ Incomplete: 82
 | [GitIgnore.Cli](#pkg-gitignore-cli) | 0.1.1 | ok | xml-ready | 3/3 | 0/3 | 0/2 | 0/3 | FAIL |
 | [Gitor.Cli](#pkg-gitor-cli) | 1.0.3 | ok | xml-ready | 5/5 | 6/6 | 3/3 | 0/5 | FAIL |
 | [Heyreach.Console](#pkg-heyreach-console) | 1.0.0 | ok | xml-ready | 38/38 | 163/163 | 15/15 | 0/29 | FAIL |
-| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.42 | ok | xml-ready | 8/8 | 88/88 | 4/4 | 0/5 | FAIL |
 | [Ivy.Console](#pkg-ivy-console) | 1.2.27 | ok | xml-ready | 31/33 | 75/85 | 6/6 | 0/24 | FAIL |
 | [JJConsulting.Deploy](#pkg-jjconsulting-deploy) | 3.0.6 | ok | xml-ready | 5/5 | 4/4 | 5/5 | 0/5 | FAIL |
 | [JJConsulting.Deploy.Console](#pkg-jjconsulting-deploy-console) | 3.0.2 | ok | xml-ready | 19/19 | 8/8 | 1/1 | 0/15 | FAIL |
@@ -65,7 +64,6 @@ Incomplete: 82
 | [MrKWatkins.OakIO.Tool](#pkg-mrkwatkins-oakio-tool) | 1.0.4 | ok | xml-ready | 2/2 | 0/0 | 3/3 | 0/2 | FAIL |
 | [MrKWatkins.RemoveJetBrainsAnnotations](#pkg-mrkwatkins-removejetbrainsannotations) | 1.1.0 | ok | xml-ready | 0/0 | 0/0 | 0/1 | 0/0 | FAIL |
 | [MrKWatkins.Sesharp.Tool](#pkg-mrkwatkins-sesharp-tool) | 1.6.0 | ok | xml-ready | 0/0 | 0/3 | 0/1 | 0/0 | FAIL |
-| [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.0 | ok | xml-ready | 19/19 | 129/137 | 2/10 | 0/16 | FAIL |
 | [Nivobi.GitBuddy](#pkg-nivobi-gitbuddy) | 1.3.1 | ok | xml-ready | 15/15 | 12/15 | 7/8 | 0/15 | FAIL |
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.31 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [Notify.Console](#pkg-notify-console) | 1.1.0 | ok | xml-ready | 3/3 | 0/5 | 0/1 | 0/3 | FAIL |
@@ -87,7 +85,6 @@ Incomplete: 82
 | [Spaceship.Console](#pkg-spaceship-console) | 1.0.1 | ok | xml-ready | 34/34 | 196/196 | 24/24 | 0/29 | FAIL |
 | [sqlct](#pkg-sqlct) | 0.1.0 | ok | xml-ready | 5/5 | 0/18 | 0/0 | 0/5 | FAIL |
 | [StewardEF](#pkg-stewardef) | 0.5.0-preview.3 | ok | xml-ready | 2/2 | 1/5 | 0/2 | 2/2 | FAIL |
-| [Substratum.Tools](#pkg-substratum-tools) | 2.3.3 | ok | xml-ready | 0/12 | 24/24 | 1/1 | 0/9 | FAIL |
 | [SwedishTestSsn](#pkg-swedishtestssn) | 1.1.0 | ok | xml-ready | 1/1 | 2/6 | 2/2 | 1/1 | FAIL |
 | [Test262Harness.Console](#pkg-test262harness-console) | 1.0.4 | ok | xml-ready | 1/1 | 4/7 | 0/0 | 0/1 | FAIL |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.1 | ok | xml-ready | 6/8 | 24/24 | 9/9 | 0/6 | FAIL |
@@ -768,23 +765,6 @@ Incomplete: 82
 - Missing argument descriptions: None
 - Missing leaf command examples: auth check, campaigns add-leads, campaigns get, campaigns list, campaigns pause, campaigns resume, campaigns stop-lead, conversations list, conversations send, leads get, leads lists, leads update-status, lists add-lead, lists companies, lists create, lists get, lists leads, lists list, lists remove-lead, senders get, senders list, senders network, stats get, tags create, webhooks create, webhooks delete, webhooks get, webhooks list, webhooks update
 
-<a id="pkg-inspectra-gen"></a>
-### InSpectra.Gen
-
-- Version: `0.0.42`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `8/8`
-- Option documentation: `88/88`
-- Argument documentation: `4/4`
-- Leaf command examples: `0/5`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: render exec html, render exec markdown, render file html, render file markdown, render self
-
 <a id="pkg-ivy-console"></a>
 ### Ivy.Console
 
@@ -1005,23 +985,6 @@ Incomplete: 82
 - Missing option descriptions: [root] --delete-contents-of-output-directory, [root] --output, [root] --repository
 - Missing argument descriptions: [root] <assemblies>
 - Missing leaf command examples: None
-
-<a id="pkg-nexudus-cli"></a>
-### Nexudus.Cli
-
-- Version: `0.1.0`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `19/19`
-- Option documentation: `129/137`
-- Argument documentation: `2/10`
-- Leaf command examples: `0/16`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: businesses list --page, businesses list --query, businesses list --size, products delete --yes, products list --business, products list --page, products list --query, products list --size
-- Missing argument descriptions: businesses get <id>, businesses update <id>, config get <key>, config set <key>, config set <value>, products delete <id>, products get <id>, products update <id>
-- Missing leaf command examples: businesses get, businesses list, businesses update, config get, config set, doctor, login, logout, products commands, products create, products delete, products get, products list, products run-command, products update, whoami
 
 <a id="pkg-nivobi-gitbuddy"></a>
 ### Nivobi.GitBuddy
@@ -1379,23 +1342,6 @@ Incomplete: 82
 - Missing option descriptions: convert-to-sql --migration, convert-to-sql --project, squash --target, squash --year
 - Missing argument descriptions: convert-to-sql <MigrationsDirectory>, squash <MigrationsDirectory>
 - Missing leaf command examples: None
-
-<a id="pkg-substratum-tools"></a>
-### Substratum.Tools
-
-- Version: `2.3.3`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `0/12`
-- Option documentation: `24/24`
-- Argument documentation: `1/1`
-- Leaf command examples: `0/9`
-- Overall: `FAIL`
-- Missing command descriptions: database, database sql, database update, migrate, migrations, migrations add, new, new endpoint, new entity, new event, new job, new webapp
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: database sql, database update, migrate, migrations add, new endpoint, new entity, new event, new job, new webapp
 
 <a id="pkg-swedishtestssn"></a>
 ### SwedishTestSsn
