@@ -78,6 +78,26 @@ internal static class RepositoryPackageIndexBuilder
         return string.IsNullOrWhiteSpace(text) ? null : ParseDateTime(text).ToUniversalTime().ToString("O");
     }
 
+    public static PackageEntryTimestamps ResolvePackageTimestamps(JsonObject package)
+    {
+        var timestamps = package["versions"]?.AsArray().OfType<JsonObject>()
+            .Select(ResolveVersionTimestamp)
+            .Where(value => value is not null)
+            .Select(value => value!.Value)
+            .OrderBy(value => value)
+            .ToList()
+            ?? [];
+
+        if (timestamps.Count == 0)
+        {
+            return new PackageEntryTimestamps(null, null);
+        }
+
+        return new PackageEntryTimestamps(
+            timestamps[0].ToString("O"),
+            timestamps[^1].ToString("O"));
+    }
+
     private static JsonObject BuildPackageSummary(
         IReadOnlyList<JsonObject> records,
         IReadOnlyDictionary<string, CurrentPackageSnapshot> currentSnapshotLookup,
@@ -153,12 +173,15 @@ internal static class RepositoryPackageIndexBuilder
             var latestVersionRecord = package["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault();
             var packageId = package["packageId"]?.GetValue<string>() ?? string.Empty;
             var latestVersion = package["latestVersion"]?.GetValue<string>() ?? string.Empty;
+            var packageTimestamps = ResolvePackageTimestamps(package);
             packages.Add(new JsonObject
             {
                 ["packageId"] = packageId,
                 ["commandName"] = latestVersionRecord?["command"]?.GetValue<string>(),
                 ["versionCount"] = package["versions"]?.AsArray().Count ?? 0,
                 ["latestVersion"] = latestVersion,
+                ["createdAt"] = packageTimestamps.CreatedAt,
+                ["updatedAt"] = packageTimestamps.UpdatedAt,
                 ["completeness"] = package["latestStatus"]?.GetValue<string>() switch
                 {
                     "ok" => "full",
@@ -196,6 +219,21 @@ internal static class RepositoryPackageIndexBuilder
             ?? now.ToString("O");
 
         return new DocumentTimestamps(createdAt, now.ToString("O"));
+    }
+
+    private static DateTimeOffset? ResolveVersionTimestamp(JsonObject version)
+    {
+        if (TryParseMeaningfulDateTime(version["publishedAt"]?.GetValue<string>(), out var publishedAt))
+        {
+            return publishedAt;
+        }
+
+        if (TryParseMeaningfulDateTime(version["evaluatedAt"]?.GetValue<string>(), out var evaluatedAt))
+        {
+            return evaluatedAt;
+        }
+
+        return null;
     }
 
     private static IReadOnlyDictionary<string, CurrentPackageSnapshot> LoadCurrentPackageSnapshotLookup(string repositoryRoot)
@@ -363,7 +401,30 @@ internal static class RepositoryPackageIndexBuilder
     private static DateTimeOffset ParseDateTime(string? value)
         => DateTimeOffset.TryParse(value, out var parsed) ? parsed : DateTimeOffset.MinValue;
 
+    private static bool TryParseDateTime(string? value, out DateTimeOffset parsed)
+    {
+        if (DateTimeOffset.TryParse(value, out parsed))
+        {
+            parsed = parsed.ToUniversalTime();
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryParseMeaningfulDateTime(string? value, out DateTimeOffset parsed)
+    {
+        if (TryParseDateTime(value, out parsed) && parsed.Year > 1900)
+        {
+            return true;
+        }
+
+        parsed = default;
+        return false;
+    }
+
     private sealed record DocumentTimestamps(string CreatedAt, string UpdatedAt);
+    internal sealed record PackageEntryTimestamps(string? CreatedAt, string? UpdatedAt);
 
     private sealed record PackageRecord(JsonObject? Metadata, string VersionDirectory);
 

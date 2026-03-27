@@ -80,6 +80,10 @@ public sealed class DocsCommandServiceTests
         var browserIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "index.json"));
         Assert.NotNull(browserIndex["createdAt"]?.GetValue<string>());
         Assert.NotNull(browserIndex["updatedAt"]?.GetValue<string>());
+        var browserPackage = browserIndex["packages"]?.AsArray().OfType<JsonObject>().Single()
+            ?? throw new InvalidOperationException("Expected one package in browser index.");
+        Assert.Equal("2026-03-27T00:30:00.0000000+00:00", browserPackage["createdAt"]?.GetValue<string>());
+        Assert.Equal("2026-03-27T00:30:00.0000000+00:00", browserPackage["updatedAt"]?.GetValue<string>());
     }
 
     [Fact]
@@ -114,6 +118,22 @@ public sealed class DocsCommandServiceTests
                             {
                                 ["version"] = "1.2.3",
                                 ["command"] = "sample",
+                                ["publishedAt"] = "2026-03-26T00:00:00Z",
+                                ["evaluatedAt"] = "2026-03-26T00:30:00Z",
+                            },
+                            new JsonObject
+                            {
+                                ["version"] = "1.1.0-preview.1",
+                                ["command"] = "sample",
+                                ["publishedAt"] = "1900-01-01T00:00:00Z",
+                                ["evaluatedAt"] = "2026-03-19T00:00:00Z",
+                            },
+                            new JsonObject
+                            {
+                                ["version"] = "1.0.0",
+                                ["command"] = "sample",
+                                ["publishedAt"] = "2026-03-20T00:00:00Z",
+                                ["evaluatedAt"] = "2026-03-20T00:30:00Z",
                             },
                         },
                     },
@@ -149,6 +169,12 @@ public sealed class DocsCommandServiceTests
             DateTimeOffset.Parse(browserIndex["createdAt"]?.GetValue<string>() ?? throw new InvalidOperationException("Missing createdAt.")));
         Assert.NotNull(browserIndex["updatedAt"]?.GetValue<string>());
         Assert.Equal(1234L, package["totalDownloads"]?.GetValue<long>());
+        Assert.Equal(
+            DateTimeOffset.Parse("2026-03-19T00:00:00Z"),
+            DateTimeOffset.Parse(package["createdAt"]?.GetValue<string>() ?? throw new InvalidOperationException("Missing package createdAt.")));
+        Assert.Equal(
+            DateTimeOffset.Parse("2026-03-26T00:00:00Z"),
+            DateTimeOffset.Parse(package["updatedAt"]?.GetValue<string>() ?? throw new InvalidOperationException("Missing package updatedAt.")));
     }
 
     private static JsonObject ParseJsonObject(string path)

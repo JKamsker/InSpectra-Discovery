@@ -54,12 +54,15 @@ internal sealed class DocsCommandService
             var latestVersionRecord = package["versions"]?.AsArray().FirstOrDefault() as JsonObject;
             var packageId = package["packageId"]?.GetValue<string>() ?? string.Empty;
             var latestVersion = package["latestVersion"]?.GetValue<string>() ?? string.Empty;
+            var packageTimestamps = RepositoryPackageIndexBuilder.ResolvePackageTimestamps(package);
             packages.Add(new
             {
                 packageId,
                 commandName = latestVersionRecord?["command"]?.GetValue<string>(),
                 versionCount = package["versions"]?.AsArray().Count ?? 0,
                 latestVersion,
+                createdAt = packageTimestamps.CreatedAt,
+                updatedAt = packageTimestamps.UpdatedAt,
                 completeness = GetCompletenessLabel(package["latestStatus"]?.GetValue<string>()),
                 packageIconUrl = string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(latestVersion)
                     ? null
