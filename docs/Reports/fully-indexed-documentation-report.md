@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-27 12:19:26+01:00
+Generated: 2026-03-27 14:22:30+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -527,7 +527,7 @@ Incomplete: 82
 - Leaf command examples: `0/2`
 - Overall: `FAIL`
 - Missing command descriptions: None
-- Missing option descriptions: [root] --version, build --dep-only, build --mode, build --out, build --platform, build --target
+- Missing option descriptions: build --dep-only, build --mode, build --out, build --platform, build --target, [root] --version
 - Missing argument descriptions: build <PATH>, clean <PATH>
 - Missing leaf command examples: build, clean
 
@@ -714,8 +714,8 @@ Incomplete: 82
 - Leaf command examples: `3/3`
 - Overall: `FAIL`
 - Missing command descriptions: None
-- Missing option descriptions: [root] --with-diff, generate --with-diff
-- Missing argument descriptions: [root] <Path>, generate <Path>
+- Missing option descriptions: generate --with-diff, [root] --with-diff
+- Missing argument descriptions: generate <Path>, [root] <Path>
 - Missing leaf command examples: None
 
 <a id="pkg-gitignore-cli"></a>
@@ -917,10 +917,10 @@ Incomplete: 82
 - Argument documentation: `12/12`
 - Leaf command examples: `0/11`
 - Overall: `FAIL`
-- Missing command descriptions: copy_metadata, downscale_video, downscale_videos, list_dates, list_metadata, rename_file, rename_files, set_date, set_date_and_rename_file, set_dates, set_dates_and_rename_files
+- Missing command descriptions: copy_metadata, downscale_video, downscale_videos, list_dates, list_metadata, rename_file, rename_files, set_date, set_dates, set_dates_and_rename_files, set_date_and_rename_file
 - Missing option descriptions: None
 - Missing argument descriptions: None
-- Missing leaf command examples: copy_metadata, downscale_video, downscale_videos, list_dates, list_metadata, rename_file, rename_files, set_date, set_date_and_rename_file, set_dates, set_dates_and_rename_files
+- Missing leaf command examples: copy_metadata, downscale_video, downscale_videos, list_dates, list_metadata, rename_file, rename_files, set_date, set_dates, set_dates_and_rename_files, set_date_and_rename_file
 
 <a id="pkg-momentum-extensions-eventmarkdowngenerator"></a>
 ### Momentum.Extensions.EventMarkdownGenerator
@@ -1411,7 +1411,7 @@ Incomplete: 82
 - Leaf command examples: `1/1`
 - Overall: `FAIL`
 - Missing command descriptions: None
-- Missing option descriptions: [root] --limit, [root] --offset, swetestssn --limit, swetestssn --offset
+- Missing option descriptions: swetestssn --limit, swetestssn --offset, [root] --limit, [root] --offset
 - Missing argument descriptions: None
 - Missing leaf command examples: None
 
@@ -1497,7 +1497,7 @@ Incomplete: 82
 - Overall: `FAIL`
 - Missing command descriptions: None
 - Missing option descriptions: [root] --output, [root] --set, [root] --verbose
-- Missing argument descriptions: [root] <tape-file>, validate <tape-file>
+- Missing argument descriptions: validate <tape-file>, [root] <tape-file>
 - Missing leaf command examples: themes
 
 <a id="pkg-verify-tool"></a>
