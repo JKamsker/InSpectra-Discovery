@@ -67,6 +67,7 @@ internal sealed record RegistrationPage(
     [property: JsonPropertyName("items")] IReadOnlyList<RegistrationLeaf> Items);
 
 internal sealed record RegistrationLeaf(
+    [property: JsonPropertyName("@id")] string? Id,
     [property: JsonPropertyName("commitTimeStamp")] DateTimeOffset CommitTimeStamp,
     [property: JsonPropertyName("catalogEntry")] CatalogEntry CatalogEntry,
     [property: JsonPropertyName("packageContent")] string PackageContent);

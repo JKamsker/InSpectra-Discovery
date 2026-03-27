@@ -14,7 +14,7 @@ internal sealed class NuGetApiClient
     public NuGetApiClient(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("InSpectra.Discovery.Bootstrap", "0.1.0"));
+        _httpClient.DefaultRequestHeaders.UserAgent.Add(new ProductInfoHeaderValue("InSpectra.Discovery.Tool", "0.1.0"));
     }
 
     public Task<NuGetServiceIndex> GetServiceResourcesAsync(string serviceIndexUrl, CancellationToken cancellationToken)
@@ -61,6 +61,9 @@ internal sealed class NuGetApiClient
 
     public Task<CatalogLeaf> GetCatalogLeafAsync(string catalogEntryUrl, CancellationToken cancellationToken)
         => GetJsonAsync<CatalogLeaf>(catalogEntryUrl, cancellationToken);
+
+    public Task<T> GetJsonByUrlAsync<T>(string url, CancellationToken cancellationToken)
+        => GetJsonAsync<T>(url, cancellationToken);
 
     public async Task<int> GetSearchTotalHitsAsync(string searchUrl, CancellationToken cancellationToken)
     {
