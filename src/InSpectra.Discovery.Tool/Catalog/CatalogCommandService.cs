@@ -150,6 +150,42 @@ internal sealed class CatalogCommandService
             cancellationToken);
     }
 
+    public async Task<int> RunCliFxFilterAsync(CliFxFilterOptions options, CancellationToken cancellationToken)
+    {
+        var output = ToolRuntime.CreateOutput();
+        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        var filter = new CliFxCatalogFilter(scope.Client);
+        var snapshot = await filter.RunAsync(
+            options,
+            options.Json ? null : output.WriteProgress,
+            cancellationToken);
+
+        var outputPath = Path.GetFullPath(options.OutputPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
+
+        await using var outputStream = File.Create(outputPath);
+        await JsonSerializer.SerializeAsync(outputStream, snapshot, JsonOptions.RepositoryFiles, cancellationToken);
+
+        return await output.WriteSuccessAsync(
+            new
+            {
+                command = CliFxFilterOptions.CommandName,
+                inputPath = snapshot.InputPath,
+                outputPath,
+                scannedPackageCount = snapshot.ScannedPackageCount,
+                matchedPackageCount = snapshot.PackageCount,
+            },
+            [
+                new SummaryRow("Command", CliFxFilterOptions.CommandName),
+                new SummaryRow("Input", snapshot.InputPath),
+                new SummaryRow("Scanned", snapshot.ScannedPackageCount.ToString()),
+                new SummaryRow("Matched", snapshot.PackageCount.ToString()),
+                new SummaryRow("Output", outputPath),
+            ],
+            options.Json,
+            cancellationToken);
+    }
+
     private static async Task WriteJsonFileAsync<T>(string outputPath, T value, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);

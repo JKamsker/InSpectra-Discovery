@@ -103,6 +103,29 @@ public sealed class NuGetApiClientTests
         Assert.Contains(nameof(RegistrationLeafDocument), exception.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task GetCatalogLeafAsync_ToleratesStringRepositoryPayload()
+    {
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [CatalogEntryUrl] = """
+                {
+                  "@id": "https://nuget.test/catalog/cute.2.15.0.json",
+                  "projectUrl": "https://github.com/andresharpe/cute",
+                  "repository": "",
+                  "packageEntries": [],
+                  "dependencyGroups": []
+                }
+                """,
+        }));
+        var client = new NuGetApiClient(httpClient);
+
+        var leaf = await client.GetCatalogLeafAsync(CatalogEntryUrl, CancellationToken.None);
+
+        Assert.Equal("https://github.com/andresharpe/cute", leaf.ProjectUrl);
+        Assert.Null(leaf.Repository);
+    }
+
     private sealed class StubHttpMessageHandler : HttpMessageHandler
     {
         private readonly IReadOnlyDictionary<string, string> _responses;

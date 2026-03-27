@@ -29,6 +29,7 @@ try
             catalog.AddBranch("filter", filter =>
             {
                 filter.SetDescription("Filter an index to packages with Spectre evidence.");
+                filter.AddCommand<CatalogFilterCliFxCommand>("clifx").WithDescription("Filter an index to packages with CliFx evidence.");
                 filter.AddCommand<CatalogFilterSpectreConsoleCommand>("spectre-console").WithDescription("Filter an index to packages with Spectre.Console evidence.");
                 filter.AddCommand<CatalogFilterSpectreConsoleCliCommand>("spectre-console-cli").WithDescription("Filter an index to packages with Spectre.Console.Cli evidence.");
             });
@@ -45,6 +46,7 @@ try
         config.AddBranch("analysis", analysis =>
         {
             analysis.SetDescription("Run sandboxed package analysis.");
+            analysis.AddCommand<AnalysisRunCliFxCommand>("run-clifx").WithDescription("Install a CliFx-based tool and synthesize OpenCLI from recursive help crawl.");
             analysis.AddCommand<AnalysisRunUntrustedCommand>("run-untrusted").WithDescription("Install a package in an isolated sandbox and capture OpenCLI/XMLDoc outputs.");
         });
 
