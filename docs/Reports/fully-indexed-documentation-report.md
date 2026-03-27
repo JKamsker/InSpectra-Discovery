@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-27 14:22:30+00:00
+Generated: 2026-03-27 15:26:01+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 155
+Packages in scope: 154
 
-Fully documented: 73
+Fully documented: 72
 
 Incomplete: 82
 
@@ -153,7 +153,6 @@ Incomplete: 82
 | [PackageGuard](#pkg-packageguard) | 2.1.1 | ok | xml-ready | 0/0 | 14/14 | 1/1 | 0/0 | PASS |
 | [PackCheck](#pkg-packcheck) | 3.1.4 | ok | xml-ready | 2/2 | 33/33 | 1/1 | 2/2 | PASS |
 | [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.0 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
-| [Refitter](#pkg-refitter) | 1.8.0-preview.100 | ok | xml-ready | 0/0 | 48/48 | 1/1 | 0/0 | PASS |
 | [Releasator](#pkg-releasator) | 0.2.1 | ok | xml-ready | 0/0 | 4/4 | 1/1 | 0/0 | PASS |
 | [roslyn-diff](#pkg-roslyn-diff) | 0.8.0 | ok | xml-ready | 2/2 | 28/28 | 4/4 | 2/2 | PASS |
 | [RouteCheck](#pkg-routecheck) | 0.0.3 | ok | xml-ready | 1/1 | 4/4 | 0/0 | 1/1 | PASS |
@@ -2497,23 +2496,6 @@ Incomplete: 82
 - Option documentation: `15/15`
 - Argument documentation: `4/4`
 - Leaf command examples: `4/4`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-refitter"></a>
-### Refitter
-
-- Version: `1.8.0-preview.100`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `0/0`
-- Option documentation: `48/48`
-- Argument documentation: `1/1`
-- Leaf command examples: `0/0`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
