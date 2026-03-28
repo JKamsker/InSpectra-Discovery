@@ -13,19 +13,18 @@ internal sealed class CliFxCommandTreeBuilder
             foreach (var child in pair.Value.Commands)
             {
                 var childFullName = string.IsNullOrWhiteSpace(pair.Key) ? child.Key : $"{pair.Key} {child.Key}";
-                knownCommands.Add(childFullName);
-                AddEdge(edges, edgeKeys, pair.Key, new CliFxCommandNode(childFullName, child.Key, child.Description));
+                AddCommandAndPrefixes(knownCommands, childFullName);
             }
         }
 
         foreach (var commandName in staticCommands.Keys.Where(key => !string.IsNullOrWhiteSpace(key)))
         {
-            knownCommands.Add(commandName);
+            AddCommandAndPrefixes(knownCommands, commandName);
         }
 
         foreach (var commandName in helpDocuments.Keys.Where(key => !string.IsNullOrWhiteSpace(key)))
         {
-            knownCommands.Add(commandName);
+            AddCommandAndPrefixes(knownCommands, commandName);
         }
 
         foreach (var commandName in knownCommands.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
@@ -81,6 +80,20 @@ internal sealed class CliFxCommandTreeBuilder
         }
 
         return string.Empty;
+    }
+
+    private static void AddCommandAndPrefixes(ISet<string> knownCommands, string? commandName)
+    {
+        if (string.IsNullOrWhiteSpace(commandName))
+        {
+            return;
+        }
+
+        var segments = commandName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (var length = 1; length <= segments.Length; length++)
+        {
+            knownCommands.Add(string.Join(' ', segments.Take(length)));
+        }
     }
 
     private static string? ResolveDescription(

@@ -63,4 +63,24 @@ public sealed class CliFxHelpParserTests
         Assert.Equal("-a|--admin", document.Options[0].Key);
         Assert.Equal("--age", document.Options[1].Key);
     }
+
+    [Fact]
+    public void Prefers_first_title_line_over_noisy_preamble_lines()
+    {
+        var parser = new CliFxHelpTextParser();
+        var document = parser.Parse(
+            """
+            C:\Temp\logs\trace.txt
+            Another noisy line
+            msworddiff 0.4.4
+            Compare Word documents
+
+            USAGE
+              msworddiff compare <left> <right>
+            """);
+
+        Assert.Equal("msworddiff", document.Title);
+        Assert.Equal("0.4.4", document.Version);
+        Assert.Equal("Compare Word documents", document.ApplicationDescription);
+    }
 }

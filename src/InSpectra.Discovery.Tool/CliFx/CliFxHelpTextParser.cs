@@ -18,8 +18,8 @@ internal sealed partial class CliFxHelpTextParser
         var preamble = firstSectionIndex >= 0 ? lines[..firstSectionIndex] : lines;
         var sections = ParseSections(firstSectionIndex >= 0 ? lines[firstSectionIndex..] : []);
 
-        var (title, version) = ParseTitleAndVersion(preamble);
-        var appDescription = JoinLines(preamble.Skip(1));
+        var (title, version, descriptionStartIndex) = ParseTitleAndVersion(preamble);
+        var appDescription = JoinLines(preamble.Skip(descriptionStartIndex));
 
         sections.TryGetValue("DESCRIPTION", out var descriptionLines);
         sections.TryGetValue("USAGE", out var usageLines);
@@ -114,18 +114,33 @@ internal sealed partial class CliFxHelpTextParser
         }
     }
 
-    private static (string? Title, string? Version) ParseTitleAndVersion(IReadOnlyList<string> preamble)
+    private static (string? Title, string? Version, int DescriptionStartIndex) ParseTitleAndVersion(IReadOnlyList<string> preamble)
     {
-        var firstLine = preamble.FirstOrDefault(line => !string.IsNullOrWhiteSpace(line))?.Trim();
-        if (string.IsNullOrWhiteSpace(firstLine))
+        int? firstNonEmptyIndex = null;
+
+        for (var index = 0; index < preamble.Count; index++)
         {
-            return (null, null);
+            var line = preamble[index];
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            firstNonEmptyIndex ??= index;
+            var match = TitleLineRegex().Match(line.Trim());
+            if (match.Success)
+            {
+                return (match.Groups["title"].Value.Trim(), match.Groups["version"].Value.Trim(), index + 1);
+            }
         }
 
-        var match = TitleLineRegex().Match(firstLine);
-        return match.Success
-            ? (match.Groups["title"].Value.Trim(), match.Groups["version"].Value.Trim())
-            : (firstLine, null);
+        if (firstNonEmptyIndex is null)
+        {
+            return (null, null, 0);
+        }
+
+        var firstLine = preamble[firstNonEmptyIndex.Value].Trim();
+        return (firstLine, null, firstNonEmptyIndex.Value + 1);
     }
 
     private static IReadOnlyList<string> TrimNonEmpty(IEnumerable<string> lines)

@@ -36,4 +36,38 @@ public sealed class CliFxCommandTreeBuilderTests
         Assert.Equal("godot", godot.FullName);
         Assert.Equal("install", Assert.Single(godot.Children).DisplayName);
     }
+
+    [Fact]
+    public void Synthesizes_missing_intermediate_parents_for_multi_segment_commands()
+    {
+        var builder = new CliFxCommandTreeBuilder();
+        var staticCommands = new Dictionary<string, CliFxCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["app build"] = new("app build", "Build the app", [], []),
+            ["app run"] = new("app run", "Run the app", [], []),
+        };
+
+        var helpDocuments = new Dictionary<string, CliFxHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: ["demo [command] [...]"],
+                Parameters: [],
+                Options: [],
+                Commands:
+                [
+                    new CliFxHelpItem("app build", false, "Build the app"),
+                    new CliFxHelpItem("app run", false, "Run the app"),
+                ]),
+        };
+
+        var tree = builder.Build(staticCommands, helpDocuments);
+
+        var app = Assert.Single(tree);
+        Assert.Equal("app", app.DisplayName);
+        Assert.Equal(new[] { "build", "run" }, app.Children.Select(child => child.DisplayName).ToArray());
+    }
 }

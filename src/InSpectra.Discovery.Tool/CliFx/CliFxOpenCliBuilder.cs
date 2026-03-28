@@ -2,6 +2,7 @@ using System.Text.Json.Nodes;
 internal sealed class CliFxOpenCliBuilder
 {
     private readonly CliFxCommandTreeBuilder _commandTreeBuilder = new();
+
     public JsonObject Build(
         string commandName,
         string packageVersion,
@@ -10,25 +11,21 @@ internal sealed class CliFxOpenCliBuilder
     {
         helpDocuments.TryGetValue(string.Empty, out var rootHelp);
         staticCommands.TryGetValue(string.Empty, out var defaultCommand);
-        var rootCommands = new JsonArray();
-        if (defaultCommand is not null)
+        var rootCommands = new JsonArray(_commandTreeBuilder
+            .Build(staticCommands, helpDocuments)
+            .Select(child => BuildCommandNode(child, staticCommands, helpDocuments))
+            .ToArray());
+        var info = new JsonObject
         {
-            rootCommands.Add(BuildDefaultCommandNode(defaultCommand, rootHelp));
-        }
-        foreach (var child in _commandTreeBuilder.Build(staticCommands, helpDocuments))
-        {
-            rootCommands.Add(BuildCommandNode(child, staticCommands, helpDocuments));
-        }
+            ["title"] = rootHelp?.Title ?? commandName,
+            ["version"] = rootHelp?.Version ?? packageVersion,
+        };
+        AddIfPresent(info, "description", rootHelp?.ApplicationDescription ?? defaultCommand?.Description);
 
-        return new JsonObject
+        var document = new JsonObject
         {
             ["opencli"] = "0.1-draft",
-            ["info"] = new JsonObject
-            {
-                ["title"] = rootHelp?.Title ?? commandName,
-                ["version"] = rootHelp?.Version ?? packageVersion,
-                ["description"] = rootHelp?.ApplicationDescription ?? defaultCommand?.Description,
-            },
+            ["info"] = info,
             ["x-inspectra"] = new JsonObject
             {
                 ["artifactSource"] = "crawled-from-clifx-help",
@@ -36,16 +33,12 @@ internal sealed class CliFxOpenCliBuilder
                 ["metadataEnriched"] = staticCommands.Count > 0,
                 ["helpDocumentCount"] = helpDocuments.Count,
             },
-            ["options"] = BuildOptions(defaultCommand, rootHelp),
-            ["arguments"] = BuildArguments(defaultCommand, rootHelp),
             ["commands"] = rootCommands,
         };
-    }
-    private JsonObject BuildDefaultCommandNode(CliFxCommandDefinition command, CliFxHelpDocument? helpDocument)
-    {
-        var node = BuildCommandPayload("__default_command", command, helpDocument, helpDocument?.CommandDescription ?? command.Description);
-        node["hidden"] = true;
-        return node;
+
+        AddIfPresent(document, "options", BuildOptions(defaultCommand, rootHelp));
+        AddIfPresent(document, "arguments", BuildArguments(defaultCommand, rootHelp));
+        return document;
     }
 
     private JsonObject BuildCommandNode(
@@ -76,21 +69,14 @@ internal sealed class CliFxOpenCliBuilder
         var node = new JsonObject
         {
             ["name"] = name,
-            ["description"] = description,
             ["hidden"] = false,
         };
+        AddIfPresent(node, "description", description);
 
         var options = BuildOptions(command, helpDocument);
-        if (options is not null)
-        {
-            node["options"] = options;
-        }
-
+        AddIfPresent(node, "options", options);
         var arguments = BuildArguments(command, helpDocument);
-        if (arguments is not null)
-        {
-            node["arguments"] = arguments;
-        }
+        AddIfPresent(node, "arguments", arguments);
 
         return node;
     }
@@ -185,11 +171,10 @@ internal sealed class CliFxOpenCliBuilder
         var optionNode = new JsonObject
         {
             ["name"] = name,
-            ["required"] = definition?.IsRequired ?? required,
-            ["description"] = description ?? definition?.Description,
             ["recursive"] = false,
             ["hidden"] = false,
         };
+        AddIfPresent(optionNode, "description", description ?? definition?.Description);
 
         var aliases = CliFxOptionNameSupport.BuildAliases(definition, longName, shortName);
         if (aliases is not null)
@@ -218,11 +203,11 @@ internal sealed class CliFxOpenCliBuilder
         {
             ["name"] = name,
             ["required"] = required,
-            ["description"] = description,
             ["hidden"] = false,
             ["arity"] = BuildArity(isSequence, required ? 1 : 0),
         };
 
+        AddIfPresent(argument, "description", description);
         ApplyInputMetadata(argument, clrType, acceptedValues, null);
         return argument;
     }
@@ -296,6 +281,22 @@ internal sealed class CliFxOpenCliBuilder
         if (acceptedValues is { Count: > 0 })
         {
             node["acceptedValues"] = new JsonArray(acceptedValues.Select(value => JsonValue.Create(value)).ToArray());
+        }
+    }
+
+    private static void AddIfPresent(JsonObject target, string propertyName, JsonNode? value)
+    {
+        if (value is not null)
+        {
+            target[propertyName] = value;
+        }
+    }
+
+    private static void AddIfPresent(JsonObject target, string propertyName, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            target[propertyName] = value;
         }
     }
 }

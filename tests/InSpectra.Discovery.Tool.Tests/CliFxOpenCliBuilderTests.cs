@@ -48,7 +48,19 @@ public sealed class CliFxOpenCliBuilderTests
                 ],
                 Commands:
                 [
-                    new CliFxHelpItem("user add", false, "Adds a user"),
+                    new CliFxHelpItem("user", false, "Manage users"),
+                ]),
+            ["user"] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: "Manage users",
+                UsageLines: ["demo user [command]"],
+                Parameters: [],
+                Options: [],
+                Commands:
+                [
+                    new CliFxHelpItem("add", false, "Adds a user"),
                 ]),
             ["user add"] = new(
                 Title: "demo",
@@ -76,12 +88,19 @@ public sealed class CliFxOpenCliBuilderTests
         Assert.Null(verbose["arguments"]);
         Assert.NotNull(config["arguments"]);
         Assert.Equal("DEMO_CONFIG", config["arguments"]![0]!["metadata"]![1]!["value"]!.GetValue<string>());
+        Assert.False(config.ContainsKey("required"));
+        Assert.False(document.ContainsKey("arguments"));
 
         var rootCommands = document["commands"]!.AsArray();
-        Assert.Equal("__default_command", rootCommands[0]!["name"]!.GetValue<string>());
+        var userNode = Assert.Single(rootCommands);
+        Assert.NotNull(userNode);
+        var user = userNode!.AsObject();
+        Assert.Equal("user", user["name"]!.GetValue<string>());
+        Assert.Equal("Manage users", user["description"]!.GetValue<string>());
+        Assert.False(user.ContainsKey("arguments"));
 
-        var userAdd = rootCommands[1]!.AsObject();
-        Assert.Equal("user add", userAdd["name"]!.GetValue<string>());
+        var userAdd = user["commands"]![0]!.AsObject();
+        Assert.Equal("add", userAdd["name"]!.GetValue<string>());
         Assert.Single(userAdd["arguments"]!.AsArray());
         Assert.Null(userAdd["options"]!.AsArray()[0]!["arguments"]);
         Assert.True(userAdd["options"]!.AsArray()[1]!["arguments"]![0]!["required"]!.GetValue<bool>());
@@ -134,9 +153,10 @@ public sealed class CliFxOpenCliBuilderTests
             new Dictionary<string, CliFxHelpDocument>(StringComparer.OrdinalIgnoreCase));
 
         Assert.Equal("Default command", document["info"]!["description"]!.GetValue<string>());
+        Assert.False(document.ContainsKey("options"));
+        Assert.False(document.ContainsKey("arguments"));
 
         var commands = document["commands"]!.AsArray();
-        Assert.Equal("__default_command", commands[0]!["name"]!.GetValue<string>());
         var sync = commands.Single(command => string.Equals(command!["name"]!.GetValue<string>(), "sync", StringComparison.Ordinal))!.AsObject();
         Assert.Equal("Synchronize data", sync["description"]!.GetValue<string>());
         Assert.Equal("target", sync["arguments"]![0]!["name"]!.GetValue<string>());
