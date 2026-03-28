@@ -352,7 +352,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
     }
 
     [Fact]
-    public void Repairs_Blank_Provenance_When_Xmldoc_Artifacts_Exist()
+    public void Ignores_Blank_Provenance_When_OpenCli_Already_Exists()
     {
         ToolRuntime.Initialize();
 
@@ -403,9 +403,10 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
         var regenerator = new XmldocOpenCliArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
-        Assert.Equal(1, result.CandidateCount);
-        Assert.Equal(1, result.RewrittenCount);
-        Assert.Equal("synthesized-from-xmldoc", ParseJsonObject(metadataPath)["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Equal(0, result.CandidateCount);
+        Assert.Equal(0, result.RewrittenCount);
+        Assert.Null(ParseJsonObject(metadataPath)["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Equal("stale", ParseJsonObject(openCliPath)["info"]?["title"]?.GetValue<string>());
     }
 
     private static JsonObject ParseJsonObject(string path)

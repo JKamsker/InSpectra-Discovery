@@ -130,6 +130,7 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             && !openCliExists;
         var shouldRepairBlankXmldocProvenance = hasXmlDoc
             && !hasCrawl
+            && !openCliExists
             && string.IsNullOrWhiteSpace(artifactSource);
         if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
             && !shouldBackfillMissingOpenCli

@@ -37,7 +37,8 @@ internal sealed class NativeOpenCliArtifactRegenerator
                     root,
                     candidate.MetadataPath,
                     candidate.OpenCliPath,
-                    "tool-output");
+                    "tool-output",
+                    xmldocPath: candidate.XmlDocPath);
                 var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
                 if (!openCliChanged && !metadataChanged && !stateChanged)
                 {
@@ -126,7 +127,16 @@ internal sealed class NativeOpenCliArtifactRegenerator
             return null;
         }
 
-        return new NativeOpenCliArtifactCandidate(packageId, version, metadataPath, openCliPath);
+        var xmlDocRelativePath = artifacts?["xmldocPath"]?.GetValue<string>();
+        var xmlDocPath = string.IsNullOrWhiteSpace(xmlDocRelativePath)
+            ? null
+            : Path.Combine(repositoryRoot, xmlDocRelativePath);
+        if (!File.Exists(xmlDocPath))
+        {
+            xmlDocPath = null;
+        }
+
+        return new NativeOpenCliArtifactCandidate(packageId, version, metadataPath, openCliPath, xmlDocPath);
     }
 }
 
@@ -143,7 +153,8 @@ internal sealed record NativeOpenCliArtifactCandidate(
     string PackageId,
     string Version,
     string MetadataPath,
-    string OpenCliPath)
+    string OpenCliPath,
+    string? XmlDocPath)
 {
     public string DisplayName => $"{PackageId} {Version}";
 }

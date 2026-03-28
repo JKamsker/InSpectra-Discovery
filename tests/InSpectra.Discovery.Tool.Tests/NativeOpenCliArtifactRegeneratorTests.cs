@@ -15,6 +15,8 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
         var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "native.tool", "1.2.3");
         var metadataPath = Path.Combine(versionRoot, "metadata.json");
         var openCliPath = Path.Combine(versionRoot, "opencli.json");
+        var xmlDocPath = Path.Combine(versionRoot, "xmldoc.xml");
+        RepositoryPathResolver.WriteTextFile(xmlDocPath, "<Model />");
         RepositoryPathResolver.WriteJsonFile(
             metadataPath,
             new JsonObject
@@ -44,6 +46,8 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
                 {
                     ["metadataPath"] = "index/packages/native.tool/1.2.3/metadata.json",
                     ["opencliPath"] = "index/packages/native.tool/1.2.3/opencli.json",
+                    ["opencliSource"] = "tool-output",
+                    ["xmldocPath"] = "index/packages/native.tool/1.2.3/xmldoc.xml",
                 },
             });
         RepositoryPathResolver.WriteJsonFile(
@@ -79,10 +83,12 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
         var metadata = ParseJsonObject(metadataPath);
         Assert.Equal("ok", metadata["status"]?.GetValue<string>());
         Assert.Equal("tool-output", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Equal("index/packages/native.tool/1.2.3/xmldoc.xml", metadata["artifacts"]?["xmldocPath"]?.GetValue<string>());
         Assert.Equal("ok", metadata["steps"]?["opencli"]?["status"]?.GetValue<string>());
         Assert.Equal("tool-output", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
         Assert.Equal("json-ready", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
         Assert.Null(metadata["steps"]?["opencli"]?["message"]);
+        Assert.Equal("index/packages/native.tool/1.2.3/xmldoc.xml", metadata["steps"]?["xmldoc"]?["path"]?.GetValue<string>());
         Assert.Equal("ok", metadata["introspection"]?["opencli"]?["status"]?.GetValue<string>());
         Assert.Equal("json-ready", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
         Assert.Null(metadata["introspection"]?["opencli"]?["message"]);
