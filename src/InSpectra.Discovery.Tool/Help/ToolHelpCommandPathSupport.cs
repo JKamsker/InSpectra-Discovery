@@ -2,24 +2,29 @@ internal static class ToolHelpCommandPathSupport
 {
     public static string ResolveChildKey(string rootCommandName, string parentKey, string childKey)
     {
+        var rootSegments = SplitSegments(rootCommandName);
         var parentSegments = SplitSegments(parentKey);
         foreach (var candidate in EnumerateCandidates(childKey)
             .OrderByDescending(candidate => candidate.Sum(segment => segment.Length)))
         {
-            var relative = TrimPrefix(candidate, SplitSegments(rootCommandName));
-            if (StartsWith(relative, parentSegments))
-            {
-                relative = relative[parentSegments.Length..];
-            }
+            var isRootQualified = StartsWith(candidate, rootSegments);
+            var rootRelative = TrimPrefix(candidate, rootSegments);
+            var isUnderParent = StartsWith(rootRelative, parentSegments);
+            var relative = isUnderParent
+                ? rootRelative[parentSegments.Length..]
+                : rootRelative;
 
             if (relative.Length == 0)
             {
                 continue;
             }
 
-            return parentSegments.Length == 0
-                ? string.Join(' ', relative)
-                : $"{parentKey} {string.Join(' ', relative)}";
+            if (parentSegments.Length == 0 || (isRootQualified && !isUnderParent))
+            {
+                return string.Join(' ', relative);
+            }
+
+            return $"{parentKey} {string.Join(' ', relative)}";
         }
 
         return parentKey;
