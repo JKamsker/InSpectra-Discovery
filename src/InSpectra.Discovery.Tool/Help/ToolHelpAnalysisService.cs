@@ -130,11 +130,7 @@ internal sealed class ToolHelpAnalysisService
         }
         catch (Exception ex)
         {
-            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
-                result,
-                phase: result["phase"]?.GetValue<string>() ?? "bootstrap",
-                classification: result["classification"]?.GetValue<string>() ?? "unexpected-exception",
-                ex.Message);
+            NonSpectreAnalysisResultSupport.ApplyUnexpectedRetryableFailure(result, ex.Message);
         }
         finally
         {

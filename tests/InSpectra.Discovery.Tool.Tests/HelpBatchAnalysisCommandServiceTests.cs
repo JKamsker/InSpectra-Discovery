@@ -67,6 +67,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                     ["artifacts"] = new JsonObject
                     {
                         ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
                     },
                 });
             RepositoryPathResolver.WriteJsonFile(
@@ -74,6 +75,12 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                 new JsonObject
                 {
                     ["opencli"] = "0.1-draft",
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "crawl.json"),
+                new JsonObject
+                {
+                    ["commands"] = new JsonArray(),
                 });
             return 0;
         });
@@ -112,7 +119,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
         Assert.Equal("help", expectedItem["analysisMode"]?.GetValue<string>());
         Assert.Equal("System.CommandLine", expectedItem["cliFramework"]?.GetValue<string>());
         Assert.Equal(1234L, expectedItem["totalDownloads"]?.GetValue<long>());
-        Assert.Equal("analysis-sample.tool-1.2.3", expectedItem["artifactName"]?.GetValue<string>());
+        Assert.Equal("analysis-sample.tool-1.2.3-sample", expectedItem["artifactName"]?.GetValue<string>());
         Assert.Equal("https://api.nuget.org/v3-flatcontainer/sample.tool/1.2.3/sample.tool.1.2.3.nupkg", expectedItem["packageContentUrl"]?.GetValue<string>());
     }
 
@@ -239,6 +246,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                     ["artifacts"] = new JsonObject
                     {
                         ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
                     },
                 });
             RepositoryPathResolver.WriteJsonFile(
@@ -246,6 +254,12 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                 new JsonObject
                 {
                     ["opencli"] = "0.1-draft",
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "crawl.json"),
+                new JsonObject
+                {
+                    ["commands"] = new JsonArray(),
                 });
             return 0;
         });
@@ -325,6 +339,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                     ["artifacts"] = new JsonObject
                     {
                         ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
                     },
                 });
             RepositoryPathResolver.WriteJsonFile(
@@ -332,6 +347,12 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                 new JsonObject
                 {
                     ["opencli"] = "0.1-draft",
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "crawl.json"),
+                new JsonObject
+                {
+                    ["commands"] = new JsonArray(),
                 });
             return 0;
         });
@@ -360,6 +381,161 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             ?? throw new InvalidOperationException("Expected one item.");
         Assert.Equal("clifx", expectedItem["analysisMode"]?.GetValue<string>());
         Assert.Equal("CliFx", expectedItem["cliFramework"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RunAsync_DefaultArtifactName_Includes_Command_Discriminator()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "plans", "help-batch.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["batchId"] = "help-batch-005",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "Sample.Tool",
+                        ["version"] = "1.2.3",
+                        ["command"] = "sample",
+                    },
+                    new JsonObject
+                    {
+                        ["packageId"] = "Sample.Tool",
+                        ["version"] = "1.2.3",
+                        ["command"] = "sample-alt",
+                    },
+                },
+            });
+
+        var runner = new FakeHelpBatchAnalysisRunner((item, outputRoot, batchId, source, timeouts) =>
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = item.PackageId,
+                    ["version"] = item.Version,
+                    ["batchId"] = batchId,
+                    ["attempt"] = item.Attempt,
+                    ["source"] = source,
+                    ["disposition"] = "success",
+                    ["command"] = item.CommandName,
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(Path.Combine(outputRoot, "opencli.json"), new JsonObject { ["opencli"] = "0.1-draft" });
+            RepositoryPathResolver.WriteJsonFile(Path.Combine(outputRoot, "crawl.json"), new JsonObject { ["commands"] = new JsonArray() });
+            return 0;
+        });
+
+        var service = new HelpBatchAnalysisCommandService(
+            runner,
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+        var exitCode = await service.RunAsync(
+            repositoryRoot,
+            "plans/help-batch.json",
+            "artifacts/help-batch",
+            batchId: null,
+            source: "help-index-batch",
+            targetBranch: "main",
+            installTimeoutSeconds: 300,
+            analysisTimeoutSeconds: 600,
+            commandTimeoutSeconds: 60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(2, runner.Invocations.Count);
+        Assert.NotEqual(runner.Invocations[0].OutputRoot, runner.Invocations[1].OutputRoot);
+
+        var expected = ParseJsonObject(Path.Combine(repositoryRoot, "artifacts", "help-batch", "plan", "expected.json"));
+        var artifactNames = expected["items"]!.AsArray()
+            .OfType<JsonObject>()
+            .Select(item => item["artifactName"]?.GetValue<string>())
+            .ToArray();
+        Assert.Contains("analysis-sample.tool-1.2.3-sample", artifactNames);
+        Assert.Contains("analysis-sample.tool-1.2.3-sample-alt", artifactNames);
+    }
+
+    [Fact]
+    public async Task RunAsync_Treats_Help_Success_Without_Crawl_Artifact_As_Failure()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "plans", "help-batch.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["batchId"] = "help-batch-006",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "Help.Tool",
+                        ["version"] = "2.0.0",
+                        ["command"] = "help-tool",
+                        ["analysisMode"] = "help",
+                    },
+                },
+            });
+
+        var runner = new FakeHelpBatchAnalysisRunner((item, outputRoot, batchId, source, timeouts) =>
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = item.PackageId,
+                    ["version"] = item.Version,
+                    ["batchId"] = batchId,
+                    ["attempt"] = item.Attempt,
+                    ["source"] = source,
+                    ["analysisMode"] = "help",
+                    ["disposition"] = "success",
+                    ["command"] = item.CommandName,
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(Path.Combine(outputRoot, "opencli.json"), new JsonObject { ["opencli"] = "0.1-draft" });
+            return 0;
+        });
+
+        var service = new HelpBatchAnalysisCommandService(
+            runner,
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+        var exitCode = await service.RunAsync(
+            repositoryRoot,
+            "plans/help-batch.json",
+            "artifacts/help-batch",
+            batchId: null,
+            source: "help-index-batch",
+            targetBranch: "main",
+            installTimeoutSeconds: 300,
+            analysisTimeoutSeconds: 600,
+            commandTimeoutSeconds: 60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(1, exitCode);
     }
 
     private static JsonObject ParseJsonObject(string path)

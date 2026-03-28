@@ -31,6 +31,23 @@ internal static class NonSpectreAnalysisResultSupport
         result["failureMessage"] = message;
     }
 
+    public static void ApplyUnexpectedRetryableFailure(JsonObject result, string? message)
+    {
+        var phase = result["phase"]?.GetValue<string>();
+        var classification = result["classification"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(phase))
+        {
+            phase = "bootstrap";
+        }
+
+        if (string.IsNullOrWhiteSpace(classification) || string.Equals(classification, "uninitialized", StringComparison.Ordinal))
+        {
+            classification = "unexpected-exception";
+        }
+
+        ApplyRetryableFailure(result, phase, classification, message);
+    }
+
     public static void ApplyTerminalFailure(JsonObject result, string phase, string classification, string? message)
     {
         result["disposition"] = "terminal-failure";

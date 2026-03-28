@@ -145,9 +145,7 @@ internal sealed class HelpBatchAnalysisCommandService
         IReadOnlyDictionary<string, HelpBatchSnapshotItem> snapshotLookup,
         CancellationToken cancellationToken)
     {
-        var artifactName = string.IsNullOrWhiteSpace(item.ArtifactName)
-            ? BuildArtifactName(item.PackageId, item.Version)
-            : item.ArtifactName;
+        var artifactName = HelpBatchArtifactSupport.ResolveArtifactName(item);
         var itemOutputRoot = Path.Combine(downloadRoot, artifactName);
         var exitCode = string.Equals(item.AnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase)
             ? await _cliFxRunner.RunAsync(item, itemOutputRoot, batchId, source, timeouts, cancellationToken)
@@ -157,17 +155,20 @@ internal sealed class HelpBatchAnalysisCommandService
             ? JsonNode.Parse(await File.ReadAllTextAsync(resultPath, cancellationToken))?.AsObject()
             : null;
         var openCliArtifactName = result?["artifacts"]?["opencliArtifact"]?.GetValue<string>();
-        var openCliExists = !string.IsNullOrWhiteSpace(openCliArtifactName) &&
-                            File.Exists(Path.Combine(itemOutputRoot, openCliArtifactName));
+        var crawlArtifactName = result?["artifacts"]?["crawlArtifact"]?.GetValue<string>();
+        var openCliExists = HasUsableJsonArtifact(itemOutputRoot, openCliArtifactName);
+        var crawlExists = !HelpBatchArtifactSupport.RequiresCrawlArtifact(item.AnalysisMode)
+            || HasUsableJsonArtifact(itemOutputRoot, crawlArtifactName);
         var disposition = result?["disposition"]?.GetValue<string>();
         var success = exitCode == 0 &&
                       string.Equals(disposition, "success", StringComparison.Ordinal) &&
-                      openCliExists;
+                      openCliExists &&
+                      crawlExists;
         var snapshot = snapshotLookup.TryGetValue(item.PackageId, out var value) ? value : null;
 
         return new HelpBatchItemOutcome(
             Success: success,
-            FailureSummary: BuildFailureSummary(item, result, disposition, openCliExists),
+            FailureSummary: BuildFailureSummary(item, result, disposition, openCliExists, crawlExists),
             ExpectedItem: BuildExpectedItem(item, artifactName, result, snapshot));
     }
 
@@ -205,7 +206,7 @@ internal sealed class HelpBatchAnalysisCommandService
         return expectedItem;
     }
 
-    private static string BuildFailureSummary(HelpBatchItem item, JsonObject? result, string? disposition, bool openCliExists)
+    private static string BuildFailureSummary(HelpBatchItem item, JsonObject? result, string? disposition, bool openCliExists, bool crawlExists)
     {
         var failureMessage = result?["failureMessage"]?.GetValue<string>();
         if (!string.Equals(disposition, "success", StringComparison.Ordinal))
@@ -213,9 +214,17 @@ internal sealed class HelpBatchAnalysisCommandService
             return $"{item.PackageId} {item.Version}: {disposition ?? "missing-result"} {failureMessage ?? "No failure message was recorded."}";
         }
 
-        return openCliExists
-            ? $"{item.PackageId} {item.Version}: analysis runner did not report success."
-            : $"{item.PackageId} {item.Version}: success result is missing opencli artifact.";
+        if (!openCliExists)
+        {
+            return $"{item.PackageId} {item.Version}: success result is missing a usable opencli artifact.";
+        }
+
+        if (!crawlExists)
+        {
+            return $"{item.PackageId} {item.Version}: success result is missing a usable crawl artifact.";
+        }
+
+        return $"{item.PackageId} {item.Version}: analysis runner did not report success.";
     }
 
     private static IReadOnlyDictionary<string, HelpBatchSnapshotItem> LoadCurrentSnapshotLookup(string repositoryRoot)
@@ -248,8 +257,11 @@ internal sealed class HelpBatchAnalysisCommandService
     private static string? FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
-    private static string BuildArtifactName(string packageId, string version)
-        => $"analysis-{packageId.ToLowerInvariant()}-{version.ToLowerInvariant()}";
+    private static bool HasUsableJsonArtifact(string artifactDirectory, string? artifactName)
+    {
+        var artifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, artifactName);
+        return artifactPath is not null && PromotionArtifactSupport.TryLoadJsonObject(artifactPath, out _);
+    }
 
     private static void SetOptionalString(JsonObject target, string propertyName, string? value)
     {

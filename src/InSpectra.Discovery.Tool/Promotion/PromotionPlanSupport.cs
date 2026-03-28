@@ -25,11 +25,7 @@ internal static class PromotionPlanSupport
 
             foreach (var item in plan["items"]?.AsArray().OfType<JsonObject>() ?? [])
             {
-                var packageId = item["packageId"]?.GetValue<string>()
-                    ?? throw new InvalidOperationException($"Plan '{expectedPath}' contains an item without packageId.");
-                var version = item["version"]?.GetValue<string>()
-                    ?? throw new InvalidOperationException($"Plan '{expectedPath}' contains an item without version.");
-                var key = $"{packageId}|{version}";
+                var key = HelpBatchArtifactSupport.BuildPlanItemKey(item);
                 var cloned = item.DeepClone()?.AsObject() ?? new JsonObject();
                 if (!itemsByKey.TryGetValue(key, out var existing) || GetAttempt(cloned) >= GetAttempt(existing))
                 {

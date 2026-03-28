@@ -86,4 +86,27 @@ public sealed class NonSpectreAnalysisResultSupportTests
         Assert.Equal("clifx-crawl", result["steps"]?["opencli"]?["classification"]?.GetValue<string>());
         Assert.Equal("ok", result["introspection"]?["opencli"]?["status"]?.GetValue<string>());
     }
+
+    [Fact]
+    public void ApplyUnexpectedRetryableFailure_Replaces_Uninitialized_Classification()
+    {
+        var result = NonSpectreAnalysisResultSupport.CreateInitialResult(
+            "Sample.Tool",
+            "1.2.3",
+            "sample",
+            "batch-001",
+            1,
+            "help-index-batch",
+            "System.CommandLine",
+            "help",
+            DateTimeOffset.UtcNow);
+
+        NonSpectreAnalysisResultSupport.ApplyUnexpectedRetryableFailure(result, "boom");
+        NonSpectreAnalysisResultSupport.FinalizeFailureSignature(result);
+
+        Assert.Equal("retryable-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("bootstrap", result["phase"]?.GetValue<string>());
+        Assert.Equal("unexpected-exception", result["classification"]?.GetValue<string>());
+        Assert.Equal("bootstrap|unexpected-exception|boom", result["failureSignature"]?.GetValue<string>());
+    }
 }

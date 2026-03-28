@@ -17,6 +17,7 @@ internal sealed class PromotionApplyCommandService
         var plan = await PromotionPlanSupport.LoadMergedPlanAsync(downloadDirectory, cancellationToken);
 
         var resultLookup = new Dictionary<string, (JsonObject Result, string ArtifactDirectory)>(StringComparer.OrdinalIgnoreCase);
+        var legacyResultLookup = new Dictionary<string, (JsonObject Result, string ArtifactDirectory)>(StringComparer.OrdinalIgnoreCase);
         foreach (var resultPath in Directory.GetFiles(downloadDirectory, "result.json", SearchOption.AllDirectories))
         {
             var result = JsonNode.Parse(await File.ReadAllTextAsync(resultPath, cancellationToken))?.AsObject();
@@ -25,11 +26,28 @@ internal sealed class PromotionApplyCommandService
                 continue;
             }
 
-            var key = $"{result["packageId"]?.GetValue<string>()}|{result["version"]?.GetValue<string>()}";
-            if (!resultLookup.TryGetValue(key, out var existing)
-                || GetAttempt(result) >= GetAttempt(existing.Result))
+            var artifactDirectory = Path.GetDirectoryName(resultPath)!;
+            foreach (var key in HelpBatchArtifactSupport.BuildResultKeys(result, artifactDirectory))
             {
-                resultLookup[key] = (result, Path.GetDirectoryName(resultPath)!);
+                if (!resultLookup.TryGetValue(key, out var existing)
+                    || GetAttempt(result) >= GetAttempt(existing.Result))
+                {
+                    resultLookup[key] = (result, artifactDirectory);
+                }
+            }
+
+            var resultPackageId = result["packageId"]?.GetValue<string>();
+            var resultVersion = result["version"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(resultPackageId) || string.IsNullOrWhiteSpace(resultVersion))
+            {
+                continue;
+            }
+
+            var legacyKey = HelpBatchArtifactSupport.BuildPackageVersionKey(resultPackageId, resultVersion);
+            if (!legacyResultLookup.TryGetValue(legacyKey, out var existingLegacy)
+                || GetAttempt(result) >= GetAttempt(existingLegacy.Result))
+            {
+                legacyResultLookup[legacyKey] = (result, artifactDirectory);
             }
         }
 
@@ -52,8 +70,21 @@ internal sealed class PromotionApplyCommandService
 
         foreach (var item in plan.Items.OfType<JsonObject>())
         {
-            var key = $"{item["packageId"]?.GetValue<string>()}|{item["version"]?.GetValue<string>()}";
+            var key = HelpBatchArtifactSupport.BuildPlanItemKey(item);
             var hasResultArtifact = resultLookup.TryGetValue(key, out var resultEntry);
+            if (!hasResultArtifact
+                && string.IsNullOrWhiteSpace(item["artifactName"]?.GetValue<string>())
+                && string.IsNullOrWhiteSpace(item["command"]?.GetValue<string>()))
+            {
+                var itemPackageId = item["packageId"]?.GetValue<string>()
+                    ?? throw new InvalidOperationException("Plan item is missing packageId.");
+                var itemVersion = item["version"]?.GetValue<string>()
+                    ?? throw new InvalidOperationException($"Plan item '{itemPackageId}' is missing version.");
+                hasResultArtifact = legacyResultLookup.TryGetValue(
+                    HelpBatchArtifactSupport.BuildPackageVersionKey(itemPackageId, itemVersion),
+                    out resultEntry);
+            }
+
             var result = hasResultArtifact
                 ? resultEntry.Result
                 : PromotionResultSupport.NewSyntheticFailureResult(
@@ -73,19 +104,31 @@ internal sealed class PromotionApplyCommandService
             if (string.Equals(result["disposition"]?.GetValue<string>(), "success", StringComparison.Ordinal))
             {
                 var openCliArtifact = result["artifacts"]?["opencliArtifact"]?.GetValue<string>();
+                var crawlArtifact = result["artifacts"]?["crawlArtifact"]?.GetValue<string>();
                 var xmlDocArtifact = result["artifacts"]?["xmldocArtifact"]?.GetValue<string>();
                 var openCliArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, openCliArtifact);
+                var crawlArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, crawlArtifact);
                 var xmlDocArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, xmlDocArtifact);
                 var openCliExists = openCliArtifactPath is not null;
+                var crawlExists = crawlArtifactPath is not null;
                 var xmlDocExists = xmlDocArtifactPath is not null;
                 var hasUsableOpenCli = openCliArtifactPath is not null
                     && PromotionArtifactSupport.TryLoadJsonObject(openCliArtifactPath, out _);
+                var hasUsableCrawl = crawlArtifactPath is not null
+                    && PromotionArtifactSupport.TryLoadJsonObject(crawlArtifactPath, out _);
+                var requiresCrawlArtifact = HelpBatchArtifactSupport.RequiresCrawlArtifact(
+                    result["analysisMode"]?.GetValue<string>() ?? item["analysisMode"]?.GetValue<string>());
                 var declaredMissing = new List<string>();
                 var invalidArtifacts = new List<string>();
 
                 if (!string.IsNullOrWhiteSpace(openCliArtifact) && !openCliExists)
                 {
                     declaredMissing.Add(openCliArtifact);
+                }
+
+                if (!string.IsNullOrWhiteSpace(crawlArtifact) && !crawlExists)
+                {
+                    declaredMissing.Add(crawlArtifact);
                 }
 
                 if (!string.IsNullOrWhiteSpace(xmlDocArtifact) && !xmlDocExists)
@@ -98,12 +141,22 @@ internal sealed class PromotionApplyCommandService
                     invalidArtifacts.Add(openCliArtifact!);
                 }
 
-                if (declaredMissing.Count > 0 || invalidArtifacts.Count > 0 || !(hasUsableOpenCli || xmlDocExists))
+                if (crawlArtifactPath is not null && !hasUsableCrawl)
+                {
+                    invalidArtifacts.Add(crawlArtifact!);
+                }
+
+                if (declaredMissing.Count > 0
+                    || invalidArtifacts.Count > 0
+                    || !(hasUsableOpenCli || xmlDocExists)
+                    || (requiresCrawlArtifact && !hasUsableCrawl))
                 {
                     var message = declaredMissing.Count > 0
                         ? "Success result declared artifact(s) that were not uploaded: " + string.Join(", ", declaredMissing)
                         : invalidArtifacts.Count > 0
                             ? "Success result declared OpenCLI artifact(s) that are not JSON objects: " + string.Join(", ", invalidArtifacts)
+                        : requiresCrawlArtifact && !hasUsableCrawl
+                            ? "Success result did not include a usable crawl.json artifact."
                         : "Success result did not include either opencli.json or xmldoc.xml.";
                     result = PromotionResultSupport.NewSyntheticFailureResult(
                         item,
