@@ -49,10 +49,13 @@ public sealed class ToolHelpOpenCliBuilderTests
         Assert.Equal("-c", rootOptions[1]!["aliases"]![0]!.GetValue<string>());
         Assert.Equal("PATH", rootOptions[1]!["arguments"]![0]!["name"]!.GetValue<string>());
 
-        var command = document["commands"]![0]!.AsObject();
-        Assert.Equal("user add", command["name"]!.GetValue<string>());
-        Assert.Equal("NAME", command["arguments"]![0]!["name"]!.GetValue<string>());
-        Assert.Equal("--admin", command["options"]![0]!["name"]!.GetValue<string>());
+        var user = document["commands"]![0]!.AsObject();
+        Assert.Equal("user", user["name"]!.GetValue<string>());
+
+        var add = user["commands"]![0]!.AsObject();
+        Assert.Equal("add", add["name"]!.GetValue<string>());
+        Assert.Equal("NAME", add["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.Equal("--admin", add["options"]![0]!["name"]!.GetValue<string>());
     }
 
     [Fact]
