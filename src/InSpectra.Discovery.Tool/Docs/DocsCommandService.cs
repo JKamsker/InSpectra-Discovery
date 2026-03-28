@@ -154,16 +154,20 @@ internal sealed class DocsCommandService
             var openCliPath = ResolveExistingOpenCliPath(
                 root,
                 latestPaths?["opencliPath"]?.GetValue<string>(),
-                metadata["artifacts"]?["opencliPath"]?.GetValue<string>());
+                metadata["artifacts"]?["opencliPath"]?.GetValue<string>(),
+                metadata["steps"]?["opencli"]?["path"]?.GetValue<string>(),
+                package["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault()?["paths"]?["opencliPath"]?.GetValue<string>());
             if (openCliPath is null)
             {
                 continue;
             }
 
             var openCli = JsonNode.Parse(await File.ReadAllTextAsync(openCliPath, cancellationToken));
-            var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
-                ?? metadata["artifacts"]?["opencliSource"]?.GetValue<string>()
-                ?? metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
+            var artifactSource = FirstNonEmpty(
+                openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>(),
+                metadata["artifacts"]?["opencliSource"]?.GetValue<string>(),
+                metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>(),
+                metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
             if (!string.Equals(artifactSource, "tool-output", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -364,6 +368,9 @@ internal sealed class DocsCommandService
 
         return null;
     }
+
+    private static string? FirstNonEmpty(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
     private static string ToAnchorSlug(string value)
     {

@@ -532,6 +532,81 @@ public sealed class DocsCommandServiceTests
         Assert.Contains("Fallback.Tool", report, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task BuildFullyIndexedDocumentationReportAsync_Falls_Back_To_OpenCli_Step_Path_When_Artifacts_Path_Is_Missing()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "all.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packages"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "StepFallback.Tool",
+                        ["latestPaths"] = new JsonObject
+                        {
+                            ["metadataPath"] = "index/packages/stepfallback.tool/latest/metadata.json",
+                            ["opencliPath"] = "index/packages/stepfallback.tool/latest/opencli.json",
+                        },
+                    },
+                },
+            });
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "packages", "stepfallback.tool", "latest", "metadata.json"),
+            new JsonObject
+            {
+                ["packageId"] = "StepFallback.Tool",
+                ["version"] = "1.0.0",
+                ["status"] = "ok",
+                ["introspection"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["classification"] = "json-ready",
+                        ["artifactSource"] = "tool-output",
+                    },
+                },
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["path"] = "index/packages/stepfallback.tool/1.0.0/opencli.json",
+                    },
+                },
+                ["artifacts"] = new JsonObject(),
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "packages", "stepfallback.tool", "1.0.0", "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray(),
+            });
+
+        var service = new DocsCommandService();
+        var exitCode = await service.BuildFullyIndexedDocumentationReportAsync(
+            repositoryRoot,
+            "index/all.json",
+            "docs/report.md",
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+
+        var report = File.ReadAllText(Path.Combine(repositoryRoot, "docs", "report.md"));
+        Assert.Contains("Packages in scope: 1", report, StringComparison.Ordinal);
+        Assert.Contains("StepFallback.Tool", report, StringComparison.Ordinal);
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

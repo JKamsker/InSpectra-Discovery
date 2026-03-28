@@ -58,10 +58,7 @@ internal static class OpenCliMetrics
         => packageSummaries
             .Select(summary =>
             {
-                var openCliRelativePath = summary["latestPaths"]?["opencliPath"]?.GetValue<string>();
-                var openCliFullPath = string.IsNullOrWhiteSpace(openCliRelativePath)
-                    ? null
-                    : Path.Combine(repositoryRoot, openCliRelativePath);
+                var openCliFullPath = ResolveOpenCliPath(summary, repositoryRoot);
                 var metrics = GetFromPath(openCliFullPath);
                 return new
                 {
@@ -75,6 +72,52 @@ internal static class OpenCliMetrics
             .ThenBy(item => item.Summary["packageId"]?.GetValue<string>() ?? string.Empty, StringComparer.OrdinalIgnoreCase)
             .Select(item => item.Summary)
             .ToList();
+
+    private static string? ResolveOpenCliPath(JsonObject summary, string repositoryRoot)
+    {
+        var latestPaths = summary["latestPaths"] as JsonObject;
+        var resolved = ResolveExistingPath(
+            repositoryRoot,
+            latestPaths?["opencliPath"]?.GetValue<string>());
+        if (resolved is not null)
+        {
+            return resolved;
+        }
+
+        var metadataPath = ResolveExistingPath(
+            repositoryRoot,
+            latestPaths?["metadataPath"]?.GetValue<string>());
+        if (metadataPath is not null)
+        {
+            var metadata = JsonNode.Parse(File.ReadAllText(metadataPath)) as JsonObject;
+            resolved = ResolveExistingPath(
+                repositoryRoot,
+                metadata?["artifacts"]?["opencliPath"]?.GetValue<string>(),
+                metadata?["steps"]?["opencli"]?["path"]?.GetValue<string>());
+            if (resolved is not null)
+            {
+                return resolved;
+            }
+        }
+
+        return ResolveExistingPath(
+            repositoryRoot,
+            summary["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault()?["paths"]?["opencliPath"]?.GetValue<string>());
+    }
+
+    private static string? ResolveExistingPath(string repositoryRoot, params string?[] relativePaths)
+    {
+        foreach (var relativePath in relativePaths.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var candidatePath = Path.Combine(repositoryRoot, relativePath!);
+            if (File.Exists(candidatePath))
+            {
+                return candidatePath;
+            }
+        }
+
+        return null;
+    }
 
     private static void AddOptionMetrics(MetricsState state, JsonArray? options)
     {
