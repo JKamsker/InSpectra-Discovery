@@ -476,8 +476,7 @@ internal sealed class PromotionApplyCommandService
             openCliStep["artifactSource"] = openCliSource;
         }
 
-        if (string.IsNullOrWhiteSpace(openCliStep["classification"]?.GetValue<string>())
-            && !string.IsNullOrWhiteSpace(inferredOpenCliClassification))
+        if (!string.IsNullOrWhiteSpace(inferredOpenCliClassification))
         {
             openCliStep["classification"] = inferredOpenCliClassification;
         }
@@ -504,8 +503,7 @@ internal sealed class PromotionApplyCommandService
             openCliIntrospection["artifactSource"] = openCliSource;
         }
 
-        if (string.IsNullOrWhiteSpace(openCliIntrospection["classification"]?.GetValue<string>())
-            && !string.IsNullOrWhiteSpace(inferredOpenCliClassification))
+        if (!string.IsNullOrWhiteSpace(inferredOpenCliClassification))
         {
             openCliIntrospection["classification"] = inferredOpenCliClassification;
         }

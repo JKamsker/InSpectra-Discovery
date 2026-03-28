@@ -570,6 +570,7 @@ public sealed class PromotionApplyCommandServiceTests
                         ["opencli"] = new JsonObject
                         {
                             ["status"] = "failed",
+                            ["classification"] = "json-ready",
                             ["message"] = "stale failure",
                             ["synthesizedArtifact"] = true,
                         },
@@ -579,6 +580,7 @@ public sealed class PromotionApplyCommandServiceTests
                         ["opencli"] = new JsonObject
                         {
                             ["status"] = "failed",
+                            ["classification"] = "json-ready",
                             ["message"] = "stale step failure",
                         },
                     },
@@ -643,7 +645,7 @@ public sealed class PromotionApplyCommandServiceTests
     }
 
     [Fact]
-    public async Task ApplyUntrustedAsync_Backfills_Missing_CliFx_OpenCli_Provenance_Nodes()
+    public async Task ApplyUntrustedAsync_Backfills_CliFx_OpenCli_Provenance_And_Classification()
     {
         ToolRuntime.Initialize();
 
@@ -714,6 +716,22 @@ public sealed class PromotionApplyCommandServiceTests
                     ["packageContentUrl"] = "https://nuget.test/clifx.tool.2.0.0.nupkg",
                     ["catalogEntryUrl"] = "https://nuget.test/catalog/clifx.tool.2.0.0.json",
                     ["command"] = "clifx-tool",
+                    ["introspection"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                            ["classification"] = "json-ready",
+                        },
+                    },
+                    ["steps"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                            ["classification"] = "json-ready",
+                        },
+                    },
                     ["timings"] = new JsonObject
                     {
                         ["totalMs"] = 120,
