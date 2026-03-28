@@ -295,6 +295,32 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Infers_CommandLineParser_Style_Options_Without_Dash_Prefixes()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            AutoPoint 1.1.0
+
+              t, target       Required. Path to the target Auto Point json file.
+
+              p, producers    Required. List of producers to make code for.
+
+              o, output       Path to output resulting files to.
+
+              help            Display more information on a specific command.
+
+              version         Display version information.
+            """);
+
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-t, --target", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-p, --producers", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-o, --output", StringComparison.Ordinal));
+        Assert.Empty(document.Commands);
+    }
+
+    [Fact]
     public void Normalizes_Command_Keys_By_Removing_Usage_Placeholders()
     {
         var parser = new ToolHelpTextParser();

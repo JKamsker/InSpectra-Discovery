@@ -14,8 +14,42 @@ internal static partial class ToolHelpLegacyOptionTable
         IReadOnlyList<string> usageLines)
     {
         var candidateLines = preamble.Skip(string.IsNullOrWhiteSpace(title) ? 0 : 1).ToArray();
+        var commandLineParserOptionLines = TryExtractCommandLineParserOptionLines(candidateLines);
+        if (commandLineParserOptionLines.Count > 0)
+        {
+            return commandLineParserOptionLines;
+        }
+
         var tableLines = TryExtractTableLines(candidateLines, usageLines);
         return tableLines.Count > 0 ? tableLines : candidateLines;
+    }
+
+    private static IReadOnlyList<string> TryExtractCommandLineParserOptionLines(IReadOnlyList<string> lines)
+    {
+        var results = new List<string>();
+        var hasRows = false;
+        var currentRowCaptured = false;
+
+        foreach (var rawLine in lines)
+        {
+            if (TryBuildCommandLineParserOptionRow(rawLine, out var syntheticLine))
+            {
+                results.Add(syntheticLine);
+                hasRows = true;
+                currentRowCaptured = true;
+                continue;
+            }
+
+            if (currentRowCaptured && rawLine.Length > 0 && char.IsWhiteSpace(rawLine, 0))
+            {
+                results.Add(rawLine);
+                continue;
+            }
+
+            currentRowCaptured = false;
+        }
+
+        return hasRows ? results : [];
     }
 
     private static IReadOnlyList<string> TryExtractTableLines(
@@ -187,6 +221,29 @@ internal static partial class ToolHelpLegacyOptionTable
         return true;
     }
 
+    private static bool TryBuildCommandLineParserOptionRow(string rawLine, out string syntheticLine)
+    {
+        syntheticLine = string.Empty;
+        var match = CommandLineParserOptionRowRegex().Match(rawLine);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var shortName = match.Groups["short"].Value.Trim();
+        var longName = match.Groups["long"].Value.Trim();
+        var description = match.Groups["description"].Value.Trim();
+        if (string.IsNullOrWhiteSpace(shortName)
+            || string.IsNullOrWhiteSpace(longName)
+            || string.IsNullOrWhiteSpace(description))
+        {
+            return false;
+        }
+
+        syntheticLine = $"-{shortName}, --{longName}  {description}";
+        return true;
+    }
+
     private static bool TryBuildMarkdownRow(string rawLine, out string syntheticLine)
     {
         syntheticLine = string.Empty;
@@ -348,6 +405,9 @@ internal static partial class ToolHelpLegacyOptionTable
 
     [GeneratedRegex(@"^(?<name>[A-Za-z][A-Za-z0-9]*)\*?\s+\((?<short>-[A-Za-z][A-Za-z0-9]*)\)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex TableRowRegex();
+
+    [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9\-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
+    private static partial Regex CommandLineParserOptionRowRegex();
 
     [GeneratedRegex(@"(?<=[a-z0-9])([A-Z])", RegexOptions.Compiled)]
     private static partial Regex KebabCaseRegex();
