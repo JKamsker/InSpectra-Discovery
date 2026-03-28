@@ -210,6 +210,16 @@ internal sealed class PromotionApplyCommandService
             openCliSource = "synthesized-from-xmldoc";
         }
 
+        if (openCliDocument is JsonObject openCliObject)
+        {
+            if (!string.IsNullOrWhiteSpace(openCliSource))
+            {
+                OpenCliDocumentSanitizer.EnsureArtifactSource(openCliObject, openCliSource);
+            }
+
+            openCliDocument = OpenCliDocumentSanitizer.Sanitize(openCliObject);
+        }
+
         var hasOpenCliOutput = openCliDocument is not null;
         if (hasOpenCliOutput)
         {

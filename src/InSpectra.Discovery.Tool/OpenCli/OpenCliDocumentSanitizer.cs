@@ -1,0 +1,118 @@
+using System.Text.Json.Nodes;
+
+internal static class OpenCliDocumentSanitizer
+{
+    private static readonly HashSet<string> EmptyOptionalArrayProperties = new(StringComparer.Ordinal)
+    {
+        "acceptedValues",
+        "aliases",
+        "arguments",
+        "examples",
+        "metadata",
+        "options",
+    };
+
+    public static JsonObject Sanitize(JsonObject document)
+    {
+        SanitizeNode(document, arrayContext: null);
+        return document;
+    }
+
+    public static JsonObject EnsureArtifactSource(JsonObject document, string artifactSource)
+    {
+        if (string.IsNullOrWhiteSpace(artifactSource))
+        {
+            return document;
+        }
+
+        var inspectra = document["x-inspectra"] as JsonObject;
+        if (inspectra is null)
+        {
+            inspectra = new JsonObject();
+            document["x-inspectra"] = inspectra;
+        }
+
+        if (string.IsNullOrWhiteSpace(inspectra["artifactSource"]?.GetValue<string>()))
+        {
+            inspectra["artifactSource"] = artifactSource;
+        }
+
+        return document;
+    }
+
+    private static void SanitizeNode(JsonNode node, string? arrayContext)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach (var property in obj.ToArray())
+            {
+                if (string.Equals(arrayContext, "options", StringComparison.Ordinal)
+                    && string.Equals(property.Key, "required", StringComparison.Ordinal))
+                {
+                    obj.Remove(property.Key);
+                    continue;
+                }
+
+                if (property.Value is null)
+                {
+                    obj.Remove(property.Key);
+                    continue;
+                }
+
+                var childArrayContext = property.Value is JsonArray ? property.Key : arrayContext;
+                SanitizeNode(property.Value, childArrayContext);
+
+                if (ShouldRemoveProperty(property.Key, property.Value))
+                {
+                    obj.Remove(property.Key);
+                }
+            }
+
+            return;
+        }
+
+        if (node is not JsonArray array)
+        {
+            return;
+        }
+
+        for (var index = array.Count - 1; index >= 0; index--)
+        {
+            if (array[index] is null)
+            {
+                array.RemoveAt(index);
+                continue;
+            }
+
+            SanitizeNode(array[index]!, arrayContext);
+        }
+    }
+
+    private static bool ShouldRemoveProperty(string propertyName, JsonNode value)
+    {
+        if (value is JsonArray array)
+        {
+            return array.Count == 0 && EmptyOptionalArrayProperties.Contains(propertyName);
+        }
+
+        if (value is JsonObject obj)
+        {
+            return obj.Count == 0 && string.Equals(propertyName, "x-inspectra", StringComparison.Ordinal);
+        }
+
+        if (value is not JsonValue jsonValue
+            || !string.Equals(propertyName, "description", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        try
+        {
+            return string.IsNullOrWhiteSpace(jsonValue.GetValue<string>());
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+    }
+}

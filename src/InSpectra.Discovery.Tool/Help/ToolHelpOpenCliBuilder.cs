@@ -30,7 +30,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
         AddIfPresent(document, "options", BuildOptions(rootHelp));
         AddIfPresent(document, "arguments", BuildArguments(commandName, string.Empty, rootHelp));
-        return document;
+        return OpenCliDocumentSanitizer.Sanitize(document);
     }
 
     private JsonObject BuildCommandNode(

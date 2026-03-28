@@ -44,7 +44,7 @@ internal static class OpenCliDocumentSynthesizer
 
         AddIfPresent(document, "options", defaultOptions);
         AddIfPresent(document, "arguments", defaultArguments);
-        return document;
+        return OpenCliDocumentSanitizer.Sanitize(document);
     }
 
     private static JsonObject ConvertCommand(XElement commandNode, IReadOnlyList<string> parentPath)

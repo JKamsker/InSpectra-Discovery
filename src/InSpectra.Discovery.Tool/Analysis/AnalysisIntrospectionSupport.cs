@@ -99,7 +99,13 @@ internal static class AnalysisIntrospectionSupport
         result["timings"]!.AsObject()["opencliMs"] = openCliOutcome.ProcessResult.DurationMs;
         result["timings"]!.AsObject()["xmldocMs"] = xmlDocOutcome.ProcessResult.DurationMs;
 
-        if (openCliOutcome.ArtifactObject is not null)
+        if (openCliOutcome.ArtifactObject is JsonObject openCliDocument)
+        {
+            OpenCliDocumentSanitizer.EnsureArtifactSource(openCliDocument, "tool-output");
+            RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), OpenCliDocumentSanitizer.Sanitize(openCliDocument));
+            result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
+        }
+        else if (openCliOutcome.ArtifactObject is not null)
         {
             RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliOutcome.ArtifactObject);
             result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";

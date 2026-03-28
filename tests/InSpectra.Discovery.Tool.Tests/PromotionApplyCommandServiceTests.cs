@@ -207,8 +207,28 @@ public sealed class PromotionApplyCommandServiceTests
                     {
                         ["title"] = "sample",
                         ["version"] = "1.0",
+                        ["description"] = null,
                     },
-                    ["commands"] = new JsonArray(),
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                            ["required"] = false,
+                            ["description"] = null,
+                            ["aliases"] = new JsonArray(),
+                        },
+                    },
+                    ["commands"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "serve",
+                            ["description"] = null,
+                            ["arguments"] = null,
+                            ["examples"] = new JsonArray(),
+                        },
+                    },
                 });
 
             RepositoryPathResolver.WriteJsonFile(
@@ -236,10 +256,25 @@ public sealed class PromotionApplyCommandServiceTests
             Assert.Equal(1234L, sampleMetadata["totalDownloads"]?.GetValue<long>());
             Assert.Equal("System.CommandLine", sampleMetadata["cliFramework"]?.GetValue<string>());
             Assert.Equal("index/packages/sample.tool/1.2.3/crawl.json", sampleMetadata["artifacts"]?["crawlPath"]?.GetValue<string>());
+            Assert.Equal("tool-output", sampleMetadata["artifacts"]?["opencliSource"]?.GetValue<string>());
 
             var sampleCrawl = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3", "crawl.json"));
             Assert.Equal(1, sampleCrawl["captureCount"]?.GetValue<int>());
             Assert.Equal("sample", sampleCrawl["commands"]?[0]?["command"]?.GetValue<string>());
+
+            var sampleOpenCli = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3", "opencli.json"));
+            Assert.Equal("tool-output", sampleOpenCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+            Assert.False(sampleOpenCli["info"]!.AsObject().ContainsKey("description"));
+
+            var sampleOption = sampleOpenCli["options"]![0]!.AsObject();
+            Assert.False(sampleOption.ContainsKey("required"));
+            Assert.False(sampleOption.ContainsKey("description"));
+            Assert.False(sampleOption.ContainsKey("aliases"));
+
+            var sampleCommand = sampleOpenCli["commands"]![0]!.AsObject();
+            Assert.False(sampleCommand.ContainsKey("description"));
+            Assert.False(sampleCommand.ContainsKey("arguments"));
+            Assert.False(sampleCommand.ContainsKey("examples"));
 
             var existingPackageIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "existing.tool", "index.json"));
             Assert.Equal(4321L, existingPackageIndex["totalDownloads"]?.GetValue<long>());

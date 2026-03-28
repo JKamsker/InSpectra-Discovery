@@ -38,7 +38,7 @@ internal sealed class CliFxOpenCliBuilder
 
         AddIfPresent(document, "options", BuildOptions(defaultCommand, rootHelp));
         AddIfPresent(document, "arguments", BuildArguments(defaultCommand, rootHelp));
-        return document;
+        return OpenCliDocumentSanitizer.Sanitize(document);
     }
 
     private JsonObject BuildCommandNode(
