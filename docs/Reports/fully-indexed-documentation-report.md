@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-28 10:42:48+00:00
+Generated: 2026-03-28 12:30:00+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 152
+Packages in scope: 153
 
 Fully documented: 72
 
-Incomplete: 80
+Incomplete: 81
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -64,6 +64,7 @@ Incomplete: 80
 | [MrKWatkins.OakIO.Tool](#pkg-mrkwatkins-oakio-tool) | 1.0.4 | ok | xml-ready | 2/2 | 0/0 | 3/3 | 0/2 | FAIL |
 | [MrKWatkins.RemoveJetBrainsAnnotations](#pkg-mrkwatkins-removejetbrainsannotations) | 1.1.0 | ok | xml-ready | 0/0 | 0/0 | 0/1 | 0/0 | FAIL |
 | [MrKWatkins.Sesharp.Tool](#pkg-mrkwatkins-sesharp-tool) | 1.6.0 | ok | xml-ready | 0/0 | 0/3 | 0/1 | 0/0 | FAIL |
+| [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.3 | ok | xml-ready | 61/61 | 608/645 | 2/30 | 0/50 | FAIL |
 | [Nivobi.GitBuddy](#pkg-nivobi-gitbuddy) | 1.3.1 | ok | xml-ready | 15/15 | 12/15 | 7/8 | 0/15 | FAIL |
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.31 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [Notify.Console](#pkg-notify-console) | 1.1.0 | ok | xml-ready | 3/3 | 0/5 | 0/1 | 0/3 | FAIL |
@@ -986,6 +987,23 @@ Incomplete: 80
 - Missing option descriptions: [root] --delete-contents-of-output-directory, [root] --output, [root] --repository
 - Missing argument descriptions: [root] <assemblies>
 - Missing leaf command examples: None
+
+<a id="pkg-nexudus-cli"></a>
+### Nexudus.Cli
+
+- Version: `0.1.3`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `61/61`
+- Option documentation: `608/645`
+- Argument documentation: `2/30`
+- Leaf command examples: `0/50`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: businesses list --page, businesses list --query, businesses list --size, countries list --page, countries list --query, countries list --size, currencies list --page, currencies list --query, currencies list --size, extraservices delete --yes, extraservices list --page, extraservices list --query, extraservices list --size, productextraservices delete --yes, productextraservices list --page, productextraservices list --query, productextraservices list --size, products delete --yes, products list --page, products list --query, products list --size, producttimepasses delete --yes, producttimepasses list --page, producttimepasses list --query, producttimepasses list --size, resources delete --yes, resources list --page, resources list --query, resources list --size, resourcetypes delete --yes, resourcetypes list --page, resourcetypes list --query, resourcetypes list --size, timepasses delete --yes, timepasses list --page, timepasses list --query, timepasses list --size
+- Missing argument descriptions: businesses get <id>, businesses update <id>, config get <key>, config set <key>, config set <value>, countries get <id>, currencies get <id>, extraservices delete <id>, extraservices get <id>, extraservices update <id>, productextraservices delete <id>, productextraservices get <id>, productextraservices update <id>, products delete <id>, products get <id>, products update <id>, producttimepasses delete <id>, producttimepasses get <id>, producttimepasses update <id>, resources delete <id>, resources get <id>, resources update <id>, resourcetypes delete <id>, resourcetypes get <id>, resourcetypes update <id>, timepasses delete <id>, timepasses get <id>, timepasses update <id>
+- Missing leaf command examples: businesses get, businesses list, businesses update, config get, config set, countries get, countries list, currencies get, currencies list, doctor, extraservices create, extraservices delete, extraservices get, extraservices list, extraservices update, login, logout, productextraservices create, productextraservices delete, productextraservices get, productextraservices list, productextraservices update, products commands, products create, products delete, products get, products list, products run-command, products update, producttimepasses create, producttimepasses delete, producttimepasses get, producttimepasses list, producttimepasses update, resources create, resources delete, resources get, resources list, resources update, resourcetypes create, resourcetypes delete, resourcetypes get, resourcetypes list, resourcetypes update, timepasses create, timepasses delete, timepasses get, timepasses list, timepasses update, whoami
 
 <a id="pkg-nivobi-gitbuddy"></a>
 ### Nivobi.GitBuddy
