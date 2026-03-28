@@ -124,14 +124,15 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             ? null
             : Path.Combine(repositoryRoot, crawlRelativePath);
         var hasCrawl = !string.IsNullOrWhiteSpace(crawlPath) && File.Exists(crawlPath);
+        var hasStaleCrawlReference = !string.IsNullOrWhiteSpace(crawlRelativePath) && !hasCrawl;
         var shouldBackfillMissingOpenCli = string.IsNullOrWhiteSpace(openCliRelativePath)
             && hasXmlDoc
             && !hasCrawl
             && !openCliExists;
         var shouldRepairBlankXmldocProvenance = hasXmlDoc
             && !hasCrawl
-            && !openCliExists
-            && string.IsNullOrWhiteSpace(artifactSource);
+            && string.IsNullOrWhiteSpace(artifactSource)
+            && (!openCliExists || hasStaleCrawlReference);
         if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
             && !shouldBackfillMissingOpenCli
             && !shouldRepairBlankXmldocProvenance)
