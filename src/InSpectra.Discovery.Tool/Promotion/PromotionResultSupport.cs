@@ -84,15 +84,20 @@ internal static class PromotionResultSupport
 
         if (item["analysisMode"] is not null)
         {
-            result["analysisMode"] = item["analysisMode"]?.DeepClone();
+            var analysisMode = item["analysisMode"]?.DeepClone();
+            result["analysisMode"] = analysisMode;
 
-            if (result["analysisSelection"] is JsonObject analysisSelection)
+            var analysisSelection = result["analysisSelection"] as JsonObject;
+            if (analysisSelection is null)
             {
-                analysisSelection["selectedMode"] = item["analysisMode"]?.DeepClone();
-                if (analysisSelection["preferredMode"] is null)
-                {
-                    analysisSelection["preferredMode"] = item["analysisMode"]?.DeepClone();
-                }
+                analysisSelection = new JsonObject();
+                result["analysisSelection"] = analysisSelection;
+            }
+
+            analysisSelection["selectedMode"] = analysisMode?.DeepClone();
+            if (analysisSelection["preferredMode"] is null)
+            {
+                analysisSelection["preferredMode"] = analysisMode?.DeepClone();
             }
         }
     }

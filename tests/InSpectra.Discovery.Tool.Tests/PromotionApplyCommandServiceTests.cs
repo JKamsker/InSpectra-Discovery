@@ -614,6 +614,8 @@ public sealed class PromotionApplyCommandServiceTests
 
             var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "legacy.help.tool", "2.2.0", "metadata.json"));
             Assert.Equal("help", metadata["analysisMode"]?.GetValue<string>());
+            Assert.Equal("help", metadata["analysisSelection"]?["selectedMode"]?.GetValue<string>());
+            Assert.Equal("help", metadata["analysisSelection"]?["preferredMode"]?.GetValue<string>());
             Assert.Equal("crawled-from-help", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
             Assert.Equal("crawled-from-help", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
             Assert.Equal("help-crawl", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
