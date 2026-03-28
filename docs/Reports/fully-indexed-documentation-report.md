@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-28 15:29:41+00:00
+Generated: 2026-03-28 15:53:17+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -57,7 +57,7 @@ Incomplete: 81
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.12 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
 | [kosh](#pkg-kosh) | 0.4.1 | ok | xml-ready | 4/4 | 2/2 | 0/0 | 0/4 | FAIL |
 | [MChris.DotnetCheck](#pkg-mchris-dotnetcheck) | 1.0.11 | ok | xml-ready | 10/10 | 18/18 | 1/1 | 3/8 | FAIL |
-| [Metalama.Tool](#pkg-metalama-tool) | 2026.1.5-preview | ok | xml-ready | 29/29 | 56/56 | 5/5 | 0/25 | FAIL |
+| [Metalama.Tool](#pkg-metalama-tool) | 2026.1.6-preview | ok | xml-ready | 29/29 | 56/56 | 5/5 | 0/25 | FAIL |
 | [MetaMorph.Cli](#pkg-metamorph-cli) | 1.0.10 | ok | xml-ready | 0/11 | 10/10 | 12/12 | 0/11 | FAIL |
 | [Momentum.Extensions.EventMarkdownGenerator](#pkg-momentum-extensions-eventmarkdowngenerator) | 0.0.9 | ok | xml-ready | 2/2 | 10/10 | 0/0 | 0/2 | FAIL |
 | [MrKWatkins.OakAsm.Tool](#pkg-mrkwatkins-oakasm-tool) | 0.8.2 | ok | xml-ready | 0/2 | 0/1 | 2/3 | 0/2 | FAIL |
@@ -872,7 +872,7 @@ Incomplete: 81
 <a id="pkg-metalama-tool"></a>
 ### Metalama.Tool
 
-- Version: `2026.1.5-preview`
+- Version: `2026.1.6-preview`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
