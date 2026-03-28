@@ -607,6 +607,82 @@ public sealed class DocsCommandServiceTests
         Assert.Contains("StepFallback.Tool", report, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task BuildFullyIndexedDocumentationReportAsync_Includes_JsonReadyWithNonzeroExit_Tool_Output()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "all.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packages"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "NativeExit.Tool",
+                        ["latestPaths"] = new JsonObject
+                        {
+                            ["metadataPath"] = "index/packages/nativeexit.tool/latest/metadata.json",
+                            ["opencliPath"] = "index/packages/nativeexit.tool/latest/opencli.json",
+                        },
+                    },
+                },
+            });
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "packages", "nativeexit.tool", "latest", "metadata.json"),
+            new JsonObject
+            {
+                ["packageId"] = "NativeExit.Tool",
+                ["version"] = "1.0.0",
+                ["status"] = "ok",
+                ["introspection"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["classification"] = "json-ready-with-nonzero-exit",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["opencliPath"] = "index/packages/nativeexit.tool/latest/opencli.json",
+                    ["opencliSource"] = "tool-output",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "packages", "nativeexit.tool", "latest", "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "tool-output",
+                },
+                ["commands"] = new JsonArray(),
+            });
+
+        var service = new DocsCommandService();
+        var exitCode = await service.BuildFullyIndexedDocumentationReportAsync(
+            repositoryRoot,
+            "index/all.json",
+            "docs/report.md",
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+
+        var report = File.ReadAllText(Path.Combine(repositoryRoot, "docs", "report.md"));
+        Assert.Contains("Packages in scope: 1", report, StringComparison.Ordinal);
+        Assert.Contains("NativeExit.Tool", report, StringComparison.Ordinal);
+        Assert.Contains("json-ready-with-nonzero-exit", report, StringComparison.Ordinal);
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

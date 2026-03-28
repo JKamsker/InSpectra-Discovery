@@ -778,6 +778,123 @@ public sealed class PromotionApplyCommandServiceTests
     }
 
     [Fact]
+    public async Task ApplyUntrustedAsync_Preserves_Native_Nonzero_Exit_OpenCli_Classification()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Native.Exit.Tool",
+                            ["latestVersion"] = "1.0.0",
+                            ["totalDownloads"] = 25,
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-native-nonzero-exit",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Native.Exit.Tool",
+                            ["version"] = "1.0.0",
+                            ["attempt"] = 1,
+                            ["command"] = "native-exit-tool",
+                            ["analysisMode"] = "native",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-native-exit-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Native.Exit.Tool",
+                    ["version"] = "1.0.0",
+                    ["batchId"] = "batch-native-nonzero-exit",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analysisMode"] = "native",
+                    ["analyzedAt"] = "2026-03-27T05:30:00Z",
+                    ["disposition"] = "success",
+                    ["command"] = "native-exit-tool",
+                    ["steps"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                            ["classification"] = "json-ready-with-nonzero-exit",
+                        },
+                    },
+                    ["introspection"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                            ["classification"] = "json-ready-with-nonzero-exit",
+                        },
+                    },
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["xmldocArtifact"] = null,
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-native-exit-tool", "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                    ["info"] = new JsonObject
+                    {
+                        ["title"] = "native-exit-tool",
+                        ["version"] = "1.0.0",
+                    },
+                    ["commands"] = new JsonArray(),
+                });
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "native.exit.tool", "1.0.0", "metadata.json"));
+            Assert.Equal("json-ready-with-nonzero-exit", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
+            Assert.Equal("json-ready-with-nonzero-exit", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
     public async Task ApplyUntrustedAsync_Backfills_CliFx_OpenCli_Provenance_And_Classification()
     {
         ToolRuntime.Initialize();

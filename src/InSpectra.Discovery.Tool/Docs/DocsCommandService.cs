@@ -146,7 +146,7 @@ internal sealed class DocsCommandService
             var openCliClassification = metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>();
 
             if (!string.Equals(packageStatus, "ok", StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(openCliClassification, "json-ready", StringComparison.OrdinalIgnoreCase))
+                !IsReportableOpenCliClassification(openCliClassification))
             {
                 continue;
             }
@@ -372,6 +372,10 @@ internal sealed class DocsCommandService
     private static string? FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
+    private static bool IsReportableOpenCliClassification(string? classification)
+        => string.Equals(classification, "json-ready", StringComparison.OrdinalIgnoreCase)
+           || string.Equals(classification, "json-ready-with-nonzero-exit", StringComparison.OrdinalIgnoreCase);
+
     private static string ToAnchorSlug(string value)
     {
         var normalized = new string(value.ToLowerInvariant().Select(ch => char.IsAsciiLetterOrDigit(ch) ? ch : '-').ToArray()).Trim('-');
@@ -397,7 +401,7 @@ internal sealed class DocsCommandService
             string.Empty,
             $"Generated: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ssK}",
             string.Empty,
-            "Scope: latest package entries with status ok, whose OpenCLI classification is json-ready, and whose resolved OpenCLI provenance is tool-output.",
+            "Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.",
             string.Empty,
             "Completeness rule: visible commands, options, and arguments must all have non-empty descriptions, and every visible leaf command must have at least one non-empty example.",
             string.Empty,

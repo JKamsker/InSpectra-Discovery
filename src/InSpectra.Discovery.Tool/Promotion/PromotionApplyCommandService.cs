@@ -336,8 +336,10 @@ internal sealed class PromotionApplyCommandService
             File.Delete(xmlDocPath);
         }
 
-        var inferredOpenCliClassification = InferOpenCliClassification(openCliSource);
         var openCliStep = result["steps"]?["opencli"]?.DeepClone() as JsonObject;
+        var introspection = result["introspection"]?.DeepClone() as JsonObject ?? new JsonObject();
+        var openCliIntrospection = introspection["opencli"]?.DeepClone() as JsonObject;
+        var inferredOpenCliClassification = ResolveOpenCliClassification(openCliSource, openCliStep, openCliIntrospection);
         if (openCliStep is null && hasOpenCliOutput)
         {
             openCliStep = new JsonObject
@@ -375,8 +377,6 @@ internal sealed class PromotionApplyCommandService
             }
         }
 
-        var introspection = result["introspection"]?.DeepClone() as JsonObject ?? new JsonObject();
-        var openCliIntrospection = introspection["opencli"]?.DeepClone() as JsonObject;
         if (openCliIntrospection is null && hasOpenCliOutput)
         {
             openCliIntrospection = new JsonObject
@@ -460,6 +460,22 @@ internal sealed class PromotionApplyCommandService
 
     private static string? InferOpenCliClassification(string? openCliSource)
         => OpenCliArtifactSourceSupport.InferClassification(openCliSource);
+
+    private static string? ResolveOpenCliClassification(string? openCliSource, params JsonObject?[] sources)
+    {
+        if (string.Equals(openCliSource, "tool-output", StringComparison.OrdinalIgnoreCase))
+        {
+            var preserved = sources
+                .Select(source => source?["classification"]?.GetValue<string>())
+                .FirstOrDefault(classification => string.Equals(classification, "json-ready-with-nonzero-exit", StringComparison.OrdinalIgnoreCase));
+            if (!string.IsNullOrWhiteSpace(preserved))
+            {
+                return preserved;
+            }
+        }
+
+        return InferOpenCliClassification(openCliSource);
+    }
 
     private static void BackfillOpenCliStepMetadata(
         JsonObject openCliStep,
