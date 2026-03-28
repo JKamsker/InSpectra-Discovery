@@ -213,6 +213,48 @@ function Test-IsComplete {
     return $Documented -eq $Visible
 }
 
+function Get-FirstNonEmptyText {
+    param([AllowNull()][object[]]$Values)
+
+    foreach ($value in @($Values)) {
+        $text = [string]$value
+        if (-not [string]::IsNullOrWhiteSpace($text)) {
+            return $text
+        }
+    }
+
+    return $null
+}
+
+function Resolve-ExistingOpenCliPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot,
+
+        [AllowNull()][object[]]$RelativePaths
+    )
+
+    foreach ($relativePath in @($RelativePaths)) {
+        $candidate = [string]$relativePath
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            continue
+        }
+
+        $fullPath = Join-Path $RepositoryRoot $candidate
+        if (Test-Path -LiteralPath $fullPath) {
+            return $fullPath
+        }
+    }
+
+    return $null
+}
+
+function Test-IsReportableOpenCliClassification {
+    param([AllowNull()][string]$Classification)
+
+    return $Classification -in @('json-ready', 'json-ready-with-nonzero-exit')
+}
+
 function ConvertTo-AnchorSlug {
     param([Parameter(Mandatory = $true)][string]$Value)
 
@@ -262,36 +304,28 @@ foreach ($package in Get-Collection -Value (Get-OptionalPropertyValue -InputObje
         continue
     }
 
-    if ($openCliClassification -ne 'json-ready') {
+    if (-not (Test-IsReportableOpenCliClassification -Classification $openCliClassification)) {
         continue
     }
 
-    if ($artifactSource -eq 'synthesized-from-xmldoc') {
-        continue
-    }
-
-    $openCliRelativePath = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliPath')
-    if ([string]::IsNullOrWhiteSpace($openCliRelativePath)) {
-        $openCliRelativePath = [string](Get-OptionalPropertyValue -InputObject $latestPaths -Name 'opencliPath')
-    }
-
-    if ([string]::IsNullOrWhiteSpace($openCliRelativePath)) {
-        continue
-    }
-
-    $openCliPath = Join-Path $RepositoryRoot $openCliRelativePath
-    if (-not (Test-Path -LiteralPath $openCliPath)) {
+    $latestVersionRecord = @(Get-Collection -Value (Get-OptionalPropertyValue -InputObject $package -Name 'versions')) | Select-Object -First 1
+    $openCliPath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
+        Get-OptionalPropertyValue -InputObject $latestPaths -Name 'opencliPath',
+        Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliPath',
+        Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'path',
+        Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $latestVersionRecord -Name 'paths') -Name 'opencliPath'
+    )
+    if (-not $openCliPath) {
         continue
     }
 
     $openCli = Get-Content -Path $openCliPath -Raw | ConvertFrom-Json -Depth 100
-    $artifactSource = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliSource')
-    if ([string]::IsNullOrWhiteSpace($artifactSource)) {
-        $artifactSource = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'artifactSource')
-    }
-    if ([string]::IsNullOrWhiteSpace($artifactSource)) {
-        $artifactSource = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $openCli -Name 'x-inspectra') -Name 'artifactSource')
-    }
+    $artifactSource = Get-FirstNonEmptyText -Values @(
+        Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $openCli -Name 'x-inspectra') -Name 'artifactSource',
+        Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliSource',
+        Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'artifactSource',
+        Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'introspection') -Name 'opencli') -Name 'artifactSource'
+    )
     if ($artifactSource -ne 'tool-output') {
         continue
     }
@@ -357,7 +391,7 @@ $lines.Add('# Fully Indexed Package Documentation Report')
 $lines.Add('')
 $lines.Add("Generated: $generatedAt")
 $lines.Add('')
-$lines.Add("Scope: latest package entries with status `ok`, whose OpenCLI classification is `json-ready`, and whose resolved OpenCLI provenance is `tool-output`.")
+$lines.Add("Scope: latest package entries with status `ok`, whose OpenCLI classification is `json-ready` or `json-ready-with-nonzero-exit`, and whose resolved OpenCLI provenance is `tool-output`.")
 $lines.Add('')
 $lines.Add("Completeness rule: visible commands, options, and arguments must all have non-empty descriptions, and every visible leaf command must have at least one non-empty example.")
 $lines.Add('')

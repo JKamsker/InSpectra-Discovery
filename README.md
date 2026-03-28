@@ -111,7 +111,7 @@ dotnet run --project src/InSpectra.Discovery.Tool -- catalog filter spectre-cons
 
 ### Analysis
 
-Discovered tools are analyzed via the discovery CLI. The scheduled path prefers native Spectre OpenCLI/XMLDoc extraction and falls back to generic help crawling for other well-behaving tools:
+Discovered tools are analyzed via the discovery CLI. The scheduled path prefers native Spectre OpenCLI/XMLDoc extraction, falls back to dedicated `CliFx` analysis when that framework is detected, and otherwise uses generic help crawling for other well-behaving tools:
 
 ```powershell
 dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-auto --package-id JellyfinCli --version 0.1.16 --output-root artifacts/analysis/jellyfincli --batch-id manual

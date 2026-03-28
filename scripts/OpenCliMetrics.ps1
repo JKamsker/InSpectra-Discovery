@@ -195,6 +195,66 @@ function Get-OpenCliMetricsFromPath {
     return Get-OpenCliMetricsFromDocument -OpenCliDocument $document
 }
 
+function Resolve-ExistingOpenCliPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot,
+
+        [AllowNull()][object[]]$RelativePaths
+    )
+
+    foreach ($relativePath in @($RelativePaths)) {
+        $candidate = [string]$relativePath
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            continue
+        }
+
+        $fullPath = Join-Path $RepositoryRoot $candidate
+        if (Test-Path -LiteralPath $fullPath) {
+            return $fullPath
+        }
+    }
+
+    return $null
+}
+
+function Resolve-OpenCliPathForSummary {
+    param(
+        [Parameter(Mandatory = $true)]
+        [object]$Summary,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot
+    )
+
+    $latestPaths = Get-OpenCliOptionalPropertyValue -InputObject $Summary -Name 'latestPaths'
+    $latestOpenCliPath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
+        Get-OpenCliOptionalPropertyValue -InputObject $latestPaths -Name 'opencliPath'
+    )
+    if ($latestOpenCliPath) {
+        return $latestOpenCliPath
+    }
+
+    $metadataPath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
+        Get-OpenCliOptionalPropertyValue -InputObject $latestPaths -Name 'metadataPath'
+    )
+    if ($metadataPath) {
+        $metadata = Get-Content -Path $metadataPath -Raw | ConvertFrom-Json -Depth 100
+        $metadataOpenCliPath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
+            Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliPath',
+            Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'path'
+        )
+        if ($metadataOpenCliPath) {
+            return $metadataOpenCliPath
+        }
+    }
+
+    $latestVersionRecord = @(Get-OpenCliCollection -Value (Get-OpenCliOptionalPropertyValue -InputObject $Summary -Name 'versions')) | Select-Object -First 1
+    return Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
+        Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject $latestVersionRecord -Name 'paths') -Name 'opencliPath'
+    )
+}
+
 function Add-OpenCliMetricsToPackageSummary {
     param(
         [Parameter(Mandatory = $true)]
@@ -234,15 +294,7 @@ function Sort-PackageSummariesForAllIndex {
     )
 
     $decorated = foreach ($summary in $PackageSummaries) {
-        $latestPaths = Get-OpenCliOptionalPropertyValue -InputObject $summary -Name 'latestPaths'
-        $openCliRelativePath = [string](Get-OpenCliOptionalPropertyValue -InputObject $latestPaths -Name 'opencliPath')
-        $openCliFullPath = if ([string]::IsNullOrWhiteSpace($openCliRelativePath)) {
-            $null
-        }
-        else {
-            Join-Path $RepositoryRoot $openCliRelativePath
-        }
-
+        $openCliFullPath = Resolve-OpenCliPathForSummary -Summary $summary -RepositoryRoot $RepositoryRoot
         $metrics = Get-OpenCliMetricsFromPath -OpenCliPath $openCliFullPath
         [pscustomobject]@{
             summary = Add-OpenCliMetricsToPackageSummary -Summary $summary -Metrics $metrics
