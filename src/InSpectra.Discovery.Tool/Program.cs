@@ -60,6 +60,7 @@ try
         {
             docs.SetDescription("Generate derived discovery documentation artifacts.");
             docs.AddCommand<DocsRebuildIndexesCommand>("rebuild-indexes").WithDescription("Rebuild package summaries, index/all.json, and index/index.json from indexed metadata.");
+            docs.AddCommand<DocsRegenerateHelpCrawlsCommand>("regenerate-help-crawls").WithDescription("Regenerate generic help OpenCLI artifacts from stored crawl.json captures.");
             docs.AddCommand<DocsBrowserIndexCommand>("browser-index").WithDescription("Build the lightweight browser index from index/all.json.");
             docs.AddCommand<DocsFullyIndexedReportCommand>("fully-indexed-report").WithDescription("Build the fully indexed package documentation coverage report.");
         });

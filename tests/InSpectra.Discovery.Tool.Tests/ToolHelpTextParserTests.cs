@@ -224,4 +224,281 @@ public sealed class ToolHelpTextParserTests
         Assert.Contains(document.Commands, command => string.Equals(command.Key, "convert", StringComparison.Ordinal));
         Assert.Contains(document.Commands, command => string.Equals(command.Key, "report", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Parses_Markdown_Option_Tables_Without_Inferring_Fake_Commands()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            RegisterBot Version 2.0.20.0
+
+            ```RegisterBot [--endpoint endpoint] [--name botName] [--resource-group groupName] [--help]```
+
+            Creates or updates a bot registration for [botName] pointing to [endpoint] with teams channel and SSO enabled.
+
+            | Argument                         | Description                                                                                   |
+            | -------------------------------- | --------------------------------------------------------------------------------------------- |
+            | -e, --endpoint endpoint          | (optional) If not specified the endpoint will stay the same as project settings               |
+            | -n, --name botName               | (optional) If not specified the botname will be pulled from settings or interactively asked   |
+            | -g, --resource-group groupName   | (optional) If not specified the groupname will be pulled from settings or interactively asked |
+            | -v, --verbose                    | (optional) show all commands as they are executed                                             |
+            | -h, --help                       | display help                                                                                  |
+
+            If the endpoint host name is:
+
+            | Host                 | Action                                                                               |
+            | -------------------- | ------------------------------------------------------------------------------------ |
+            | xx.azurewebsites.net | it modifies the remote web app settings to have correct settings/secrets             |
+            | localhost            | it modifies the local project settings/user secrets to have correct settings/secrets |
+            """);
+
+        Assert.Contains(document.UsageLines, line => string.Equals(line, "RegisterBot [--endpoint endpoint] [--name botName] [--resource-group groupName] [--help]", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-e, --endpoint <ENDPOINT>", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-n, --name <BOTNAME>", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-g, --resource-group <GROUPNAME>", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-v, --verbose", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-h, --help", StringComparison.Ordinal));
+        Assert.Empty(document.Commands);
+    }
+
+    [Fact]
+    public void Ignores_Bare_Pipe_Lines_When_Inferring_Options()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            | Gitfo v0.4.0
+            |
+            | No .gitfo config found, scanning local folders for Git repos...
+            | No local Git repos found.
+            gitfo 0.0.0.0
+            Copyright 2022-2025
+
+              -p, --profile       Profile to use
+
+              -l, --scan-local    Ignore .gitfo config and scan local folders
+
+              --help              Display this help screen.
+
+              --version           Display version information.
+            """);
+
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-p, --profile", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-l, --scan-local", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--help", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--version", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Does_Not_Infer_Ascii_Banner_As_Commands()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Ola mundo!
+            .NET Tool criada com .NET 9...
+
+             .----------------.  .----------------.
+            | .--------------. || .--------------. |
+            | |    ______    | || |  _______     | |
+            | |  .' ___  |   | || | |_   __ \    | |
+            | '--------------' || '--------------' |
+             '----------------'  '----------------'
+            """);
+
+        Assert.Empty(document.Commands);
+        Assert.Empty(document.Options);
+    }
+
+    [Fact]
+    public void Does_Not_Parse_Stack_Trace_Separators_As_Options()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Unhandled exception. System.Net.Sockets.SocketException: Unknown socket error
+               at Program.Main(String[] args) in Program.cs:line 59
+            --- End of stack trace from previous location ---
+               at Spectre.Console.Status.StartAsync(String status) in Status.cs:line 117
+            """);
+
+        Assert.Empty(document.Options);
+        Assert.Empty(document.Commands);
+    }
+
+    [Fact]
+    public void Parses_Box_Drawing_Option_Tables_Without_Inferring_Fake_Commands()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            dotnet-repl
+
+             dotnet-repl [options]
+
+            ┌───────────────────────┬───────────────────────────────┐
+            │ Option                │ Description                   │
+            ├───────────────────────┼───────────────────────────────┤
+            │ -h, -?, --help        │ Show help and usage           │
+            │ --log-path <PATH>     │ Enable file logging           │
+            │                       │ to the specified directory    │
+            └───────────────────────┴───────────────────────────────┘
+            """);
+
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-h, -?, --help", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option =>
+            string.Equals(option.Key, "--log-path <PATH>", StringComparison.Ordinal)
+            && option.Description!.Contains("specified directory", StringComparison.Ordinal));
+        Assert.Empty(document.Commands);
+    }
+
+    [Fact]
+    public void Does_Not_Infer_Commands_From_Log_Prefixes_Or_Register_Dumps()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            ExactOnline OpenApiGenerator
+            By Stef Heyenrath
+            info: Usage: obfuscar [Options] <project_file>
+            info:   -h, --help  Show help information
+              r8: 00002a00000b4263  r9: 0000000000000001
+              dx: 0000000000000006  ax: 0000000000000000
+            """);
+
+        Assert.Empty(document.Commands);
+        Assert.Empty(document.Options);
+    }
+
+    [Fact]
+    public void Normalizes_Trailing_Colon_In_Commands_Section()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Swashbuckle (Swagger) Command Line Tools
+            Commands:
+              tofile:  retrieves Swagger from a startup assembly, and writes to file
+              list:    retrieves the list of Swagger document names from a startup assembly
+            """);
+
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "tofile", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "list", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Ignores_CommandLineParser_Error_Preamble_And_Pseudo_Verbs()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Error parsing
+             CommandLine.HelpVerbRequestedError
+            GSoft.CertificateTool 1.0.0+bb4d252c46ae13f3169853b02995b8cd77635ab6
+            Copyright (C) 2026 GSoft.CertificateTool
+
+              add        Installs a pfx certificate to selected store.
+              remove     Removes a pfx certificate from selected store.
+              version    Display version information.
+            """);
+
+        Assert.Equal("GSoft.CertificateTool", document.Title);
+        Assert.Equal("1.0.0+bb4d252c46ae13f3169853b02995b8cd77635ab6", document.Version);
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "add", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "remove", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "version", StringComparison.Ordinal));
+        Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "CommandLine.HelpVerbRequestedError", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Treats_Singular_Command_Header_As_Command_Specific_Help()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Apizr dedicated version of NSwag command line tool for Net70, toolchain v13.19.0.0
+            Visit http://NSwag.org for more information.
+            NSwag bin directory: /tmp/tool
+
+            Command: run
+              Executes an .nswag file. If 'input' is not specified then all *.nswag files are executed.
+
+            Arguments:
+              Variables
+                Variables passed to the command.
+
+            Duration: 00:00:00.0549972
+            """);
+
+        Assert.Equal("run", document.Title);
+        Assert.Equal("Executes an .nswag file. If 'input' is not specified then all *.nswag files are executed.", document.CommandDescription);
+        Assert.Empty(document.Commands);
+        Assert.Single(document.Arguments);
+        Assert.Equal("Variables", document.Arguments[0].Key);
+        Assert.Equal("Variables passed to the command.", document.Arguments[0].Description);
+    }
+
+    [Fact]
+    public void Ignores_Raw_Output_And_Redirection_Warning_Sections()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            CLI Version: 7.0.0
+
+            Description:
+              Fetch the current account
+
+            Usage:
+              Beamable.Tools me [options]
+
+            Options:
+              -?, -h, --help  Show help and usage information
+
+            Raw Output:
+              Returns a stream of AccountMeCommandOutput object on the stream stream.
+              {
+                "ts": 1774693724241
+              }
+
+            Redirection Warning:
+              The quiet flag must be used.
+            """);
+
+        Assert.Equal("Fetch the current account", document.CommandDescription);
+        Assert.Single(document.Options);
+        Assert.Equal("-?, -h, --help", document.Options[0].Key);
+        Assert.Equal("Show help and usage information", document.Options[0].Description);
+        Assert.DoesNotContain("Raw Output", document.Options[0].Description, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Normalizes_Comma_Separated_Command_Aliases_To_First_Alias()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Usage: Beamable.Tools [command] [options]
+
+            Commands:
+              deploy, deployment, deployments, deploys  Commands for deployments
+              otel, tel, telemetry                      Open telemetry commands
+            """);
+
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "deploy", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "otel", StringComparison.Ordinal));
+        Assert.DoesNotContain(document.Commands, command => command.Key.Contains(',', StringComparison.Ordinal));
+    }
 }

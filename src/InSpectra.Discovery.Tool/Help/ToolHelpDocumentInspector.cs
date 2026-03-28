@@ -19,6 +19,11 @@ internal static class ToolHelpDocumentInspector
             return true;
         }
 
+        if (ContainsPath(document.Title, commandSegments))
+        {
+            return true;
+        }
+
         if (document.Commands.Count == 0)
         {
             return document.Options.Count > 0
@@ -26,11 +31,10 @@ internal static class ToolHelpDocumentInspector
                 || !string.IsNullOrWhiteSpace(document.CommandDescription);
         }
 
-        var currentSegment = commandSegments[^1];
-        return !document.Commands.Any(command => string.Equals(command.Key, currentSegment, StringComparison.OrdinalIgnoreCase));
+        return false;
     }
 
-    private static bool ContainsPath(string line, IReadOnlyList<string> commandSegments)
+    private static bool ContainsPath(string? line, IReadOnlyList<string> commandSegments)
     {
         if (string.IsNullOrWhiteSpace(line))
         {
