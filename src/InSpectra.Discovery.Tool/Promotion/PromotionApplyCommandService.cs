@@ -307,6 +307,11 @@ internal sealed class PromotionApplyCommandService
             openCliSource = "synthesized-from-xmldoc";
         }
 
+        if (openCliDocument is not null && !string.IsNullOrWhiteSpace(result["cliFramework"]?.GetValue<string>()))
+        {
+            openCliDocument["x-inspectra"]!.AsObject()["cliFramework"] = result["cliFramework"]!.GetValue<string>();
+        }
+
         var hasOpenCliOutput = openCliDocument is not null;
         if (hasOpenCliOutput)
         {

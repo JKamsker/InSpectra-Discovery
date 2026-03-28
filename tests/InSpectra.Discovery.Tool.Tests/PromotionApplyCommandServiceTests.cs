@@ -755,6 +755,9 @@ public sealed class PromotionApplyCommandServiceTests
             Assert.Equal("clifx-crawl", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
             Assert.Equal("crawled-from-clifx-help", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
             Assert.Equal("clifx-crawl", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+
+            var openCli = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "clifx.tool", "2.0.0", "opencli.json"));
+            Assert.Equal("CliFx + System.CommandLine", openCli["x-inspectra"]?["cliFramework"]?.GetValue<string>());
         }
         finally
         {

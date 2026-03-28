@@ -354,7 +354,7 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
     }
 
     [Fact]
-    public void Regenerates_Mixed_Framework_CliFx_Crawl()
+    public void Preserves_CliFramework_From_Existing_OpenCli_When_Metadata_Is_Blank()
     {
         ToolRuntime.Initialize();
 
@@ -371,7 +371,6 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
                 ["packageId"] = "MixedCliFx",
                 ["version"] = "1.0.0",
                 ["command"] = "mixed",
-                ["cliFramework"] = "CliFx + System.CommandLine",
                 ["artifacts"] = new JsonObject
                 {
                     ["crawlPath"] = "index/packages/mixedclifx/1.0.0/crawl.json",
@@ -404,6 +403,18 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
                         },
                     },
                 },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "crawled-from-help",
+                    ["cliFramework"] = "CliFx + System.CommandLine",
+                },
+                ["commands"] = new JsonArray(),
             });
 
         var regenerator = new CliFxCrawlArtifactRegenerator();

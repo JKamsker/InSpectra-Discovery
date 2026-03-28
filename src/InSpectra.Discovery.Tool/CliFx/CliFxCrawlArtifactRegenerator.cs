@@ -212,7 +212,7 @@ internal sealed class CliFxCrawlArtifactRegenerator
             packageId,
             version,
             commandName,
-            metadata?["cliFramework"]?.GetValue<string>(),
+            cliFramework,
             metadataPath,
             crawlPath,
             openCliPath);

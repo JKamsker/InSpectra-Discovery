@@ -17,8 +17,17 @@ internal static class CliFrameworkSupport
             return true;
         }
 
-        return string.Equals(existingCliFramework, "CliFx", StringComparison.OrdinalIgnoreCase)
-            && HasCliFx(candidateCliFramework)
-            && !string.Equals(existingCliFramework, candidateCliFramework, StringComparison.OrdinalIgnoreCase);
+        if (string.Equals(existingCliFramework, candidateCliFramework, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!HasCliFx(candidateCliFramework))
+        {
+            return false;
+        }
+
+        return !HasCliFx(existingCliFramework)
+            || string.Equals(existingCliFramework, "CliFx", StringComparison.OrdinalIgnoreCase);
     }
 }
