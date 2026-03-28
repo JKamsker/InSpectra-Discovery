@@ -104,9 +104,9 @@ internal sealed class NativeOpenCliArtifactRegenerator
         }
 
         var openCli = JsonNode.Parse(File.ReadAllText(openCliPath))?.AsObject();
-        var artifactSource = artifacts?["opencliSource"]?.GetValue<string>()
-            ?? openCliStep?["artifactSource"]?.GetValue<string>()
-            ?? openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>();
+        var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
+            ?? artifacts?["opencliSource"]?.GetValue<string>()
+            ?? openCliStep?["artifactSource"]?.GetValue<string>();
         if (!string.IsNullOrWhiteSpace(artifactSource)
             && !string.Equals(artifactSource, "tool-output", StringComparison.OrdinalIgnoreCase))
         {

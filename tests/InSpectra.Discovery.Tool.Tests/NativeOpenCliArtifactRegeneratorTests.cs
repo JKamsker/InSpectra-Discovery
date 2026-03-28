@@ -23,6 +23,23 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
                 ["packageId"] = "Native.Tool",
                 ["version"] = "1.2.3",
                 ["status"] = "partial",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["status"] = "failed",
+                        ["message"] = "stale failure",
+                    },
+                },
+                ["introspection"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["status"] = "unsupported",
+                        ["message"] = "stale introspection failure",
+                        ["synthesizedArtifact"] = true,
+                    },
+                },
                 ["artifacts"] = new JsonObject
                 {
                     ["metadataPath"] = "index/packages/native.tool/1.2.3/metadata.json",
@@ -62,9 +79,14 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
         var metadata = ParseJsonObject(metadataPath);
         Assert.Equal("ok", metadata["status"]?.GetValue<string>());
         Assert.Equal("tool-output", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Equal("ok", metadata["steps"]?["opencli"]?["status"]?.GetValue<string>());
         Assert.Equal("tool-output", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
         Assert.Equal("json-ready", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
+        Assert.Null(metadata["steps"]?["opencli"]?["message"]);
+        Assert.Equal("ok", metadata["introspection"]?["opencli"]?["status"]?.GetValue<string>());
         Assert.Equal("json-ready", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+        Assert.Null(metadata["introspection"]?["opencli"]?["message"]);
+        Assert.Null(metadata["introspection"]?["opencli"]?["synthesizedArtifact"]);
         Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "native.tool", "latest", "opencli.json")));
     }
 
@@ -136,6 +158,48 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
 
         var helpOpenCli = ParseJsonObject(Path.Combine(helpVersionRoot, "opencli.json"));
         Assert.Equal("crawled-from-help", helpOpenCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Prefers_OpenCli_Artifact_Provenance_Over_Stale_Metadata()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Sample.Tool",
+                ["version"] = "1.2.3",
+                ["artifacts"] = new JsonObject
+                {
+                    ["opencliPath"] = "index/packages/sample.tool/1.2.3/opencli.json",
+                    ["opencliSource"] = "tool-output",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "crawled-from-help",
+                },
+                ["commands"] = new JsonArray(),
+            });
+
+        var regenerator = new NativeOpenCliArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(0, result.CandidateCount);
+        Assert.Equal("tool-output", ParseJsonObject(Path.Combine(versionRoot, "metadata.json"))["artifacts"]?["opencliSource"]?.GetValue<string>());
     }
 
     private static JsonObject ParseJsonObject(string path)

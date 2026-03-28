@@ -35,8 +35,10 @@ internal static class OpenCliArtifactMetadataRepair
 
         var steps = metadata["steps"] as JsonObject ?? new JsonObject();
         var openCliStep = steps["opencli"] as JsonObject ?? new JsonObject();
+        openCliStep["status"] = "ok";
         openCliStep["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, openCliPath);
         openCliStep["artifactSource"] = artifactSource;
+        openCliStep.Remove("message");
         var classification = OpenCliArtifactSourceSupport.InferClassification(artifactSource);
         if (!string.IsNullOrWhiteSpace(classification))
         {
@@ -56,7 +58,9 @@ internal static class OpenCliArtifactMetadataRepair
 
         var introspection = metadata["introspection"] as JsonObject ?? new JsonObject();
         var openCliIntrospection = introspection["opencli"] as JsonObject ?? new JsonObject();
+        openCliIntrospection["status"] = "ok";
         openCliIntrospection["artifactSource"] = artifactSource;
+        openCliIntrospection.Remove("message");
         if (!string.IsNullOrWhiteSpace(classification))
         {
             openCliIntrospection["classification"] = classification;
@@ -65,6 +69,10 @@ internal static class OpenCliArtifactMetadataRepair
         if (synthesizedArtifact)
         {
             openCliIntrospection["synthesizedArtifact"] = true;
+        }
+        else
+        {
+            openCliIntrospection.Remove("synthesizedArtifact");
         }
 
         introspection["opencli"] = openCliIntrospection;
