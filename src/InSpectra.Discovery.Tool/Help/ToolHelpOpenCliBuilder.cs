@@ -139,7 +139,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
         var arguments = helpDocument.Arguments.Count > 0
             ? helpDocument.Arguments
-            : ExtractUsageArguments(commandName, commandPath, helpDocument.UsageLines);
+            : ExtractUsageArguments(commandName, commandPath, helpDocument.UsageLines, helpDocument.Commands.Count > 0);
 
         if (arguments.Count == 0)
         {
@@ -177,7 +177,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
             ["version"] = rootHelp?.Version ?? packageVersion,
         };
 
-        AddIfPresent(info, "description", rootHelp?.ApplicationDescription ?? rootHelp?.CommandDescription);
+        AddIfPresent(info, "description", rootHelp?.CommandDescription ?? rootHelp?.ApplicationDescription);
         return info;
     }
 
@@ -200,7 +200,8 @@ internal sealed partial class ToolHelpOpenCliBuilder
     private static IReadOnlyList<ToolHelpItem> ExtractUsageArguments(
         string commandName,
         string commandPath,
-        IReadOnlyList<string> usageLines)
+        IReadOnlyList<string> usageLines,
+        bool hasChildCommands)
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var arguments = new List<ToolHelpItem>();
@@ -215,9 +216,17 @@ internal sealed partial class ToolHelpOpenCliBuilder
                     continue;
                 }
 
-                if (string.Equals(value, "command", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(value, "subcommand", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(value, "options", StringComparison.OrdinalIgnoreCase))
+                if (IsDispatcherPlaceholder(value))
+                {
+                    if (hasChildCommands)
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                if (string.Equals(value, "options", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -236,6 +245,10 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
         return arguments;
     }
+
+    private static bool IsDispatcherPlaceholder(string value)
+        => string.Equals(value, "command", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "subcommand", StringComparison.OrdinalIgnoreCase);
 
     private static OptionSignature ParseOptionSignature(string key)
     {

@@ -711,6 +711,53 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Parses_Abp_Command_List_Sections_With_Bulleted_Commands()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            ABP CLI 10.2.0-dev
+
+            Usage:
+                abp <command> <target> [options]
+
+            Command List:
+                > add-module: Add a multi-package module to a solution.
+                > install: Install a package.
+            """);
+
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "add-module", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "install", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command =>
+            string.Equals(command.Key, "add-module", StringComparison.Ordinal)
+            && string.Equals(command.Description, "Add a multi-package module to a solution.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Filters_Parameter_File_Setup_Chatter_From_Preamble()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            === ADFS Authentication CLI ===
+            No parameters file found in the current directory.
+            Creating a template parameters file (.parameters) in the current directory...
+            ✅ Parameters file created: /tmp/inspectra-help-adfsauthtool/.parameters
+            Please edit this file with your ADFS credentials and configuration.
+            Description:
+              ADFS Authentication CLI tool
+
+            Usage:
+              AdfsAutomationUsage [command] [options]
+            """);
+
+        Assert.Null(document.ApplicationDescription);
+        Assert.Equal("ADFS Authentication CLI tool", document.CommandDescription);
+    }
+
+    [Fact]
     public void Does_Not_Start_New_Command_From_Indented_Wrapped_Description_Or_Help_Hints()
     {
         var parser = new ToolHelpTextParser();

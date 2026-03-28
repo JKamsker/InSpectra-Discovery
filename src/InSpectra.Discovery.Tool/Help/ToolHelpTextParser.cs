@@ -11,6 +11,7 @@ internal sealed partial class ToolHelpTextParser
         ["BEFEHL"] = "commands",
         ["BEFEHLE"] = "commands",
         ["COMMAND"] = "commands",
+        ["COMMAND LIST"] = "commands",
         ["COMMANDS"] = "commands",
         ["DESCRIPTION"] = "description",
         ["EXAMPLES"] = "examples",
@@ -288,6 +289,11 @@ internal sealed partial class ToolHelpTextParser
         description = null;
         isRequired = false;
 
+        if (kind == ItemKind.Command)
+        {
+            rawLine = NormalizeCommandItemLine(rawLine);
+        }
+
         var trimmedStart = rawLine.TrimStart();
         if (kind == ItemKind.Command && LooksLikeMarkdownTableLine(trimmedStart))
         {
@@ -483,6 +489,7 @@ internal sealed partial class ToolHelpTextParser
             ? false
             : IsFrameworkNoiseLine(trimmed)
                 || IsStructuredLogLine(trimmed)
+                || LooksLikeSetupPreambleLine(trimmed)
                 || LooksLikeInventoryHeaderLine(trimmed)
                 || trimmed.StartsWith("Visit http://", StringComparison.OrdinalIgnoreCase)
                 || trimmed.StartsWith("Visit https://", StringComparison.OrdinalIgnoreCase)
@@ -515,6 +522,12 @@ internal sealed partial class ToolHelpTextParser
 
     private static bool IsStructuredLogLine(string line)
         => StructuredLogPrefixRegex().IsMatch(line);
+
+    private static bool LooksLikeSetupPreambleLine(string line)
+        => line.StartsWith("No parameters file found", StringComparison.OrdinalIgnoreCase)
+            || line.StartsWith("Creating a template parameters file", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("Parameters file created:", StringComparison.OrdinalIgnoreCase)
+            || line.StartsWith("Please edit this file with your", StringComparison.OrdinalIgnoreCase);
 
     private static bool LooksLikeRejectedHelpInvocation(string? line)
     {
@@ -590,6 +603,28 @@ internal sealed partial class ToolHelpTextParser
         var trimmed = description.TrimStart();
         return trimmed.Length > 0
             && char.IsLetter(trimmed[0]);
+    }
+
+    private static string NormalizeCommandItemLine(string rawLine)
+    {
+        var trimmedStart = rawLine.TrimStart();
+        if (!trimmedStart.StartsWith(">", StringComparison.Ordinal))
+        {
+            return rawLine;
+        }
+
+        var commandLine = trimmedStart[1..].TrimStart();
+        var separatorIndex = commandLine.IndexOf(':');
+        if (separatorIndex < 0)
+        {
+            return commandLine;
+        }
+
+        var commandKey = commandLine[..separatorIndex].Trim();
+        var commandDescription = commandLine[(separatorIndex + 1)..].Trim();
+        return string.IsNullOrWhiteSpace(commandDescription)
+            ? commandKey
+            : $"{commandKey}  {commandDescription}";
     }
 
     private static bool LooksLikeSubcommandHelpHint(string line)

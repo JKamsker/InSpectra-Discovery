@@ -207,4 +207,52 @@ public sealed class ToolHelpOpenCliBuilderTests
         Assert.Equal("START_PATH", options[0]!["arguments"]![0]!["name"]!.GetValue<string>());
         Assert.Equal("FORMAT", options[1]!["arguments"]![0]!["name"]!.GetValue<string>());
     }
+
+    [Fact]
+    public void Does_Not_Emit_Dispatcher_Target_As_Root_Argument_When_Child_Commands_Exist()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "abp",
+                Version: "10.2.0-dev",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: ["abp <command> <target> [options]"],
+                Arguments: [],
+                Options: [],
+                Commands:
+                [
+                    new ToolHelpItem("add-module", false, "Add a multi-package module."),
+                ]),
+        };
+
+        var document = builder.Build("abp", "10.2.0-dev", helpDocuments);
+
+        Assert.Null(document["arguments"]);
+        Assert.Single(document["commands"]!.AsArray());
+    }
+
+    [Fact]
+    public void Prefers_Root_Command_Description_Over_Preamble_Description()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "adfs",
+                Version: "1.0.1",
+                ApplicationDescription: "No parameters file found in the current directory.",
+                CommandDescription: "ADFS Authentication CLI tool",
+                UsageLines: [],
+                Arguments: [],
+                Options: [],
+                Commands: []),
+        };
+
+        var document = builder.Build("adfs", "1.0.1", helpDocuments);
+
+        Assert.Equal("ADFS Authentication CLI tool", document["info"]!["description"]!.GetValue<string>());
+    }
 }
