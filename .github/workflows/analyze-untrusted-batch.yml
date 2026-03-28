@@ -3,6 +3,48 @@ run-name: >-
   Analyze Untrusted Batch / ${{ inputs.batch_id || github.event.client_payload.batch_id || 'manual' }}
 
 on:
+  workflow_call:
+    inputs:
+      batch_id:
+        required: false
+        default: ""
+        type: string
+      queue_path:
+        required: false
+        default: ""
+        type: string
+      offset:
+        required: false
+        default: "0"
+        type: string
+      take:
+        required: false
+        default: ""
+        type: string
+      state_branch:
+        required: false
+        default: automation/discovery-state
+        type: string
+      target_branch:
+        required: false
+        default: "main"
+        type: string
+      force_reanalyze:
+        required: false
+        default: "false"
+        type: string
+      queue_artifact_name:
+        required: false
+        default: ""
+        type: string
+      upload_plan_artifact:
+        required: false
+        default: "true"
+        type: string
+      artifact_retention_days:
+        required: false
+        default: "7"
+        type: string
   workflow_dispatch:
     inputs:
       batch_id:
@@ -40,11 +82,27 @@ on:
         required: false
         default: "false"
         type: string
+      queue_artifact_name:
+        description: "Internal: uploaded queue artifact name for reusable runs"
+        required: false
+        default: ""
+        type: string
+      upload_plan_artifact:
+        description: "Internal: whether to upload the batch expected.json artifact"
+        required: false
+        default: "true"
+        type: string
+      artifact_retention_days:
+        description: Artifact retention in days
+        required: false
+        default: "7"
+        type: string
   repository_dispatch:
     types:
       - analyze-untrusted-batch
 
 permissions:
+  actions: read
   contents: read
   packages: read
 
@@ -79,6 +137,13 @@ jobs:
           github-token: ${{ github.token }}
           github-actor: ${{ github.actor }}
           github-owner: ${{ github.repository_owner }}
+
+      - name: Download queue artifact
+        if: ${{ inputs.queue_artifact_name != '' }}
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ inputs.queue_artifact_name }}
+          path: ${{ runner.temp }}/queue-artifact
 
       - name: Build batch plan
         id: plan
@@ -134,6 +199,13 @@ jobs:
             'automation/discovery-state'
           }
 
+          $queueArtifactName = if ('${{ inputs.queue_artifact_name }}') {
+            '${{ inputs.queue_artifact_name }}'
+          }
+          else {
+            $null
+          }
+
           $targetBranch = if ('${{ inputs.target_branch }}') {
             '${{ inputs.target_branch }}'
           }
@@ -177,26 +249,39 @@ jobs:
           }
 
           $planPath = Join-Path $env:RUNNER_TEMP 'expected.json'
-          if ([string]::IsNullOrWhiteSpace($queuePath)) {
-            throw 'queue_path is required. Checked-in batch manifests were removed; use a queue-driven run.'
+          if ([string]::IsNullOrWhiteSpace($queuePath) -and [string]::IsNullOrWhiteSpace($queueArtifactName)) {
+            throw 'queue_path or queue_artifact_name is required. Checked-in batch manifests were removed; use a queue-driven run.'
           }
 
           if ([string]::IsNullOrWhiteSpace($batchId)) {
             throw 'A queue-driven run requires batch_id.'
           }
 
-          git fetch origin $stateBranch --depth=1
-          $queueContent = git show "FETCH_HEAD:$queuePath"
-          $materializedQueuePath = Join-Path $PWD $queuePath
-          $materializedQueueDirectory = Split-Path -Parent $materializedQueuePath
-          if ($materializedQueueDirectory) {
-            New-Item -ItemType Directory -Path $materializedQueueDirectory -Force | Out-Null
-          }
+          if (-not [string]::IsNullOrWhiteSpace($queueArtifactName)) {
+            $materializedQueuePath = Get-ChildItem `
+              -Path (Join-Path $env:RUNNER_TEMP 'queue-artifact') `
+              -Filter '*.json' `
+              -Recurse |
+              Select-Object -First 1 -ExpandProperty FullName
 
-          [System.IO.File]::WriteAllText(
-            $materializedQueuePath,
-            $queueContent + [Environment]::NewLine,
-            [System.Text.UTF8Encoding]::new($false))
+            if ([string]::IsNullOrWhiteSpace($materializedQueuePath)) {
+              throw "No queue JSON file was found in artifact '$queueArtifactName'."
+            }
+          }
+          else {
+            git fetch origin $stateBranch --depth=1
+            $queueContent = git show "FETCH_HEAD:$queuePath"
+            $materializedQueuePath = Join-Path $PWD $queuePath
+            $materializedQueueDirectory = Split-Path -Parent $materializedQueuePath
+            if ($materializedQueueDirectory) {
+              New-Item -ItemType Directory -Path $materializedQueueDirectory -Force | Out-Null
+            }
+
+            [System.IO.File]::WriteAllText(
+              $materializedQueuePath,
+              $queueContent + [Environment]::NewLine,
+              [System.Text.UTF8Encoding]::new($false))
+          }
 
           $arguments = @{
             QueuePath = $materializedQueuePath
@@ -245,6 +330,7 @@ jobs:
           "EOF" >> $env:GITHUB_OUTPUT
 
       - name: Write workflow metadata
+        if: ${{ inputs.upload_plan_artifact != 'false' }}
         shell: pwsh
         run: |
           Set-Content `
@@ -253,6 +339,7 @@ jobs:
             -Encoding UTF8NoBOM
 
       - name: Upload expected plan
+        if: ${{ inputs.upload_plan_artifact != 'false' }}
         uses: actions/upload-artifact@v6
         with:
           name: plan-${{ steps.plan.outputs.batch_id }}
@@ -260,7 +347,7 @@ jobs:
             ${{ runner.temp }}/expected.json
             ${{ runner.temp }}/tool-version.txt
           if-no-files-found: error
-          retention-days: 7
+          retention-days: ${{ fromJson(inputs.artifact_retention_days || '7') }}
 
   analyze:
     needs:
@@ -328,4 +415,4 @@ jobs:
           name: ${{ matrix.artifactName }}
           path: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
           if-no-files-found: error
-          retention-days: 7
+          retention-days: ${{ fromJson(inputs.artifact_retention_days || '7') }}
