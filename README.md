@@ -117,7 +117,7 @@ Discovered tools are analyzed via the discovery CLI. The scheduled path prefers 
 dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-auto --package-id JellyfinCli --version 0.1.16 --output-root artifacts/analysis/jellyfincli --batch-id manual
 ```
 
-For non-Spectre tools that do not expose native `--opencli`, the generic help crawler can run a checked-in batch plan and emit a promotion-ready `expected.json`:
+For non-Spectre tools that do not expose native `--opencli`, the checked-in help batch can run generic-help and `CliFx` representatives and emit a promotion-ready `expected.json`:
 
 ```powershell
 dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-help-batch --plan docs/Plans/validated-generic-help-frameworks.json --output-root artifacts/help-batches/validated-frameworks --source help-index-batch
@@ -126,7 +126,7 @@ dotnet run --project src/InSpectra.Discovery.Tool -- promotion apply-untrusted -
 
 The sample plan in [docs/Plans/validated-generic-help-frameworks.json](docs/Plans/validated-generic-help-frameworks.json) covers validated representatives for `CliFx`, `Argu`, `McMaster.Extensions.CommandLineUtils`, `Spectre.Console.Cli`, `Cocona`, `DocoptNet`, `System.CommandLine`, `CommandLineParser`, `Mono.Options / NDesk.Options`, `Microsoft.Extensions.CommandLineUtils`, `ConsoleAppFramework`, `CommandDotNet`, and `PowerArgs`.
 
-Items can declare `"analysisMode": "help"` or `"analysisMode": "native"`. `run-help-batch` only executes the `help` items and records the others in the plan's `skipped` array. The checked-in plan uses that for `Cake.Tool`, which stays indexed through the richer native OpenCLI/XMLDoc path instead of being downgraded to a help-only partial entry.
+Items can declare `"analysisMode": "help"`, `"analysisMode": "clifx"`, or `"analysisMode": "native"`. `run-help-batch` executes the `help` and `clifx` items, and records the others in the plan's `skipped` array. The checked-in plan uses that for `Cake.Tool`, which stays indexed through the richer native OpenCLI/XMLDoc path instead of being downgraded to a help-only partial entry, while `Husky` now exercises the dedicated `CliFx` analyzer path.
 
 Crawler-based analysis now always emits `crawl.json`, even when the parser fails to synthesize a usable `opencli.json`, so raw help captures remain available for later parser fixes without re-running the tool.
 
