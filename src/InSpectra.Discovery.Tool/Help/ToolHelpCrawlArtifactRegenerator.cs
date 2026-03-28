@@ -109,14 +109,15 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         var documents = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase);
         foreach (var capture in captures?.OfType<JsonObject>() ?? [])
         {
-            var payload = capture["payload"]?.GetValue<string>();
+            var storedCommand = capture["command"]?.GetValue<string>() ?? string.Empty;
+            var payload = SelectBestPayload(rootCommandName, storedCommand, capture);
             if (string.IsNullOrWhiteSpace(payload))
             {
                 continue;
             }
 
             var document = _parser.Parse(payload);
-            var commandSegments = ToolHelpCommandPathSupport.ResolveStoredCaptureSegments(rootCommandName, capture["command"]?.GetValue<string>() ?? string.Empty, document);
+            var commandSegments = ToolHelpCommandPathSupport.ResolveStoredCaptureSegments(rootCommandName, storedCommand, document);
             if (!document.HasContent || !ToolHelpDocumentInspector.IsCompatible(commandSegments, document))
             {
                 continue;
@@ -131,6 +132,68 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         }
 
         return documents;
+    }
+
+    private string? SelectBestPayload(string rootCommandName, string storedCommand, JsonObject capture)
+    {
+        var candidates = SelectPayloadCandidates(capture);
+        ToolHelpDocument? bestDocument = null;
+        string? bestPayload = null;
+        var bestScore = -1;
+
+        foreach (var payload in candidates)
+        {
+            var document = _parser.Parse(payload);
+            var commandSegments = ToolHelpCommandPathSupport.ResolveStoredCaptureSegments(rootCommandName, storedCommand, document);
+            var compatibleDocument = document.HasContent && ToolHelpDocumentInspector.IsCompatible(commandSegments, document)
+                ? document
+                : null;
+            var score = compatibleDocument is not null ? ToolHelpDocumentInspector.Score(compatibleDocument) : 0;
+            if (score <= bestScore)
+            {
+                continue;
+            }
+
+            bestScore = score;
+            bestDocument = compatibleDocument;
+            bestPayload = payload;
+        }
+
+        return bestDocument is not null ? bestPayload : null;
+    }
+
+    private static IReadOnlyList<string> SelectPayloadCandidates(JsonObject capture)
+    {
+        var payloads = new List<string>();
+        var storedPayload = ToolCommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>());
+        if (!string.IsNullOrWhiteSpace(storedPayload))
+        {
+            payloads.Add(storedPayload);
+        }
+
+        if (capture["result"] is JsonObject processResult)
+        {
+            var stdout = ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>());
+            var stderr = ToolCommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
+
+            if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
+            {
+                payloads.Add($"{stdout}\n{stderr}");
+                payloads.Add($"{stderr}\n{stdout}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(stdout))
+            {
+                payloads.Add(stdout);
+            }
+
+            if (!string.IsNullOrWhiteSpace(stderr))
+            {
+                payloads.Add(stderr);
+            }
+        }
+
+        return payloads.Distinct(StringComparer.Ordinal).ToArray();
     }
 
     private static Dictionary<string, ToolHelpDocument> BuildReachableDocuments(

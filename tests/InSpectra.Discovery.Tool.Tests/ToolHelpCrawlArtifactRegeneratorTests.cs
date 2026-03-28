@@ -570,6 +570,75 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
         Assert.Equal("crawled-from-help", ParseJsonObject(Path.Combine(versionRoot, "opencli.json"))["x-inspectra"]?["artifactSource"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void Regenerator_Replays_Generic_Help_From_Stored_Process_Output_When_Payload_Is_Noisy()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "samplehelp", "2.0.0");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "SampleHelp",
+                ["version"] = "2.0.0",
+                ["command"] = "samplehelp",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "crawled-from-help",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["crawlPath"] = "index/packages/samplehelp/2.0.0/crawl.json",
+                    ["opencliSource"] = "crawled-from-help",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] = "Unhandled exception. stale payload",
+                        ["result"] = new JsonObject
+                        {
+                            ["stdout"] =
+                                """
+                                samplehelp 2.0.0
+
+                                Usage: samplehelp [options]
+
+                                Options:
+                                  --verbose  Verbose output.
+                                """,
+                        },
+                    },
+                },
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        Assert.Equal("samplehelp", regenerated["info"]?["title"]?.GetValue<string>());
+        Assert.Contains(regenerated["options"]!.AsArray(), option =>
+            string.Equals(option?["name"]?.GetValue<string>(), "--verbose", StringComparison.Ordinal));
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
