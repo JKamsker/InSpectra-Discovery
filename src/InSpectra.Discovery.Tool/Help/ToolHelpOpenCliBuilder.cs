@@ -15,26 +15,22 @@ internal sealed partial class ToolHelpOpenCliBuilder
             .Build(helpDocuments)
             .Select(node => BuildCommandNode(commandName, node, helpDocuments))
             .ToArray());
-
-        return new JsonObject
+        var document = new JsonObject
         {
             ["opencli"] = "0.1-draft",
-            ["info"] = new JsonObject
-            {
-                ["title"] = rootHelp?.Title ?? commandName,
-                ["version"] = rootHelp?.Version ?? packageVersion,
-                ["description"] = rootHelp?.ApplicationDescription ?? rootHelp?.CommandDescription,
-            },
+            ["info"] = BuildInfo(commandName, packageVersion, rootHelp),
             ["x-inspectra"] = new JsonObject
             {
                 ["artifactSource"] = "crawled-from-help",
                 ["generator"] = "InSpectra.Discovery",
                 ["helpDocumentCount"] = helpDocuments.Count,
             },
-            ["options"] = BuildOptions(rootHelp),
-            ["arguments"] = BuildArguments(commandName, string.Empty, rootHelp),
             ["commands"] = rootCommands,
         };
+
+        AddIfPresent(document, "options", BuildOptions(rootHelp));
+        AddIfPresent(document, "arguments", BuildArguments(commandName, string.Empty, rootHelp));
+        return document;
     }
 
     private JsonObject BuildCommandNode(
@@ -46,21 +42,16 @@ internal sealed partial class ToolHelpOpenCliBuilder
         var node = new JsonObject
         {
             ["name"] = commandNode.DisplayName,
-            ["description"] = helpDocument?.CommandDescription ?? commandNode.Description,
             ["hidden"] = false,
         };
 
+        AddIfPresent(node, "description", helpDocument?.CommandDescription ?? commandNode.Description);
+
         var options = BuildOptions(helpDocument);
-        if (options is not null)
-        {
-            node["options"] = options;
-        }
+        AddIfPresent(node, "options", options);
 
         var arguments = BuildArguments(commandName, commandNode.FullName, helpDocument);
-        if (arguments is not null)
-        {
-            node["arguments"] = arguments;
-        }
+        AddIfPresent(node, "arguments", arguments);
 
         if (commandNode.Children.Count > 0)
         {
@@ -91,11 +82,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
             var node = new JsonObject
             {
                 ["name"] = signature.PrimaryName,
-                ["required"] = item.IsRequired,
-                ["description"] = item.Description,
                 ["recursive"] = false,
                 ["hidden"] = false,
             };
+
+            AddIfPresent(node, "description", item.Description);
 
             if (signature.Aliases.Count > 0)
             {
@@ -140,17 +131,47 @@ internal sealed partial class ToolHelpOpenCliBuilder
         var array = new JsonArray();
         foreach (var argument in arguments)
         {
-            array.Add(new JsonObject
+            var node = new JsonObject
             {
                 ["name"] = NormalizeArgumentName(argument.Key),
                 ["required"] = argument.IsRequired,
-                ["description"] = argument.Description,
                 ["hidden"] = false,
                 ["arity"] = BuildArity(argument.IsRequired ? 1 : 0),
-            });
+            };
+
+            AddIfPresent(node, "description", argument.Description);
+            array.Add(node);
         }
 
         return array.Count > 0 ? array : null;
+    }
+
+    private static JsonObject BuildInfo(string commandName, string packageVersion, ToolHelpDocument? rootHelp)
+    {
+        var info = new JsonObject
+        {
+            ["title"] = rootHelp?.Title ?? commandName,
+            ["version"] = rootHelp?.Version ?? packageVersion,
+        };
+
+        AddIfPresent(info, "description", rootHelp?.ApplicationDescription ?? rootHelp?.CommandDescription);
+        return info;
+    }
+
+    private static void AddIfPresent(JsonObject target, string propertyName, JsonNode? value)
+    {
+        if (value is not null)
+        {
+            target[propertyName] = value;
+        }
+    }
+
+    private static void AddIfPresent(JsonObject target, string propertyName, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            target[propertyName] = value;
+        }
     }
 
     private static IReadOnlyList<ToolHelpItem> ExtractUsageArguments(
@@ -232,7 +253,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
     private static string NormalizeArgumentName(string key)
         => key.Trim().TrimStart('[', '<').TrimEnd(']', '>').ToUpperInvariant();
 
-    [GeneratedRegex(@"(?<option>(?:--?|/)[A-Za-z0-9\?\-]+)", RegexOptions.Compiled)]
+    [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
 
     [GeneratedRegex(@"(?<all>\[?<(?<name>[^>]+)>\]?)", RegexOptions.Compiled)]

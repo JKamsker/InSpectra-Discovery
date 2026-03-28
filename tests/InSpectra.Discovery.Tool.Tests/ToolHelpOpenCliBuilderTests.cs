@@ -81,4 +81,37 @@ public sealed class ToolHelpOpenCliBuilderTests
         Assert.Equal("-input", option["name"]!.GetValue<string>());
         Assert.Equal("-i", option["aliases"]![0]!.GetValue<string>());
     }
+
+    [Fact]
+    public void Omits_Null_Collections_And_Does_Not_Emit_Option_Level_Required()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options:
+                [
+                    new ToolHelpItem("--verbose", false, null),
+                    new ToolHelpItem("--config <PATH>", false, "Path to config"),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build("demo", "1.0.0", helpDocuments);
+        var options = document["options"]!.AsArray();
+
+        Assert.Null(document["arguments"]);
+        Assert.Null(document["info"]!["description"]);
+        Assert.Null(options[0]!["required"]);
+        Assert.Null(options[0]!["description"]);
+        Assert.Null(options[1]!["required"]);
+        Assert.Equal("PATH", options[1]!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.True(options[1]!["arguments"]![0]!["required"]!.GetValue<bool>());
+    }
 }
