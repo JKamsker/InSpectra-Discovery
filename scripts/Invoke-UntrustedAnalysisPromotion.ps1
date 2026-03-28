@@ -44,10 +44,111 @@ function Convert-ToIsoTimestamp {
     return ([DateTimeOffset]$Value).ToUniversalTime().ToString('o')
 }
 
+function Get-FirstNonEmptyText {
+    param([AllowNull()][object[]]$Values)
+
+    foreach ($value in @($Values)) {
+        $text = [string]$value
+        if (-not [string]::IsNullOrWhiteSpace($text)) {
+            return $text
+        }
+    }
+
+    return $null
+}
+
+function Copy-ObjectProperties {
+    param([AllowNull()][object]$InputObject)
+
+    if ($null -eq $InputObject) {
+        return $null
+    }
+
+    $clone = [ordered]@{}
+    foreach ($property in $InputObject.PSObject.Properties) {
+        $clone[$property.Name] = $property.Value
+    }
+
+    return $clone
+}
+
+function Get-InferredAnalysisMode {
+    param(
+        [AllowNull()][object]$Result,
+        [AllowNull()][object]$Item,
+        [bool]$HasCrawlArtifact,
+        [AllowNull()][string]$ArtifactDirectory
+    )
+
+    $explicitMode = Get-FirstNonEmptyText -Values @(
+        if ($Result) { $Result.analysisMode } else { $null },
+        if ($Item) { $Item.analysisMode } else { $null }
+    )
+    if ($explicitMode) {
+        return $explicitMode
+    }
+
+    if (-not $HasCrawlArtifact -or [string]::IsNullOrWhiteSpace($ArtifactDirectory) -or -not $Result -or -not $Result.artifacts.crawlArtifact) {
+        return $null
+    }
+
+    $crawlPath = Join-Path $ArtifactDirectory $Result.artifacts.crawlArtifact
+    if (-not (Test-Path -LiteralPath $crawlPath)) {
+        return $null
+    }
+
+    try {
+        $crawl = Get-Content -Path $crawlPath -Raw | ConvertFrom-Json -Depth 100
+        if ($crawl -and $crawl.PSObject.Properties.Name -contains 'staticCommands') {
+            return 'clifx'
+        }
+    }
+    catch {
+        return 'help'
+    }
+
+    return 'help'
+}
+
+function Get-InferredOpenCliArtifactSource {
+    param([AllowNull()][string]$AnalysisMode)
+
+    switch ($AnalysisMode) {
+        'native' { return 'tool-output' }
+        'help' { return 'crawled-from-help' }
+        'clifx' { return 'crawled-from-clifx-help' }
+        'xmldoc' { return 'synthesized-from-xmldoc' }
+        default { return $null }
+    }
+}
+
+function Get-InferredOpenCliClassification {
+    param(
+        [AllowNull()][string]$ArtifactSource,
+        [AllowNull()][object[]]$ExistingClassifications
+    )
+
+    if ($ArtifactSource -eq 'tool-output') {
+        foreach ($existing in @($ExistingClassifications)) {
+            if ([string]$existing -eq 'json-ready-with-nonzero-exit') {
+                return 'json-ready-with-nonzero-exit'
+            }
+        }
+    }
+
+    switch ($ArtifactSource) {
+        'tool-output' { return 'json-ready' }
+        'crawled-from-help' { return 'help-crawl' }
+        'crawled-from-clifx-help' { return 'clifx-crawl' }
+        'synthesized-from-xmldoc' { return 'xmldoc-synthesized' }
+        default { return $null }
+    }
+}
+
 function Sync-LatestDirectory {
     param([string]$VersionDirectory, [string]$LatestDirectory)
     New-Item -ItemType Directory -Path $LatestDirectory -Force | Out-Null
-    foreach ($artifactName in @('metadata.json', 'opencli.json', 'xmldoc.xml')) {
+    foreach ($artifactName in @('metadata.json', 'opencli.json', 'xmldoc.xml', 'crawl.json')) {
         $sourcePath = Join-Path $VersionDirectory $artifactName
         $targetPath = Join-Path $LatestDirectory $artifactName
         if (Test-Path $sourcePath) { Copy-Item -Path $sourcePath -Destination $targetPath -Force } else { Remove-Item -Path $targetPath -Force -ErrorAction SilentlyContinue }
@@ -68,6 +169,7 @@ function Get-PackageSummary {
         latestPaths = [ordered]@{
             metadataPath = "index/packages/$lowerId/latest/metadata.json"
             opencliPath = if ($latest.artifacts.opencliPath) { "index/packages/$lowerId/latest/opencli.json" } else { $null }
+            crawlPath = if ($latest.artifacts.crawlPath) { "index/packages/$lowerId/latest/crawl.json" } else { $null }
             xmldocPath = if ($latest.artifacts.xmldocPath) { "index/packages/$lowerId/latest/xmldoc.xml" } else { $null }
         }
         versions = @(
@@ -234,27 +336,27 @@ function Write-SuccessArtifacts {
     $versionRoot = Join-Path $PackagesRoot "$lowerId/$lowerVersion"
     $metadataPath = Join-Path $versionRoot 'metadata.json'
     $openCliPath = Join-Path $versionRoot 'opencli.json'
+    $crawlPath = Join-Path $versionRoot 'crawl.json'
     $xmlDocPath = Join-Path $versionRoot 'xmldoc.xml'
 
     $hasOpenCliArtifact = $ArtifactDirectory -and $Result.artifacts.opencliArtifact -and (Test-Path (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact))
+    $hasCrawlArtifact = $ArtifactDirectory -and $Result.artifacts.crawlArtifact -and (Test-Path (Join-Path $ArtifactDirectory $Result.artifacts.crawlArtifact))
     $hasXmlDocArtifact = $ArtifactDirectory -and $Result.artifacts.xmldocArtifact -and (Test-Path (Join-Path $ArtifactDirectory $Result.artifacts.xmldocArtifact))
+    $analysisMode = Get-InferredAnalysisMode -Result $Result -Item $null -HasCrawlArtifact:$hasCrawlArtifact -ArtifactDirectory $ArtifactDirectory
     $openCliSource = $null
     $openCliDocument = $null
     $xmlDocContent = $null
 
     if ($hasOpenCliArtifact) {
         $openCliDocument = Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact) -Raw | ConvertFrom-Json
-        if (
-            $openCliDocument.PSObject.Properties.Name -contains 'x-inspectra' -and
-            $openCliDocument.'x-inspectra' -and
-            $openCliDocument.'x-inspectra'.PSObject.Properties.Name -contains 'artifactSource' -and
-            -not [string]::IsNullOrWhiteSpace([string]$openCliDocument.'x-inspectra'.artifactSource)
-        ) {
-            $openCliSource = [string]$openCliDocument.'x-inspectra'.artifactSource
-        }
-        else {
-            $openCliSource = 'tool-output'
-        }
+        $openCliSource = Get-FirstNonEmptyText -Values @(
+            if ($openCliDocument.PSObject.Properties.Name -contains 'x-inspectra' -and $openCliDocument.'x-inspectra') { $openCliDocument.'x-inspectra'.artifactSource } else { $null },
+            $Result.artifacts.opencliSource,
+            if ($Result.steps) { $Result.steps.opencli.artifactSource } else { $null },
+            if ($Result.introspection) { $Result.introspection.opencli.artifactSource } else { $null },
+            Get-InferredOpenCliArtifactSource -AnalysisMode $analysisMode,
+            'tool-output'
+        )
     }
 
     if ($hasXmlDocArtifact) {
@@ -271,12 +373,30 @@ function Write-SuccessArtifacts {
     }
 
     $hasOpenCliOutput = $null -ne $openCliDocument
+    $openCliClassification = Get-InferredOpenCliClassification -ArtifactSource $openCliSource -ExistingClassifications @(
+        if ($Result.steps) { $Result.steps.opencli.classification } else { $null },
+        if ($Result.introspection) { $Result.introspection.opencli.classification } else { $null }
+    )
+
+    if ($hasOpenCliOutput) {
+        if (-not ($openCliDocument.PSObject.Properties.Name -contains 'x-inspectra') -or -not $openCliDocument.'x-inspectra') {
+            $openCliDocument | Add-Member -NotePropertyName 'x-inspectra' -NotePropertyValue ([ordered]@{}) -Force
+        }
+        $openCliDocument.'x-inspectra'.artifactSource = $openCliSource
+    }
 
     if ($hasOpenCliOutput) {
         Write-JsonFile -Path $openCliPath -InputObject $openCliDocument
     }
     else {
         Remove-Item -Path $openCliPath -Force -ErrorAction SilentlyContinue
+    }
+
+    if ($hasCrawlArtifact) {
+        Copy-Item -Path (Join-Path $ArtifactDirectory $Result.artifacts.crawlArtifact) -Destination $crawlPath -Force
+    }
+    else {
+        Remove-Item -Path $crawlPath -Force -ErrorAction SilentlyContinue
     }
 
     if ($hasXmlDocArtifact) {
@@ -287,58 +407,82 @@ function Write-SuccessArtifacts {
     }
 
     $steps = [ordered]@{
-        install = $Result.steps.install
-        opencli = if ($Result.steps.opencli) {
-            $clone = [ordered]@{}
-            foreach ($property in $Result.steps.opencli.PSObject.Properties) {
-                $clone[$property.Name] = $property.Value
-            }
-            if ($hasOpenCliOutput) {
-                $clone.path = Get-RelativeRepositoryPath -Path $openCliPath
-            }
-            else {
-                $clone.Remove('path')
-            }
-            if ($openCliSource) {
-                $clone.artifactSource = $openCliSource
-            }
-            $clone
-        } else { $null }
-        xmldoc = if ($Result.steps.xmldoc) {
-            $clone = [ordered]@{}
-            foreach ($property in $Result.steps.xmldoc.PSObject.Properties) {
-                $clone[$property.Name] = $property.Value
-            }
-            if ($hasXmlDocArtifact) {
-                $clone.path = Get-RelativeRepositoryPath -Path $xmlDocPath
-            }
-            else {
-                $clone.Remove('path')
-            }
-            $clone
-        } else { $null }
+        install = if ($Result.steps) { $Result.steps.install } else { $null }
+        opencli = $null
+        xmldoc = $null
     }
 
-    $introspection = if ($Result.PSObject.Properties.Name -contains 'introspection' -and $Result.introspection) {
-        $clone = [ordered]@{}
-        foreach ($property in $Result.introspection.PSObject.Properties) {
-            $clone[$property.Name] = $property.Value
+    $openCliStep = if ($Result.steps -and $Result.steps.opencli) {
+        Copy-ObjectProperties -InputObject $Result.steps.opencli
+    }
+    elseif ($hasOpenCliOutput) {
+        [ordered]@{ status = 'ok' }
+    }
+    else { $null }
+    if ($openCliStep) {
+        if ($hasOpenCliOutput) {
+            $openCliStep.status = 'ok'
+            $openCliStep.path = Get-RelativeRepositoryPath -Path $openCliPath
+            $openCliStep.Remove('message')
+            if ($openCliSource) { $openCliStep.artifactSource = $openCliSource }
+            if ($openCliClassification) { $openCliStep.classification = $openCliClassification }
         }
-        $clone
-    } else { $null }
+        else {
+            $openCliStep.Remove('path')
+        }
+    }
+    $steps.opencli = $openCliStep
+
+    $xmlDocStep = if ($Result.steps -and $Result.steps.xmldoc) {
+        Copy-ObjectProperties -InputObject $Result.steps.xmldoc
+    }
+    else { $null }
+    if ($xmlDocStep) {
+        if ($hasXmlDocArtifact) {
+            $xmlDocStep.path = Get-RelativeRepositoryPath -Path $xmlDocPath
+        }
+        else {
+            $xmlDocStep.Remove('path')
+        }
+    }
+    $steps.xmldoc = $xmlDocStep
+
+    $introspection = if ($Result.PSObject.Properties.Name -contains 'introspection' -and $Result.introspection) {
+        Copy-ObjectProperties -InputObject $Result.introspection
+    } else { [ordered]@{} }
 
     if ($hasOpenCliOutput) {
-        if ($null -eq $introspection) {
-            $introspection = [ordered]@{}
-        }
-
         if (-not ($introspection.Contains('opencli')) -or $null -eq $introspection.opencli) {
             $introspection.opencli = [ordered]@{}
         }
 
+        $introspection.opencli.status = 'ok'
         $introspection.opencli.artifactSource = $openCliSource
+        if ($openCliClassification) {
+            $introspection.opencli.classification = $openCliClassification
+        }
+        $introspection.opencli.Remove('message')
         if ($openCliSource -eq 'synthesized-from-xmldoc') {
             $introspection.opencli.synthesizedArtifact = $true
+        }
+        else {
+            $introspection.opencli.Remove('synthesizedArtifact')
+        }
+    }
+
+    $analysisSelection = if ($Result.PSObject.Properties.Name -contains 'analysisSelection' -and $Result.analysisSelection) {
+        Copy-ObjectProperties -InputObject $Result.analysisSelection
+    }
+    elseif ($analysisMode) {
+        [ordered]@{}
+    }
+    else { $null }
+    if ($analysisSelection) {
+        if (-not ($analysisSelection.Contains('selectedMode')) -or $null -eq $analysisSelection.selectedMode) {
+            $analysisSelection.selectedMode = $analysisMode
+        }
+        if (-not ($analysisSelection.Contains('preferredMode')) -or $null -eq $analysisSelection.preferredMode) {
+            $analysisSelection.preferredMode = $analysisMode
         }
     }
 
@@ -347,6 +491,10 @@ function Write-SuccessArtifacts {
         packageId = $Result.packageId
         version = $Result.version
         trusted = $false
+        analysisMode = $analysisMode
+        analysisSelection = $analysisSelection
+        fallback = if ($Result.PSObject.Properties.Name -contains 'fallback' -and $Result.fallback) { Copy-ObjectProperties -InputObject $Result.fallback } else { $null }
+        cliFramework = $Result.cliFramework
         source = $Result.source
         batchId = $Result.batchId
         attempt = $Result.attempt
@@ -354,6 +502,8 @@ function Write-SuccessArtifacts {
         evaluatedAt = $Result.analyzedAt
         publishedAt = Convert-ToIsoTimestamp $Result.publishedAt
         packageUrl = $Result.packageUrl
+        projectUrl = $Result.projectUrl
+        sourceRepositoryUrl = $Result.sourceRepositoryUrl
         packageContentUrl = $Result.packageContentUrl
         registrationLeafUrl = $Result.registrationLeafUrl
         catalogEntryUrl = $Result.catalogEntryUrl
@@ -363,12 +513,14 @@ function Write-SuccessArtifacts {
         toolSettingsPath = $Result.toolSettingsPath
         detection = $Result.detection
         introspection = $introspection
+        coverage = if ($Result.PSObject.Properties.Name -contains 'coverage' -and $Result.coverage) { Copy-ObjectProperties -InputObject $Result.coverage } else { $null }
         timings = $Result.timings
         steps = $steps
         artifacts = [ordered]@{
             metadataPath = Get-RelativeRepositoryPath -Path $metadataPath
             opencliPath = if ($hasOpenCliOutput) { Get-RelativeRepositoryPath -Path $openCliPath } else { $null }
             opencliSource = if ($hasOpenCliOutput) { $openCliSource } else { $null }
+            crawlPath = if ($hasCrawlArtifact) { Get-RelativeRepositoryPath -Path $crawlPath } else { $null }
             xmldocPath = if ($hasXmlDocArtifact) { Get-RelativeRepositoryPath -Path $xmlDocPath } else { $null }
         }
     }
@@ -450,14 +602,20 @@ foreach ($item in $Plan.items) {
 
     if ($result.disposition -eq 'success') {
         $openCliExists = $artifactDir -and $result.artifacts.opencliArtifact -and (Test-Path (Join-Path $artifactDir $result.artifacts.opencliArtifact))
+        $crawlExists = $artifactDir -and $result.artifacts.crawlArtifact -and (Test-Path (Join-Path $artifactDir $result.artifacts.crawlArtifact))
         $xmlDocExists = $artifactDir -and $result.artifacts.xmldocArtifact -and (Test-Path (Join-Path $artifactDir $result.artifacts.xmldocArtifact))
+        $analysisMode = Get-InferredAnalysisMode -Result $result -Item $item -HasCrawlArtifact:$crawlExists -ArtifactDirectory $artifactDir
+        $requiresCrawlArtifact = $analysisMode -in @('help', 'clifx')
         $declaredMissing = @()
         if ($result.artifacts.opencliArtifact -and -not $openCliExists) { $declaredMissing += $result.artifacts.opencliArtifact }
+        if ($result.artifacts.crawlArtifact -and -not $crawlExists) { $declaredMissing += $result.artifacts.crawlArtifact }
         if ($result.artifacts.xmldocArtifact -and -not $xmlDocExists) { $declaredMissing += $result.artifacts.xmldocArtifact }
 
-        if ($declaredMissing.Count -gt 0 -or -not ($openCliExists -or $xmlDocExists)) {
+        if ($declaredMissing.Count -gt 0 -or -not ($openCliExists -or $xmlDocExists) -or ($requiresCrawlArtifact -and -not $crawlExists)) {
             $message = if ($declaredMissing.Count -gt 0) {
                 'Success result declared artifact(s) that were not uploaded: ' + ($declaredMissing -join ', ')
+            } elseif ($requiresCrawlArtifact -and -not $crawlExists) {
+                'Success result did not include crawl.json.'
             } else {
                 'Success result did not include either opencli.json or xmldoc.xml.'
             }

@@ -39,7 +39,7 @@ function Convert-ToIsoTimestamp {
 function Sync-LatestDirectory {
     param([string]$VersionDirectory, [string]$LatestDirectory)
     New-Item -ItemType Directory -Path $LatestDirectory -Force | Out-Null
-    foreach ($artifactName in @('metadata.json', 'opencli.json', 'xmldoc.xml')) {
+    foreach ($artifactName in @('metadata.json', 'opencli.json', 'xmldoc.xml', 'crawl.json')) {
         $sourcePath = Join-Path $VersionDirectory $artifactName
         $targetPath = Join-Path $LatestDirectory $artifactName
         if (Test-Path $sourcePath) {
@@ -69,6 +69,7 @@ function Get-PackageSummary {
         latestPaths = [ordered]@{
             metadataPath = "index/packages/$lowerId/latest/metadata.json"
             opencliPath = if ($latest.artifacts.opencliPath) { "index/packages/$lowerId/latest/opencli.json" } else { $null }
+            crawlPath = if ($latest.artifacts.crawlPath) { "index/packages/$lowerId/latest/crawl.json" } else { $null }
             xmldocPath = if ($latest.artifacts.xmldocPath) { "index/packages/$lowerId/latest/xmldoc.xml" } else { $null }
         }
         versions = @(
@@ -177,15 +178,31 @@ foreach ($metadataFile in $metadataFiles) {
         $metadata.artifacts | Add-Member -NotePropertyName opencliSource -NotePropertyValue 'synthesized-from-xmldoc'
     }
 
-    if ($metadata.PSObject.Properties.Name -contains 'steps' -and $metadata.steps -and $metadata.steps.PSObject.Properties.Name -contains 'opencli' -and $metadata.steps.opencli) {
-        $metadata.steps.opencli | Add-Member -NotePropertyName path -NotePropertyValue $relativeOpenCliPath -Force
-        $metadata.steps.opencli | Add-Member -NotePropertyName artifactSource -NotePropertyValue 'synthesized-from-xmldoc' -Force
+    if (-not ($metadata.PSObject.Properties.Name -contains 'steps') -or -not $metadata.steps) {
+        $metadata | Add-Member -NotePropertyName steps -NotePropertyValue ([ordered]@{}) -Force
     }
 
-    if ($metadata.PSObject.Properties.Name -contains 'introspection' -and $metadata.introspection -and $metadata.introspection.PSObject.Properties.Name -contains 'opencli' -and $metadata.introspection.opencli) {
-        $metadata.introspection.opencli | Add-Member -NotePropertyName synthesizedArtifact -NotePropertyValue $true -Force
-        $metadata.introspection.opencli | Add-Member -NotePropertyName artifactSource -NotePropertyValue 'synthesized-from-xmldoc' -Force
+    if (-not ($metadata.steps.PSObject.Properties.Name -contains 'opencli') -or -not $metadata.steps.opencli) {
+        $metadata.steps | Add-Member -NotePropertyName opencli -NotePropertyValue ([ordered]@{}) -Force
     }
+
+    $metadata.steps.opencli | Add-Member -NotePropertyName status -NotePropertyValue 'ok' -Force
+    $metadata.steps.opencli | Add-Member -NotePropertyName path -NotePropertyValue $relativeOpenCliPath -Force
+    $metadata.steps.opencli | Add-Member -NotePropertyName artifactSource -NotePropertyValue 'synthesized-from-xmldoc' -Force
+    $metadata.steps.opencli | Add-Member -NotePropertyName classification -NotePropertyValue 'xmldoc-synthesized' -Force
+
+    if (-not ($metadata.PSObject.Properties.Name -contains 'introspection') -or -not $metadata.introspection) {
+        $metadata | Add-Member -NotePropertyName introspection -NotePropertyValue ([ordered]@{}) -Force
+    }
+
+    if (-not ($metadata.introspection.PSObject.Properties.Name -contains 'opencli') -or -not $metadata.introspection.opencli) {
+        $metadata.introspection | Add-Member -NotePropertyName opencli -NotePropertyValue ([ordered]@{}) -Force
+    }
+
+    $metadata.introspection.opencli | Add-Member -NotePropertyName status -NotePropertyValue 'ok' -Force
+    $metadata.introspection.opencli | Add-Member -NotePropertyName synthesizedArtifact -NotePropertyValue $true -Force
+    $metadata.introspection.opencli | Add-Member -NotePropertyName artifactSource -NotePropertyValue 'synthesized-from-xmldoc' -Force
+    $metadata.introspection.opencli | Add-Member -NotePropertyName classification -NotePropertyValue 'xmldoc-synthesized' -Force
 
     $metadata.status = 'ok'
 
