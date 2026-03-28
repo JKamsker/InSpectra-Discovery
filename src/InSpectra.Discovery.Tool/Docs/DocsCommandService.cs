@@ -41,7 +41,7 @@ internal sealed class DocsCommandService
         var allIndex = JsonNode.Parse(await File.ReadAllTextAsync(allIndexFile, cancellationToken))?.AsObject()
             ?? throw new InvalidOperationException($"Manifest '{allIndexFile}' is empty.");
         var packageNodes = allIndex["packages"]?.AsArray() ?? [];
-        var packages = new List<object>();
+        var packages = new List<JsonObject>();
         var now = DateTimeOffset.UtcNow;
 
         foreach (var packageNode in packageNodes)
@@ -55,23 +55,24 @@ internal sealed class DocsCommandService
             var packageId = package["packageId"]?.GetValue<string>() ?? string.Empty;
             var latestVersion = package["latestVersion"]?.GetValue<string>() ?? string.Empty;
             var packageTimestamps = RepositoryPackageIndexBuilder.ResolvePackageTimestamps(package);
-            packages.Add(new
+            var packageEntry = new JsonObject
             {
-                packageId,
-                commandName = latestVersionRecord?["command"]?.GetValue<string>(),
-                cliFramework = package["cliFramework"]?.GetValue<string>(),
-                versionCount = package["versions"]?.AsArray().Count ?? 0,
-                latestVersion,
-                createdAt = packageTimestamps.CreatedAt,
-                updatedAt = packageTimestamps.UpdatedAt,
-                completeness = GetCompletenessLabel(package["latestStatus"]?.GetValue<string>()),
-                packageIconUrl = string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(latestVersion)
+                ["packageId"] = packageId,
+                ["commandName"] = latestVersionRecord?["command"]?.GetValue<string>(),
+                ["versionCount"] = package["versions"]?.AsArray().Count ?? 0,
+                ["latestVersion"] = latestVersion,
+                ["createdAt"] = packageTimestamps.CreatedAt,
+                ["updatedAt"] = packageTimestamps.UpdatedAt,
+                ["completeness"] = GetCompletenessLabel(package["latestStatus"]?.GetValue<string>()),
+                ["packageIconUrl"] = string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(latestVersion)
                     ? null
                     : $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLowerInvariant()}/{latestVersion.ToLowerInvariant()}/icon",
-                totalDownloads = package["totalDownloads"]?.GetValue<long?>(),
-                commandCount = package["commandCount"]?.GetValue<int?>() ?? 0,
-                commandGroupCount = package["commandGroupCount"]?.GetValue<int?>() ?? 0,
-            });
+                ["totalDownloads"] = package["totalDownloads"]?.GetValue<long?>(),
+                ["commandCount"] = package["commandCount"]?.GetValue<int?>() ?? 0,
+                ["commandGroupCount"] = package["commandGroupCount"]?.GetValue<int?>() ?? 0,
+            };
+            SetOptionalString(packageEntry, "cliFramework", package["cliFramework"]?.GetValue<string>());
+            packages.Add(packageEntry);
         }
 
         var createdAt = ResolveDocumentCreatedAt(
@@ -231,6 +232,14 @@ internal sealed class DocsCommandService
             "partial" => "partial",
             _ => latestStatus ?? string.Empty,
         };
+
+    private static void SetOptionalString(JsonObject target, string propertyName, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            target[propertyName] = value;
+        }
+    }
 
     private static DateTimeOffset ResolveDocumentCreatedAt(string outputFile, string? fallback, DateTimeOffset now)
     {

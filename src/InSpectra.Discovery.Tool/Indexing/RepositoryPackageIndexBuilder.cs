@@ -114,12 +114,11 @@ internal static class RepositoryPackageIndexBuilder
         var projectUrl = ResolvePackageLink(packageId, ordered, currentSnapshotLookup, existingSummary, "projectUrl");
         var sourceRepositoryUrl = ResolvePackageSourceRepositoryUrl(packageId, ordered, currentSnapshotLookup, existingSummary);
 
-        return new JsonObject
+        var summary = new JsonObject
         {
             ["schemaVersion"] = 1,
             ["packageId"] = packageId,
             ["trusted"] = latest["trusted"]?.GetValue<bool?>(),
-            ["cliFramework"] = latest["cliFramework"]?.GetValue<string>(),
             ["totalDownloads"] = totalDownloads,
             ["links"] = new JsonObject
             {
@@ -135,18 +134,11 @@ internal static class RepositoryPackageIndexBuilder
                 ["opencliPath"] = latest["artifacts"]?["opencliPath"]?.GetValue<string>() is { Length: > 0 } ? $"index/packages/{lowerId}/latest/opencli.json" : null,
                 ["xmldocPath"] = latest["artifacts"]?["xmldocPath"]?.GetValue<string>() is { Length: > 0 } ? $"index/packages/{lowerId}/latest/xmldoc.xml" : null,
             },
-            ["versions"] = new JsonArray(ordered.Select(record => (JsonNode)new JsonObject
-            {
-                ["version"] = record["version"]?.GetValue<string>(),
-                ["publishedAt"] = ToIsoTimestamp(record["publishedAt"]),
-                ["evaluatedAt"] = ToIsoTimestamp(record["evaluatedAt"]),
-                ["status"] = record["status"]?.GetValue<string>(),
-                ["command"] = record["command"]?.GetValue<string>(),
-                ["cliFramework"] = record["cliFramework"]?.GetValue<string>(),
-                ["timings"] = record["timings"]?.DeepClone(),
-                ["paths"] = record["artifacts"]?.DeepClone(),
-            }).ToArray()),
         };
+
+        SetOptionalString(summary, "cliFramework", latest["cliFramework"]?.GetValue<string>());
+        summary["versions"] = new JsonArray(ordered.Select(record => (JsonNode)BuildVersionRecord(record)).ToArray());
+        return summary;
     }
 
     private static void SyncLatestDirectory(string versionDirectory, string latestDirectory)
@@ -176,11 +168,10 @@ internal static class RepositoryPackageIndexBuilder
             var packageId = package["packageId"]?.GetValue<string>() ?? string.Empty;
             var latestVersion = package["latestVersion"]?.GetValue<string>() ?? string.Empty;
             var packageTimestamps = ResolvePackageTimestamps(package);
-            packages.Add(new JsonObject
+            var packageEntry = new JsonObject
             {
                 ["packageId"] = packageId,
                 ["commandName"] = latestVersionRecord?["command"]?.GetValue<string>(),
-                ["cliFramework"] = package["cliFramework"]?.GetValue<string>(),
                 ["versionCount"] = package["versions"]?.AsArray().Count ?? 0,
                 ["latestVersion"] = latestVersion,
                 ["createdAt"] = packageTimestamps.CreatedAt,
@@ -197,7 +188,9 @@ internal static class RepositoryPackageIndexBuilder
                 ["totalDownloads"] = package["totalDownloads"]?.GetValue<long?>(),
                 ["commandCount"] = package["commandCount"]?.GetValue<int?>() ?? 0,
                 ["commandGroupCount"] = package["commandGroupCount"]?.GetValue<int?>() ?? 0,
-            });
+            };
+            SetOptionalString(packageEntry, "cliFramework", package["cliFramework"]?.GetValue<string>());
+            packages.Add(packageEntry);
         }
 
         var timestamps = ResolveDocumentTimestamps(outputPath, now);
@@ -424,6 +417,31 @@ internal static class RepositoryPackageIndexBuilder
 
         parsed = default;
         return false;
+    }
+
+    private static JsonObject BuildVersionRecord(JsonObject record)
+    {
+        var versionRecord = new JsonObject
+        {
+            ["version"] = record["version"]?.GetValue<string>(),
+            ["publishedAt"] = ToIsoTimestamp(record["publishedAt"]),
+            ["evaluatedAt"] = ToIsoTimestamp(record["evaluatedAt"]),
+            ["status"] = record["status"]?.GetValue<string>(),
+            ["command"] = record["command"]?.GetValue<string>(),
+            ["timings"] = record["timings"]?.DeepClone(),
+            ["paths"] = record["artifacts"]?.DeepClone(),
+        };
+
+        SetOptionalString(versionRecord, "cliFramework", record["cliFramework"]?.GetValue<string>());
+        return versionRecord;
+    }
+
+    private static void SetOptionalString(JsonObject target, string propertyName, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            target[propertyName] = value;
+        }
     }
 
     private sealed record DocumentTimestamps(string CreatedAt, string UpdatedAt);
