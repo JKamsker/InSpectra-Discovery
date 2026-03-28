@@ -98,7 +98,7 @@ internal static partial class ToolHelpUsageSectionSplitter
     private static int GetIndentation(string rawLine)
         => rawLine.TakeWhile(char.IsWhiteSpace).Count();
 
-    [GeneratedRegex(@"^(?:--?[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9\?\-]*)(?:\s*[,|]\s*(?:--?[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9\?\-]*))*\s{2,}\S", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^(?:--?[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*)(?:\s*[,|]\s*(?:--?[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*))*\s{2,}\S", RegexOptions.Compiled)]
     private static partial Regex OptionRowRegex();
 
     [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s{2,}\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]

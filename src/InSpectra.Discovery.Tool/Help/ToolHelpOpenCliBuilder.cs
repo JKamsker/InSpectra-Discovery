@@ -477,7 +477,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
     private static string NormalizeArgumentName(string key)
         => key.Replace('-', '_').ToUpperInvariant();
 
-    [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))", RegexOptions.Compiled)]
+    [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
 
     [GeneratedRegex(@"(?<all>\[?<(?<name>[^>]+)>\]?)", RegexOptions.Compiled)]

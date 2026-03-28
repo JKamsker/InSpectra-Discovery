@@ -519,7 +519,7 @@ internal static partial class ToolHelpLegacyOptionTable
     [GeneratedRegex(@"^(?<name>[A-Za-z][A-Za-z0-9]*)\*?\s+\((?<short>-[A-Za-z][A-Za-z0-9]*)\)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex TableRowRegex();
 
-    [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9\-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_\.\-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex CommandLineParserOptionRowRegex();
 
     [GeneratedRegex(@"(?<=[a-z0-9])([A-Z])", RegexOptions.Compiled)]
@@ -528,7 +528,7 @@ internal static partial class ToolHelpLegacyOptionTable
     [GeneratedRegex(@"\[?<(?<name>[^>]+)>\]?", RegexOptions.Compiled)]
     private static partial Regex UsageArgumentRegex();
 
-    [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))", RegexOptions.Compiled)]
+    [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
 
     private readonly record struct StructuredOptionTableSchema(

@@ -56,13 +56,13 @@ internal sealed partial class ToolHelpTextParser
             }
 
             sawInventoryHeader |= LooksLikeInventoryHeaderLine(line.Trim());
-            if (TryParseIgnoredSectionHeader(line))
+            if (ToolHelpSectionHeaderSupport.TryParseIgnoredSectionHeader(line, IgnoredSectionHeaders))
             {
                 currentSection = IgnoredSectionName;
                 continue;
             }
 
-            if (TryParseSectionHeader(line, out var sectionName, out var inlineValue, out var matchedHeader))
+            if (ToolHelpSectionHeaderSupport.TryParseSectionHeader(line, SectionAliases, out var sectionName, out var inlineValue, out var matchedHeader))
             {
                 if (string.Equals(matchedHeader, "COMMAND", StringComparison.OrdinalIgnoreCase)
                     && !string.IsNullOrWhiteSpace(inlineValue))
@@ -114,7 +114,7 @@ internal sealed partial class ToolHelpTextParser
                 sections[currentSection].Add(line);
             }
         }
-        var (title, version, descriptionStartIndex) = ParseTitleAndVersion(preamble);
+        var (title, version, descriptionStartIndex) = ToolHelpTitleInference.ParseTitleAndVersion(preamble);
         if (!string.IsNullOrWhiteSpace(commandHeader))
         {
             title = commandHeader;
@@ -128,6 +128,7 @@ internal sealed partial class ToolHelpTextParser
         var usageSectionParts = ToolHelpUsageSectionSplitter.Split(usageLines ?? []);
         var rawArgumentLines = new List<string>(argumentLines ?? []);
         rawArgumentLines.AddRange(usageSectionParts.ArgumentLines);
+        rawArgumentLines.AddRange(ToolHelpPreambleArgumentInference.InferArgumentLines(preamble, title));
         SplitArgumentSectionLines(rawArgumentLines, out var parsedArgumentLines, out var optionStyleArgumentLines);
         var parsedUsageLines = TrimNonEmpty(
             usageSectionParts.UsageLines.Count > 0
@@ -163,65 +164,6 @@ internal sealed partial class ToolHelpTextParser
         => text.Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace('\r', '\n')
             .Split('\n');
-
-    private static bool TryParseSectionHeader(string line, out string sectionName, out string? inlineValue, out string matchedHeader)
-    {
-        sectionName = string.Empty;
-        inlineValue = null;
-        matchedHeader = string.Empty;
-
-        var trimmed = line.Trim();
-        if (string.IsNullOrWhiteSpace(trimmed))
-        {
-            return false;
-        }
-
-        if (SectionAliases.TryGetValue(trimmed, out var matchedSectionName))
-        {
-            sectionName = matchedSectionName;
-            matchedHeader = trimmed;
-            return true;
-        }
-
-        var match = SectionHeaderRegex().Match(trimmed);
-        if (!match.Success)
-        {
-            return false;
-        }
-
-        var alias = match.Groups["header"].Value.Trim();
-        if (!SectionAliases.TryGetValue(alias, out matchedSectionName))
-        {
-            if (!TryResolveSectionAlias(alias, out matchedSectionName))
-            {
-                return false;
-            }
-        }
-
-        matchedHeader = alias;
-        sectionName = matchedSectionName;
-        inlineValue = string.IsNullOrWhiteSpace(match.Groups["value"].Value)
-            ? null
-            : match.Groups["value"].Value.Trim();
-        return true;
-    }
-
-    private static bool TryParseIgnoredSectionHeader(string line)
-    {
-        var trimmed = line.Trim();
-        if (string.IsNullOrWhiteSpace(trimmed))
-        {
-            return false;
-        }
-
-        var match = SectionHeaderRegex().Match(trimmed);
-        if (!match.Success)
-        {
-            return false;
-        }
-
-        return IgnoredSectionHeaders.Contains(match.Groups["header"].Value.Trim());
-    }
 
     private static IReadOnlyList<ToolHelpItem> ParseItems(IReadOnlyList<string> lines, ItemKind kind)
     {
@@ -440,9 +382,20 @@ internal sealed partial class ToolHelpTextParser
             return [];
         }
 
-        return ParseItems(preamble.Skip(1).ToArray(), ItemKind.Command)
+        var parsedCommands = ParseItems(preamble.Skip(1).ToArray(), ItemKind.Command);
+        var describedCommands = parsedCommands
             .Where(item => !string.IsNullOrWhiteSpace(item.Description))
             .ToArray();
+        if (describedCommands.Any(item => !IsBuiltinAuxiliaryCommand(item.Key)))
+        {
+            return describedCommands;
+        }
+
+        var blankInventoryCommands = parsedCommands
+            .Where(item => string.IsNullOrWhiteSpace(item.Description))
+            .Where(item => !IsBuiltinAuxiliaryCommand(item.Key))
+            .ToArray();
+        return blankInventoryCommands;
     }
 
     private static void FlushItem(ICollection<ToolHelpItem> items, ItemKind kind, string? key, bool isRequired, string? description)
@@ -453,46 +406,6 @@ internal sealed partial class ToolHelpTextParser
         }
 
         items.Add(new ToolHelpItem(key, isRequired, string.IsNullOrWhiteSpace(description) ? null : description.Trim()));
-    }
-
-    private static (string? Title, string? Version, int DescriptionStartIndex) ParseTitleAndVersion(IReadOnlyList<string> preamble)
-    {
-        int? firstNonEmptyIndex = null;
-
-        for (var index = 0; index < preamble.Count; index++)
-        {
-            var line = preamble[index];
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            firstNonEmptyIndex ??= index;
-            if (index > firstNonEmptyIndex.Value && string.IsNullOrWhiteSpace(preamble[index - 1]))
-            {
-                break;
-            }
-
-            var trimmed = line.Trim();
-            var match = TitleLineRegex().Match(trimmed);
-            if (match.Success)
-            {
-                var title = match.Groups["title"].Value.Trim();
-                var version = match.Groups["version"].Value.Trim();
-                if (LooksLikeTitleVersionLine(trimmed, title, version))
-                {
-                    return (title, version, index + 1);
-                }
-            }
-        }
-
-        if (firstNonEmptyIndex is null)
-        {
-            return (null, null, 0);
-        }
-
-        var firstLine = preamble[firstNonEmptyIndex.Value].Trim();
-        return (firstLine, null, firstNonEmptyIndex.Value + 1);
     }
 
     private static IReadOnlyList<string> TrimNonEmpty(IEnumerable<string> lines)
@@ -657,28 +570,6 @@ internal sealed partial class ToolHelpTextParser
         return RejectedHelpInvocationRegex().IsMatch(line.Trim());
     }
 
-    private static bool TryResolveSectionAlias(string alias, out string sectionName)
-    {
-        if (alias.EndsWith("OPTIONS", StringComparison.OrdinalIgnoreCase)
-            || alias.EndsWith("OPTIONEN", StringComparison.OrdinalIgnoreCase))
-        {
-            sectionName = "options";
-            return true;
-        }
-
-        if (alias.EndsWith("ARGUMENTS", StringComparison.OrdinalIgnoreCase)
-            || alias.EndsWith("ARGUMENTE", StringComparison.OrdinalIgnoreCase)
-            || alias.EndsWith("PARAMETERS", StringComparison.OrdinalIgnoreCase)
-            || alias.EndsWith("PARAMETER", StringComparison.OrdinalIgnoreCase))
-        {
-            sectionName = "arguments";
-            return true;
-        }
-
-        sectionName = string.Empty;
-        return false;
-    }
-
     private static bool LooksLikeArgumentKey(string key)
         => key.Length > 0
             && !key.Contains(' ', StringComparison.Ordinal)
@@ -766,9 +657,24 @@ internal sealed partial class ToolHelpTextParser
     private static bool LooksLikeCommandDescription(string description)
     {
         var trimmed = description.TrimStart();
+        while (trimmed.StartsWith("(", StringComparison.Ordinal))
+        {
+            var closingIndex = trimmed.IndexOf(')');
+            if (closingIndex < 0)
+            {
+                break;
+            }
+
+            trimmed = trimmed[(closingIndex + 1)..].TrimStart();
+        }
+
         return trimmed.Length > 0
             && char.IsLetter(trimmed[0]);
     }
+
+    private static bool IsBuiltinAuxiliaryCommand(string key)
+        => string.Equals(key, "help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(key, "version", StringComparison.OrdinalIgnoreCase);
 
     private static string NormalizeCommandItemLine(string rawLine)
     {
@@ -818,32 +724,17 @@ internal sealed partial class ToolHelpTextParser
             && value.Any(char.IsLetter)
             && value.Where(char.IsLetter).All(char.IsUpper);
 
-    private static bool LooksLikeTitleVersionLine(string line, string title, string version)
-        => !StackTraceLineRegex().IsMatch(line)
-            && !title.Contains(":line", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(title, "Version", StringComparison.OrdinalIgnoreCase)
-            && version.Count(char.IsDigit) > 1;
-
-    [GeneratedRegex(@"^(?<header>[\p{L}\p{M}\s]+):\s*(?<value>\S.*)?$", RegexOptions.Compiled)]
-    private static partial Regex SectionHeaderRegex();
-
     [GeneratedRegex(@"^(?<prefix>\* )?(?<key>\S.*?)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex ItemRegex();
 
     [GeneratedRegex(@"^(?<key>[A-Za-z][A-Za-z0-9_.-]*)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 
-    [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))", RegexOptions.Compiled)]
+    [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
 
-    [GeneratedRegex(@"^(?<group>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*)(?:\s*(?:\||,)\s*(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))*)", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^(?<group>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*)(?:\s*(?:\||,)\s*(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))*)", RegexOptions.Compiled)]
     private static partial Regex LeadingOptionAliasGroupRegex();
-
-    [GeneratedRegex(@"^(?<title>.+?)\s+(?<version>v?\d[\w\.\-\+]*)$", RegexOptions.Compiled)]
-    private static partial Regex TitleLineRegex();
-
-    [GeneratedRegex(@"^\s*at\s+.+\s+in\s+.+:line\s+\d+\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
-    private static partial Regex StackTraceLineRegex();
 
     [GeneratedRegex(@"^CommandLine\.[A-Za-z]+Error$", RegexOptions.Compiled)]
     private static partial Regex CommandLineErrorTokenRegex();
