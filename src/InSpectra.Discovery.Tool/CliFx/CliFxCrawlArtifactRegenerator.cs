@@ -293,13 +293,16 @@ internal sealed class CliFxCrawlArtifactRegenerator
             return null;
         }
 
-        var crawlPath = Path.Combine(versionDirectory, "crawl.json");
+        var metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject();
+        var crawlRelativePath = metadata?["artifacts"]?["crawlPath"]?.GetValue<string>();
+        var crawlPath = string.IsNullOrWhiteSpace(crawlRelativePath)
+            ? Path.Combine(versionDirectory, "crawl.json")
+            : Path.Combine(repositoryRoot, crawlRelativePath);
         if (!File.Exists(crawlPath))
         {
             return null;
         }
 
-        var metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject();
         var openCliRelativePath = metadata?["artifacts"]?["opencliPath"]?.GetValue<string>();
         var openCliPath = string.IsNullOrWhiteSpace(openCliRelativePath)
             ? Path.Combine(versionDirectory, "opencli.json")

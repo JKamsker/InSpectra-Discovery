@@ -559,6 +559,118 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
             string.Equals(candidate?["name"]?.GetValue<string>(), "orphan", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Regenerator_Respects_Metadata_Crawl_Path()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "sampleclifx", "4.0.0");
+        var redirectedCrawlPath = Path.Combine(repositoryRoot, "index", "packages", "sampleclifx", "4.0.0", "replayed", "crawl.json");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "SampleCliFx",
+                ["version"] = "4.0.0",
+                ["command"] = "sample",
+                ["cliFramework"] = "CliFx",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "crawled-from-clifx-help",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/sampleclifx/4.0.0/metadata.json",
+                    ["opencliPath"] = "index/packages/sampleclifx/4.0.0/opencli.json",
+                    ["opencliSource"] = "crawled-from-clifx-help",
+                    ["crawlPath"] = "index/packages/sampleclifx/4.0.0/replayed/crawl.json",
+                },
+            });
+
+        RepositoryPathResolver.WriteJsonFile(
+            redirectedCrawlPath,
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            sample 4.0.0
+
+                            USAGE
+                              sample [command]
+
+                            COMMANDS
+                              upload            Upload a package
+                            """,
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "upload",
+                        ["payload"] =
+                            """
+                            sample 4.0.0
+
+                            USAGE
+                              sample upload [options]
+
+                            DESCRIPTION
+                              Upload a package
+                            """,
+                    },
+                },
+                ["staticCommands"] = CliFxCrawlArtifactSupport.SerializeStaticCommands(
+                    new Dictionary<string, CliFxCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["upload"] = new(
+                            Name: "upload",
+                            Description: "Upload a package",
+                            Parameters: [],
+                            Options: []),
+                    }),
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "crawled-from-clifx-help",
+                    ["cliFramework"] = "CliFx",
+                },
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "stale",
+                        ["hidden"] = false,
+                    },
+                },
+            });
+
+        var regenerator = new CliFxCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        var command = Assert.IsType<JsonObject>(Assert.Single(regenerated["commands"]!.AsArray()));
+        Assert.Equal("upload", command["name"]?.GetValue<string>());
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
