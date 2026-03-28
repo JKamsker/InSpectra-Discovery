@@ -34,6 +34,9 @@ internal static class ToolHelpDocumentInspector
         return false;
     }
 
+    public static bool IsCompatible(string[] commandSegments, ToolHelpDocument document)
+        => IsCompatible((IReadOnlyList<string>)commandSegments, document);
+
     private static bool HasStructuredContent(ToolHelpDocument document)
         => document.UsageLines.Count > 0
             || document.Options.Count > 0

@@ -597,7 +597,7 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
-    public void Normalizes_Comma_Separated_Command_Aliases_To_First_Alias()
+    public void Normalizes_Comma_Separated_Command_Aliases_To_Longest_Alias()
     {
         var parser = new ToolHelpTextParser();
 
@@ -610,8 +610,8 @@ public sealed class ToolHelpTextParserTests
               otel, tel, telemetry                      Open telemetry commands
             """);
 
-        Assert.Contains(document.Commands, command => string.Equals(command.Key, "deploy", StringComparison.Ordinal));
-        Assert.Contains(document.Commands, command => string.Equals(command.Key, "otel", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "deployments", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "telemetry", StringComparison.Ordinal));
         Assert.DoesNotContain(document.Commands, command => command.Key.Contains(',', StringComparison.Ordinal));
     }
 

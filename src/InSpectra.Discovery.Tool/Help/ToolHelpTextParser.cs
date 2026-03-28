@@ -320,6 +320,11 @@ internal sealed partial class ToolHelpTextParser
             return false;
         }
 
+        if (kind == ItemKind.Option)
+        {
+            key = NormalizeOptionSignatureKey(key);
+        }
+
         if (kind == ItemKind.Option && TryExtractLeadingAliasFromDescription(description, out var alias, out var normalizedDescription))
         {
             key = $"{key} | {alias}";
@@ -453,19 +458,28 @@ internal sealed partial class ToolHelpTextParser
     private static string NormalizeCommandKey(string key)
     {
         var normalizedKey = key.Trim();
-        var aliasSeparator = normalizedKey.IndexOf(',');
-        if (aliasSeparator >= 0)
+        var rawSegments = normalizedKey.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var segments = new List<string>();
+        for (var index = 0; index < rawSegments.Length; index++)
         {
-            normalizedKey = normalizedKey[..aliasSeparator];
+            var aliases = new List<string> { rawSegments[index].TrimEnd(',', ':') };
+            while (rawSegments[index].EndsWith(",", StringComparison.Ordinal) && index + 1 < rawSegments.Length)
+            {
+                index++;
+                aliases.Add(rawSegments[index].TrimEnd(',', ':'));
+            }
+
+            segments.Add(aliases
+                .Where(alias => alias.Length > 0)
+                .OrderByDescending(alias => alias.Length)
+                .FirstOrDefault() ?? string.Empty);
         }
 
-        var segments = normalizedKey.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var normalized = segments
             .TakeWhile(segment => !segment.StartsWith("<", StringComparison.Ordinal)
                 && !segment.StartsWith("[", StringComparison.Ordinal)
                 && !segment.StartsWith("-", StringComparison.Ordinal)
                 && !segment.StartsWith("/", StringComparison.Ordinal))
-            .Select(segment => segment.TrimEnd(':'))
             .Where(segment => segment.Length > 0)
             .ToArray();
         return normalized.Length == 0 || normalized.Any(segment => !LooksLikeCommandSegment(segment))
@@ -475,6 +489,38 @@ internal sealed partial class ToolHelpTextParser
 
     private static string NormalizeArgumentKey(string key)
         => key.Trim().TrimStart('[', '<').TrimEnd(']', '>');
+
+    private static string NormalizeOptionSignatureKey(string key)
+    {
+        var matches = OptionTokenRegex().Matches(key);
+        if (matches.Count == 0)
+        {
+            return key.Trim();
+        }
+
+        var trailing = key[(matches[^1].Index + matches[^1].Length)..].Trim();
+        if (string.IsNullOrWhiteSpace(trailing))
+        {
+            return key.Trim();
+        }
+
+        if (trailing.StartsWith("=", StringComparison.Ordinal) || trailing.StartsWith(":", StringComparison.Ordinal))
+        {
+            return key.Trim();
+        }
+
+        if (trailing.StartsWith("<", StringComparison.Ordinal) || trailing.StartsWith("[", StringComparison.Ordinal))
+        {
+            return $"{key[..(matches[^1].Index + matches[^1].Length)].Trim()} {trailing}";
+        }
+
+        if (!IsBareOptionPlaceholder(trailing))
+        {
+            return key.Trim();
+        }
+
+        return $"{key[..(matches[^1].Index + matches[^1].Length)].Trim()} <{trailing.ToUpperInvariant()}>";
+    }
 
     private static bool HasContentSections(IReadOnlyDictionary<string, List<string>> sections)
         => sections.Any(pair => pair.Value.Count > 0 || string.Equals(pair.Key, "commands", StringComparison.OrdinalIgnoreCase));
@@ -587,15 +633,52 @@ internal sealed partial class ToolHelpTextParser
             return false;
         }
 
-        var match = LeadingAliasInDescriptionRegex().Match(description);
-        if (!match.Success)
+        var trimmed = description.Trim().TrimStart('|').TrimStart();
+        var match = OptionTokenRegex().Match(trimmed);
+        if (!match.Success || match.Index != 0)
         {
             return false;
         }
 
-        alias = match.Groups["alias"].Value.Trim();
-        normalizedDescription = match.Groups["description"].Value.Trim();
-        return LooksLikeOptionSignature(alias);
+        alias = match.Value.Trim();
+        var remainder = trimmed[match.Length..];
+        if (string.IsNullOrWhiteSpace(remainder))
+        {
+            normalizedDescription = null;
+            return true;
+        }
+
+        if (!char.IsWhiteSpace(remainder[0]))
+        {
+            return false;
+        }
+
+        var trimmedRemainder = remainder.TrimStart();
+        var leadingWhitespace = remainder.Length - trimmedRemainder.Length;
+        if (leadingWhitespace > 1)
+        {
+            normalizedDescription = trimmedRemainder;
+            return true;
+        }
+
+        var separatorIndex = trimmedRemainder.IndexOf(' ');
+        var candidatePlaceholder = separatorIndex >= 0
+            ? trimmedRemainder[..separatorIndex]
+            : trimmedRemainder;
+        var candidateDescription = separatorIndex >= 0
+            ? trimmedRemainder[(separatorIndex + 1)..].TrimStart()
+            : null;
+        if (IsBareOptionPlaceholder(candidatePlaceholder)
+            || candidatePlaceholder.StartsWith("<", StringComparison.Ordinal)
+            || candidatePlaceholder.StartsWith("[", StringComparison.Ordinal))
+        {
+            alias = NormalizeOptionSignatureKey($"{alias} {candidatePlaceholder}");
+            normalizedDescription = string.IsNullOrWhiteSpace(candidateDescription) ? null : candidateDescription;
+            return true;
+        }
+
+        normalizedDescription = trimmedRemainder;
+        return true;
     }
 
     private static bool LooksLikeCommandDescription(string description)
@@ -640,6 +723,14 @@ internal sealed partial class ToolHelpTextParser
             && line.EndsWith("|", StringComparison.Ordinal)
             && line.Count(ch => ch == '|') >= 2;
 
+    private static bool IsBareOptionPlaceholder(string value)
+        => !string.IsNullOrWhiteSpace(value)
+            && !value.Contains(' ', StringComparison.Ordinal)
+            && !value.StartsWith("<", StringComparison.Ordinal)
+            && !value.StartsWith("[", StringComparison.Ordinal)
+            && !value.StartsWith("-", StringComparison.Ordinal)
+            && !value.StartsWith("/", StringComparison.Ordinal);
+
     private static bool LooksLikeTitleVersionLine(string line, string title, string version)
         => !StackTraceLineRegex().IsMatch(line)
             && !title.Contains(":line", StringComparison.OrdinalIgnoreCase)
@@ -669,9 +760,6 @@ internal sealed partial class ToolHelpTextParser
 
     [GeneratedRegex(@"^(?:--help|-h|/\?)\s+is an unknown (?:parameter|option|argument)\b|^Invalid usage\b|^Unknown argument or flag for value --help\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex RejectedHelpInvocationRegex();
-
-    [GeneratedRegex(@"^\|\s*(?<alias>.+?)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
-    private static partial Regex LeadingAliasInDescriptionRegex();
 
     [GeneratedRegex(@"^Package Id\s{2,}Version\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex DotnetToolListHeaderRegex();

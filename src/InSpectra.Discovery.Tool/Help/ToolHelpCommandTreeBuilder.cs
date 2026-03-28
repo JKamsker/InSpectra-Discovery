@@ -1,6 +1,6 @@
 internal sealed class ToolHelpCommandTreeBuilder
 {
-    public IReadOnlyList<ToolHelpCommandNode> Build(IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
+    public IReadOnlyList<ToolHelpCommandNode> Build(string commandName, IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
     {
         var knownCommands = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var edges = new Dictionary<string, List<ToolHelpCommandNode>>(StringComparer.OrdinalIgnoreCase);
@@ -10,26 +10,26 @@ internal sealed class ToolHelpCommandTreeBuilder
         {
             foreach (var child in pair.Value.Commands)
             {
-                var childFullName = string.IsNullOrWhiteSpace(pair.Key) ? child.Key : $"{pair.Key} {child.Key}";
+                var childFullName = ToolHelpCommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);
                 AddCommandAndPrefixes(knownCommands, childFullName);
             }
         }
 
-        foreach (var commandName in helpDocuments.Keys.Where(key => !string.IsNullOrWhiteSpace(key)))
+        foreach (var knownCommand in helpDocuments.Keys.Where(key => !string.IsNullOrWhiteSpace(key)))
         {
-            AddCommandAndPrefixes(knownCommands, commandName);
+            AddCommandAndPrefixes(knownCommands, knownCommand);
         }
 
-        foreach (var commandName in knownCommands.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
+        foreach (var knownCommand in knownCommands.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
         {
-            var parentName = FindParent(commandName, knownCommands);
+            var parentName = FindParent(knownCommand, knownCommands);
             var displayName = string.IsNullOrWhiteSpace(parentName)
-                ? commandName
-                : commandName[(parentName.Length + 1)..];
-            var description = helpDocuments.TryGetValue(commandName, out var helpDocument)
+                ? knownCommand
+                : knownCommand[(parentName.Length + 1)..];
+            var description = helpDocuments.TryGetValue(knownCommand, out var helpDocument)
                 ? helpDocument.CommandDescription
                 : null;
-            AddEdge(edges, edgeKeys, parentName, new ToolHelpCommandNode(commandName, displayName, description));
+            AddEdge(edges, edgeKeys, parentName, new ToolHelpCommandNode(knownCommand, displayName, description));
         }
 
         return BuildNodes(string.Empty, edges);

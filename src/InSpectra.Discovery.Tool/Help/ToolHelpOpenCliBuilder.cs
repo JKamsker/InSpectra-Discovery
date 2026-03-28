@@ -30,7 +30,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
     {
         helpDocuments.TryGetValue(string.Empty, out var rootHelp);
         var rootCommands = new JsonArray(_commandTreeBuilder
-            .Build(helpDocuments)
+            .Build(commandName, helpDocuments)
             .Select(node => BuildCommandNode(commandName, node, helpDocuments))
             .ToArray());
         var document = new JsonObject
@@ -257,6 +257,9 @@ internal sealed partial class ToolHelpOpenCliBuilder
             .Select(match => match.Groups["name"].Value.Trim())
             .Where(value => value.Length > 0)
             .ToArray();
+        var barePlaceholder = placeholders.Length == 0
+            ? ExtractBareOptionPlaceholder(key)
+            : null;
 
         foreach (var segment in key.Split(new[] { '|', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
@@ -281,7 +284,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
                 .Where(alias => !string.Equals(alias, primary, StringComparison.OrdinalIgnoreCase))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray(),
-            ArgumentName: NormalizeOptionArgumentName(placeholders.FirstOrDefault(), primary),
+            ArgumentName: NormalizeOptionArgumentName(placeholders.FirstOrDefault() ?? barePlaceholder, primary),
             ArgumentRequired: !key.Contains("[", StringComparison.Ordinal));
     }
 
@@ -416,6 +419,26 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
         return NormalizeArgumentName(token);
     }
+
+    private static string? ExtractBareOptionPlaceholder(string key)
+    {
+        var matches = OptionTokenRegex().Matches(key);
+        if (matches.Count == 0)
+        {
+            return null;
+        }
+
+        var trailing = key[(matches[^1].Index + matches[^1].Length)..].Trim();
+        return IsBareOptionPlaceholder(trailing) ? trailing : null;
+    }
+
+    private static bool IsBareOptionPlaceholder(string trailing)
+        => !string.IsNullOrWhiteSpace(trailing)
+            && !trailing.Contains(' ', StringComparison.Ordinal)
+            && !trailing.StartsWith("<", StringComparison.Ordinal)
+            && !trailing.StartsWith("[", StringComparison.Ordinal)
+            && !trailing.StartsWith("-", StringComparison.Ordinal)
+            && !trailing.StartsWith("/", StringComparison.Ordinal);
 
     private static bool LooksLikeOptionPlaceholder(string value)
         => value.StartsWith("-", StringComparison.Ordinal)

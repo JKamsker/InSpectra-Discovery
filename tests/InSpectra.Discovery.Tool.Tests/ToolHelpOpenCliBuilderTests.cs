@@ -235,6 +235,33 @@ public sealed class ToolHelpOpenCliBuilderTests
     }
 
     [Fact]
+    public void Emits_Arguments_For_Bare_Word_Option_Metavars()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "nake",
+                Version: "4.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options:
+                [
+                    new ToolHelpItem("--runner NAME", false, "Runner to execute"),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build("nake", "4.0.0", helpDocuments);
+        var option = document["options"]![0]!;
+
+        Assert.Equal("--runner", option["name"]!.GetValue<string>());
+        Assert.Equal("NAME", option["arguments"]![0]!["name"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Prefers_Root_Command_Description_Over_Preamble_Description()
     {
         var builder = new ToolHelpOpenCliBuilder();

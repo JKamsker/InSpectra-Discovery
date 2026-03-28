@@ -55,9 +55,8 @@ internal sealed class ToolHelpCrawler
 
             foreach (var child in capture.Document.Commands)
             {
-                var childSegments = commandSegments
-                    .Concat(child.Key.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                    .ToArray();
+                var resolvedChildKey = ToolHelpCommandPathSupport.ResolveChildKey(commandPath, key, child.Key);
+                var childSegments = ToolHelpCommandPathSupport.SplitSegments(resolvedChildKey);
                 var childKey = GetKey(childSegments);
                 if (childSegments.Length <= MaxCommandDepth && seen.Add(childKey))
                 {

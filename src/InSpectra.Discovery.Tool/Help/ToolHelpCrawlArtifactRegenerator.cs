@@ -72,7 +72,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
     {
         var crawl = JsonNode.Parse(File.ReadAllText(candidate.CrawlPath))?.AsObject()
             ?? throw new InvalidOperationException($"Crawl artifact '{candidate.CrawlPath}' is empty.");
-        var parsedCaptures = ParseCaptures(crawl["commands"] as JsonArray);
+        var parsedCaptures = ParseCaptures(candidate.CommandName, crawl["commands"] as JsonArray);
         if (!parsedCaptures.TryGetValue(string.Empty, out _))
         {
             parsedCaptures[string.Empty] = CreateEmptyRootDocument();
@@ -104,7 +104,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             Options: [],
             Commands: []);
 
-    private Dictionary<string, ToolHelpDocument> ParseCaptures(JsonArray? captures)
+    private Dictionary<string, ToolHelpDocument> ParseCaptures(string rootCommandName, JsonArray? captures)
     {
         var documents = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase);
         foreach (var capture in captures?.OfType<JsonObject>() ?? [])
@@ -115,13 +115,14 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
                 continue;
             }
 
-            var commandKey = capture["command"]?.GetValue<string>() ?? string.Empty;
-            var commandSegments = SplitCommandSegments(commandKey);
             var document = _parser.Parse(payload);
+            var commandSegments = ToolHelpCommandPathSupport.ResolveStoredCaptureSegments(rootCommandName, capture["command"]?.GetValue<string>() ?? string.Empty, document);
             if (!document.HasContent || !ToolHelpDocumentInspector.IsCompatible(commandSegments, document))
             {
                 continue;
             }
+
+            var commandKey = commandSegments.Length == 0 ? string.Empty : string.Join(' ', commandSegments);
 
             if (!documents.TryGetValue(commandKey, out var existing) || ToolHelpDocumentInspector.Score(document) > ToolHelpDocumentInspector.Score(existing))
             {
@@ -226,12 +227,6 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             crawlPath,
             openCliPath);
     }
-
-    private static string[] SplitCommandSegments(string commandKey)
-        => string.IsNullOrWhiteSpace(commandKey)
-            ? []
-            : commandKey.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
     private static JsonNode? TryLoadJsonNode(string path)
     {
         if (!File.Exists(path))
