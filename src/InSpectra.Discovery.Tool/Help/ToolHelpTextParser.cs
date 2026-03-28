@@ -119,10 +119,12 @@ internal sealed partial class ToolHelpTextParser
         sections.TryGetValue("arguments", out var argumentLines);
         sections.TryGetValue("options", out var optionLines);
         sections.TryGetValue("commands", out var commandLines);
+        SplitArgumentSectionLines(argumentLines ?? [], out var parsedArgumentLines, out var optionStyleArgumentLines);
         var parsedUsageLines = TrimNonEmpty(usageLines ?? ToolHelpPreambleInference.InferUsageLines(preamble));
+        var rawOptionLines = new List<string>(optionLines ?? ToolHelpLegacyOptionTable.InferOptionLines(preamble, title, parsedUsageLines));
+        rawOptionLines.AddRange(optionStyleArgumentLines);
         var parsedOptions = ParseItems(
-            ToolHelpLegacyOptionTable.NormalizeOptionLines(
-                optionLines ?? ToolHelpLegacyOptionTable.InferOptionLines(preamble, title, parsedUsageLines)),
+            ToolHelpLegacyOptionTable.NormalizeOptionLines(rawOptionLines),
             ItemKind.Option);
 
         var commands = ParseItems(commandLines ?? [], ItemKind.Command);
@@ -139,7 +141,7 @@ internal sealed partial class ToolHelpTextParser
             ApplicationDescription: applicationDescription,
             CommandDescription: commandDescription,
             UsageLines: parsedUsageLines,
-            Arguments: ParseItems(argumentLines ?? [], ItemKind.Argument),
+            Arguments: ParseItems(parsedArgumentLines, ItemKind.Argument),
             Options: parsedOptions,
             Commands: commands);
     }
@@ -177,7 +179,10 @@ internal sealed partial class ToolHelpTextParser
         var alias = match.Groups["header"].Value.Trim();
         if (!SectionAliases.TryGetValue(alias, out matchedSectionName))
         {
-            return false;
+            if (!TryResolveSectionAlias(alias, out matchedSectionName))
+            {
+                return false;
+            }
         }
 
         matchedHeader = alias;
@@ -248,6 +253,33 @@ internal sealed partial class ToolHelpTextParser
 
         FlushItem(items, kind, key, isRequired, description);
         return items;
+    }
+
+    private static void SplitArgumentSectionLines(
+        IReadOnlyList<string> lines,
+        out IReadOnlyList<string> argumentLines,
+        out IReadOnlyList<string> optionLines)
+    {
+        var arguments = new List<string>();
+        var options = new List<string>();
+        List<string>? target = arguments;
+
+        foreach (var rawLine in lines)
+        {
+            if (TryParseItemStart(rawLine, ItemKind.Option, out _, out _, out _))
+            {
+                target = options;
+            }
+            else if (TryParseItemStart(rawLine, ItemKind.Argument, out _, out _, out _))
+            {
+                target = arguments;
+            }
+
+            target?.Add(rawLine);
+        }
+
+        argumentLines = arguments;
+        optionLines = options;
     }
 
     private static bool TryParseItemStart(string rawLine, ItemKind kind, out string key, out bool isRequired, out string? description)
@@ -494,6 +526,28 @@ internal sealed partial class ToolHelpTextParser
         return RejectedHelpInvocationRegex().IsMatch(line.Trim());
     }
 
+    private static bool TryResolveSectionAlias(string alias, out string sectionName)
+    {
+        if (alias.EndsWith("OPTIONS", StringComparison.OrdinalIgnoreCase)
+            || alias.EndsWith("OPTIONEN", StringComparison.OrdinalIgnoreCase))
+        {
+            sectionName = "options";
+            return true;
+        }
+
+        if (alias.EndsWith("ARGUMENTS", StringComparison.OrdinalIgnoreCase)
+            || alias.EndsWith("ARGUMENTE", StringComparison.OrdinalIgnoreCase)
+            || alias.EndsWith("PARAMETERS", StringComparison.OrdinalIgnoreCase)
+            || alias.EndsWith("PARAMETER", StringComparison.OrdinalIgnoreCase))
+        {
+            sectionName = "arguments";
+            return true;
+        }
+
+        sectionName = string.Empty;
+        return false;
+    }
+
     private static bool LooksLikeArgumentKey(string key)
         => key.Length > 0
             && !key.Contains(' ', StringComparison.Ordinal)
@@ -578,7 +632,7 @@ internal sealed partial class ToolHelpTextParser
     [GeneratedRegex(@"^(?:trace|debug|info|warn|warning|fail|error):\s|^\[\d{2}:\d{2}:\d{2}\s+[A-Z]{3}\]\s", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex StructuredLogPrefixRegex();
 
-    [GeneratedRegex(@"^(?:--help|-h|/\?)\s+is an unknown (?:parameter|option|argument)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?:--help|-h|/\?)\s+is an unknown (?:parameter|option|argument)\b|^Invalid usage\b|^Unknown argument or flag for value --help\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex RejectedHelpInvocationRegex();
 
     [GeneratedRegex(@"^\|\s*(?<alias>.+?)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]

@@ -210,6 +210,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
             foreach (Match match in UsageArgumentRegex().Matches(line))
             {
                 var value = match.Groups["name"].Value.Trim();
+                if (LooksLikeOptionPlaceholder(value))
+                {
+                    continue;
+                }
+
                 if (string.Equals(value, "command", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(value, "subcommand", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(value, "options", StringComparison.OrdinalIgnoreCase))
@@ -263,7 +268,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
                 .Where(alias => !string.Equals(alias, primary, StringComparison.OrdinalIgnoreCase))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray(),
-            ArgumentName: placeholders.FirstOrDefault(),
+            ArgumentName: NormalizeOptionArgumentName(placeholders.FirstOrDefault(), primary),
             ArgumentRequired: !key.Contains("[", StringComparison.Ordinal));
     }
 
@@ -287,6 +292,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
         signature = new ArgumentSignature(string.Empty, false);
         var trimmed = rawKey.Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return false;
+        }
+
+        if (LooksLikeOptionPlaceholder(trimmed))
         {
             return false;
         }
@@ -354,6 +364,51 @@ internal sealed partial class ToolHelpOpenCliBuilder
         normalized = InvalidArgumentTokenRegex().Replace(normalized, string.Empty);
         return normalized;
     }
+
+    private static string? NormalizeOptionArgumentName(string? rawPlaceholder, string? primaryOption)
+    {
+        if (string.IsNullOrWhiteSpace(rawPlaceholder))
+        {
+            return null;
+        }
+
+        if (rawPlaceholder.Contains('|', StringComparison.Ordinal) || LooksLikeOptionPlaceholder(rawPlaceholder))
+        {
+            return InferArgumentNameFromOption(primaryOption);
+        }
+
+        return TryParseArgumentSignature(rawPlaceholder, out var signature)
+            ? signature.Name
+            : InferArgumentNameFromOption(primaryOption);
+    }
+
+    private static string? InferArgumentNameFromOption(string? primaryOption)
+    {
+        if (string.IsNullOrWhiteSpace(primaryOption))
+        {
+            return null;
+        }
+
+        var token = primaryOption.TrimStart('-', '/');
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        var separator = token.IndexOfAny(['=', ':']);
+        if (separator >= 0)
+        {
+            token = token[..separator];
+        }
+
+        return NormalizeArgumentName(token);
+    }
+
+    private static bool LooksLikeOptionPlaceholder(string value)
+        => value.StartsWith("-", StringComparison.Ordinal)
+            || value.StartsWith("/", StringComparison.Ordinal)
+            || (value.Contains('|', StringComparison.Ordinal) && OptionTokenRegex().Match(value).Success)
+            || (value.Contains('=', StringComparison.Ordinal) && OptionTokenRegex().Match(value).Success);
 
     private static string NormalizeArgumentName(string key)
         => key.Replace('-', '_').ToUpperInvariant();

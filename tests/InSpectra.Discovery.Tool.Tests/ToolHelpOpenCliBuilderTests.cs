@@ -175,4 +175,36 @@ public sealed class ToolHelpOpenCliBuilderTests
         Assert.Equal(0, arguments[1]!["arity"]!["minimum"]!.GetValue<int>());
         Assert.Null(arguments[1]!["arity"]!["maximum"]);
     }
+
+    [Fact]
+    public void Skips_Option_Shaped_Placeholders_And_Normalizes_Choice_Metavars()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: ["demo [options] <--path|-p=<START_PATH>>"],
+                Arguments:
+                [
+                    new ToolHelpItem("--format-json", false, "Bad positional"),
+                ],
+                Options:
+                [
+                    new ToolHelpItem("--path|-p=<START_PATH>", false, "Start path"),
+                    new ToolHelpItem("-f, --format <Csv|Json|Table|Yaml>", false, "Output format"),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build("demo", "1.0.0", helpDocuments);
+        var options = document["options"]!.AsArray();
+
+        Assert.Null(document["arguments"]);
+        Assert.Equal("START_PATH", options[0]!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.Equal("FORMAT", options[1]!["arguments"]![0]!["name"]!.GetValue<string>());
+    }
 }

@@ -187,6 +187,72 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Rejects_Oakton_Invalid_Usage_As_NonHelp()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Invalid usage
+            Unknown argument or flag for value --help
+
+            awss3upload - AwsS3UploadCommand
+            └── AwsS3UploadCommand
+                └── dotnet run -- awss3upload <bucketname> <keyprefix> <localpath>
+            """);
+
+        Assert.False(document.HasContent);
+    }
+
+    [Fact]
+    public void Parses_Suffixed_Options_Sections()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            usage:
+              Runs the pipeline configured in the lua file
+                envm run [run-options] [file]
+
+            parameters:
+                file      The lua file containing the pipeline
+
+            run-options:
+                -s        Runs the pipeline without using stages
+                -v        Enables the verbose mode for logs
+                --test    Setup the test environment
+            """);
+
+        Assert.Contains(document.Arguments, argument => string.Equals(argument.Key, "file", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-s", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-v", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--test", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Reclassifies_Option_Shaped_Argument_Entries_As_Options()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Usage: dnp check-references [options] <--path|-p=<START_PATH>>
+
+            Arguments:
+              --path|-p=<START_PATH>  The path to a directory containing a
+                                      Directory.Packages.props file.
+
+            Options:
+              -?|-h|--help            Show help information.
+            """);
+
+        Assert.Empty(document.Arguments);
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--path|-p=<START_PATH>", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-?|-h|--help", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Infers_Usage_From_Preamble_Without_Usage_Section_Header()
     {
         var parser = new ToolHelpTextParser();
