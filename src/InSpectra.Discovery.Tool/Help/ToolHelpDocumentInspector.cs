@@ -14,24 +14,20 @@ internal static class ToolHelpDocumentInspector
             return HasStructuredContent(document);
         }
 
-        if (document.UsageLines.Any(line => ContainsPath(line, commandSegments)))
+        if (document.UsageLines.Any(line => ContainsPath(line, commandSegments))
+            || ContainsPath(document.Title, commandSegments))
         {
             return true;
         }
 
-        if (ContainsPath(document.Title, commandSegments))
+        if (document.Commands.Count > 0 || LooksLikeDispatcherUsage(document.UsageLines))
         {
-            return true;
+            return false;
         }
 
-        if (document.Commands.Count == 0)
-        {
-            return document.Options.Count > 0
-                || document.Arguments.Count > 0
-                || !string.IsNullOrWhiteSpace(document.CommandDescription);
-        }
-
-        return false;
+        return document.Options.Count > 0
+            || document.Arguments.Count > 0
+            || !string.IsNullOrWhiteSpace(document.CommandDescription);
     }
 
     public static bool IsCompatible(string[] commandSegments, ToolHelpDocument document)
@@ -43,6 +39,13 @@ internal static class ToolHelpDocumentInspector
             || document.Commands.Count > 0
             || document.Arguments.Count > 0
             || !string.IsNullOrWhiteSpace(document.CommandDescription);
+
+    private static bool LooksLikeDispatcherUsage(IReadOnlyList<string> usageLines)
+        => usageLines.Any(line =>
+            line.Contains("[command]", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("<command>", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("[subcommand]", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("<subcommand>", StringComparison.OrdinalIgnoreCase));
 
     private static bool ContainsPath(string? line, IReadOnlyList<string> commandSegments)
     {

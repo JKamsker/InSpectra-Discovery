@@ -724,6 +724,22 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Rejects_Unrecognized_Help_Switch_Preambles()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Unrecognized option '--help'
+            Usage: antlr4cg [options]
+            """);
+
+        Assert.False(document.HasContent);
+        Assert.Null(document.Title);
+        Assert.Empty(document.Options);
+    }
+
+    [Fact]
     public void Does_Not_Infer_Commands_From_DotnetToolList_Headers()
     {
         var parser = new ToolHelpTextParser();

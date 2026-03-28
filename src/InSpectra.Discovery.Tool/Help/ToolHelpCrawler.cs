@@ -160,12 +160,6 @@ internal sealed class ToolHelpCrawler
         var stderr = ToolCommandRuntime.NormalizeConsoleText(processResult.Stderr);
         var payloads = new List<string>();
 
-        if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
-        {
-            payloads.Add($"{stdout}\n{stderr}");
-            payloads.Add($"{stderr}\n{stdout}");
-        }
-
         if (!string.IsNullOrWhiteSpace(stdout))
         {
             payloads.Add(stdout);
@@ -174,6 +168,12 @@ internal sealed class ToolHelpCrawler
         if (!string.IsNullOrWhiteSpace(stderr))
         {
             payloads.Add(stderr);
+        }
+
+        if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
+        {
+            payloads.Add($"{stdout}\n{stderr}");
+            payloads.Add($"{stderr}\n{stdout}");
         }
 
         return payloads.Distinct(StringComparer.Ordinal).ToArray();

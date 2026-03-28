@@ -639,6 +639,157 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
             string.Equals(option?["name"]?.GetValue<string>(), "--verbose", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Regenerator_Prefers_Clean_Stream_Over_Mixed_Exception_Payload()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "samplehelp", "3.0.0");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "SampleHelp",
+                ["version"] = "3.0.0",
+                ["command"] = "samplehelp",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "crawled-from-help",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["crawlPath"] = "index/packages/samplehelp/3.0.0/crawl.json",
+                    ["opencliSource"] = "crawled-from-help",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["result"] = new JsonObject
+                        {
+                            ["stdout"] =
+                                """
+                                samplehelp 3.0.0
+
+                                Usage: samplehelp [options]
+
+                                Options:
+                                  --verbose  Verbose output.
+                                """,
+                            ["stderr"] =
+                                """
+                                Unhandled exception. System.InvalidOperationException: boom
+                                   at Program.Main(String[] args)
+                                """,
+                        },
+                    },
+                },
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        Assert.Equal("samplehelp", regenerated["info"]?["title"]?.GetValue<string>());
+        Assert.Contains(regenerated["options"]!.AsArray(), option =>
+            string.Equals(option?["name"]?.GetValue<string>(), "--verbose", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Regenerator_Does_Not_Attach_Root_Help_To_Subcommand_Captures()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "samplehelp", "4.0.0");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "SampleHelp",
+                ["version"] = "4.0.0",
+                ["command"] = "samplehelp",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "crawled-from-help",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["crawlPath"] = "index/packages/samplehelp/4.0.0/crawl.json",
+                    ["opencliSource"] = "crawled-from-help",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            samplehelp 4.0.0
+
+                            Usage: samplehelp [command] [options]
+
+                            Commands:
+                              deploy  Deploy the sample.
+                            """,
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "deploy",
+                        ["payload"] =
+                            """
+                            samplehelp 4.0.0
+
+                            Usage: samplehelp [command] [options]
+
+                            Options:
+                              --verbose  Verbose output.
+                            """,
+                    },
+                },
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        var command = Assert.IsType<JsonObject>(Assert.Single(regenerated["commands"]!.AsArray()));
+        Assert.Equal("deploy", command["name"]?.GetValue<string>());
+        Assert.Null(command["options"]);
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

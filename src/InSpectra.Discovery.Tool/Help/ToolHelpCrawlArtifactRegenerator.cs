@@ -176,12 +176,6 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             var stdout = ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>());
             var stderr = ToolCommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
 
-            if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
-            {
-                payloads.Add($"{stdout}\n{stderr}");
-                payloads.Add($"{stderr}\n{stdout}");
-            }
-
             if (!string.IsNullOrWhiteSpace(stdout))
             {
                 payloads.Add(stdout);
@@ -190,6 +184,12 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             if (!string.IsNullOrWhiteSpace(stderr))
             {
                 payloads.Add(stderr);
+            }
+
+            if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
+            {
+                payloads.Add($"{stdout}\n{stderr}");
+                payloads.Add($"{stderr}\n{stdout}");
             }
         }
 
