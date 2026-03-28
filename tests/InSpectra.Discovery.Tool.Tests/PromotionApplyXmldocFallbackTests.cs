@@ -132,6 +132,9 @@ public sealed class PromotionApplyXmldocFallbackTests
             var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "xmldoc.tool", "1.2.3", "metadata.json"));
             Assert.Equal("ok", metadata["status"]?.GetValue<string>());
             Assert.Equal("synthesized-from-xmldoc", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+            Assert.Equal("xmldoc", metadata["analysisMode"]?.GetValue<string>());
+            Assert.Equal("xmldoc", metadata["analysisSelection"]?["selectedMode"]?.GetValue<string>());
+            Assert.Equal("native", metadata["analysisSelection"]?["preferredMode"]?.GetValue<string>());
 
             var openCli = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "xmldoc.tool", "1.2.3", "opencli.json"));
             Assert.Equal("synthesized-from-xmldoc", openCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());

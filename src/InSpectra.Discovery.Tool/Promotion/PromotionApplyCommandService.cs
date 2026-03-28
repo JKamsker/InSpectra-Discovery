@@ -328,6 +328,11 @@ internal sealed class PromotionApplyCommandService
             openCliSource = "synthesized-from-xmldoc";
         }
 
+        BackfillAnalysisModeSelection(
+            result,
+            OpenCliArtifactSourceSupport.InferAnalysisMode(openCliSource)
+            ?? OpenCliArtifactSourceSupport.InferAnalysisMode(openCliDocument?["x-inspectra"]?["artifactSource"]?.GetValue<string>()));
+
         if (openCliDocument is not null && !string.IsNullOrWhiteSpace(result["cliFramework"]?.GetValue<string>()))
         {
             openCliDocument["x-inspectra"]!.AsObject()["cliFramework"] = result["cliFramework"]!.GetValue<string>();
@@ -412,14 +417,28 @@ internal sealed class PromotionApplyCommandService
             introspection["opencli"] = openCliIntrospection;
         }
 
+        var metadataAnalysisMode = OpenCliArtifactSourceSupport.InferAnalysisMode(openCliSource)
+            ?? OpenCliArtifactSourceSupport.InferAnalysisMode(openCliDocument?["x-inspectra"]?["artifactSource"]?.GetValue<string>())
+            ?? result["analysisMode"]?.GetValue<string>();
+        var metadataAnalysisSelection = result["analysisSelection"]?.DeepClone() as JsonObject;
+        if (!string.IsNullOrWhiteSpace(metadataAnalysisMode))
+        {
+            metadataAnalysisSelection ??= new JsonObject();
+            metadataAnalysisSelection["selectedMode"] = metadataAnalysisMode;
+            if (metadataAnalysisSelection["preferredMode"] is null)
+            {
+                metadataAnalysisSelection["preferredMode"] = metadataAnalysisMode;
+            }
+        }
+
         var metadata = new JsonObject
         {
             ["schemaVersion"] = 1,
             ["packageId"] = packageId,
             ["version"] = version,
             ["trusted"] = false,
-            ["analysisMode"] = result["analysisMode"]?.GetValue<string>(),
-            ["analysisSelection"] = result["analysisSelection"]?.DeepClone(),
+            ["analysisMode"] = metadataAnalysisMode,
+            ["analysisSelection"] = metadataAnalysisSelection,
             ["fallback"] = result["fallback"]?.DeepClone(),
             ["cliFramework"] = result["cliFramework"]?.GetValue<string>(),
             ["source"] = result["source"]?.GetValue<string>(),
@@ -460,6 +479,19 @@ internal sealed class PromotionApplyCommandService
         };
 
         RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
+
+        if (hasOpenCliOutput && !string.IsNullOrWhiteSpace(openCliSource))
+        {
+            OpenCliArtifactMetadataRepair.SyncMetadata(
+                repositoryRoot,
+                metadataPath,
+                openCliPath,
+                openCliSource,
+                crawlPath: hasCrawlArtifact ? crawlPath : null,
+                xmldocPath: !string.IsNullOrWhiteSpace(xmlDocContent) ? xmlDocPath : null,
+                synthesizedArtifact: string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase));
+        }
+
         return metadata["artifacts"]!.DeepClone().AsObject();
     }
 
@@ -481,9 +513,9 @@ internal sealed class PromotionApplyCommandService
         JsonObject item,
         JsonObject result)
         => FirstNonEmpty(
+            InferCliFxModeFromCrawl(crawlArtifact),
             InferAnalysisModeFromOpenCli(openCliArtifact),
             OpenCliArtifactSourceSupport.InferAnalysisMode(result["artifacts"]?["opencliSource"]?.GetValue<string>()),
-            InferCliFxModeFromCrawl(crawlArtifact),
             crawlArtifact is not null ? PreferCrawlBackedMode(result["analysisMode"]?.GetValue<string>()) : null,
             crawlArtifact is not null ? PreferCrawlBackedMode(item["analysisMode"]?.GetValue<string>()) : null,
             result["analysisMode"]?.GetValue<string>(),

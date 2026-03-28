@@ -97,6 +97,21 @@ internal static class OpenCliArtifactMetadataRepair
         introspection["opencli"] = openCliIntrospection;
         metadata["introspection"] = introspection;
 
+        var analysisMode = OpenCliArtifactSourceSupport.InferAnalysisMode(artifactSource);
+        if (!string.IsNullOrWhiteSpace(analysisMode))
+        {
+            metadata["analysisMode"] = analysisMode;
+
+            var analysisSelection = metadata["analysisSelection"] as JsonObject ?? new JsonObject();
+            analysisSelection["selectedMode"] = analysisMode;
+            if (analysisSelection["preferredMode"] is null)
+            {
+                analysisSelection["preferredMode"] = analysisMode;
+            }
+
+            metadata["analysisSelection"] = analysisSelection;
+        }
+
         if (JsonNode.DeepEquals(original, metadata))
         {
             return false;
