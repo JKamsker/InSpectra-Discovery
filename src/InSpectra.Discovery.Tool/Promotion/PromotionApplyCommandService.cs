@@ -74,9 +74,14 @@ internal sealed class PromotionApplyCommandService
             {
                 var openCliArtifact = result["artifacts"]?["opencliArtifact"]?.GetValue<string>();
                 var xmlDocArtifact = result["artifacts"]?["xmldocArtifact"]?.GetValue<string>();
-                var openCliExists = !string.IsNullOrWhiteSpace(openCliArtifact) && artifactDirectory is not null && File.Exists(Path.Combine(artifactDirectory, openCliArtifact));
-                var xmlDocExists = !string.IsNullOrWhiteSpace(xmlDocArtifact) && artifactDirectory is not null && File.Exists(Path.Combine(artifactDirectory, xmlDocArtifact));
+                var openCliArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, openCliArtifact);
+                var xmlDocArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, xmlDocArtifact);
+                var openCliExists = openCliArtifactPath is not null;
+                var xmlDocExists = xmlDocArtifactPath is not null;
+                var hasUsableOpenCli = openCliArtifactPath is not null
+                    && PromotionArtifactSupport.TryLoadJsonObject(openCliArtifactPath, out _);
                 var declaredMissing = new List<string>();
+                var invalidArtifacts = new List<string>();
 
                 if (!string.IsNullOrWhiteSpace(openCliArtifact) && !openCliExists)
                 {
@@ -88,10 +93,17 @@ internal sealed class PromotionApplyCommandService
                     declaredMissing.Add(xmlDocArtifact);
                 }
 
-                if (declaredMissing.Count > 0 || !(openCliExists || xmlDocExists))
+                if (openCliArtifactPath is not null && !hasUsableOpenCli)
+                {
+                    invalidArtifacts.Add(openCliArtifact!);
+                }
+
+                if (declaredMissing.Count > 0 || invalidArtifacts.Count > 0 || !(hasUsableOpenCli || xmlDocExists))
                 {
                     var message = declaredMissing.Count > 0
                         ? "Success result declared artifact(s) that were not uploaded: " + string.Join(", ", declaredMissing)
+                        : invalidArtifacts.Count > 0
+                            ? "Success result declared OpenCLI artifact(s) that are not JSON objects: " + string.Join(", ", invalidArtifacts)
                         : "Success result did not include either opencli.json or xmldoc.xml.";
                     result = PromotionResultSupport.NewSyntheticFailureResult(
                         item,
@@ -192,25 +204,21 @@ internal sealed class PromotionApplyCommandService
         var openCliArtifact = result["artifacts"]?["opencliArtifact"]?.GetValue<string>();
         var crawlArtifact = result["artifacts"]?["crawlArtifact"]?.GetValue<string>();
         var xmlDocArtifact = result["artifacts"]?["xmldocArtifact"]?.GetValue<string>();
-        var hasOpenCliArtifact = !string.IsNullOrWhiteSpace(openCliArtifact) && artifactDirectory is not null && File.Exists(Path.Combine(artifactDirectory, openCliArtifact));
-        var hasXmlDocArtifact = !string.IsNullOrWhiteSpace(xmlDocArtifact) && artifactDirectory is not null && File.Exists(Path.Combine(artifactDirectory, xmlDocArtifact));
+        var openCliArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, openCliArtifact);
+        var xmlDocArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, xmlDocArtifact);
         string? openCliSource = null;
         JsonObject? openCliDocument = null;
         string? xmlDocContent = null;
-        if (hasOpenCliArtifact)
+        if (openCliArtifactPath is not null && PromotionArtifactSupport.TryLoadJsonObject(openCliArtifactPath, out var parsedOpenCli))
         {
-            var parsedOpenCli = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(artifactDirectory!, openCliArtifact!), cancellationToken));
-            if (parsedOpenCli is JsonObject openCliObject)
-            {
-                openCliSource = ResolveOpenCliSource(openCliObject);
-                OpenCliDocumentSanitizer.EnsureArtifactSource(openCliObject, openCliSource);
-                openCliDocument = OpenCliDocumentSanitizer.Sanitize(openCliObject);
-            }
+            openCliSource = ResolveOpenCliSource(parsedOpenCli!);
+            OpenCliDocumentSanitizer.EnsureArtifactSource(parsedOpenCli!, openCliSource);
+            openCliDocument = OpenCliDocumentSanitizer.Sanitize(parsedOpenCli!);
         }
 
-        if (hasXmlDocArtifact)
+        if (xmlDocArtifactPath is not null)
         {
-            xmlDocContent = await File.ReadAllTextAsync(Path.Combine(artifactDirectory!, xmlDocArtifact!), cancellationToken);
+            xmlDocContent = await File.ReadAllTextAsync(xmlDocArtifactPath, cancellationToken);
         }
 
         if (openCliDocument is null && !string.IsNullOrWhiteSpace(xmlDocContent))
