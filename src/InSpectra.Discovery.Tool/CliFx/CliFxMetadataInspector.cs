@@ -148,7 +148,8 @@ internal sealed class CliFxMetadataInspector
             ClrType: clrType,
             Description: GetNamedArgument<string>(attribute, "Description"),
             EnvironmentVariable: GetNamedArgument<string>(attribute, "EnvironmentVariable"),
-            AcceptedValues: acceptedValues);
+            AcceptedValues: acceptedValues,
+            ValueName: property.Name);
     }
 
     private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)

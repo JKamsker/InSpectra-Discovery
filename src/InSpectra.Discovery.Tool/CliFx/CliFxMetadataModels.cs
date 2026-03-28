@@ -22,7 +22,8 @@ internal sealed record CliFxOptionDefinition(
     string? ClrType,
     string? Description,
     string? EnvironmentVariable,
-    IReadOnlyList<string> AcceptedValues);
+    IReadOnlyList<string> AcceptedValues,
+    string? ValueName = null);
 
 internal sealed record CliFxHelpDocument(
     string? Title,

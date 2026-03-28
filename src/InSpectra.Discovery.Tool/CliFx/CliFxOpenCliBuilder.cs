@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json.Nodes;
 internal sealed class CliFxOpenCliBuilder
 {
@@ -182,7 +183,7 @@ internal sealed class CliFxOpenCliBuilder
             optionNode["aliases"] = aliases;
         }
 
-        var argument = BuildOptionArgument(definition, definition?.Name ?? longName ?? shortName?.ToString() ?? "VALUE");
+        var argument = BuildOptionArgument(definition, definition?.ValueName ?? definition?.Name ?? longName ?? shortName?.ToString() ?? "VALUE");
         if (argument is not null)
         {
             optionNode["arguments"] = new JsonArray { argument };
@@ -225,10 +226,9 @@ internal sealed class CliFxOpenCliBuilder
             return null;
         }
 
-        fallbackName = CliFxOptionNameSupport.NormalizeLongName(fallbackName) ?? fallbackName;
         var argument = new JsonObject
         {
-            ["name"] = fallbackName.ToUpperInvariant(),
+            ["name"] = NormalizeOptionArgumentName(fallbackName),
             ["required"] = definition.IsRequired,
             ["arity"] = BuildArity(definition.IsSequence, definition.IsRequired ? 1 : 0),
         };
@@ -282,6 +282,46 @@ internal sealed class CliFxOpenCliBuilder
         {
             node["acceptedValues"] = new JsonArray(acceptedValues.Select(value => JsonValue.Create(value)).ToArray());
         }
+    }
+
+    private static string NormalizeOptionArgumentName(string fallbackName)
+    {
+        fallbackName = CliFxOptionNameSupport.NormalizeLongName(fallbackName) ?? fallbackName;
+        if (string.IsNullOrWhiteSpace(fallbackName))
+        {
+            return "VALUE";
+        }
+
+        var builder = new StringBuilder();
+        char? previous = null;
+        foreach (var character in fallbackName)
+        {
+            if (!char.IsLetterOrDigit(character))
+            {
+                if (builder.Length > 0 && builder[^1] != '_')
+                {
+                    builder.Append('_');
+                }
+
+                previous = character;
+                continue;
+            }
+
+            if (builder.Length > 0
+                && char.IsUpper(character)
+                && previous is { } previousValue
+                && (char.IsLower(previousValue) || char.IsDigit(previousValue))
+                && builder[^1] != '_')
+            {
+                builder.Append('_');
+            }
+
+            builder.Append(char.ToUpperInvariant(character));
+            previous = character;
+        }
+
+        var normalized = builder.ToString().Trim('_');
+        return string.IsNullOrWhiteSpace(normalized) ? "VALUE" : normalized;
     }
 
     private static void AddIfPresent(JsonObject target, string propertyName, JsonNode? value)

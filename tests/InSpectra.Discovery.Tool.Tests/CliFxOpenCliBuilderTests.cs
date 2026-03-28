@@ -172,4 +172,47 @@ public sealed class CliFxOpenCliBuilderTests
         Assert.Equal("-x", install["options"]![0]!["aliases"]![0]!.GetValue<string>());
         Assert.Equal("PROXY", install["options"]![0]!["arguments"]![0]!["name"]!.GetValue<string>());
     }
+
+    [Fact]
+    public void Uses_Metadata_ValueName_For_ShortOnly_Options()
+    {
+        var builder = new CliFxOpenCliBuilder();
+        var staticCommands = new Dictionary<string, CliFxCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Name: null,
+                Description: "Default command",
+                Parameters: [],
+                Options:
+                [
+                    new CliFxOptionDefinition(
+                        Name: null,
+                        ShortName: 's',
+                        IsRequired: true,
+                        IsSequence: false,
+                        IsBoolLike: false,
+                        ClrType: "System.String",
+                        Description: "Script path",
+                        EnvironmentVariable: null,
+                        AcceptedValues: [],
+                        ValueName: "scriptPath"),
+                ]),
+        };
+
+        var document = builder.Build(
+            "demo",
+            "1.0.0",
+            staticCommands,
+            new Dictionary<string, CliFxHelpDocument>(StringComparer.OrdinalIgnoreCase));
+
+        var optionNode = Assert.Single(document["options"]!.AsArray());
+        Assert.NotNull(optionNode);
+        var option = optionNode!.AsObject();
+        var argumentNode = Assert.Single(option["arguments"]!.AsArray());
+        Assert.NotNull(argumentNode);
+        var argument = argumentNode!.AsObject();
+
+        Assert.Equal("-s", option["name"]!.GetValue<string>());
+        Assert.Equal("SCRIPT_PATH", argument["name"]!.GetValue<string>());
+    }
 }
