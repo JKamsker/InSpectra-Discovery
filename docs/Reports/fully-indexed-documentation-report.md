@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-28 15:53:17+00:00
+Generated: 2026-03-28 18:21:37+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -64,7 +64,7 @@ Incomplete: 81
 | [MrKWatkins.OakIO.Tool](#pkg-mrkwatkins-oakio-tool) | 1.0.4 | ok | xml-ready | 2/2 | 0/0 | 3/3 | 0/2 | FAIL |
 | [MrKWatkins.RemoveJetBrainsAnnotations](#pkg-mrkwatkins-removejetbrainsannotations) | 1.1.0 | ok | xml-ready | 0/0 | 0/0 | 0/1 | 0/0 | FAIL |
 | [MrKWatkins.Sesharp.Tool](#pkg-mrkwatkins-sesharp-tool) | 1.6.0 | ok | xml-ready | 0/0 | 0/3 | 0/1 | 0/0 | FAIL |
-| [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.3 | ok | xml-ready | 61/61 | 608/645 | 2/30 | 0/50 | FAIL |
+| [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.4 | ok | xml-ready | 65/65 | 656/696 | 2/32 | 0/53 | FAIL |
 | [Nivobi.GitBuddy](#pkg-nivobi-gitbuddy) | 1.3.1 | ok | xml-ready | 15/15 | 12/15 | 7/8 | 0/15 | FAIL |
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.31 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [Notify.Console](#pkg-notify-console) | 1.1.0 | ok | xml-ready | 3/3 | 0/5 | 0/1 | 0/3 | FAIL |
@@ -131,7 +131,7 @@ Incomplete: 81
 | [DPI](#pkg-dpi) | 2026.2.11.364 | ok | xml-ready | 3/3 | 7/7 | 1/1 | 2/2 | PASS |
 | [Garrard.CloudShare.Receiver](#pkg-garrard-cloudshare-receiver) | 0.1.9 | ok | xml-ready | 0/0 | 7/7 | 0/0 | 0/0 | PASS |
 | [Garrard.CloudShare.Sender](#pkg-garrard-cloudshare-sender) | 0.1.9 | ok | xml-ready | 0/0 | 5/5 | 0/0 | 0/0 | PASS |
-| [GeoMapCli](#pkg-geomapcli) | 0.0.6-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
+| [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
 | [GitCommitAnalyzer](#pkg-gitcommitanalyzer) | 1.0.0 | ok | xml-ready | 0/0 | 2/2 | 1/1 | 0/0 | PASS |
 | [gsg](#pkg-gsg) | 0.0.24 | ok | xml-ready | 3/3 | 28/28 | 0/0 | 3/3 | PASS |
 | [HttpGenerator](#pkg-httpgenerator) | 1.1.0-preview.18 | ok | xml-ready | 0/0 | 15/15 | 1/1 | 0/0 | PASS |
@@ -991,14 +991,14 @@ Incomplete: 81
 <a id="pkg-nexudus-cli"></a>
 ### Nexudus.Cli
 
-- Version: `0.1.3`
+- Version: `0.1.4`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
-- Command documentation: `61/61`
-- Option documentation: `608/645`
-- Argument documentation: `2/30`
-- Leaf command examples: `0/50`
+- Command documentation: `65/65`
+- Option documentation: `656/696`
+- Argument documentation: `2/32`
+- Leaf command examples: `0/53`
 - Overall: `FAIL`
 - Missing command descriptions: None
 - Missing option descriptions: businesses list --page, businesses list --query, businesses list --size, countries list --page, countries list --query, countries list --size, currencies list --page, currencies list --query, currencies list --size, extraservices delete --yes, extraservices list --page, extraservices list --query, extraservices list --size, productextraservices delete --yes, productextraservices list --page, productextraservices list --query, productextraservices list --size, products delete --yes, products list --page, products list --query, products list --size, producttimepasses delete --yes, producttimepasses list --page, producttimepasses list --query, producttimepasses list --size, resources delete --yes, resources list --page, resources list --query, resources list --size, resourcetypes delete --yes, resourcetypes list --page, resourcetypes list --query, resourcetypes list --size, timepasses delete --yes, timepasses list --page, timepasses list --query, timepasses list --size
@@ -2130,7 +2130,7 @@ Incomplete: 81
 <a id="pkg-geomapcli"></a>
 ### GeoMapCli
 
-- Version: `0.0.6-beta`
+- Version: `0.0.8-beta`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
