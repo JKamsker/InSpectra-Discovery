@@ -136,6 +136,13 @@ public sealed class PromotionApplyCommandServiceTests
                     ["trusted"] = false,
                     ["source"] = "analyze-untrusted-batch",
                     ["cliFramework"] = "System.CommandLine",
+                    ["analysisMode"] = "native",
+                    ["analysisSelection"] = new JsonObject
+                    {
+                        ["preferredMode"] = "native",
+                        ["selectedMode"] = "native",
+                        ["reason"] = "confirmed-spectre-console-cli",
+                    },
                     ["analyzedAt"] = "2026-03-27T01:00:00Z",
                     ["disposition"] = "success",
                     ["retryEligible"] = false,
@@ -254,9 +261,13 @@ public sealed class PromotionApplyCommandServiceTests
 
             var sampleMetadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3", "metadata.json"));
             Assert.Equal(1234L, sampleMetadata["totalDownloads"]?.GetValue<long>());
+            Assert.Equal("ok", sampleMetadata["status"]?.GetValue<string>());
+            Assert.Equal("native", sampleMetadata["analysisMode"]?.GetValue<string>());
+            Assert.Equal("native", sampleMetadata["analysisSelection"]?["preferredMode"]?.GetValue<string>());
             Assert.Equal("System.CommandLine", sampleMetadata["cliFramework"]?.GetValue<string>());
             Assert.Equal("index/packages/sample.tool/1.2.3/crawl.json", sampleMetadata["artifacts"]?["crawlPath"]?.GetValue<string>());
             Assert.Equal("tool-output", sampleMetadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+            Assert.Equal("tool-output", sampleMetadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
 
             var sampleCrawl = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3", "crawl.json"));
             Assert.Equal(1, sampleCrawl["captureCount"]?.GetValue<int>());
@@ -300,6 +311,330 @@ public sealed class PromotionApplyCommandServiceTests
             Assert.Equal(4321L, FindPackage(browserIndex, "Existing.Tool")["totalDownloads"]?.GetValue<long>());
             Assert.Equal(1234L, FindPackage(browserIndex, "Sample.Tool")["totalDownloads"]?.GetValue<long>());
             Assert.Equal("System.CommandLine", FindPackage(browserIndex, "Sample.Tool")["cliFramework"]?.GetValue<string>());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyUntrustedAsync_PreservesHelpDerivedOpenCliProvenance_AndMarksSuccessAsOk()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Help.Tool",
+                            ["latestVersion"] = "2.0.0",
+                            ["totalDownloads"] = 250,
+                            ["projectUrl"] = "https://help.example",
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-help",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Help.Tool",
+                            ["version"] = "2.0.0",
+                            ["attempt"] = 1,
+                            ["command"] = "help-tool",
+                            ["cliFramework"] = "System.CommandLine",
+                            ["analysisMode"] = "help",
+                            ["packageUrl"] = "https://www.nuget.org/packages/Help.Tool/2.0.0",
+                            ["packageContentUrl"] = "https://nuget.test/help.tool.2.0.0.nupkg",
+                            ["catalogEntryUrl"] = "https://nuget.test/catalog/help.tool.2.0.0.json",
+                            ["totalDownloads"] = 250,
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-help-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Help.Tool",
+                    ["version"] = "2.0.0",
+                    ["batchId"] = "batch-help",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["cliFramework"] = "System.CommandLine",
+                    ["analysisMode"] = "help",
+                    ["analysisSelection"] = new JsonObject
+                    {
+                        ["preferredMode"] = "help",
+                        ["selectedMode"] = "help",
+                        ["reason"] = "generic-help-crawl",
+                    },
+                    ["fallback"] = new JsonObject
+                    {
+                        ["from"] = "native",
+                        ["classification"] = "unsupported-command",
+                    },
+                    ["analyzedAt"] = "2026-03-27T02:00:00Z",
+                    ["disposition"] = "success",
+                    ["packageUrl"] = "https://www.nuget.org/packages/Help.Tool/2.0.0",
+                    ["packageContentUrl"] = "https://nuget.test/help.tool.2.0.0.nupkg",
+                    ["registrationLeafUrl"] = "https://nuget.test/registration/help.tool/2.0.0.json",
+                    ["catalogEntryUrl"] = "https://nuget.test/catalog/help.tool.2.0.0.json",
+                    ["projectUrl"] = "https://help.example",
+                    ["publishedAt"] = "2026-03-27T00:15:00Z",
+                    ["totalDownloads"] = 250,
+                    ["command"] = "help-tool",
+                    ["introspection"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                        ["xmldoc"] = null,
+                    },
+                    ["steps"] = new JsonObject
+                    {
+                        ["install"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                            ["classification"] = "help-crawl",
+                        },
+                        ["xmldoc"] = null,
+                    },
+                    ["timings"] = new JsonObject
+                    {
+                        ["totalMs"] = 150,
+                        ["crawlMs"] = 75,
+                    },
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
+                        ["xmldocArtifact"] = null,
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-help-tool", "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                    ["info"] = new JsonObject
+                    {
+                        ["title"] = "Help Tool",
+                        ["version"] = "2.0.0",
+                    },
+                    ["x-inspectra"] = new JsonObject
+                    {
+                        ["artifactSource"] = "crawled-from-help",
+                        ["helpDocumentCount"] = 4,
+                    },
+                    ["commands"] = new JsonArray(),
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-help-tool", "crawl.json"),
+                new JsonObject
+                {
+                    ["documentCount"] = 4,
+                    ["captureCount"] = 4,
+                    ["commands"] = new JsonArray(),
+                });
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "help.tool", "2.0.0", "metadata.json"));
+            Assert.Equal("ok", metadata["status"]?.GetValue<string>());
+            Assert.Equal("help", metadata["analysisMode"]?.GetValue<string>());
+            Assert.Equal("help", metadata["analysisSelection"]?["selectedMode"]?.GetValue<string>());
+            Assert.Equal("native", metadata["fallback"]?["from"]?.GetValue<string>());
+            Assert.Equal("crawled-from-help", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+            Assert.Equal("crawled-from-help", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal("crawled-from-help", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+
+            var openCli = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "help.tool", "2.0.0", "opencli.json"));
+            Assert.Equal("crawled-from-help", openCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyUntrustedAsync_MarksXmldocSynthesizedSuccess_AsOk()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Xml.Tool",
+                            ["latestVersion"] = "3.0.0",
+                            ["totalDownloads"] = 150,
+                            ["projectUrl"] = "https://xml.example",
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-xml",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Xml.Tool",
+                            ["version"] = "3.0.0",
+                            ["attempt"] = 1,
+                            ["command"] = "xml-tool",
+                            ["analysisMode"] = "native",
+                            ["packageUrl"] = "https://www.nuget.org/packages/Xml.Tool/3.0.0",
+                            ["packageContentUrl"] = "https://nuget.test/xml.tool.3.0.0.nupkg",
+                            ["catalogEntryUrl"] = "https://nuget.test/catalog/xml.tool.3.0.0.json",
+                            ["totalDownloads"] = 150,
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-xml-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Xml.Tool",
+                    ["version"] = "3.0.0",
+                    ["batchId"] = "batch-xml",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analysisMode"] = "native",
+                    ["analyzedAt"] = "2026-03-27T03:00:00Z",
+                    ["disposition"] = "success",
+                    ["packageUrl"] = "https://www.nuget.org/packages/Xml.Tool/3.0.0",
+                    ["packageContentUrl"] = "https://nuget.test/xml.tool.3.0.0.nupkg",
+                    ["registrationLeafUrl"] = "https://nuget.test/registration/xml.tool/3.0.0.json",
+                    ["catalogEntryUrl"] = "https://nuget.test/catalog/xml.tool.3.0.0.json",
+                    ["projectUrl"] = "https://xml.example",
+                    ["publishedAt"] = "2026-03-27T00:45:00Z",
+                    ["totalDownloads"] = 150,
+                    ["command"] = "xml-tool",
+                    ["introspection"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "missing",
+                        },
+                        ["xmldoc"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                    },
+                    ["steps"] = new JsonObject
+                    {
+                        ["install"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "missing",
+                        },
+                        ["xmldoc"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                    },
+                    ["timings"] = new JsonObject
+                    {
+                        ["totalMs"] = 175,
+                        ["xmldocMs"] = 60,
+                    },
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = null,
+                        ["xmldocArtifact"] = "xmldoc.xml",
+                    },
+                });
+
+            RepositoryPathResolver.WriteTextFile(
+                Path.Combine(downloadRoot, "analysis-xml-tool", "xmldoc.xml"),
+                """
+                <Model>
+                  <Command Name="serve">
+                    <Description>Serve content</Description>
+                  </Command>
+                </Model>
+                """);
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "xml.tool", "3.0.0", "metadata.json"));
+            Assert.Equal("ok", metadata["status"]?.GetValue<string>());
+            Assert.Equal("synthesized-from-xmldoc", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+            Assert.Equal("synthesized-from-xmldoc", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal("synthesized-from-xmldoc", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+            Assert.True(metadata["introspection"]?["opencli"]?["synthesizedArtifact"]?.GetValue<bool>());
+
+            var openCli = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "xml.tool", "3.0.0", "opencli.json"));
+            Assert.Equal("synthesized-from-xmldoc", openCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
         }
         finally
         {

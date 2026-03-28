@@ -26,7 +26,11 @@ internal sealed class PromotionApplyCommandService
             }
 
             var key = $"{result["packageId"]?.GetValue<string>()}|{result["version"]?.GetValue<string>()}";
-            resultLookup[key] = (result, Path.GetDirectoryName(resultPath)!);
+            if (!resultLookup.TryGetValue(key, out var existing)
+                || GetAttempt(result) >= GetAttempt(existing.Result))
+            {
+                resultLookup[key] = (result, Path.GetDirectoryName(resultPath)!);
+            }
         }
 
         var summary = new JsonObject
@@ -191,33 +195,30 @@ internal sealed class PromotionApplyCommandService
         var hasOpenCliArtifact = !string.IsNullOrWhiteSpace(openCliArtifact) && artifactDirectory is not null && File.Exists(Path.Combine(artifactDirectory, openCliArtifact));
         var hasXmlDocArtifact = !string.IsNullOrWhiteSpace(xmlDocArtifact) && artifactDirectory is not null && File.Exists(Path.Combine(artifactDirectory, xmlDocArtifact));
         string? openCliSource = null;
-        JsonNode? openCliDocument = null;
+        JsonObject? openCliDocument = null;
         string? xmlDocContent = null;
         if (hasOpenCliArtifact)
         {
-            openCliDocument = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(artifactDirectory!, openCliArtifact!), cancellationToken));
-            openCliSource = "tool-output";
+            var parsedOpenCli = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(artifactDirectory!, openCliArtifact!), cancellationToken));
+            if (parsedOpenCli is JsonObject openCliObject)
+            {
+                openCliSource = ResolveOpenCliSource(openCliObject);
+                OpenCliDocumentSanitizer.EnsureArtifactSource(openCliObject, openCliSource);
+                openCliDocument = OpenCliDocumentSanitizer.Sanitize(openCliObject);
+            }
         }
+
         if (hasXmlDocArtifact)
         {
             xmlDocContent = await File.ReadAllTextAsync(Path.Combine(artifactDirectory!, xmlDocArtifact!), cancellationToken);
         }
+
         if (openCliDocument is null && !string.IsNullOrWhiteSpace(xmlDocContent))
         {
             openCliDocument = OpenCliDocumentSynthesizer.ConvertFromXmldoc(
                 XDocument.Parse(xmlDocContent),
                 result["command"]?.GetValue<string>() ?? packageId);
             openCliSource = "synthesized-from-xmldoc";
-        }
-
-        if (openCliDocument is JsonObject openCliObject)
-        {
-            if (!string.IsNullOrWhiteSpace(openCliSource))
-            {
-                OpenCliDocumentSanitizer.EnsureArtifactSource(openCliObject, openCliSource);
-            }
-
-            openCliDocument = OpenCliDocumentSanitizer.Sanitize(openCliObject);
         }
 
         var hasOpenCliOutput = openCliDocument is not null;
@@ -269,9 +270,13 @@ internal sealed class PromotionApplyCommandService
 
         var introspection = result["introspection"]?.DeepClone() as JsonObject ?? new JsonObject();
         var openCliIntrospection = introspection["opencli"]?.DeepClone() as JsonObject;
-        if (openCliIntrospection is not null && string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.Ordinal))
+        if (openCliIntrospection is not null && hasOpenCliOutput)
         {
-            openCliIntrospection["synthesizedArtifact"] = true;
+            if (string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.Ordinal))
+            {
+                openCliIntrospection["synthesizedArtifact"] = true;
+            }
+
             openCliIntrospection["artifactSource"] = openCliSource;
             introspection["opencli"] = openCliIntrospection;
         }
@@ -282,11 +287,14 @@ internal sealed class PromotionApplyCommandService
             ["packageId"] = packageId,
             ["version"] = version,
             ["trusted"] = false,
+            ["analysisMode"] = result["analysisMode"]?.GetValue<string>(),
+            ["analysisSelection"] = result["analysisSelection"]?.DeepClone(),
+            ["fallback"] = result["fallback"]?.DeepClone(),
             ["cliFramework"] = result["cliFramework"]?.GetValue<string>(),
             ["source"] = result["source"]?.GetValue<string>(),
             ["batchId"] = result["batchId"]?.GetValue<string>(),
             ["attempt"] = result["attempt"]?.GetValue<int?>(),
-            ["status"] = hasOpenCliArtifact && hasXmlDocArtifact ? "ok" : "partial",
+            ["status"] = hasOpenCliOutput ? "ok" : "partial",
             ["evaluatedAt"] = result["analyzedAt"]?.GetValue<string>(),
             ["publishedAt"] = RepositoryPackageIndexBuilder.ToIsoTimestamp(result["publishedAt"]),
             ["packageUrl"] = result["packageUrl"]?.GetValue<string>(),
@@ -302,6 +310,7 @@ internal sealed class PromotionApplyCommandService
             ["toolSettingsPath"] = result["toolSettingsPath"]?.GetValue<string>(),
             ["detection"] = result["detection"]?.DeepClone(),
             ["introspection"] = introspection,
+            ["coverage"] = result["coverage"]?.DeepClone(),
             ["timings"] = result["timings"]?.DeepClone(),
             ["steps"] = new JsonObject
             {
@@ -322,4 +331,14 @@ internal sealed class PromotionApplyCommandService
         RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
         return metadata["artifacts"]!.DeepClone().AsObject();
     }
+
+    private static int GetAttempt(JsonObject result)
+        => result["attempt"]?.GetValue<int?>() ?? 0;
+
+    private static string ResolveOpenCliSource(JsonObject document)
+        => document["x-inspectra"]?["artifactSource"]?.GetValue<string>() switch
+        {
+            { Length: > 0 } artifactSource => artifactSource,
+            _ => "tool-output",
+        };
 }
