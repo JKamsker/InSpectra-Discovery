@@ -1,0 +1,102 @@
+internal sealed class ToolHelpCommandTreeBuilder
+{
+    public IReadOnlyList<ToolHelpCommandNode> Build(IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
+    {
+        var knownCommands = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var edges = new Dictionary<string, List<ToolHelpCommandNode>>(StringComparer.OrdinalIgnoreCase);
+        var edgeKeys = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var pair in helpDocuments)
+        {
+            foreach (var child in pair.Value.Commands)
+            {
+                var childFullName = string.IsNullOrWhiteSpace(pair.Key) ? child.Key : $"{pair.Key} {child.Key}";
+                knownCommands.Add(childFullName);
+                AddEdge(edges, edgeKeys, pair.Key, new ToolHelpCommandNode(childFullName, child.Key, child.Description));
+            }
+        }
+
+        foreach (var commandName in helpDocuments.Keys.Where(key => !string.IsNullOrWhiteSpace(key)))
+        {
+            knownCommands.Add(commandName);
+        }
+
+        foreach (var commandName in knownCommands.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
+        {
+            var parentName = FindParent(commandName, knownCommands);
+            var displayName = string.IsNullOrWhiteSpace(parentName)
+                ? commandName
+                : commandName[(parentName.Length + 1)..];
+            var description = helpDocuments.TryGetValue(commandName, out var helpDocument)
+                ? helpDocument.CommandDescription
+                : null;
+            AddEdge(edges, edgeKeys, parentName, new ToolHelpCommandNode(commandName, displayName, description));
+        }
+
+        return BuildNodes(string.Empty, edges);
+    }
+
+    private static void AddEdge(
+        IDictionary<string, List<ToolHelpCommandNode>> edges,
+        IDictionary<string, HashSet<string>> edgeKeys,
+        string? parentName,
+        ToolHelpCommandNode node)
+    {
+        var normalizedParent = parentName ?? string.Empty;
+        if (!edgeKeys.TryGetValue(normalizedParent, out var knownChildren))
+        {
+            knownChildren = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            edgeKeys[normalizedParent] = knownChildren;
+        }
+
+        if (!knownChildren.Add(node.FullName))
+        {
+            return;
+        }
+
+        if (!edges.TryGetValue(normalizedParent, out var children))
+        {
+            children = [];
+            edges[normalizedParent] = children;
+        }
+
+        children.Add(node);
+    }
+
+    private static string FindParent(string commandName, IReadOnlySet<string> knownCommands)
+    {
+        var segments = commandName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        for (var length = segments.Length - 1; length > 0; length--)
+        {
+            var candidate = string.Join(' ', segments.Take(length));
+            if (knownCommands.Contains(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return string.Empty;
+    }
+
+    private static IReadOnlyList<ToolHelpCommandNode> BuildNodes(
+        string parentName,
+        IReadOnlyDictionary<string, List<ToolHelpCommandNode>> edges)
+    {
+        if (!edges.TryGetValue(parentName, out var children))
+        {
+            return [];
+        }
+
+        return children
+            .Select(child => child with { Children = BuildNodes(child.FullName, edges) })
+            .ToArray();
+    }
+}
+
+internal sealed record ToolHelpCommandNode(
+    string FullName,
+    string DisplayName,
+    string? Description)
+{
+    public IReadOnlyList<ToolHelpCommandNode> Children { get; init; } = [];
+}
