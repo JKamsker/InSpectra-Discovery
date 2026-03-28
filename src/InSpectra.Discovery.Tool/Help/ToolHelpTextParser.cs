@@ -282,6 +282,12 @@ internal sealed partial class ToolHelpTextParser
             return false;
         }
 
+        if (kind == ItemKind.Option && TryExtractLeadingAliasFromDescription(description, out var alias, out var normalizedDescription))
+        {
+            key = $"{key} | {alias}";
+            description = normalizedDescription;
+        }
+
         if (kind == ItemKind.Command)
         {
             if (!char.IsWhiteSpace(rawLine, 0) && string.IsNullOrWhiteSpace(description))
@@ -494,6 +500,26 @@ internal sealed partial class ToolHelpTextParser
         return match.Success && match.Index == 0;
     }
 
+    private static bool TryExtractLeadingAliasFromDescription(string? description, out string alias, out string? normalizedDescription)
+    {
+        alias = string.Empty;
+        normalizedDescription = description;
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return false;
+        }
+
+        var match = LeadingAliasInDescriptionRegex().Match(description);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        alias = match.Groups["alias"].Value.Trim();
+        normalizedDescription = match.Groups["description"].Value.Trim();
+        return LooksLikeOptionSignature(alias);
+    }
+
     private static bool LooksLikeCommandDescription(string description)
     {
         var trimmed = description.TrimStart();
@@ -534,6 +560,9 @@ internal sealed partial class ToolHelpTextParser
 
     [GeneratedRegex(@"^(?:--help|-h|/\?)\s+is an unknown (?:parameter|option|argument)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex RejectedHelpInvocationRegex();
+
+    [GeneratedRegex(@"^\|\s*(?<alias>.+?)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
+    private static partial Regex LeadingAliasInDescriptionRegex();
 
     [GeneratedRegex(@"^Package Id\s{2,}Version\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex DotnetToolListHeaderRegex();

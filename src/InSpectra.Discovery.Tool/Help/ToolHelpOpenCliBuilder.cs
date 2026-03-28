@@ -3,6 +3,24 @@ using System.Text.RegularExpressions;
 
 internal sealed partial class ToolHelpOpenCliBuilder
 {
+    private static readonly HashSet<string> ArgumentNoiseWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "A",
+        "AN",
+        "AND",
+        "DEFAULT",
+        "ENTER",
+        "FOR",
+        "KEY",
+        "OF",
+        "OPTIONAL",
+        "OR",
+        "PRESS",
+        "THE",
+        "TO",
+        "USE",
+    };
+
     private readonly ToolHelpCommandTreeBuilder _commandTreeBuilder = new();
 
     public JsonObject Build(
@@ -131,12 +149,17 @@ internal sealed partial class ToolHelpOpenCliBuilder
         var array = new JsonArray();
         foreach (var argument in arguments)
         {
+            if (!TryParseArgumentSignature(argument.Key, out var signature))
+            {
+                continue;
+            }
+
             var node = new JsonObject
             {
-                ["name"] = NormalizeArgumentName(argument.Key),
+                ["name"] = signature.Name,
                 ["required"] = argument.IsRequired,
                 ["hidden"] = false,
-                ["arity"] = BuildArity(argument.IsRequired ? 1 : 0),
+                ["arity"] = BuildArity(argument.IsRequired ? 1 : 0, signature.IsSequence),
             };
 
             AddIfPresent(node, "description", argument.Description);
@@ -244,15 +267,96 @@ internal sealed partial class ToolHelpOpenCliBuilder
             ArgumentRequired: !key.Contains("[", StringComparison.Ordinal));
     }
 
-    private static JsonObject BuildArity(int minimum)
-        => new()
+    private static JsonObject BuildArity(int minimum, bool isSequence = false)
+    {
+        var arity = new JsonObject
         {
             ["minimum"] = minimum,
-            ["maximum"] = 1,
         };
 
+        if (!isSequence)
+        {
+            arity["maximum"] = 1;
+        }
+
+        return arity;
+    }
+
+    private static bool TryParseArgumentSignature(string rawKey, out ArgumentSignature signature)
+    {
+        signature = new ArgumentSignature(string.Empty, false);
+        var trimmed = rawKey.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return false;
+        }
+
+        var isSequence = trimmed.Contains("...", StringComparison.Ordinal);
+        var rawTokens = trimmed
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(NormalizeArgumentToken)
+            .Where(token => token.Length > 0)
+            .ToArray();
+        if (rawTokens.Length == 0 || ArgumentNoiseWords.Contains(rawTokens[0]))
+        {
+            return false;
+        }
+
+        string normalizedName;
+        if (TryGetCommonPlaceholderStem(rawTokens, out var commonStem))
+        {
+            normalizedName = commonStem;
+            isSequence = true;
+        }
+        else
+        {
+            normalizedName = rawTokens[0];
+        }
+
+        normalizedName = NormalizeArgumentName(normalizedName);
+        if (string.IsNullOrWhiteSpace(normalizedName))
+        {
+            return false;
+        }
+
+        signature = new ArgumentSignature(normalizedName, isSequence);
+        return true;
+    }
+
+    private static bool TryGetCommonPlaceholderStem(IReadOnlyList<string> tokens, out string stem)
+    {
+        stem = string.Empty;
+        if (tokens.Count < 2)
+        {
+            return false;
+        }
+
+        var stems = tokens
+            .Where(token => !string.Equals(token, "...", StringComparison.Ordinal))
+            .Select(token => TrailingDigitsRegex().Replace(token, string.Empty))
+            .Where(token => token.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (stems.Length != 1)
+        {
+            return false;
+        }
+
+        stem = stems[0];
+        return true;
+    }
+
+    private static string NormalizeArgumentToken(string token)
+    {
+        var normalized = token.Trim()
+            .Trim('[', ']', '<', '>', '(', ')', '{', '}', '.', ',', ':', ';', '"', '\'');
+        normalized = normalized.Replace("...", string.Empty, StringComparison.Ordinal);
+        normalized = InvalidArgumentTokenRegex().Replace(normalized, string.Empty);
+        return normalized;
+    }
+
     private static string NormalizeArgumentName(string key)
-        => key.Trim().TrimStart('[', '<').TrimEnd(']', '>').ToUpperInvariant();
+        => key.Replace('-', '_').ToUpperInvariant();
 
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
@@ -260,9 +364,19 @@ internal sealed partial class ToolHelpOpenCliBuilder
     [GeneratedRegex(@"(?<all>\[?<(?<name>[^>]+)>\]?)", RegexOptions.Compiled)]
     private static partial Regex UsageArgumentRegex();
 
+    [GeneratedRegex(@"[^A-Za-z0-9_\-]", RegexOptions.Compiled)]
+    private static partial Regex InvalidArgumentTokenRegex();
+
+    [GeneratedRegex(@"\d+$", RegexOptions.Compiled)]
+    private static partial Regex TrailingDigitsRegex();
+
     private sealed record OptionSignature(
         string? PrimaryName,
         IReadOnlyList<string> Aliases,
         string? ArgumentName,
         bool ArgumentRequired);
+
+    private sealed record ArgumentSignature(
+        string Name,
+        bool IsSequence);
 }

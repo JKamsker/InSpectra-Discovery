@@ -578,6 +578,26 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Reattaches_Pipe_Separated_Long_Aliases_To_Option_Signatures()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Amazon Deploy Tools
+
+            Options:
+              -pl                           | --project-location             The location of the project.
+              -cfg                          | --config-file                  Configuration file storing defaults.
+            """);
+
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-pl | --project-location", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option =>
+            string.Equals(option.Key, "-cfg | --config-file", StringComparison.Ordinal)
+            && string.Equals(option.Description, "Configuration file storing defaults.", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Does_Not_Start_New_Command_From_Indented_Wrapped_Description_Or_Help_Hints()
     {
         var parser = new ToolHelpTextParser();

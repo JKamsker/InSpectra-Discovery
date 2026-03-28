@@ -143,4 +143,36 @@ public sealed class ToolHelpOpenCliBuilderTests
         Assert.Null(document["arguments"]);
         Assert.Single(document["commands"]!.AsArray());
     }
+
+    [Fact]
+    public void Sanitizes_Polluted_Argument_Names_And_Variadic_Placeholders()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments:
+                [
+                    new ToolHelpItem("FUNCTION-NAME> THE NAME OF THE FUNCTION TO INVOKE", true, null),
+                    new ToolHelpItem("THE PROJECT TO USE.", false, null),
+                    new ToolHelpItem("<search_pattern1 search_pattern2 ...>", false, null),
+                ],
+                Options: [],
+                Commands: []),
+        };
+
+        var document = builder.Build("demo", "1.0.0", helpDocuments);
+        var arguments = document["arguments"]!.AsArray();
+
+        Assert.Equal(2, arguments.Count);
+        Assert.Equal("FUNCTION_NAME", arguments[0]!["name"]!.GetValue<string>());
+        Assert.Equal("SEARCH_PATTERN", arguments[1]!["name"]!.GetValue<string>());
+        Assert.Equal(0, arguments[1]!["arity"]!["minimum"]!.GetValue<int>());
+        Assert.Null(arguments[1]!["arity"]!["maximum"]);
+    }
 }
