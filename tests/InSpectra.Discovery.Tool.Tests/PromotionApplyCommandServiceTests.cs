@@ -496,6 +496,137 @@ public sealed class PromotionApplyCommandServiceTests
     }
 
     [Fact]
+    public async Task ApplyUntrustedAsync_Infers_Help_Provenance_From_Crawl_Artifact_When_Analysis_Mode_Is_Stale()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Legacy.Help.Tool",
+                            ["latestVersion"] = "2.2.0",
+                            ["totalDownloads"] = 180,
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-help-stale-mode",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Legacy.Help.Tool",
+                            ["version"] = "2.2.0",
+                            ["attempt"] = 1,
+                            ["command"] = "legacy-help",
+                            ["cliFramework"] = "System.CommandLine",
+                            ["analysisMode"] = "help",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-legacy-help-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Legacy.Help.Tool",
+                    ["version"] = "2.2.0",
+                    ["batchId"] = "batch-help-stale-mode",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["cliFramework"] = "System.CommandLine",
+                    ["analysisMode"] = "native",
+                    ["analyzedAt"] = "2026-03-27T02:15:00Z",
+                    ["disposition"] = "success",
+                    ["command"] = "legacy-help",
+                    ["steps"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                    },
+                    ["introspection"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                    },
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-legacy-help-tool", "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                    ["info"] = new JsonObject
+                    {
+                        ["title"] = "Legacy Help Tool",
+                        ["version"] = "2.2.0",
+                    },
+                    ["commands"] = new JsonArray(),
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-legacy-help-tool", "crawl.json"),
+                new JsonObject
+                {
+                    ["documentCount"] = 2,
+                    ["captureCount"] = 2,
+                    ["commands"] = new JsonArray(),
+                });
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "legacy.help.tool", "2.2.0", "metadata.json"));
+            Assert.Equal("help", metadata["analysisMode"]?.GetValue<string>());
+            Assert.Equal("crawled-from-help", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+            Assert.Equal("crawled-from-help", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal("help-crawl", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
+            Assert.Equal("crawled-from-help", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal("help-crawl", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
     public async Task ApplyUntrustedAsync_Backfills_Partial_Help_OpenCli_Metadata_From_Analysis_Mode()
     {
         ToolRuntime.Initialize();

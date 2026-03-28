@@ -82,9 +82,18 @@ internal static class PromotionResultSupport
             result["cliFramework"] = item["cliFramework"]?.DeepClone();
         }
 
-        if (result["analysisMode"] is null && item["analysisMode"] is not null)
+        if (item["analysisMode"] is not null)
         {
             result["analysisMode"] = item["analysisMode"]?.DeepClone();
+
+            if (result["analysisSelection"] is JsonObject analysisSelection)
+            {
+                analysisSelection["selectedMode"] = item["analysisMode"]?.DeepClone();
+                if (analysisSelection["preferredMode"] is null)
+                {
+                    analysisSelection["preferredMode"] = item["analysisMode"]?.DeepClone();
+                }
+            }
         }
     }
 
