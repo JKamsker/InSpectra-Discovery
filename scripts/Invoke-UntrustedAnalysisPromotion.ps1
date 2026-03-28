@@ -244,7 +244,17 @@ function Write-SuccessArtifacts {
 
     if ($hasOpenCliArtifact) {
         $openCliDocument = Get-Content (Join-Path $ArtifactDirectory $Result.artifacts.opencliArtifact) -Raw | ConvertFrom-Json
-        $openCliSource = 'tool-output'
+        if (
+            $openCliDocument.PSObject.Properties.Name -contains 'x-inspectra' -and
+            $openCliDocument.'x-inspectra' -and
+            $openCliDocument.'x-inspectra'.PSObject.Properties.Name -contains 'artifactSource' -and
+            -not [string]::IsNullOrWhiteSpace([string]$openCliDocument.'x-inspectra'.artifactSource)
+        ) {
+            $openCliSource = [string]$openCliDocument.'x-inspectra'.artifactSource
+        }
+        else {
+            $openCliSource = 'tool-output'
+        }
     }
 
     if ($hasXmlDocArtifact) {
@@ -309,6 +319,29 @@ function Write-SuccessArtifacts {
         } else { $null }
     }
 
+    $introspection = if ($Result.PSObject.Properties.Name -contains 'introspection' -and $Result.introspection) {
+        $clone = [ordered]@{}
+        foreach ($property in $Result.introspection.PSObject.Properties) {
+            $clone[$property.Name] = $property.Value
+        }
+        $clone
+    } else { $null }
+
+    if ($hasOpenCliOutput) {
+        if ($null -eq $introspection) {
+            $introspection = [ordered]@{}
+        }
+
+        if (-not ($introspection.Contains('opencli')) -or $null -eq $introspection.opencli) {
+            $introspection.opencli = [ordered]@{}
+        }
+
+        $introspection.opencli.artifactSource = $openCliSource
+        if ($openCliSource -eq 'synthesized-from-xmldoc') {
+            $introspection.opencli.synthesizedArtifact = $true
+        }
+    }
+
     $metadata = [ordered]@{
         schemaVersion = 1
         packageId = $Result.packageId
@@ -317,7 +350,7 @@ function Write-SuccessArtifacts {
         source = $Result.source
         batchId = $Result.batchId
         attempt = $Result.attempt
-        status = if ($hasOpenCliArtifact -and $hasXmlDocArtifact) { 'ok' } else { 'partial' }
+        status = if ($hasOpenCliOutput) { 'ok' } else { 'partial' }
         evaluatedAt = $Result.analyzedAt
         publishedAt = Convert-ToIsoTimestamp $Result.publishedAt
         packageUrl = $Result.packageUrl
@@ -329,7 +362,7 @@ function Write-SuccessArtifacts {
         runner = $Result.runner
         toolSettingsPath = $Result.toolSettingsPath
         detection = $Result.detection
-        introspection = if ($Result.PSObject.Properties.Name -contains 'introspection') { $Result.introspection } else { $null }
+        introspection = $introspection
         timings = $Result.timings
         steps = $steps
         artifacts = [ordered]@{

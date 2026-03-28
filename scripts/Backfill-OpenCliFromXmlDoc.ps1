@@ -187,9 +187,7 @@ foreach ($metadataFile in $metadataFiles) {
         $metadata.introspection.opencli | Add-Member -NotePropertyName artifactSource -NotePropertyValue 'synthesized-from-xmldoc' -Force
     }
 
-    if ([string]$metadata.status -eq 'failed') {
-        $metadata.status = 'partial'
-    }
+    $metadata.status = 'ok'
 
     Write-JsonFile -Path $metadataFile.FullName -InputObject $metadata
     $updated.Add([ordered]@{
