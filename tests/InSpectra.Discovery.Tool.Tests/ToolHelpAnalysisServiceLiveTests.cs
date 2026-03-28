@@ -19,22 +19,7 @@ public sealed class ToolHelpAnalysisServiceLiveTests
     }
 
     public static TheoryData<LiveToolCase> Cases()
-        => new()
-        {
-            new LiveToolCase("CliFx", "Husky", "0.9.1", "husky", expectedCommands: ["add", "install"]),
-            new LiveToolCase("Argu", "Paket", "10.3.1", "paket", expectedCommands: ["add", "install"]),
-            new LiveToolCase("McMaster", "dotnet-serve", "1.10.194", "dotnet-serve", expectedOptions: ["--directory", "--port"]),
-            new LiveToolCase("Spectre.Console.Cli", "Cake.Tool", "6.1.0", "dotnet-cake", expectedOptions: ["--verbosity"], expectedArguments: ["SCRIPT"]),
-            new LiveToolCase("Cocona", "Libplanet.Tools", "5.5.3", "planet", expectedCommands: ["key", "tx"]),
-            new LiveToolCase("DocoptNet", "coveralls.net", "4.0.1", "csmacnz.Coveralls", expectedOptions: ["--input", "--repoToken"]),
-            new LiveToolCase("System.CommandLine", "dotnet-trace", "9.0.652701", "dotnet-trace", expectedCommands: ["collect", "report"]),
-            new LiveToolCase("CommandLineParser", "snapx", "10.0.0", "snapx", expectedCommands: ["promote", "pack"]),
-            new LiveToolCase("Mono.Options / NDesk.Options", "Pickles.CommandLine", "4.0.3", "pickles", expectedOptions: ["--feature-directory", "--output-directory"]),
-            new LiveToolCase("Microsoft.Extensions.CommandLineUtils", "dotnet-version-cli", "3.0.3", "dotnet-version", expectedOptions: ["--output-format", "--project-file"]),
-            new LiveToolCase("ConsoleAppFramework", "MessagePack.Generator", "2.5.198", "mpc", expectedOptions: ["-input", "-output"]),
-            new LiveToolCase("CommandDotNet", "Squidex.CLI", "13.13.0", "sq", expectedCommands: ["apps", "schemas"]),
-            new LiveToolCase("PowerArgs", "DependenSee", "2.2.0", "DependenSee", expectedOptions: ["--help", "--include-packages"], expectedArguments: ["SOURCEFOLDER", "OUTPUTPATH"]),
-        };
+        => ValidatedGenericHelpFrameworkCases.LoadForLiveTests();
 
     [Theory]
     [MemberData(nameof(Cases))]
