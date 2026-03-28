@@ -319,6 +319,83 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
         Assert.Empty(regenerated["commands"]!.AsArray());
     }
 
+    [Fact]
+    public void Regenerator_Falls_Back_To_Minimal_OpenCli_When_Root_Capture_Is_Only_Interactive_Error_Output()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "b2cconsoleclient", "1.0.0");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "b2cconsoleclient",
+                ["version"] = "1.0.0",
+                ["command"] = "b2cconsoleclient",
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            Azure B2C Console Client
+                            ========================
+                            Configuration is missing or incomplete. Let's set it up:
+
+                            Error: The authority (including the tenant ID) must be in a well-formed URI format.  (Parameter 'authority')
+                            Details: System.ArgumentException: The authority (including the tenant ID) must be in a well-formed URI format.  (Parameter 'authority')
+                               at B2CConsoleClient.AuthenticationService..ctor(AuthConfig config) in /Users/test/B2CConsoleClient/AuthenticationService.cs:line 31
+                               at B2CConsoleClient.Program.Main(String[] args) in /Users/test/B2CConsoleClient/Program.cs:line 19
+
+                            Press any key to exit...
+                            Unhandled exception. System.InvalidOperationException: Cannot read keys when either application does not have a console or when console input has been redirected. Try Console.Read.
+                            """,
+                    },
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "crawled-from-help",
+                },
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "stale",
+                        ["hidden"] = false,
+                    },
+                },
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        Assert.Equal("b2cconsoleclient", regenerated["info"]?["title"]?.GetValue<string>());
+        Assert.Equal("1.0.0", regenerated["info"]?["version"]?.GetValue<string>());
+        Assert.Null(regenerated["info"]?["description"]);
+        Assert.Empty(regenerated["commands"]!.AsArray());
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

@@ -376,10 +376,21 @@ internal sealed partial class ToolHelpTextParser
             }
 
             firstNonEmptyIndex ??= index;
-            var match = TitleLineRegex().Match(line.Trim());
+            if (index > firstNonEmptyIndex.Value && string.IsNullOrWhiteSpace(preamble[index - 1]))
+            {
+                break;
+            }
+
+            var trimmed = line.Trim();
+            var match = TitleLineRegex().Match(trimmed);
             if (match.Success)
             {
-                return (match.Groups["title"].Value.Trim(), match.Groups["version"].Value.Trim(), index + 1);
+                var title = match.Groups["title"].Value.Trim();
+                var version = match.Groups["version"].Value.Trim();
+                if (LooksLikeTitleVersionLine(trimmed, title, version))
+                {
+                    return (title, version, index + 1);
+                }
             }
         }
 
@@ -540,6 +551,12 @@ internal sealed partial class ToolHelpTextParser
             && line.EndsWith("|", StringComparison.Ordinal)
             && line.Count(ch => ch == '|') >= 2;
 
+    private static bool LooksLikeTitleVersionLine(string line, string title, string version)
+        => !StackTraceLineRegex().IsMatch(line)
+            && !title.Contains(":line", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(title, "Version", StringComparison.OrdinalIgnoreCase)
+            && version.Count(char.IsDigit) > 1;
+
     [GeneratedRegex(@"^(?<header>[\p{L}\p{M}\s]+):\s*(?<value>\S.*)?$", RegexOptions.Compiled)]
     private static partial Regex SectionHeaderRegex();
 
@@ -551,6 +568,9 @@ internal sealed partial class ToolHelpTextParser
 
     [GeneratedRegex(@"^(?<title>.+?)\s+(?<version>v?\d[\w\.\-\+]*)$", RegexOptions.Compiled)]
     private static partial Regex TitleLineRegex();
+
+    [GeneratedRegex(@"^\s*at\s+.+\s+in\s+.+:line\s+\d+\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex StackTraceLineRegex();
 
     [GeneratedRegex(@"^CommandLine\.[A-Za-z]+Error$", RegexOptions.Compiled)]
     private static partial Regex CommandLineErrorTokenRegex();

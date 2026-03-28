@@ -166,6 +166,27 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Does_Not_Parse_Later_Stack_Trace_Lines_As_Title_And_Version()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Azure B2C Console Client
+            ========================
+            Configuration is missing or incomplete. Let's set it up:
+
+            Error: The authority (including the tenant ID) must be in a well-formed URI format.  (Parameter 'authority')
+            Details: System.ArgumentException: The authority (including the tenant ID) must be in a well-formed URI format.  (Parameter 'authority')
+               at B2CConsoleClient.AuthenticationService..ctor(AuthConfig config) in /Users/test/B2CConsoleClient/AuthenticationService.cs:line 31
+               at B2CConsoleClient.Program.Main(String[] args) in /Users/test/B2CConsoleClient/Program.cs:line 19
+            """);
+
+        Assert.Equal("Azure B2C Console Client", document.Title);
+        Assert.Null(document.Version);
+    }
+
+    [Fact]
     public void Infers_Usage_From_Preamble_Without_Usage_Section_Header()
     {
         var parser = new ToolHelpTextParser();

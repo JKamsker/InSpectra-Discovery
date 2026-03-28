@@ -11,7 +11,7 @@ internal static class ToolHelpDocumentInspector
     {
         if (commandSegments.Count == 0)
         {
-            return true;
+            return HasStructuredContent(document);
         }
 
         if (document.UsageLines.Any(line => ContainsPath(line, commandSegments)))
@@ -33,6 +33,13 @@ internal static class ToolHelpDocumentInspector
 
         return false;
     }
+
+    private static bool HasStructuredContent(ToolHelpDocument document)
+        => document.UsageLines.Count > 0
+            || document.Options.Count > 0
+            || document.Commands.Count > 0
+            || document.Arguments.Count > 0
+            || !string.IsNullOrWhiteSpace(document.CommandDescription);
 
     private static bool ContainsPath(string? line, IReadOnlyList<string> commandSegments)
     {
