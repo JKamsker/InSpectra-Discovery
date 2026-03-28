@@ -19,6 +19,9 @@ internal sealed record HelpBatchPlan(string? BatchId, IReadOnlyList<HelpBatchIte
             Version: ReadRequiredString(item, "version"),
             CommandName: item["command"]?.GetValue<string>(),
             CliFramework: item["cliFramework"]?.GetValue<string>(),
+            ExpectedCommands: ReadStringList(item, "expectedCommands"),
+            ExpectedOptions: ReadStringList(item, "expectedOptions"),
+            ExpectedArguments: ReadStringList(item, "expectedArguments"),
             Attempt: item["attempt"]?.GetValue<int?>() ?? 1,
             ArtifactName: item["artifactName"]?.GetValue<string>(),
             PackageUrl: item["packageUrl"]?.GetValue<string>(),
@@ -30,6 +33,14 @@ internal sealed record HelpBatchPlan(string? BatchId, IReadOnlyList<HelpBatchIte
         => item[propertyName]?.GetValue<string>() is { Length: > 0 } value
             ? value
             : throw new InvalidOperationException($"Plan item is missing required property '{propertyName}'.");
+
+    private static IReadOnlyList<string> ReadStringList(JsonObject item, string propertyName)
+        => item[propertyName] is not JsonArray values
+            ? []
+            : values.OfType<JsonValue>()
+                .Select(value => value.GetValue<string>())
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .ToArray();
 }
 
 internal sealed record HelpBatchItem(
@@ -37,6 +48,9 @@ internal sealed record HelpBatchItem(
     string Version,
     string? CommandName,
     string? CliFramework,
+    IReadOnlyList<string> ExpectedCommands,
+    IReadOnlyList<string> ExpectedOptions,
+    IReadOnlyList<string> ExpectedArguments,
     int Attempt,
     string? ArtifactName,
     string? PackageUrl,
