@@ -173,13 +173,13 @@ jobs:
 
           "body_path=$bodyPath" >> $env:GITHUB_OUTPUT
 
-      - name: Narrow delta to Spectre.Console.Cli
+      - name: Queue changed tools for scheduled analysis
         if: ${{ steps.delta.outputs.changed_package_count != '0' }}
-        id: spectre
+        id: scheduled_queue
         shell: pwsh
         run: |
           $result = inspectra-discovery `
-            catalog delta queue-spectre-cli `
+            catalog delta queue-all-tools `
             --json | ConvertFrom-Json
 
           if (-not $result.ok) {
@@ -192,8 +192,32 @@ jobs:
           "output_delta_path=$($data.outputDeltaPath)" >> $env:GITHUB_OUTPUT
           "queue_output_path=$($data.queueOutputPath)" >> $env:GITHUB_OUTPUT
 
-      - name: Rewrite pull request body with Spectre.Console.Cli summary
-        if: ${{ steps.delta.outputs.changed_package_count != '0' }}
+      - name: Queue current latest versions needing analysis
+        id: current_backfill_queue
+        shell: pwsh
+        run: |
+          $result = inspectra-discovery `
+            queue backfill-current-analysis `
+            --output state/discovery/dotnet-tools.current-backfill.queue.json `
+            --take 100 `
+            --json | ConvertFrom-Json
+
+          if (-not $result.ok) {
+            throw $result.error.message
+          }
+
+          $data = $result.data
+          "current_package_count=$($data.currentPackageCount)" >> $env:GITHUB_OUTPUT
+          "eligible_package_count=$($data.eligiblePackageCount)" >> $env:GITHUB_OUTPUT
+          "missing_count=$($data.missingCount)" >> $env:GITHUB_OUTPUT
+          "legacy_terminal_negative_count=$($data.legacyTerminalNegativeCount)" >> $env:GITHUB_OUTPUT
+          "legacy_terminal_failure_count=$($data.legacyTerminalFailureCount)" >> $env:GITHUB_OUTPUT
+          "retryable_count=$($data.retryableCount)" >> $env:GITHUB_OUTPUT
+          "queue_count=$($data.queueCount)" >> $env:GITHUB_OUTPUT
+          "output_path=$($data.outputPath)" >> $env:GITHUB_OUTPUT
+
+      - name: Rewrite pull request body with scheduled queue summary
+        if: ${{ steps.delta.outputs.changed_package_count != '0' || steps.current_backfill_queue.outputs.queue_count != '0' }}
         shell: pwsh
         run: |
           $bodyPath = '${{ steps.delta.outputs.body_path }}'
@@ -209,16 +233,23 @@ jobs:
             "- affected package ids: ${{ steps.delta.outputs.affected_package_count }}"
             "- changed packages: ${{ steps.delta.outputs.changed_package_count }}"
             ''
-            'Spectre.Console.Cli subset:'
-            "- matched changed packages: ${{ steps.spectre.outputs.matched_package_count }}"
-            "- queued current packages: ${{ steps.spectre.outputs.queue_count }}"
+            'Scheduled analysis queue:'
+            "- current changed packages: ${{ steps.scheduled_queue.outputs.matched_package_count || '0' }}"
+            "- queued changed packages: ${{ steps.scheduled_queue.outputs.queue_count || '0' }}"
+            "- current backlog packages needing analysis: ${{ steps.current_backfill_queue.outputs.eligible_package_count }}"
+            "- missing current versions: ${{ steps.current_backfill_queue.outputs.missing_count }}"
+            "- legacy terminal-negative versions: ${{ steps.current_backfill_queue.outputs.legacy_terminal_negative_count }}"
+            "- legacy terminal-failure versions: ${{ steps.current_backfill_queue.outputs.legacy_terminal_failure_count }}"
+            "- retryable current versions: ${{ steps.current_backfill_queue.outputs.retryable_count }}"
+            "- queued backlog packages: ${{ steps.current_backfill_queue.outputs.queue_count }}"
             ''
             'Updated files:'
             '- `state/discovery/dotnet-tools.current.json`'
             '- `state/discovery/dotnet-tools.delta.json`'
             '- `state/discovery/dotnet-tools.cursor.json`'
-            '- `state/discovery/dotnet-tools.spectre-console-cli.delta.json`'
-            '- `state/discovery/dotnet-tools.spectre-console-cli.queue.json`'
+            '- `state/discovery/dotnet-tools.all-tools.delta.json`'
+            '- `state/discovery/dotnet-tools.all-tools.queue.json`'
+            '- `state/discovery/dotnet-tools.current-backfill.queue.json`'
             ''
             'State branch: ${{ steps.resolve.outputs.state_branch }}'
             ''
@@ -226,13 +257,13 @@ jobs:
           ) | Set-Content -Path $bodyPath
 
       - name: Report no changes
-        if: ${{ steps.delta.outputs.changed_package_count == '0' }}
+        if: ${{ steps.delta.outputs.changed_package_count == '0' && steps.current_backfill_queue.outputs.queue_count == '0' }}
         shell: pwsh
         run: |
-          Write-Host 'No added or updated dotnet tools were discovered.'
+          Write-Host 'No changed tools were discovered and no current-analysis backlog remains queued.'
 
       - name: Open pull request
-        if: ${{ steps.delta.outputs.changed_package_count != '0' && steps.resolve.outputs.apply_mode == 'pull_request' }}
+        if: ${{ steps.resolve.outputs.apply_mode == 'pull_request' }}
         id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
@@ -249,7 +280,7 @@ jobs:
           body-path: ${{ steps.delta.outputs.body_path }}
 
       - name: Report pull request result
-        if: ${{ steps.delta.outputs.changed_package_count != '0' && steps.resolve.outputs.apply_mode == 'pull_request' }}
+        if: ${{ steps.resolve.outputs.apply_mode == 'pull_request' }}
         shell: pwsh
         run: |
           Write-Host "Pull request operation: ${{ steps.cpr.outputs.pull-request-operation }}"
@@ -258,7 +289,7 @@ jobs:
           }
 
       - name: Commit discovery state to state branch
-        if: ${{ steps.delta.outputs.changed_package_count != '0' && steps.resolve.outputs.apply_mode == 'commit_and_dispatch' }}
+        if: ${{ steps.resolve.outputs.apply_mode == 'commit_and_dispatch' }}
         id: commit
         shell: pwsh
         run: |
@@ -343,10 +374,9 @@ jobs:
       - name: Dispatch queue analysis
         if: >-
           ${{
-            steps.delta.outputs.changed_package_count != '0' &&
             steps.resolve.outputs.apply_mode == 'commit_and_dispatch' &&
-            steps.spectre.outputs.queue_count != '' &&
-            steps.spectre.outputs.queue_count != '0'
+            steps.scheduled_queue.outputs.queue_count != '' &&
+            steps.scheduled_queue.outputs.queue_count != '0'
           }}
         shell: pwsh
         env:
@@ -357,7 +387,31 @@ jobs:
             --ref '${{ github.ref_name }}' `
             -f target_branch='${{ steps.resolve.outputs.target_branch }}' `
             -f state_branch='${{ steps.resolve.outputs.state_branch }}' `
-            -f queue_path='state/discovery/dotnet-tools.spectre-console-cli.queue.json' `
-            -f batch_size='250'
+            -f queue_path='state/discovery/dotnet-tools.all-tools.queue.json' `
+            -f batch_size='250' `
+            -f batch_prefix='discovery-queue'
 
           Write-Host "Dispatched queue analysis from ${{ steps.resolve.outputs.state_branch }} to ${{ steps.resolve.outputs.target_branch }}."
+
+      - name: Dispatch current-analysis backlog reanalysis
+        if: >-
+          ${{
+            steps.resolve.outputs.apply_mode == 'commit_and_dispatch' &&
+            steps.current_backfill_queue.outputs.queue_count != '' &&
+            steps.current_backfill_queue.outputs.queue_count != '0'
+          }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run dispatch-discovery-queue-analysis.yml `
+            --repo '${{ github.repository }}' `
+            --ref '${{ github.ref_name }}' `
+            -f target_branch='${{ steps.resolve.outputs.target_branch }}' `
+            -f state_branch='${{ steps.resolve.outputs.state_branch }}' `
+            -f queue_path='state/discovery/dotnet-tools.current-backfill.queue.json' `
+            -f batch_size='100' `
+            -f batch_prefix='current-backfill' `
+            -f force_reanalyze='true'
+
+          Write-Host "Dispatched current-analysis backlog reanalysis from ${{ steps.resolve.outputs.state_branch }} to ${{ steps.resolve.outputs.target_branch }}."

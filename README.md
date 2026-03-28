@@ -1,15 +1,15 @@
 # InSpectra-Discovery
 
 > **Companion repository for [InSpectra](https://github.com/JKamsker/InSpectra).**
-> This repo handles the automated discovery, filtering, and analysis of .NET CLI tools, with scheduled Spectre.Console.Cli discovery plus generic help-based indexing across other CLI frameworks. The resulting index feeds the main InSpectra project.
+> This repo handles the automated discovery, filtering, and analysis of .NET CLI tools, with scheduled all-tool discovery that prefers native Spectre.Console.Cli OpenCLI extraction and falls back to generic help-based indexing for other CLI frameworks. The resulting index feeds the main InSpectra project.
 
 ## What it does
 
 InSpectra-Discovery is an automated pipeline that:
 
 1. **Discovers** all dotnet-tool packages published on NuGet via the V3 catalog API.
-2. **Filters** packages into analysis queues, including scheduled `Spectre.Console.Cli` discovery and manual/research-driven framework batches.
-3. **Analyzes** each tool by installing it in a sandbox, extracting its CLI structure from native `--opencli`, XML documentation, or a generic recursive `--help` crawl.
+2. **Filters** packages into analysis queues, including scheduled all-tool discovery and manual/research-driven framework batches.
+3. **Analyzes** each tool by installing it in a sandbox, preferring native `--opencli` / XML documentation when a `Spectre.Console.Cli` tool supports it, and otherwise falling back to a generic recursive `--help` crawl.
 4. **Maintains** a versioned index of analyzed tools with metadata, CLI structure, and documentation artifacts.
 5. **Runs continuously** via GitHub Actions workflows that detect new/updated packages and queue them for analysis.
 
@@ -25,9 +25,9 @@ flowchart TD
     end
 
     subgraph Filtering
-        Snapshot --> Filter["catalog filter spectre-console-cli"]
-        Filter -->|"inspect NuPkg
-dependencies"| Filtered["Spectre.Console.Cli tools"]
+        Snapshot --> Filter["catalog delta queue-all-tools"]
+        Filter -->|"changed current
+dotnet tools"| Filtered["Scheduled analysis queue"]
     end
 
     subgraph Analysis["Analysis (GitHub Actions)"]
@@ -35,8 +35,8 @@ dependencies"| Filtered["Spectre.Console.Cli tools"]
         Queue --> Dispatch["dispatch-discovery-queue-analysis"]
         Dispatch -->|batch slices| Analyze["analyze-untrusted-batch"]
         Analyze -->|"install tool
-extract --opencli
-extract xmldoc"| Results["Analysis results"]
+prefer native Spectre OpenCLI/XMLDoc
+fallback to recursive --help crawl"| Results["Analysis results"]
     end
 
     subgraph Promotion
@@ -91,7 +91,19 @@ dotnet run --project src/InSpectra.Discovery.Tool -- catalog delta discover
 
 ### Filtering
 
-Packages are filtered to those that depend on `Spectre.Console.Cli`, inspecting NuPkg archives for dependency evidence:
+Scheduled discovery now queues all changed current dotnet tools for analysis:
+
+```bash
+dotnet run --project src/InSpectra.Discovery.Tool -- catalog delta queue-all-tools
+```
+
+To converge the repository toward full current-version coverage, the scheduler can also build a backlog queue of latest versions that are still missing analysis, retryable, or stuck in legacy native-analysis states:
+
+```bash
+dotnet run --project src/InSpectra.Discovery.Tool -- queue backfill-current-analysis --current-snapshot state/discovery/dotnet-tools.current.json --output state/discovery/dotnet-tools.current-backfill.queue.json --take 100
+```
+
+Focused research workflows can still filter to packages that depend on `Spectre.Console.Cli`:
 
 ```bash
 dotnet run --project src/InSpectra.Discovery.Tool -- catalog filter spectre-console-cli --concurrency 16
@@ -99,10 +111,10 @@ dotnet run --project src/InSpectra.Discovery.Tool -- catalog filter spectre-cons
 
 ### Analysis
 
-Discovered tools are analyzed via the discovery CLI, which installs each tool in a sandbox, extracts its CLI structure, and parses XML documentation:
+Discovered tools are analyzed via the discovery CLI. The scheduled path prefers native Spectre OpenCLI/XMLDoc extraction and falls back to generic help crawling for other well-behaving tools:
 
 ```powershell
-dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-untrusted --package-id JellyfinCli --version 0.1.16 --output-root artifacts/analysis/jellyfincli --batch-id manual
+dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-auto --package-id JellyfinCli --version 0.1.16 --output-root artifacts/analysis/jellyfincli --batch-id manual
 ```
 
 For non-Spectre tools that do not expose native `--opencli`, the generic help crawler can run a checked-in batch plan and emit a promotion-ready `expected.json`:
