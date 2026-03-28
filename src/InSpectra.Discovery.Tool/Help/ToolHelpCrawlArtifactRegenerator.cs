@@ -25,13 +25,24 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             {
                 var regenerated = RegenerateOpenCli(candidate);
                 var existing = JsonNode.Parse(File.ReadAllText(candidate.OpenCliPath));
-                if (JsonNode.DeepEquals(existing, regenerated))
+                var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
+                if (openCliChanged)
+                {
+                    RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
+                }
+
+                var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
+                    root,
+                    candidate.MetadataPath,
+                    candidate.OpenCliPath,
+                    "crawled-from-help",
+                    crawlPath: candidate.CrawlPath);
+                if (!openCliChanged && !metadataChanged)
                 {
                     unchangedCount++;
                     continue;
                 }
 
-                RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
                 rewritten.Add(candidate.DisplayName);
             }
             catch (Exception ex)
@@ -193,6 +204,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             version,
             commandName,
             metadata?["cliFramework"]?.GetValue<string>(),
+            metadataPath,
             crawlPath,
             openCliPath);
     }
@@ -217,6 +229,7 @@ internal sealed record HelpCrawlArtifactCandidate(
     string Version,
     string CommandName,
     string? CliFramework,
+    string MetadataPath,
     string CrawlPath,
     string OpenCliPath)
 {

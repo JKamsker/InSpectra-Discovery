@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Xml.Linq;
 using Xunit;
 
 public sealed class XmldocOpenCliArtifactRegeneratorTests
@@ -113,6 +114,138 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
         Assert.Equal(0, result.CandidateCount);
         Assert.Equal(0, result.RewrittenCount);
         Assert.Equal("native", ParseJsonObject(Path.Combine(versionRoot, "opencli.json"))["info"]?["title"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Repairs_Stale_Xmldoc_Metadata_When_OpenCli_Is_Already_Current()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3");
+        var metadataPath = Path.Combine(versionRoot, "metadata.json");
+        var xmlDocPath = Path.Combine(versionRoot, "xmldoc.xml");
+        var openCliPath = Path.Combine(versionRoot, "opencli.json");
+        RepositoryPathResolver.WriteTextFile(
+            xmlDocPath,
+            """
+            <Model>
+              <Command Name="__default_command">
+                <Parameters>
+                  <Option Long="verbose">
+                    <Description>Verbose output</Description>
+                  </Option>
+                </Parameters>
+              </Command>
+            </Model>
+            """);
+        RepositoryPathResolver.WriteJsonFile(
+            metadataPath,
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Sample.Tool",
+                ["version"] = "1.2.3",
+                ["command"] = "sample",
+                ["status"] = "partial",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "tool-output",
+                    },
+                },
+                ["introspection"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["classification"] = "json-ready",
+                        ["artifactSource"] = "tool-output",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/sample.tool/1.2.3/metadata.json",
+                    ["opencliPath"] = "index/packages/sample.tool/1.2.3/opencli.json",
+                    ["opencliSource"] = "tool-output",
+                    ["xmldocPath"] = "index/packages/sample.tool/1.2.3/xmldoc.xml",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            openCliPath,
+            OpenCliDocumentSynthesizer.ConvertFromXmldoc(
+                XDocument.Parse(File.ReadAllText(xmlDocPath)),
+                "sample"));
+
+        var regenerator = new XmldocOpenCliArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var metadata = ParseJsonObject(metadataPath);
+        Assert.Equal("ok", metadata["status"]?.GetValue<string>());
+        Assert.Equal("synthesized-from-xmldoc", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/1.2.3/opencli.json", metadata["steps"]?["opencli"]?["path"]?.GetValue<string>());
+        Assert.Equal("synthesized-from-xmldoc", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("synthesized-from-xmldoc", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.True(metadata["introspection"]?["opencli"]?["synthesizedArtifact"]?.GetValue<bool>());
+    }
+
+    [Fact]
+    public void Backfills_Missing_OpenCli_From_Stored_Xmldoc_Metadata()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3");
+        var metadataPath = Path.Combine(versionRoot, "metadata.json");
+        var openCliPath = Path.Combine(versionRoot, "opencli.json");
+        RepositoryPathResolver.WriteTextFile(
+            Path.Combine(versionRoot, "xmldoc.xml"),
+            """
+            <Model>
+              <Command Name="__default_command">
+                <Description>Sample XML doc</Description>
+              </Command>
+            </Model>
+            """);
+        RepositoryPathResolver.WriteJsonFile(
+            metadataPath,
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Sample.Tool",
+                ["version"] = "1.2.3",
+                ["command"] = "sample",
+                ["status"] = "failed",
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/sample.tool/1.2.3/metadata.json",
+                    ["xmldocPath"] = "index/packages/sample.tool/1.2.3/xmldoc.xml",
+                },
+            });
+
+        var regenerator = new XmldocOpenCliArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+        Assert.True(File.Exists(openCliPath));
+
+        var metadata = ParseJsonObject(metadataPath);
+        Assert.Equal("ok", metadata["status"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/1.2.3/opencli.json", metadata["artifacts"]?["opencliPath"]?.GetValue<string>());
+        Assert.Equal("synthesized-from-xmldoc", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/1.2.3/opencli.json", metadata["steps"]?["opencli"]?["path"]?.GetValue<string>());
+        Assert.Equal("synthesized-from-xmldoc", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.True(metadata["introspection"]?["opencli"]?["synthesizedArtifact"]?.GetValue<bool>());
     }
 
     private static JsonObject ParseJsonObject(string path)

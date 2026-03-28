@@ -396,6 +396,115 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
         Assert.Empty(regenerated["commands"]!.AsArray());
     }
 
+    [Fact]
+    public void Regenerator_Repairs_Stale_Help_Metadata_When_OpenCli_Is_Already_Current()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "samplehelp", "1.0.0");
+        var metadataPath = Path.Combine(versionRoot, "metadata.json");
+        var crawlPath = Path.Combine(versionRoot, "crawl.json");
+        var openCliPath = Path.Combine(versionRoot, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            metadataPath,
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "SampleHelp",
+                ["version"] = "1.0.0",
+                ["command"] = "samplehelp",
+                ["status"] = "partial",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "tool-output",
+                    },
+                },
+                ["introspection"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["classification"] = "json-ready",
+                        ["artifactSource"] = "tool-output",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/samplehelp/1.0.0/metadata.json",
+                    ["opencliPath"] = "index/packages/samplehelp/1.0.0/opencli.json",
+                    ["opencliSource"] = "tool-output",
+                    ["crawlPath"] = "index/packages/samplehelp/1.0.0/crawl.json",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            crawlPath,
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            samplehelp 1.0.0
+
+                            Usage: samplehelp [options]
+
+                            Options:
+                              --verbose  Verbose output.
+                            """,
+                    },
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            openCliPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "samplehelp",
+                    ["version"] = "1.0.0",
+                },
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "crawled-from-help",
+                    ["generator"] = "InSpectra.Discovery",
+                    ["helpDocumentCount"] = 1,
+                },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["recursive"] = false,
+                        ["hidden"] = false,
+                        ["description"] = "Verbose output.",
+                    },
+                },
+                ["commands"] = new JsonArray(),
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var metadata = ParseJsonObject(metadataPath);
+        Assert.Equal("ok", metadata["status"]?.GetValue<string>());
+        Assert.Equal("crawled-from-help", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Equal("index/packages/samplehelp/1.0.0/opencli.json", metadata["steps"]?["opencli"]?["path"]?.GetValue<string>());
+        Assert.Equal("crawled-from-help", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("crawled-from-help", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

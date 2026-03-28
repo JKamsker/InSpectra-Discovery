@@ -22,14 +22,28 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             try
             {
                 var regenerated = RegenerateOpenCli(candidate);
-                var existing = JsonNode.Parse(File.ReadAllText(candidate.OpenCliPath));
-                if (JsonNode.DeepEquals(existing, regenerated))
+                var existing = File.Exists(candidate.OpenCliPath)
+                    ? JsonNode.Parse(File.ReadAllText(candidate.OpenCliPath))
+                    : null;
+                var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
+                if (openCliChanged)
+                {
+                    RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
+                }
+
+                var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
+                    root,
+                    candidate.MetadataPath,
+                    candidate.OpenCliPath,
+                    "synthesized-from-xmldoc",
+                    xmldocPath: candidate.XmlDocPath,
+                    synthesizedArtifact: true);
+                if (!openCliChanged && !metadataChanged)
                 {
                     unchangedCount++;
                     continue;
                 }
 
-                RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
                 rewritten.Add(candidate.DisplayName);
             }
             catch (Exception ex)
@@ -80,23 +94,37 @@ internal sealed class XmldocOpenCliArtifactRegenerator
         var artifacts = metadata["artifacts"] as JsonObject;
         var steps = metadata["steps"] as JsonObject;
         var openCliStep = steps?["opencli"] as JsonObject;
+        var xmlDocRelativePath = artifacts?["xmldocPath"]?.GetValue<string>();
+        var openCliRelativePath = artifacts?["opencliPath"]?.GetValue<string>();
         var artifactSource = artifacts?["opencliSource"]?.GetValue<string>()
             ?? openCliStep?["artifactSource"]?.GetValue<string>();
-        if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase))
+        var versionDirectory = Path.GetDirectoryName(metadataPath)
+            ?? throw new InvalidOperationException($"Metadata path '{metadataPath}' did not resolve to a directory.");
+        var openCliPath = string.IsNullOrWhiteSpace(openCliRelativePath)
+            ? Path.Combine(versionDirectory, "opencli.json")
+            : Path.Combine(repositoryRoot, openCliRelativePath);
+        if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
+            && File.Exists(openCliPath))
+        {
+            artifactSource = JsonNode.Parse(File.ReadAllText(openCliPath))?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
+                ?? artifactSource;
+        }
+
+        var shouldBackfillMissingOpenCli = string.IsNullOrWhiteSpace(openCliRelativePath)
+            && !string.IsNullOrWhiteSpace(xmlDocRelativePath);
+        if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
+            && !shouldBackfillMissingOpenCli)
         {
             return null;
         }
 
-        var xmlDocRelativePath = artifacts?["xmldocPath"]?.GetValue<string>();
-        var openCliRelativePath = artifacts?["opencliPath"]?.GetValue<string>();
-        if (string.IsNullOrWhiteSpace(xmlDocRelativePath) || string.IsNullOrWhiteSpace(openCliRelativePath))
+        if (string.IsNullOrWhiteSpace(xmlDocRelativePath))
         {
             return null;
         }
 
         var xmlDocPath = Path.Combine(repositoryRoot, xmlDocRelativePath);
-        var openCliPath = Path.Combine(repositoryRoot, openCliRelativePath);
-        if (!File.Exists(xmlDocPath) || !File.Exists(openCliPath))
+        if (!File.Exists(xmlDocPath))
         {
             return null;
         }
@@ -105,6 +133,7 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             packageId,
             version,
             metadata["command"]?.GetValue<string>() ?? packageId,
+            metadataPath,
             xmlDocPath,
             openCliPath);
     }
@@ -123,6 +152,7 @@ internal sealed record XmldocOpenCliArtifactCandidate(
     string PackageId,
     string Version,
     string Title,
+    string MetadataPath,
     string XmlDocPath,
     string OpenCliPath)
 {
