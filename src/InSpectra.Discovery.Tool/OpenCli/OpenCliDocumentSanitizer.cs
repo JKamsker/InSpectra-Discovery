@@ -227,7 +227,7 @@ internal static class OpenCliDocumentSanitizer
 
         var leftName = left["name"]?.GetValue<string>();
         var rightName = right["name"]?.GetValue<string>();
-        if (!string.Equals(leftName, rightName, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(leftName, rightName, StringComparison.Ordinal))
         {
             return false;
         }
@@ -303,12 +303,12 @@ internal static class OpenCliDocumentSanitizer
             .OfType<JsonValue>()
             .Select(value => value.GetValue<string>())
             .Where(value => !string.IsNullOrWhiteSpace(value))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            .ToHashSet(StringComparer.Ordinal);
         var primaryName = merged["name"]?.GetValue<string>();
         foreach (var token in GetOptionTokens(other))
         {
             if (string.IsNullOrWhiteSpace(token)
-                || string.Equals(token, primaryName, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(token, primaryName, StringComparison.Ordinal)
                 || existingAliases.Contains(token))
             {
                 continue;
@@ -372,7 +372,7 @@ internal static class OpenCliDocumentSanitizer
 
     private static HashSet<string> GetOptionTokens(JsonObject option)
     {
-        var tokens = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var tokens = new HashSet<string>(StringComparer.Ordinal);
         var name = option["name"]?.GetValue<string>();
         if (!string.IsNullOrWhiteSpace(name))
         {

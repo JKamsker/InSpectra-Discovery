@@ -129,12 +129,18 @@ internal sealed partial class ToolHelpTextParser
         var rawArgumentLines = new List<string>(argumentLines ?? []);
         rawArgumentLines.AddRange(usageSectionParts.ArgumentLines);
         rawArgumentLines.AddRange(ToolHelpPreambleArgumentInference.InferArgumentLines(preamble, title));
+        var trailingStructuredBlock = ToolHelpTrailingStructuredBlockInference.Infer(sections);
+        rawArgumentLines.AddRange(trailingStructuredBlock.ArgumentLines);
         SplitArgumentSectionLines(rawArgumentLines, out var parsedArgumentLines, out var optionStyleArgumentLines);
         var parsedUsageLines = TrimNonEmpty(
             usageSectionParts.UsageLines.Count > 0
                 ? usageSectionParts.UsageLines
                 : ToolHelpPreambleInference.InferUsageLines(preamble));
-        var rawOptionLines = new List<string>(optionLines ?? ToolHelpLegacyOptionTable.InferOptionLines(preamble, title, parsedUsageLines));
+        var optionCandidateLines = preamble
+            .Skip(string.IsNullOrWhiteSpace(title) ? 0 : 1)
+            .Concat(trailingStructuredBlock.OptionLines)
+            .ToArray();
+        var rawOptionLines = new List<string>(optionLines ?? ToolHelpLegacyOptionTable.InferOptionLines(optionCandidateLines, parsedUsageLines));
         rawOptionLines.AddRange(usageSectionParts.OptionLines);
         rawOptionLines.AddRange(optionStyleArgumentLines);
         var parsedOptions = ParseItems(
@@ -144,7 +150,7 @@ internal sealed partial class ToolHelpTextParser
         var commands = ParseItems(commandLines ?? [], ItemKind.Command);
         if (commands.Count == 0)
         {
-            commands = InferCommands(preamble, sections, parsedUsageLines, parsedOptions, sawInventoryHeader);
+            commands = InferCommands(preamble, sawInventoryHeader);
         }
 
         var applicationDescription = JoinLines(preamble.Skip(descriptionStartIndex));
@@ -298,14 +304,23 @@ internal sealed partial class ToolHelpTextParser
 
         if (kind == ItemKind.Command)
         {
-            if (!char.IsWhiteSpace(rawLine, 0) && string.IsNullOrWhiteSpace(description))
+            if (ToolHelpCommandPrototypeSupport.LooksLikeBareShortLongOptionRow(rawLine))
             {
                 return false;
             }
 
+            var allowsBlankDescriptionLine = ToolHelpCommandPrototypeSupport.AllowsBlankDescriptionLine(key);
+            if (!char.IsWhiteSpace(rawLine, 0) && string.IsNullOrWhiteSpace(description))
+            {
+                if (!allowsBlankDescriptionLine)
+                {
+                    return false;
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(description)
                 && key.Contains(' ', StringComparison.Ordinal)
-                && !ToolHelpPreambleInference.LooksLikeCommandSignature(key))
+                && !ToolHelpCommandPrototypeSupport.LooksLikeCommandPrototype(key))
             {
                 return false;
             }
@@ -367,22 +382,20 @@ internal sealed partial class ToolHelpTextParser
 
     private static IReadOnlyList<ToolHelpItem> InferCommands(
         IReadOnlyList<string> preamble,
-        IReadOnlyDictionary<string, List<string>> sections,
-        IReadOnlyList<string> usageLines,
-        IReadOnlyList<ToolHelpItem> options,
         bool sawInventoryHeader)
     {
-        if (sections.ContainsKey("usage")
-            || sections.ContainsKey("options")
-            || sections.ContainsKey("arguments")
-            || usageLines.Count > 0
-            || options.Count > 0
-            || sawInventoryHeader)
+        if (sawInventoryHeader)
         {
             return [];
         }
 
-        var parsedCommands = ParseItems(preamble.Skip(1).ToArray(), ItemKind.Command);
+        var inventoryLines = ToolHelpRootCommandInventoryInference.InferLines(preamble);
+        if (inventoryLines.Count == 0)
+        {
+            return [];
+        }
+
+        var parsedCommands = ParseItems(inventoryLines, ItemKind.Command);
         var describedCommands = parsedCommands
             .Where(item => !string.IsNullOrWhiteSpace(item.Description))
             .ToArray();
@@ -440,6 +453,7 @@ internal sealed partial class ToolHelpTextParser
         var normalized = segments
             .TakeWhile(segment => !segment.StartsWith("<", StringComparison.Ordinal)
                 && !segment.StartsWith("[", StringComparison.Ordinal)
+                && !segment.StartsWith("(", StringComparison.Ordinal)
                 && !segment.StartsWith("-", StringComparison.Ordinal)
                 && !segment.StartsWith("/", StringComparison.Ordinal))
             .Where(segment => segment.Length > 0)

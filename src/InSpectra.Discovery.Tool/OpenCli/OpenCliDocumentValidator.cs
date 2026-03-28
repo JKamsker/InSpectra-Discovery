@@ -284,7 +284,7 @@ internal static partial class OpenCliDocumentValidator
         out string? reason)
     {
         reason = null;
-        var seenTokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var seenTokens = new Dictionary<string, string>(StringComparer.Ordinal);
 
         for (var index = 0; index < optionNodes.Count; index++)
         {

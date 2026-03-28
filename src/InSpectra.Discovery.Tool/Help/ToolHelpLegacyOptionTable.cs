@@ -9,11 +9,9 @@ internal static partial class ToolHelpLegacyOptionTable
     }
 
     public static IReadOnlyList<string> InferOptionLines(
-        IReadOnlyList<string> preamble,
-        string? title,
+        IReadOnlyList<string> candidateLines,
         IReadOnlyList<string> usageLines)
     {
-        var candidateLines = preamble.Skip(string.IsNullOrWhiteSpace(title) ? 0 : 1).ToArray();
         var commandLineParserOptionLines = TryExtractCommandLineParserOptionLines(candidateLines);
         if (commandLineParserOptionLines.Count > 0)
         {
@@ -21,7 +19,13 @@ internal static partial class ToolHelpLegacyOptionTable
         }
 
         var tableLines = TryExtractTableLines(candidateLines, usageLines);
-        return tableLines.Count > 0 ? tableLines : candidateLines;
+        if (tableLines.Count > 0)
+        {
+            return tableLines;
+        }
+
+        var looseBlockLines = TryExtractLooseBlockLines(candidateLines);
+        return looseBlockLines.Count > 0 ? looseBlockLines : [];
     }
 
     private static IReadOnlyList<string> TryExtractCommandLineParserOptionLines(IReadOnlyList<string> lines)
@@ -93,6 +97,63 @@ internal static partial class ToolHelpLegacyOptionTable
         }
 
         return hasRows ? results : [];
+    }
+
+    private static IReadOnlyList<string> TryExtractLooseBlockLines(IReadOnlyList<string> lines)
+    {
+        var bestLines = Array.Empty<string>();
+        var currentLines = new List<string>();
+        var rowCount = 0;
+        var currentRowCaptured = false;
+        var previousWasBlank = true;
+
+        void Commit()
+        {
+            if (rowCount >= 2)
+            {
+                bestLines = currentLines.ToArray();
+            }
+
+            currentLines.Clear();
+            rowCount = 0;
+            currentRowCaptured = false;
+        }
+
+        foreach (var rawLine in lines)
+        {
+            if (string.IsNullOrWhiteSpace(rawLine))
+            {
+                if (currentLines.Count > 0)
+                {
+                    currentLines.Add(rawLine);
+                }
+
+                previousWasBlank = true;
+                continue;
+            }
+
+            if ((previousWasBlank || currentLines.Count > 0) && LooksLikeLooseOptionRow(rawLine))
+            {
+                currentLines.Add(rawLine);
+                rowCount++;
+                currentRowCaptured = true;
+                previousWasBlank = false;
+                continue;
+            }
+
+            if (currentRowCaptured && GetIndentation(rawLine) > 0)
+            {
+                currentLines.Add(rawLine);
+                previousWasBlank = false;
+                continue;
+            }
+
+            Commit();
+            previousWasBlank = false;
+        }
+
+        Commit();
+        return bestLines;
     }
 
     private static IReadOnlyList<string> TryExtractStructuredOptionLines(IReadOnlyList<string> lines)
@@ -501,6 +562,17 @@ internal static partial class ToolHelpLegacyOptionTable
             && !trailing.StartsWith("[", StringComparison.Ordinal)
             && !trailing.StartsWith("-", StringComparison.Ordinal)
             && !trailing.StartsWith("/", StringComparison.Ordinal);
+
+    private static bool LooksLikeLooseOptionRow(string rawLine)
+    {
+        var trimmed = rawLine.TrimStart();
+        var optionMatch = OptionTokenRegex().Match(trimmed);
+        return (optionMatch.Success && optionMatch.Index == 0)
+            || ToolHelpCommandPrototypeSupport.LooksLikeBareShortLongOptionRow(rawLine);
+    }
+
+    private static int GetIndentation(string rawLine)
+        => rawLine.TakeWhile(char.IsWhiteSpace).Count();
 
     private static HashSet<string> ExtractUsageArgumentNames(IReadOnlyList<string> usageLines)
     {

@@ -3,7 +3,7 @@
   "info": {
     "title": "trcombine",
     "version": "0.23.43",
-    "description": "Copyright (c) 2023 Ken Domino\n# trcombine\n## Summary\nCombine a split Antlr4 grammar\n## Description\nCombine two grammars into one.\nOne grammar must be a lexer grammar, the other a parser grammar,\norder is irrelevant. The output is parse tree data.\n## Usage\ntrcombine <grammar1> <grammar2>\n## Details\n`trcombine` combines grammars that are known as \"split grammars\"\n(separate Antlr4 lexer and parser grammars)\ninto one grammar, known as a \"combined grammar\". This refactoring is\nuseful if a simplified grammar grammar is wanted, and if possible if\nthe split grammar does not use the \"superClass\" option in one or the other\ngrammars. The opposite refactoring is implemented by\n[trsplit](https://github.com/kaby76/Trash/tree/main/trsplit).\nThe split refactoring performs several operations:\n* Combine the two files together, parser grammar first, then lexer grammar.\n* Remove the `grammarDecl` for the lexer rules, and change the `grammarDecl`\nfor the parser rules to be a combined grammar declaration. Rename the name\nof the parser grammar to not have \"Parser\" at the tail of the name.\n* Remove the `optionsSpec` for the lexer section.\n* Remove any occurrence of \"tokenVocab\" from the `optionsSpec` of the parser\nsection.\n* If the `optionsSpec` is empty, it is removed.\nThe order of the two grammars is ignored: the parser rules always will appear\nbefore the lexer rules.\nLexer modes will require manual fix-up.\n## Example\nConsider the following grammar that is split.\n_Input to command_\nLexer grammar in ExpressionLexer.g4:\nlexer grammar ExpressionLexer;\nVARIABLE : VALID_ID_START VALID_ID_CHAR* ;\nfragment VALID_ID_START : ('a' .. 'z') | ('A' .. 'Z') | '_' ;\nfragment VALID_ID_CHAR : VALID_ID_START | ('0' .. '9') ;\nINT : ('0' .. '9')+ ;\nMUL : '*' ;\nDIV : '/' ;\nADD : '+' ;\nSUB : '-' ;\nLP : '(' ;\nRP : ')' ;\nWS : [ \\r\\n\\t] + -> skip ;\nParser grammar in ExpressionParser.g4:\nparser grammar ExpressionParser;\ne : e ('*' | '/') e\n| e ('+' | '-') e\n| '(' e ')'\n| ('-' | '+')* a\n;\na : number | variable ;\nnumber : INT ;\nvariable : VARIABLE ;\n_Command_\ntrcombine ExpressionLexer.g4 ExpressionParser.g4 | trprint > Expression.g4\nCombined grammar in Expression.g4:\ngrammar Expression;\ne : e ('*' | '/') e\n| e ('+' | '-') e\n| '(' e ')'\n| ('-' | '+')* a\n;\na : number | variable ;\nnumber : INT ;\nvariable : VARIABLE ;\nVARIABLE : VALID_ID_START VALID_ID_CHAR* ;\nfragment VALID_ID_START : ('a' .. 'z') | ('A' .. 'Z') | '_' ;\nfragment VALID_ID_CHAR : VALID_ID_START | ('0' .. '9') ;\nINT : ('0' .. '9')+ ;\nMUL : '*' ;\nDIV : '/' ;\nADD : '+' ;\nSUB : '-' ;\nLP : '(' ;\nRP : ')' ;\nWS : [ \\r\\n\\t] + -> skip ;\nThe original grammars are left unchanged.\n## Current version\n0.23.43 Fixes to trgen templates.\n## License\nThe MIT License\nCopyright (c) 2025 Ken Domino\nPermission is hereby granted, free of charge,\nto any person obtaining a copy of this software and\nassociated documentation files (the \"Software\"), to\ndeal in the Software without restriction, including\nwithout limitation the rights to use, copy, modify,\nmerge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom\nthe Software is furnished to do so,\nsubject to the following conditions:\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions of the Software.\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES\nOF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR\nANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,\nTORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE\nSOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n-f, --file       Read parse tree data from file instead of stdin.\n--fmt            Output formatted parsing results set.\n-v, --verbose\n--version\n--help           Display this help screen.\n--version        Display version information."
+    "description": "Combine two grammars into one.\nOne grammar must be a lexer grammar, the other a parser grammar,\norder is irrelevant. The output is parse tree data."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
@@ -29,19 +29,6 @@
       "description": "Output formatted parsing results set."
     },
     {
-      "name": "--verbose",
-      "recursive": false,
-      "hidden": false,
-      "aliases": [
-        "-v"
-      ]
-    },
-    {
-      "name": "--version",
-      "recursive": false,
-      "hidden": false
-    },
-    {
       "name": "--help",
       "recursive": false,
       "hidden": false,
@@ -52,6 +39,26 @@
       "recursive": false,
       "hidden": false,
       "description": "Display version information."
+    }
+  ],
+  "arguments": [
+    {
+      "name": "GRAMMAR1",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "GRAMMAR2",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
     }
   ]
 }

@@ -472,6 +472,100 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Parses_Trailing_Option_Blocks_From_Markdown_Narrative_Sections()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            trcaret
+            # trcaret
+
+            ## Summary
+
+            Print a line with caret underneath for beginning of tree.
+
+            ## Usage
+
+                trcaret [options]
+
+            ## Examples
+
+                trquery grep //lexerRuleSpec | trcaret -H
+
+            ## Current version
+
+            0.23.43 Fixes to trgen templates.
+
+              -f, --file             Read parse tree data from file instead of stdin.
+              -H, --with-filename    Print the file name for each match.
+              -p, --prefix
+              -v, --verbose
+              --help                 Display this help screen.
+              --version              Display version information.
+            """);
+
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-f, --file", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-H, --with-filename", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "-v, --verbose", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Parses_Command_Prototype_Lists_In_Commands_Sections()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            trinsert
+            # trquery
+
+            ### Commands
+
+            grep <xpath> match-required?
+            insert (before|after)? <xpath> match-required? <string>
+            delete-reattach <xpath> match-required?
+            """);
+
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "grep", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "insert", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "delete-reattach", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Infers_Root_Command_Inventories_When_Global_Options_Appear_Later()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Adliance.QmDoc 2.4.2
+            Adliance GmbH
+
+              pdf          (Default Verb) Runs the full Markdown to PDF conversion.
+
+              docx         Runs the Markdown to DOCX conversion.
+
+              update       Updates to the latest version.
+
+              help         Display more information on a specific command.
+
+              version      Display version information.
+
+            Adliance.QmDoc 2.4.2
+            Adliance GmbH
+
+              --help       Display this help screen.
+              --version    Display version information.
+            """);
+
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "pdf", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "docx", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "update", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--help", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Parses_Markdown_Short_Long_Description_Option_Tables()
     {
         var parser = new ToolHelpTextParser();

@@ -213,6 +213,43 @@ public sealed class OpenCliDocumentValidatorTests
     }
 
     [Fact]
+    public void TryLoadValidDocument_Allows_Case_Distinct_Option_Tokens()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--name",
+                        ["aliases"] = new JsonArray
+                        {
+                            "-n",
+                        },
+                    },
+                    new JsonObject
+                    {
+                        ["name"] = "--namespace",
+                        ["aliases"] = new JsonArray
+                        {
+                            "-N",
+                        },
+                    },
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.True(valid);
+        Assert.Null(reason);
+    }
+
+    [Fact]
     public void TryLoadValidDocument_Rejects_NonPublishable_Info_Text()
     {
         using var tempDirectory = new TemporaryDirectory();
