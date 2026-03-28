@@ -78,7 +78,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             parsedCaptures[string.Empty] = CreateEmptyRootDocument();
         }
 
-        var helpDocuments = BuildReachableDocuments(parsedCaptures);
+        var helpDocuments = BuildReachableDocuments(candidate.CommandName, parsedCaptures);
         if (helpDocuments.Count == 0)
         {
             helpDocuments[string.Empty] = CreateEmptyRootDocument();
@@ -197,6 +197,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
     }
 
     private static Dictionary<string, ToolHelpDocument> BuildReachableDocuments(
+        string rootCommandName,
         IReadOnlyDictionary<string, ToolHelpDocument> parsedCaptures)
     {
         var documents = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase);
@@ -216,7 +217,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             var current = documents[commandKey];
             foreach (var child in current.Commands)
             {
-                var childKey = string.IsNullOrWhiteSpace(commandKey) ? child.Key : $"{commandKey} {child.Key}";
+                var childKey = ToolHelpCommandPathSupport.ResolveChildKey(rootCommandName, commandKey, child.Key);
                 if (!seen.Add(childKey) || !parsedCaptures.TryGetValue(childKey, out var childDocument))
                 {
                     continue;

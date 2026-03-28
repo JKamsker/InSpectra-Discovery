@@ -83,6 +83,73 @@ public sealed class ToolHelpCrawlCanonicalizationTests
         Assert.Equal("cienvironment", cienvironment["name"]!.GetValue<string>());
     }
 
+    [Fact]
+    public void Regenerator_Reaches_Fully_Qualified_Child_Command_Listings()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "samplehelp", "3.0.0");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "SampleHelp",
+                ["version"] = "3.0.0",
+                ["command"] = "sample",
+                ["artifacts"] = new JsonObject
+                {
+                    ["opencliSource"] = "crawled-from-help",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            sample 3.0.0
+
+                            Commands:
+                              sample upload  Upload artifacts.
+                            """,
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "upload",
+                        ["payload"] =
+                            """
+                            Usage: sample upload [options]
+
+                            Options:
+                              --verbose  Verbose output.
+                            """,
+                    },
+                },
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+
+        var openCli = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        var rootCommands = Assert.IsType<JsonArray>(openCli["commands"]);
+        var upload = Assert.IsType<JsonObject>(Assert.Single(rootCommands));
+        Assert.Equal("upload", upload["name"]!.GetValue<string>());
+        Assert.Contains(upload["options"]!.AsArray(), option =>
+            string.Equals(option?["name"]?.GetValue<string>(), "--verbose", StringComparison.Ordinal));
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

@@ -187,7 +187,7 @@ internal sealed class CliFxCrawlArtifactRegenerator
         var parentSegments = string.IsNullOrWhiteSpace(commandKey)
             ? []
             : commandKey.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        var prefix = parentSegments.Length == 0 ? null : $"{commandKey} ";
+        var prefix = parentSegments.Length == 0 ? string.Empty : $"{commandKey} ";
 
         foreach (var staticCommandKey in staticCommandKeys.Where(key => !string.IsNullOrWhiteSpace(key)))
         {
