@@ -120,11 +120,13 @@ internal sealed class NativeOpenCliArtifactRegenerator
             return null;
         }
 
-        if (string.IsNullOrWhiteSpace(artifactSource)
-            && (!string.IsNullOrWhiteSpace(artifacts?["crawlPath"]?.GetValue<string>())
-                || !string.IsNullOrWhiteSpace(artifacts?["xmldocPath"]?.GetValue<string>())))
+        var crawlRelativePath = artifacts?["crawlPath"]?.GetValue<string>();
+        var crawlPath = string.IsNullOrWhiteSpace(crawlRelativePath)
+            ? null
+            : Path.Combine(repositoryRoot, crawlRelativePath);
+        if (!File.Exists(crawlPath))
         {
-            return null;
+            crawlPath = null;
         }
 
         var xmlDocRelativePath = artifacts?["xmldocPath"]?.GetValue<string>();
@@ -134,6 +136,12 @@ internal sealed class NativeOpenCliArtifactRegenerator
         if (!File.Exists(xmlDocPath))
         {
             xmlDocPath = null;
+        }
+
+        if (string.IsNullOrWhiteSpace(artifactSource)
+            && (crawlPath is not null || xmlDocPath is not null))
+        {
+            return null;
         }
 
         return new NativeOpenCliArtifactCandidate(packageId, version, metadataPath, openCliPath, xmlDocPath);

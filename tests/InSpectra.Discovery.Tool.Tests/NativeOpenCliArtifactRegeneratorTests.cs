@@ -210,6 +210,57 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
         Assert.Equal("tool-output", ParseJsonObject(Path.Combine(versionRoot, "metadata.json"))["artifacts"]?["opencliSource"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void Regenerates_Native_OpenCli_When_Only_Dead_Crawl_And_Xmldoc_Paths_Remain()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "stale.tool", "1.2.3");
+        var metadataPath = Path.Combine(versionRoot, "metadata.json");
+        var openCliPath = Path.Combine(versionRoot, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            metadataPath,
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Stale.Tool",
+                ["version"] = "1.2.3",
+                ["artifacts"] = new JsonObject
+                {
+                    ["opencliPath"] = "index/packages/stale.tool/1.2.3/opencli.json",
+                    ["crawlPath"] = "index/packages/stale.tool/1.2.3/crawl.json",
+                    ["xmldocPath"] = "index/packages/stale.tool/1.2.3/xmldoc.xml",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            openCliPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "stale-tool",
+                    ["version"] = "1.2.3",
+                },
+                ["commands"] = new JsonArray(),
+            });
+
+        var regenerator = new NativeOpenCliArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var metadata = ParseJsonObject(metadataPath);
+        Assert.Equal("tool-output", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Null(metadata["artifacts"]?["crawlPath"]);
+        Assert.Null(metadata["artifacts"]?["xmldocPath"]);
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
