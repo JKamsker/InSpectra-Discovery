@@ -348,8 +348,8 @@ internal sealed class DocsCommandService
         }
     }
 
-    private static IEnumerable<JsonNode> GetVisibleItems(JsonArray? items)
-        => items?.OfType<JsonNode>().Where(item => item["hidden"]?.GetValue<bool?>() != true) ?? [];
+    private static IEnumerable<JsonObject> GetVisibleItems(JsonArray? items)
+        => items?.OfType<JsonObject>().Where(item => item["hidden"]?.GetValue<bool?>() != true) ?? [];
 
     private static bool HasText(JsonNode? value)
         => value is JsonValue jsonValue &&

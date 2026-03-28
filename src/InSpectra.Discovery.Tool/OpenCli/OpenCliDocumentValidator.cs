@@ -34,7 +34,59 @@ internal static class OpenCliDocumentValidator
             }
         }
 
+        if (!TryValidateCommandLikeNode(parsedDocument, "$", out reason))
+        {
+            return false;
+        }
+
         document = parsedDocument;
+        return true;
+    }
+
+    private static bool TryValidateCommandLikeNode(JsonObject node, string path, out string? reason)
+    {
+        reason = null;
+
+        foreach (var arrayProperty in new[] { "arguments", "commands", "options" })
+        {
+            if (node[arrayProperty] is not JsonArray array)
+            {
+                continue;
+            }
+
+            for (var index = 0; index < array.Count; index++)
+            {
+                if (array[index] is not JsonObject child)
+                {
+                    reason = $"OpenCLI artifact has a non-object entry at '{path}.{arrayProperty}[{index}]'.";
+                    return false;
+                }
+
+                if (string.Equals(arrayProperty, "commands", StringComparison.Ordinal)
+                    && !TryValidateCommandLikeNode(child, $"{path}.{arrayProperty}[{index}]", out reason))
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (node["examples"] is JsonArray examples)
+        {
+            for (var index = 0; index < examples.Count; index++)
+            {
+                if (examples[index] is not JsonValue value || !value.TryGetValue<string>(out _))
+                {
+                    reason = $"OpenCLI artifact has a non-string entry at '{path}.examples[{index}]'.";
+                    return false;
+                }
+            }
+        }
+        else if (node["examples"] is not null)
+        {
+            reason = $"OpenCLI artifact has a non-array 'examples' property at '{path}'.";
+            return false;
+        }
+
         return true;
     }
 }

@@ -9,7 +9,7 @@ internal static class OpenCliMetrics
             return OpenCliMetricsResult.Empty;
         }
 
-        return OpenCliArtifactLoadSupport.TryLoadJsonNode(openCliPath, out var document)
+        return OpenCliDocumentValidator.TryLoadValidDocument(openCliPath, out var document, out _)
             ? GetFromDocument(document)
             : OpenCliMetricsResult.Empty;
     }
@@ -79,7 +79,7 @@ internal static class OpenCliMetrics
         var latestPaths = summary["latestPaths"] as JsonObject;
         var versionedOpenCliPath = summary["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault()?["paths"]?["opencliPath"]?.GetValue<string>();
 
-        if (OpenCliArtifactLoadSupport.TryLoadFirstJsonNode(
+        if (OpenCliArtifactLoadSupport.TryLoadFirstValidOpenCliDocument(
             repositoryRoot,
             [latestPaths?["opencliPath"]?.GetValue<string>(), versionedOpenCliPath],
             out var directDocument,
@@ -94,7 +94,7 @@ internal static class OpenCliMetrics
         if (metadataPath is not null)
         {
             if (PromotionArtifactSupport.TryLoadJsonObject(metadataPath, out var metadata) && metadata is not null
-                && OpenCliArtifactLoadSupport.TryLoadFirstJsonNode(
+                && OpenCliArtifactLoadSupport.TryLoadFirstValidOpenCliDocument(
                     repositoryRoot,
                     [
                         metadata["artifacts"]?["opencliPath"]?.GetValue<string>(),
