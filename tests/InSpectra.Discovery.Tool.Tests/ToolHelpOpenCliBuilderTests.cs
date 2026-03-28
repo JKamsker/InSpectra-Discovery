@@ -235,6 +235,30 @@ public sealed class ToolHelpOpenCliBuilderTests
     }
 
     [Fact]
+    public void Does_Not_Emit_Option_Metavars_As_Usage_Only_Positional_Arguments()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: ["demo [--path <PATH>] [--format <Csv|Json|Table|Yaml>] <PROJECT>"],
+                Arguments: [],
+                Options: [],
+                Commands: []),
+        };
+
+        var document = builder.Build("demo", "1.0.0", helpDocuments);
+        var arguments = document["arguments"]!.AsArray();
+
+        var project = Assert.Single(arguments);
+        Assert.Equal("PROJECT", project!["name"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Emits_Arguments_For_Bare_Word_Option_Metavars()
     {
         var builder = new ToolHelpOpenCliBuilder();

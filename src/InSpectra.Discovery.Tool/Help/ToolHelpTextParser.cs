@@ -50,6 +50,11 @@ internal sealed partial class ToolHelpTextParser
         foreach (var rawLine in lines)
         {
             var line = rawLine.TrimEnd();
+            if (ShouldRejectHelpCapture(preamble, sections, commandHeader, line))
+            {
+                return new ToolHelpDocument(null, null, null, null, [], [], [], []);
+            }
+
             sawInventoryHeader |= LooksLikeInventoryHeaderLine(line.Trim());
             if (TryParseIgnoredSectionHeader(line))
             {
@@ -539,8 +544,30 @@ internal sealed partial class ToolHelpTextParser
                 || LooksLikeInventoryHeaderLine(trimmed)
                 || trimmed.StartsWith("Visit http://", StringComparison.OrdinalIgnoreCase)
                 || trimmed.StartsWith("Visit https://", StringComparison.OrdinalIgnoreCase)
-                || trimmed.StartsWith("NSwag bin directory:", StringComparison.OrdinalIgnoreCase)
-                || trimmed.StartsWith("CLI Version:", StringComparison.OrdinalIgnoreCase);
+            || trimmed.StartsWith("NSwag bin directory:", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("CLI Version:", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ShouldRejectHelpCapture(
+        IReadOnlyList<string> preamble,
+        IReadOnlyDictionary<string, List<string>> sections,
+        string? commandHeader,
+        string line)
+    {
+        if (!LooksLikeRejectedHelpInvocation(line.Trim()))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(commandHeader) || HasContentSections(sections))
+        {
+            return false;
+        }
+
+        var meaningfulPreambleLineCount = preamble
+            .Select(entry => entry.Trim())
+            .Count(entry => !string.IsNullOrWhiteSpace(entry) && !ShouldIgnorePreambleLine(entry));
+        return meaningfulPreambleLineCount <= 1;
     }
 
     private static bool IsNoiseItemKey(ItemKind kind, string key)

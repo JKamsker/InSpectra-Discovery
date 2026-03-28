@@ -655,6 +655,26 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Rejects_InvalidUsage_Banners_That_Appear_After_The_Title()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            ExampleTool 1.2.3
+            Invalid usage
+            Unknown argument or flag for value --help
+
+            Usage:
+              example [options]
+            """);
+
+        Assert.False(document.HasContent);
+        Assert.Null(document.Title);
+        Assert.Empty(document.UsageLines);
+    }
+
+    [Fact]
     public void Does_Not_Infer_Commands_From_DotnetToolList_Headers()
     {
         var parser = new ToolHelpTextParser();

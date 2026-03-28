@@ -216,6 +216,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
                     continue;
                 }
 
+                if (AppearsInOptionClause(line, match))
+                {
+                    continue;
+                }
+
                 if (IsDispatcherPlaceholder(value))
                 {
                     if (hasChildCommands)
@@ -445,6 +450,29 @@ internal sealed partial class ToolHelpOpenCliBuilder
             || value.StartsWith("/", StringComparison.Ordinal)
             || (value.Contains('|', StringComparison.Ordinal) && OptionTokenRegex().Match(value).Success)
             || (value.Contains('=', StringComparison.Ordinal) && OptionTokenRegex().Match(value).Success);
+
+    private static bool AppearsInOptionClause(string line, Match match)
+    {
+        var index = match.Index - 1;
+        while (index >= 0 && char.IsWhiteSpace(line[index]))
+        {
+            index--;
+        }
+
+        if (index < 0)
+        {
+            return false;
+        }
+
+        var tokenEnd = index;
+        while (index >= 0 && !char.IsWhiteSpace(line[index]) && line[index] is not '[' and not '(' and not '{')
+        {
+            index--;
+        }
+
+        var candidate = line[(index + 1)..(tokenEnd + 1)].TrimEnd('=', ':');
+        return candidate.Length > 0 && OptionTokenRegex().Match(candidate).Success;
+    }
 
     private static string NormalizeArgumentName(string key)
         => key.Replace('-', '_').ToUpperInvariant();
