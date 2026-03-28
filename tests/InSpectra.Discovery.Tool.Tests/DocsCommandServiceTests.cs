@@ -177,6 +177,100 @@ public sealed class DocsCommandServiceTests
             DateTimeOffset.Parse(package["updatedAt"]?.GetValue<string>() ?? throw new InvalidOperationException("Missing package updatedAt.")));
     }
 
+    [Fact]
+    public async Task RebuildIndexesAsync_Rebases_Latest_Metadata_Artifact_Paths_And_Copies_Crawl()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+            new JsonObject
+            {
+                ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                ["packageType"] = "DotnetTool",
+                ["packageCount"] = 1,
+                ["packages"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "Sample.Tool",
+                        ["latestVersion"] = "1.2.3",
+                    },
+                },
+            });
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Sample.Tool",
+                ["version"] = "1.2.3",
+                ["status"] = "ok",
+                ["command"] = "sample",
+                ["publishedAt"] = "2026-03-27T00:30:00Z",
+                ["evaluatedAt"] = "2026-03-27T01:00:00Z",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["path"] = "index/packages/sample.tool/1.2.3/opencli.json",
+                    },
+                    ["xmldoc"] = new JsonObject
+                    {
+                        ["path"] = "index/packages/sample.tool/1.2.3/xmldoc.xml",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/sample.tool/1.2.3/metadata.json",
+                    ["opencliPath"] = "index/packages/sample.tool/1.2.3/opencli.json",
+                    ["opencliSource"] = "crawled-from-help",
+                    ["xmldocPath"] = "index/packages/sample.tool/1.2.3/xmldoc.xml",
+                    ["crawlPath"] = "index/packages/sample.tool/1.2.3/crawl.json",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "crawled-from-help",
+                },
+            });
+        RepositoryPathResolver.WriteTextFile(Path.Combine(versionRoot, "xmldoc.xml"), "<Model />");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["documentCount"] = 1,
+            });
+
+        var service = new DocsCommandService();
+        var exitCode = await service.RebuildIndexesAsync(
+            repositoryRoot,
+            writeBrowserIndex: true,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "latest", "crawl.json")));
+
+        var latestMetadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "latest", "metadata.json"));
+        Assert.Equal("index/packages/sample.tool/latest/metadata.json", latestMetadata["artifacts"]?["metadataPath"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/latest/opencli.json", latestMetadata["artifacts"]?["opencliPath"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/latest/xmldoc.xml", latestMetadata["artifacts"]?["xmldocPath"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/latest/crawl.json", latestMetadata["artifacts"]?["crawlPath"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/latest/opencli.json", latestMetadata["steps"]?["opencli"]?["path"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/latest/xmldoc.xml", latestMetadata["steps"]?["xmldoc"]?["path"]?.GetValue<string>());
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

@@ -41,7 +41,7 @@ internal static class RepositoryPackageIndexBuilder
                 packageGroup.Select(record => record.Metadata!).ToList(),
                 currentSnapshotLookup,
                 existingSummary);
-            SyncLatestDirectory(latestRecord.VersionDirectory, Path.Combine(packagesRoot, lowerId, "latest"));
+            SyncLatestDirectory(repositoryRoot, latestRecord.VersionDirectory, Path.Combine(packagesRoot, lowerId, "latest"));
             RepositoryPathResolver.WriteJsonFile(summaryPath, summary);
             unsortedPackageSummaries.Add(summary);
         }
@@ -141,10 +141,10 @@ internal static class RepositoryPackageIndexBuilder
         return summary;
     }
 
-    private static void SyncLatestDirectory(string versionDirectory, string latestDirectory)
+    private static void SyncLatestDirectory(string repositoryRoot, string versionDirectory, string latestDirectory)
     {
         Directory.CreateDirectory(latestDirectory);
-        foreach (var artifactName in new[] { "metadata.json", "opencli.json", "xmldoc.xml" })
+        foreach (var artifactName in new[] { "metadata.json", "opencli.json", "xmldoc.xml", "crawl.json" })
         {
             var sourcePath = Path.Combine(versionDirectory, artifactName);
             var targetPath = Path.Combine(latestDirectory, artifactName);
@@ -157,6 +157,73 @@ internal static class RepositoryPackageIndexBuilder
                 File.Delete(targetPath);
             }
         }
+
+        RebaseLatestMetadataPaths(repositoryRoot, latestDirectory);
+    }
+
+    private static void RebaseLatestMetadataPaths(string repositoryRoot, string latestDirectory)
+    {
+        var metadataPath = Path.Combine(latestDirectory, "metadata.json");
+        if (!File.Exists(metadataPath))
+        {
+            return;
+        }
+
+        var metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject();
+        if (metadata is null)
+        {
+            return;
+        }
+
+        var original = metadata.DeepClone();
+        var artifacts = metadata["artifacts"] as JsonObject ?? new JsonObject();
+        artifacts["metadataPath"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, metadataPath);
+        artifacts["opencliPath"] = ResolveLatestArtifactPath(repositoryRoot, latestDirectory, "opencli.json");
+        artifacts["xmldocPath"] = ResolveLatestArtifactPath(repositoryRoot, latestDirectory, "xmldoc.xml");
+        artifacts["crawlPath"] = ResolveLatestArtifactPath(repositoryRoot, latestDirectory, "crawl.json");
+        metadata["artifacts"] = artifacts;
+
+        if (metadata["steps"] is JsonObject steps)
+        {
+            if (steps["opencli"] is JsonObject openCliStep)
+            {
+                var openCliPath = ResolveLatestArtifactPath(repositoryRoot, latestDirectory, "opencli.json");
+                if (openCliPath is null)
+                {
+                    openCliStep.Remove("path");
+                }
+                else
+                {
+                    openCliStep["path"] = openCliPath;
+                }
+            }
+
+            if (steps["xmldoc"] is JsonObject xmlDocStep)
+            {
+                var xmlDocPath = ResolveLatestArtifactPath(repositoryRoot, latestDirectory, "xmldoc.xml");
+                if (xmlDocPath is null)
+                {
+                    xmlDocStep.Remove("path");
+                }
+                else
+                {
+                    xmlDocStep["path"] = xmlDocPath;
+                }
+            }
+        }
+
+        if (!JsonNode.DeepEquals(original, metadata))
+        {
+            RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
+        }
+    }
+
+    private static string? ResolveLatestArtifactPath(string repositoryRoot, string latestDirectory, string artifactName)
+    {
+        var artifactPath = Path.Combine(latestDirectory, artifactName);
+        return File.Exists(artifactPath)
+            ? RepositoryPathResolver.GetRelativePath(repositoryRoot, artifactPath)
+            : null;
     }
 
     private static void WriteBrowserIndex(JsonObject allIndex, string outputPath, DateTimeOffset now)
