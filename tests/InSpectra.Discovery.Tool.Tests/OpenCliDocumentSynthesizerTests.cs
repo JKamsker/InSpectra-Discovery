@@ -11,6 +11,7 @@ public sealed class OpenCliDocumentSynthesizerTests
             """
             <Model>
               <Command Name="__default_command">
+                <Description>Sample root description</Description>
                 <Parameters>
                   <Option Long="verbose">
                     <Description>Verbose output</Description>
@@ -28,6 +29,7 @@ public sealed class OpenCliDocumentSynthesizerTests
 
         var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample", "1.2.3");
 
+        Assert.Equal("Sample root description", document["info"]?["description"]?.GetValue<string>());
         Assert.Contains(document["options"]!.AsArray(), option =>
             string.Equals(option?["name"]?.GetValue<string>(), "--verbose", StringComparison.Ordinal));
         Assert.Contains(document["arguments"]!.AsArray(), argument =>

@@ -542,7 +542,7 @@ public sealed class PromotionApplyCommandServiceTests
                             ["version"] = "2.0.0",
                             ["attempt"] = 1,
                             ["command"] = "clifx-tool",
-                            ["cliFramework"] = "CliFx",
+                            ["cliFramework"] = "CliFx + System.CommandLine",
                             ["analysisMode"] = "clifx",
                         },
                     },
@@ -610,6 +610,7 @@ public sealed class PromotionApplyCommandServiceTests
             Assert.Equal(0, exitCode);
 
             var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "clifx.tool", "2.0.0", "metadata.json"));
+            Assert.Equal("CliFx + System.CommandLine", metadata["cliFramework"]?.GetValue<string>());
             Assert.Equal("crawled-from-clifx-help", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
             Assert.Equal("crawled-from-clifx-help", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
             Assert.Equal("clifx-crawl", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
@@ -857,6 +858,102 @@ public sealed class PromotionApplyCommandServiceTests
             var state = ParseJsonObject(Path.Combine(repositoryRoot, "state", "packages", "bad.tool", "1.0.0.json"));
             Assert.Equal("retryable-failure", state["currentStatus"]?.GetValue<string>());
             Assert.False(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "bad.tool", "1.0.0", "metadata.json")));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyUntrustedAsync_Rejects_OpenCli_Artifacts_Without_Root_OpenCli_Marker()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Bad.Shape.Tool",
+                            ["latestVersion"] = "1.0.0",
+                            ["totalDownloads"] = 25,
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-bad-shape",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Bad.Shape.Tool",
+                            ["version"] = "1.0.0",
+                            ["attempt"] = 1,
+                            ["command"] = "bad-shape-tool",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-bad-shape-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Bad.Shape.Tool",
+                    ["version"] = "1.0.0",
+                    ["batchId"] = "batch-bad-shape",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analyzedAt"] = "2026-03-27T04:15:00Z",
+                    ["disposition"] = "success",
+                    ["command"] = "bad-shape-tool",
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["xmldocArtifact"] = null,
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-bad-shape-tool", "opencli.json"),
+                new JsonObject
+                {
+                    ["info"] = new JsonObject
+                    {
+                        ["title"] = "bad-shape-tool",
+                    },
+                });
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var state = ParseJsonObject(Path.Combine(repositoryRoot, "state", "packages", "bad.shape.tool", "1.0.0.json"));
+            Assert.Equal("retryable-failure", state["currentStatus"]?.GetValue<string>());
+            Assert.False(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "bad.shape.tool", "1.0.0", "metadata.json")));
         }
         finally
         {

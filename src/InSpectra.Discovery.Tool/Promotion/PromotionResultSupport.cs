@@ -73,7 +73,11 @@ internal static class PromotionResultSupport
             result["command"] = item["command"]?.DeepClone();
         }
 
-        if (result["cliFramework"] is null && item["cliFramework"] is not null)
+        if (CliFrameworkSupport.ShouldReplace(result["cliFramework"]?.GetValue<string>(), item["cliFramework"]?.GetValue<string>()))
+        {
+            result["cliFramework"] = item["cliFramework"]?.DeepClone();
+        }
+        else if (result["cliFramework"] is null && item["cliFramework"] is not null)
         {
             result["cliFramework"] = item["cliFramework"]?.DeepClone();
         }

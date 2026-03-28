@@ -12,6 +12,7 @@ internal sealed class CliFxAnalysisService
         string packageId,
         string version,
         string? commandName,
+        string? cliFramework,
         string outputRoot,
         string batchId,
         int attempt,
@@ -24,6 +25,7 @@ internal sealed class CliFxAnalysisService
             packageId,
             version,
             commandName,
+            cliFramework,
             outputRoot,
             batchId,
             attempt,
@@ -39,6 +41,7 @@ internal sealed class CliFxAnalysisService
         string packageId,
         string version,
         string? commandName,
+        string? cliFramework,
         string outputRoot,
         string batchId,
         int attempt,
@@ -52,6 +55,7 @@ internal sealed class CliFxAnalysisService
             packageId,
             version,
             commandName,
+            cliFramework,
             outputRoot,
             batchId,
             attempt,
@@ -67,6 +71,7 @@ internal sealed class CliFxAnalysisService
         string packageId,
         string version,
         string? commandName,
+        string? cliFramework,
         string outputRoot,
         string batchId,
         int attempt,
@@ -86,6 +91,7 @@ internal sealed class CliFxAnalysisService
 
         Directory.CreateDirectory(outputDirectory);
         Directory.CreateDirectory(tempRoot);
+        var resolvedCliFramework = string.IsNullOrWhiteSpace(cliFramework) ? "CliFx" : cliFramework;
 
         var result = NonSpectreAnalysisResultSupport.CreateInitialResult(
             packageId,
@@ -94,7 +100,7 @@ internal sealed class CliFxAnalysisService
             batchId,
             attempt,
             source,
-            cliFramework: "CliFx",
+            cliFramework: resolvedCliFramework,
             analysisMode: "clifx",
             analyzedAt: generatedAt);
         result["coverage"] = null;
@@ -281,6 +287,11 @@ internal sealed class CliFxAnalysisService
         }
 
         var openCliDocument = _openCliBuilder.Build(commandName, version, staticCommands, crawl.Documents);
+        if (!string.IsNullOrWhiteSpace(result["cliFramework"]?.GetValue<string>()))
+        {
+            openCliDocument["x-inspectra"]!.AsObject()["cliFramework"] = result["cliFramework"]!.GetValue<string>();
+        }
+
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
         NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "clifx-crawl", artifactSource: "crawled-from-clifx-help");

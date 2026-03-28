@@ -156,7 +156,7 @@ internal sealed class HelpBatchAnalysisCommandService
             : null;
         var openCliArtifactName = result?["artifacts"]?["opencliArtifact"]?.GetValue<string>();
         var crawlArtifactName = result?["artifacts"]?["crawlArtifact"]?.GetValue<string>();
-        var openCliExists = HasUsableJsonArtifact(itemOutputRoot, openCliArtifactName);
+        var openCliExists = HasUsableOpenCliArtifact(itemOutputRoot, openCliArtifactName);
         var crawlExists = !HelpBatchArtifactSupport.RequiresCrawlArtifact(item.AnalysisMode)
             || HasUsableJsonArtifact(itemOutputRoot, crawlArtifactName);
         var disposition = result?["disposition"]?.GetValue<string>();
@@ -263,6 +263,12 @@ internal sealed class HelpBatchAnalysisCommandService
         return artifactPath is not null && PromotionArtifactSupport.TryLoadJsonObject(artifactPath, out _);
     }
 
+    private static bool HasUsableOpenCliArtifact(string artifactDirectory, string? artifactName)
+    {
+        var artifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, artifactName);
+        return artifactPath is not null && OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out _);
+    }
+
     private static void SetOptionalString(JsonObject target, string propertyName, string? value)
     {
         if (!string.IsNullOrWhiteSpace(value))
@@ -338,6 +344,7 @@ internal sealed class CliFxBatchAnalysisRunner : ICliFxBatchAnalysisRunner
             item.PackageId,
             item.Version,
             item.CommandName,
+            item.CliFramework,
             outputRoot,
             batchId,
             item.Attempt,

@@ -37,6 +37,7 @@ internal interface IAutoAnalysisCliFxRunner
         string packageId,
         string version,
         string? commandName,
+        string? cliFramework,
         string outputRoot,
         string batchId,
         int attempt,
@@ -162,6 +163,7 @@ internal sealed class AutoAnalysisCommandService
                 packageId,
                 version,
                 descriptor.CommandName,
+                descriptor.CliFramework,
                 outputDirectory,
                 batchId,
                 attempt,
@@ -218,7 +220,11 @@ internal sealed class AutoAnalysisCommandService
             ["reason"] = descriptor.SelectionReason,
         };
 
-        if (result["cliFramework"] is null && !string.IsNullOrWhiteSpace(descriptor.CliFramework))
+        if (CliFrameworkSupport.ShouldReplace(result["cliFramework"]?.GetValue<string>(), descriptor.CliFramework))
+        {
+            result["cliFramework"] = descriptor.CliFramework;
+        }
+        else if (result["cliFramework"] is null && !string.IsNullOrWhiteSpace(descriptor.CliFramework))
         {
             result["cliFramework"] = descriptor.CliFramework;
         }
@@ -330,7 +336,7 @@ internal sealed class AutoAnalysisCommandService
     {
         private readonly CliFxAnalysisService _service = new();
 
-        public async Task RunAsync(string packageId, string version, string? commandName, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
-            => await _service.RunQuietAsync(packageId, version, commandName, outputRoot, batchId, attempt, source, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, cancellationToken);
+        public async Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+            => await _service.RunQuietAsync(packageId, version, commandName, cliFramework, outputRoot, batchId, attempt, source, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, cancellationToken);
     }
 }

@@ -61,6 +61,7 @@ internal sealed class AnalysisRunCliFxCommand : AsyncCommand<AnalysisRunCliFxCom
             settings.PackageId,
             settings.Version,
             settings.Command,
+            null,
             settings.OutputRoot,
             settings.BatchId,
             settings.Attempt,

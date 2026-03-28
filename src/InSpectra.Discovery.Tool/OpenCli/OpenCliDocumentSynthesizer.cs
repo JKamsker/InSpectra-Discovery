@@ -11,6 +11,7 @@ internal static class OpenCliDocumentSynthesizer
 
         JsonNode? defaultOptions = null;
         JsonNode? defaultArguments = null;
+        JsonNode? defaultDescription = null;
         var visibleRootCommands = new JsonArray();
         foreach (var command in rootCommands)
         {
@@ -18,6 +19,7 @@ internal static class OpenCliDocumentSynthesizer
             {
                 defaultOptions = command["options"]?.DeepClone();
                 defaultArguments = command["arguments"]?.DeepClone();
+                defaultDescription = command["description"]?.DeepClone();
                 continue;
             }
 
@@ -44,6 +46,7 @@ internal static class OpenCliDocumentSynthesizer
 
         AddIfPresent(document, "options", defaultOptions);
         AddIfPresent(document, "arguments", defaultArguments);
+        AddIfPresent(document["info"]!.AsObject(), "description", defaultDescription);
         return OpenCliDocumentSanitizer.Sanitize(document);
     }
 

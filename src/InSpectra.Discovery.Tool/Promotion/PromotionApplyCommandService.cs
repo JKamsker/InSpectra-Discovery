@@ -112,8 +112,9 @@ internal sealed class PromotionApplyCommandService
                 var openCliExists = openCliArtifactPath is not null;
                 var crawlExists = crawlArtifactPath is not null;
                 var xmlDocExists = xmlDocArtifactPath is not null;
+                string? openCliValidationError = null;
                 var hasUsableOpenCli = openCliArtifactPath is not null
-                    && PromotionArtifactSupport.TryLoadJsonObject(openCliArtifactPath, out _);
+                    && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out _, out openCliValidationError);
                 var hasUsableCrawl = crawlArtifactPath is not null
                     && PromotionArtifactSupport.TryLoadJsonObject(crawlArtifactPath, out _);
                 var requiresCrawlArtifact = HelpBatchArtifactSupport.RequiresCrawlArtifact(
@@ -154,7 +155,9 @@ internal sealed class PromotionApplyCommandService
                     var message = declaredMissing.Count > 0
                         ? "Success result declared artifact(s) that were not uploaded: " + string.Join(", ", declaredMissing)
                         : invalidArtifacts.Count > 0
-                            ? "Success result declared OpenCLI artifact(s) that are not JSON objects: " + string.Join(", ", invalidArtifacts)
+                            ? !string.IsNullOrWhiteSpace(openCliValidationError)
+                                ? openCliValidationError
+                                : "Success result declared JSON artifact(s) that are not usable JSON objects: " + string.Join(", ", invalidArtifacts)
                         : requiresCrawlArtifact && !hasUsableCrawl
                             ? "Success result did not include a usable crawl.json artifact."
                         : "Success result did not include either opencli.json or xmldoc.xml.";
@@ -279,7 +282,7 @@ internal sealed class PromotionApplyCommandService
         string? openCliSource = null;
         JsonObject? openCliDocument = null;
         string? xmlDocContent = null;
-        if (openCliArtifactPath is not null && PromotionArtifactSupport.TryLoadJsonObject(openCliArtifactPath, out var parsedOpenCli))
+        if (openCliArtifactPath is not null && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out var parsedOpenCli, out _))
         {
             openCliSource = ResolveOpenCliSource(parsedOpenCli!);
             OpenCliDocumentSanitizer.EnsureArtifactSource(parsedOpenCli!, openCliSource);
@@ -447,12 +450,5 @@ internal sealed class PromotionApplyCommandService
         };
 
     private static string? InferOpenCliClassification(string? openCliSource)
-        => openCliSource switch
-        {
-            "tool-output" => "json-ready",
-            "crawled-from-help" => "help-crawl",
-            "crawled-from-clifx-help" => "clifx-crawl",
-            "synthesized-from-xmldoc" => "xmldoc-synthesized",
-            _ => null,
-        };
+        => OpenCliArtifactSourceSupport.InferClassification(openCliSource);
 }
