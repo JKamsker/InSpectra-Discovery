@@ -20,8 +20,21 @@ internal sealed class NativeOpenCliArtifactRegenerator
         {
             try
             {
-                var existing = JsonNode.Parse(File.ReadAllText(candidate.OpenCliPath))?.AsObject()
-                    ?? throw new InvalidOperationException($"OpenCLI artifact '{candidate.OpenCliPath}' is empty.");
+                var existingNode = TryLoadJsonNode(candidate.OpenCliPath);
+                if (existingNode is not JsonObject existing)
+                {
+                    var rejectedMetadataChanged = RejectMalformedNativeArtifact(root, candidate.MetadataPath, candidate.OpenCliPath);
+                    var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
+                    if (!rejectedMetadataChanged && !rejectedStateChanged)
+                    {
+                        unchangedCount++;
+                        continue;
+                    }
+
+                    rewritten.Add(candidate.DisplayName);
+                    continue;
+                }
+
                 var sanitized = existing.DeepClone()?.AsObject()
                     ?? throw new InvalidOperationException($"OpenCLI artifact '{candidate.OpenCliPath}' could not be cloned.");
                 OpenCliDocumentSanitizer.EnsureArtifactSource(sanitized, "tool-output");
@@ -110,7 +123,7 @@ internal sealed class NativeOpenCliArtifactRegenerator
             return null;
         }
 
-        var openCli = JsonNode.Parse(File.ReadAllText(openCliPath))?.AsObject();
+        var openCli = TryLoadJsonObject(openCliPath);
         var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
             ?? artifacts?["opencliSource"]?.GetValue<string>()
             ?? openCliStep?["artifactSource"]?.GetValue<string>();
@@ -146,6 +159,79 @@ internal sealed class NativeOpenCliArtifactRegenerator
 
         return new NativeOpenCliArtifactCandidate(packageId, version, metadataPath, openCliPath, xmlDocPath);
     }
+
+    private static bool RejectMalformedNativeArtifact(string repositoryRoot, string metadataPath, string openCliPath)
+    {
+        var metadata = TryLoadJsonNode(metadataPath) as JsonObject;
+        if (metadata is null)
+        {
+            return false;
+        }
+
+        var original = metadata.DeepClone();
+        if (File.Exists(openCliPath))
+        {
+            File.Delete(openCliPath);
+        }
+
+        var artifacts = metadata["artifacts"] as JsonObject ?? new JsonObject();
+        artifacts.Remove("opencliPath");
+        artifacts.Remove("opencliSource");
+        metadata["artifacts"] = artifacts;
+
+        if (string.Equals(metadata["status"]?.GetValue<string>(), "ok", StringComparison.OrdinalIgnoreCase))
+        {
+            metadata["status"] = "partial";
+        }
+
+        var message = "Stored OpenCLI artifact is not a JSON object.";
+        var steps = metadata["steps"] as JsonObject ?? new JsonObject();
+        var openCliStep = steps["opencli"] as JsonObject ?? new JsonObject();
+        openCliStep["status"] = "failed";
+        openCliStep["classification"] = "invalid-opencli-artifact";
+        openCliStep["message"] = message;
+        openCliStep.Remove("path");
+        openCliStep.Remove("artifactSource");
+        steps["opencli"] = openCliStep;
+        metadata["steps"] = steps;
+
+        var introspection = metadata["introspection"] as JsonObject ?? new JsonObject();
+        var openCliIntrospection = introspection["opencli"] as JsonObject ?? new JsonObject();
+        openCliIntrospection["status"] = "invalid-output";
+        openCliIntrospection["classification"] = "invalid-opencli-artifact";
+        openCliIntrospection["message"] = message;
+        openCliIntrospection.Remove("artifactSource");
+        introspection["opencli"] = openCliIntrospection;
+        metadata["introspection"] = introspection;
+
+        if (JsonNode.DeepEquals(original, metadata))
+        {
+            return false;
+        }
+
+        RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
+        return true;
+    }
+
+    private static JsonNode? TryLoadJsonNode(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonNode.Parse(File.ReadAllText(path));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static JsonObject? TryLoadJsonObject(string path)
+        => TryLoadJsonNode(path) as JsonObject;
 }
 
 internal sealed record NativeOpenCliArtifactRegenerationResult(

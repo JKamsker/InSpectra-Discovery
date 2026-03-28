@@ -258,7 +258,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         var openCliPath = string.IsNullOrWhiteSpace(openCliRelativePath)
             ? Path.Combine(versionDirectory, "opencli.json")
             : Path.Combine(repositoryRoot, openCliRelativePath);
-        var openCli = TryLoadJsonNode(openCliPath);
+        var openCli = TryLoadJsonNode(openCliPath) as JsonObject;
         var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
             ?? metadata?["artifacts"]?["opencliSource"]?.GetValue<string>()
             ?? metadata?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();

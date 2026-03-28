@@ -109,10 +109,12 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             ? Path.Combine(versionDirectory, "opencli.json")
             : Path.Combine(repositoryRoot, openCliRelativePath);
         var openCliExists = File.Exists(openCliPath);
+        var openCli = TryLoadJsonNode(openCliPath) as JsonObject;
+        var hasLoadableOpenCli = openCli is not null;
         if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
             && openCliExists)
         {
-            artifactSource = TryReadArtifactSource(openCliPath)
+            artifactSource = TryReadArtifactSource(openCli)
                 ?? artifactSource;
         }
 
@@ -128,11 +130,11 @@ internal sealed class XmldocOpenCliArtifactRegenerator
         var shouldBackfillMissingOpenCli = string.IsNullOrWhiteSpace(openCliRelativePath)
             && hasXmlDoc
             && !hasCrawl
-            && !openCliExists;
+            && !hasLoadableOpenCli;
         var shouldRepairBlankXmldocProvenance = hasXmlDoc
             && !hasCrawl
             && string.IsNullOrWhiteSpace(artifactSource)
-            && (!openCliExists || hasStaleCrawlReference);
+            && (!hasLoadableOpenCli || hasStaleCrawlReference);
         if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
             && !shouldBackfillMissingOpenCli
             && !shouldRepairBlankXmldocProvenance)
@@ -176,8 +178,10 @@ internal sealed class XmldocOpenCliArtifactRegenerator
         }
     }
 
-    private static string? TryReadArtifactSource(string path)
-        => TryLoadJsonNode(path)?["x-inspectra"]?["artifactSource"]?.GetValue<string>();
+    private static string? TryReadArtifactSource(JsonObject? document)
+    {
+        return document?["x-inspectra"]?["artifactSource"]?.GetValue<string>();
+    }
 }
 
 internal sealed record XmldocOpenCliArtifactRegenerationResult(
