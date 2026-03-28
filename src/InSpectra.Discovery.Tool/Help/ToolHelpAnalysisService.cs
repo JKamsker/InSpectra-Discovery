@@ -216,6 +216,7 @@ internal sealed class ToolHelpAnalysisService
         crawlStopwatch.Stop();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
+        WriteCrawlArtifact(outputDirectory, result, CrawlArtifactBuilder.Build(crawl.Documents.Count, crawl.Captures));
         if (crawl.Documents.Count == 0)
         {
             result["failureMessage"] = "No help documents could be captured from the installed tool.";
@@ -230,15 +231,14 @@ internal sealed class ToolHelpAnalysisService
         }
 
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), new JsonObject
-        {
-            ["commandCount"] = crawl.Documents.Count,
-            ["commands"] = new JsonArray(crawl.Captures.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase).Select(pair => pair.Value).ToArray()),
-        });
-
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
         result["disposition"] = "success";
+    }
+
+    private static void WriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
+    {
+        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), crawlArtifact);
+        result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
     }
 
     private static JsonObject CreateResult(

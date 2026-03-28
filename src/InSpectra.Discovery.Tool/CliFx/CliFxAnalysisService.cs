@@ -203,9 +203,20 @@ internal sealed class CliFxAnalysisService
         var crawl = await crawler.CrawlAsync(commandPath, tempRoot, environment.Values, commandTimeoutSeconds, cancellationToken);
         crawlStopwatch.Stop();
         var coverage = _coverageClassifier.Classify(staticCommands.Count, crawl);
+        var coverageJson = coverage.ToJsonObject();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
-        result["coverage"] = coverage.ToJsonObject();
+        result["coverage"] = coverageJson;
+        WriteCrawlArtifact(
+            outputDirectory,
+            result,
+            CrawlArtifactBuilder.Build(
+                crawl.Documents.Count,
+                crawl.Captures,
+                new JsonObject
+                {
+                    ["coverage"] = coverageJson.DeepClone(),
+                }));
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
             result["failureMessage"] = "No CliFx help documents or metadata commands could be captured from the installed tool.";
@@ -215,18 +226,16 @@ internal sealed class CliFxAnalysisService
 
         var openCliDocument = _openCliBuilder.Build(commandName, version, staticCommands, crawl.Documents);
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), new JsonObject
-        {
-            ["commandCount"] = crawl.Documents.Count,
-            ["coverage"] = coverage.ToJsonObject(),
-            ["commands"] = new JsonArray(crawl.Captures.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase).Select(pair => pair.Value).ToArray()),
-        });
-
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
         result["disposition"] = "success";
     }
 
     private static Dictionary<string, CliFxCommandDefinition> NormalizeCommandLookup(IReadOnlyDictionary<string, CliFxCommandDefinition> commands)
         => new(commands, StringComparer.OrdinalIgnoreCase);
+
+    private static void WriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
+    {
+        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), crawlArtifact);
+        result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
+    }
 }

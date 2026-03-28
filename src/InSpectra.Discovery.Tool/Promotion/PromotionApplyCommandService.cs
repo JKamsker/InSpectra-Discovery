@@ -186,26 +186,25 @@ internal sealed class PromotionApplyCommandService
         var versionRoot = Path.Combine(packagesRoot, lowerId, lowerVersion);
         var metadataPath = Path.Combine(versionRoot, "metadata.json");
         var openCliPath = Path.Combine(versionRoot, "opencli.json");
+        var crawlPath = Path.Combine(versionRoot, "crawl.json");
         var xmlDocPath = Path.Combine(versionRoot, "xmldoc.xml");
         var openCliArtifact = result["artifacts"]?["opencliArtifact"]?.GetValue<string>();
+        var crawlArtifact = result["artifacts"]?["crawlArtifact"]?.GetValue<string>();
         var xmlDocArtifact = result["artifacts"]?["xmldocArtifact"]?.GetValue<string>();
         var hasOpenCliArtifact = !string.IsNullOrWhiteSpace(openCliArtifact) && artifactDirectory is not null && File.Exists(Path.Combine(artifactDirectory, openCliArtifact));
         var hasXmlDocArtifact = !string.IsNullOrWhiteSpace(xmlDocArtifact) && artifactDirectory is not null && File.Exists(Path.Combine(artifactDirectory, xmlDocArtifact));
         string? openCliSource = null;
         JsonNode? openCliDocument = null;
         string? xmlDocContent = null;
-
         if (hasOpenCliArtifact)
         {
             openCliDocument = JsonNode.Parse(await File.ReadAllTextAsync(Path.Combine(artifactDirectory!, openCliArtifact!), cancellationToken));
             openCliSource = "tool-output";
         }
-
         if (hasXmlDocArtifact)
         {
             xmlDocContent = await File.ReadAllTextAsync(Path.Combine(artifactDirectory!, xmlDocArtifact!), cancellationToken);
         }
-
         if (openCliDocument is null && !string.IsNullOrWhiteSpace(xmlDocContent))
         {
             openCliDocument = OpenCliDocumentSynthesizer.ConvertFromXmldoc(
@@ -223,6 +222,7 @@ internal sealed class PromotionApplyCommandService
         {
             File.Delete(openCliPath);
         }
+        var hasCrawlArtifact = PromotionArtifactSupport.SyncOptionalArtifact(artifactDirectory, crawlArtifact, crawlPath);
 
         if (!string.IsNullOrWhiteSpace(xmlDocContent))
         {
@@ -307,6 +307,7 @@ internal sealed class PromotionApplyCommandService
                 ["metadataPath"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, metadataPath),
                 ["opencliPath"] = hasOpenCliOutput ? RepositoryPathResolver.GetRelativePath(repositoryRoot, openCliPath) : null,
                 ["opencliSource"] = hasOpenCliOutput ? openCliSource : null,
+                ["crawlPath"] = hasCrawlArtifact ? RepositoryPathResolver.GetRelativePath(repositoryRoot, crawlPath) : null,
                 ["xmldocPath"] = !string.IsNullOrWhiteSpace(xmlDocContent) ? RepositoryPathResolver.GetRelativePath(repositoryRoot, xmlDocPath) : null,
             },
         };

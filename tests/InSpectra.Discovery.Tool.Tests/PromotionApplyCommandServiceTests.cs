@@ -193,6 +193,7 @@ public sealed class PromotionApplyCommandServiceTests
                     ["artifacts"] = new JsonObject
                     {
                         ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
                         ["xmldocArtifact"] = null,
                     },
                 });
@@ -210,6 +211,22 @@ public sealed class PromotionApplyCommandServiceTests
                     ["commands"] = new JsonArray(),
                 });
 
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-sample-tool", "crawl.json"),
+                new JsonObject
+                {
+                    ["documentCount"] = 1,
+                    ["captureCount"] = 1,
+                    ["commands"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["command"] = "sample",
+                            ["parsed"] = true,
+                        },
+                    },
+                });
+
             var service = new PromotionApplyCommandService();
             var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
 
@@ -218,6 +235,11 @@ public sealed class PromotionApplyCommandServiceTests
             var sampleMetadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3", "metadata.json"));
             Assert.Equal(1234L, sampleMetadata["totalDownloads"]?.GetValue<long>());
             Assert.Equal("System.CommandLine", sampleMetadata["cliFramework"]?.GetValue<string>());
+            Assert.Equal("index/packages/sample.tool/1.2.3/crawl.json", sampleMetadata["artifacts"]?["crawlPath"]?.GetValue<string>());
+
+            var sampleCrawl = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3", "crawl.json"));
+            Assert.Equal(1, sampleCrawl["captureCount"]?.GetValue<int>());
+            Assert.Equal("sample", sampleCrawl["commands"]?[0]?["command"]?.GetValue<string>());
 
             var existingPackageIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "existing.tool", "index.json"));
             Assert.Equal(4321L, existingPackageIndex["totalDownloads"]?.GetValue<long>());
