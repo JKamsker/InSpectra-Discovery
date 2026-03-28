@@ -204,7 +204,8 @@ internal sealed class PromotionApplyCommandService
                     PromotionResultSupport.MergePlanItemIntoResult(item, result);
                 }
             }
-            else
+
+            if (!string.Equals(result["disposition"]?.GetValue<string>(), "success", StringComparison.Ordinal))
             {
                 PromotionIndexCleanupSupport.RemoveIndexedVersionArtifacts(packagesRoot, packageId, version);
             }
@@ -464,12 +465,9 @@ internal sealed class PromotionApplyCommandService
         string? openCliSource,
         string? inferredOpenCliClassification)
     {
-        if (string.IsNullOrWhiteSpace(openCliStep["status"]?.GetValue<string>()))
-        {
-            openCliStep["status"] = "ok";
-        }
-
+        openCliStep["status"] = "ok";
         openCliStep["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, openCliPath);
+        openCliStep.Remove("message");
         if (!string.IsNullOrWhiteSpace(openCliSource))
         {
             openCliStep["artifactSource"] = openCliSource;
@@ -487,14 +485,15 @@ internal sealed class PromotionApplyCommandService
         string? openCliSource,
         string? inferredOpenCliClassification)
     {
-        if (string.IsNullOrWhiteSpace(openCliIntrospection["status"]?.GetValue<string>()))
-        {
-            openCliIntrospection["status"] = "ok";
-        }
-
+        openCliIntrospection["status"] = "ok";
+        openCliIntrospection.Remove("message");
         if (string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.Ordinal))
         {
             openCliIntrospection["synthesizedArtifact"] = true;
+        }
+        else
+        {
+            openCliIntrospection.Remove("synthesizedArtifact");
         }
 
         if (!string.IsNullOrWhiteSpace(openCliSource))

@@ -568,14 +568,17 @@ public sealed class PromotionApplyCommandServiceTests
                     {
                         ["opencli"] = new JsonObject
                         {
-                            ["status"] = "ok",
+                            ["status"] = "failed",
+                            ["message"] = "stale failure",
+                            ["synthesizedArtifact"] = true,
                         },
                     },
                     ["steps"] = new JsonObject
                     {
                         ["opencli"] = new JsonObject
                         {
-                            ["status"] = "ok",
+                            ["status"] = "failed",
+                            ["message"] = "stale step failure",
                         },
                     },
                     ["timings"] = new JsonObject
@@ -619,10 +622,15 @@ public sealed class PromotionApplyCommandServiceTests
 
             var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "legacy.help.tool", "2.1.0", "metadata.json"));
             Assert.Equal("crawled-from-help", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+            Assert.Equal("ok", metadata["steps"]?["opencli"]?["status"]?.GetValue<string>());
             Assert.Equal("crawled-from-help", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
             Assert.Equal("help-crawl", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
+            Assert.Null(metadata["steps"]?["opencli"]?["message"]);
+            Assert.Equal("ok", metadata["introspection"]?["opencli"]?["status"]?.GetValue<string>());
             Assert.Equal("crawled-from-help", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
             Assert.Equal("help-crawl", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+            Assert.Null(metadata["introspection"]?["opencli"]?["message"]);
+            Assert.Null(metadata["introspection"]?["opencli"]?["synthesizedArtifact"]);
 
             var openCli = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "legacy.help.tool", "2.1.0", "opencli.json"));
             Assert.Equal("crawled-from-help", openCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
@@ -1673,6 +1681,100 @@ public sealed class PromotionApplyCommandServiceTests
             var state = ParseJsonObject(Path.Combine(repositoryRoot, "state", "packages", "stale.tool", "1.1.0.json"));
             Assert.Equal("retryable-failure", state["currentStatus"]?.GetValue<string>());
             Assert.Null(state["indexedPaths"]);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyUntrustedAsync_Removes_Stale_Indexed_Version_When_Success_Write_Throws()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Broken.Xml.Tool",
+                            ["latestVersion"] = "1.0.0",
+                            ["totalDownloads"] = 10,
+                        },
+                    },
+                });
+
+            WriteIndexedSuccess(repositoryRoot, "Broken.Xml.Tool", "0.9.0", "broken-xml-tool", "tool-output");
+            WriteIndexedSuccess(repositoryRoot, "Broken.Xml.Tool", "1.0.0", "broken-xml-tool", "tool-output");
+            RepositoryPackageIndexBuilder.Rebuild(repositoryRoot, writeBrowserIndex: true);
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-broken-xml-stale",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Broken.Xml.Tool",
+                            ["version"] = "1.0.0",
+                            ["attempt"] = 1,
+                            ["command"] = "broken-xml-tool",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-broken-xml-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Broken.Xml.Tool",
+                    ["version"] = "1.0.0",
+                    ["batchId"] = "batch-broken-xml-stale",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analyzedAt"] = "2026-03-27T05:30:00Z",
+                    ["disposition"] = "success",
+                    ["command"] = "broken-xml-tool",
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = null,
+                        ["xmldocArtifact"] = "xmldoc.xml",
+                    },
+                });
+            RepositoryPathResolver.WriteTextFile(
+                Path.Combine(downloadRoot, "analysis-broken-xml-tool", "xmldoc.xml"),
+                "<Model><Command></Model>");
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+            Assert.False(Directory.Exists(Path.Combine(repositoryRoot, "index", "packages", "broken.xml.tool", "1.0.0")));
+
+            var latestMetadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "broken.xml.tool", "latest", "metadata.json"));
+            Assert.Equal("0.9.0", latestMetadata["version"]?.GetValue<string>());
         }
         finally
         {
