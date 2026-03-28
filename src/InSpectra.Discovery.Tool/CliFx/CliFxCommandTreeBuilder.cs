@@ -5,6 +5,7 @@ internal sealed class CliFxCommandTreeBuilder
         IReadOnlyDictionary<string, CliFxHelpDocument> helpDocuments)
     {
         var knownCommands = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var orderedCommands = new List<string>();
         var edges = new Dictionary<string, List<CliFxCommandNode>>(StringComparer.OrdinalIgnoreCase);
         var edgeKeys = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -13,21 +14,21 @@ internal sealed class CliFxCommandTreeBuilder
             foreach (var child in pair.Value.Commands)
             {
                 var childFullName = string.IsNullOrWhiteSpace(pair.Key) ? child.Key : $"{pair.Key} {child.Key}";
-                AddCommandAndPrefixes(knownCommands, childFullName);
+                AddCommandAndPrefixes(knownCommands, orderedCommands, childFullName);
             }
         }
 
         foreach (var commandName in staticCommands.Keys.Where(key => !string.IsNullOrWhiteSpace(key)))
         {
-            AddCommandAndPrefixes(knownCommands, commandName);
+            AddCommandAndPrefixes(knownCommands, orderedCommands, commandName);
         }
 
         foreach (var commandName in helpDocuments.Keys.Where(key => !string.IsNullOrWhiteSpace(key)))
         {
-            AddCommandAndPrefixes(knownCommands, commandName);
+            AddCommandAndPrefixes(knownCommands, orderedCommands, commandName);
         }
 
-        foreach (var commandName in knownCommands.OrderBy(name => name, StringComparer.OrdinalIgnoreCase))
+        foreach (var commandName in orderedCommands)
         {
             var parentName = FindParent(commandName, knownCommands);
             var displayName = string.IsNullOrWhiteSpace(parentName)
@@ -82,7 +83,7 @@ internal sealed class CliFxCommandTreeBuilder
         return string.Empty;
     }
 
-    private static void AddCommandAndPrefixes(ISet<string> knownCommands, string? commandName)
+    private static void AddCommandAndPrefixes(ISet<string> knownCommands, ICollection<string> orderedCommands, string? commandName)
     {
         if (string.IsNullOrWhiteSpace(commandName))
         {
@@ -92,7 +93,11 @@ internal sealed class CliFxCommandTreeBuilder
         var segments = commandName.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         for (var length = 1; length <= segments.Length; length++)
         {
-            knownCommands.Add(string.Join(' ', segments.Take(length)));
+            var normalizedCommand = string.Join(' ', segments.Take(length));
+            if (knownCommands.Add(normalizedCommand))
+            {
+                orderedCommands.Add(normalizedCommand);
+            }
         }
     }
 

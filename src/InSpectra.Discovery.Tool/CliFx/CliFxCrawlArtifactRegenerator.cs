@@ -24,14 +24,25 @@ internal sealed class CliFxCrawlArtifactRegenerator
             try
             {
                 var regenerated = RegenerateOpenCli(candidate);
-                var existing = JsonNode.Parse(File.ReadAllText(candidate.OpenCliPath));
-                if (JsonNode.DeepEquals(existing, regenerated))
+                var existing = TryLoadJsonNode(candidate.OpenCliPath);
+                var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
+                if (openCliChanged)
+                {
+                    RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
+                }
+
+                var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
+                    root,
+                    candidate.MetadataPath,
+                    candidate.OpenCliPath,
+                    "crawled-from-clifx-help",
+                    crawlPath: candidate.CrawlPath);
+                if (!openCliChanged && !metadataChanged)
                 {
                     unchangedCount++;
                     continue;
                 }
 
-                RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
                 rewritten.Add(candidate.DisplayName);
             }
             catch (Exception ex)
@@ -171,13 +182,13 @@ internal sealed class CliFxCrawlArtifactRegenerator
 
         var crawlPath = Path.Combine(versionDirectory, "crawl.json");
         var openCliPath = Path.Combine(versionDirectory, "opencli.json");
-        if (!File.Exists(crawlPath) || !File.Exists(openCliPath))
+        if (!File.Exists(crawlPath))
         {
             return null;
         }
 
         var metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject();
-        var openCli = JsonNode.Parse(File.ReadAllText(openCliPath));
+        var openCli = TryLoadJsonNode(openCliPath);
         var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
             ?? metadata?["artifacts"]?["opencliSource"]?.GetValue<string>()
             ?? metadata?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
@@ -202,8 +213,26 @@ internal sealed class CliFxCrawlArtifactRegenerator
             version,
             commandName,
             metadata?["cliFramework"]?.GetValue<string>(),
+            metadataPath,
             crawlPath,
             openCliPath);
+    }
+
+    private static JsonNode? TryLoadJsonNode(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonNode.Parse(File.ReadAllText(path));
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static bool IsCliFxCrawlArtifactSource(string? artifactSource)
@@ -225,6 +254,7 @@ internal sealed record CliFxCrawlArtifactCandidate(
     string Version,
     string CommandName,
     string? CliFramework,
+    string MetadataPath,
     string CrawlPath,
     string OpenCliPath)
 {

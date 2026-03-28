@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 internal sealed partial class CliFxHelpTextParser
 {
-    private static readonly HashSet<string> SectionHeaders = new(StringComparer.Ordinal)
+    private static readonly HashSet<string> SectionHeaders = new(StringComparer.OrdinalIgnoreCase)
     {
         "USAGE",
         "DESCRIPTION",
@@ -45,7 +45,7 @@ internal sealed partial class CliFxHelpTextParser
 
     private static Dictionary<string, List<string>> ParseSections(IReadOnlyList<string> lines)
     {
-        var sections = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         string? currentHeader = null;
 
         foreach (var line in lines)

@@ -83,4 +83,31 @@ public sealed class CliFxHelpParserTests
         Assert.Equal("0.4.4", document.Version);
         Assert.Equal("Compare Word documents", document.ApplicationDescription);
     }
+
+    [Fact]
+    public void Parses_TitleCase_Section_Headers()
+    {
+        var parser = new CliFxHelpTextParser();
+        var document = parser.Parse(
+            """
+            Training Modules convertor v0.0.9
+              Training Modules convertor
+
+            Usage
+              dotnet tool.dll [command] [options]
+
+            Options
+              -h|--help         Shows help text.
+
+            Commands
+              convert           Convert a module.
+            """);
+
+        Assert.Equal("Training Modules convertor", document.Title);
+        Assert.Equal("v0.0.9", document.Version);
+        Assert.Single(document.UsageLines);
+        Assert.Single(document.Options);
+        Assert.Single(document.Commands);
+        Assert.Equal("convert", document.Commands[0].Key);
+    }
 }

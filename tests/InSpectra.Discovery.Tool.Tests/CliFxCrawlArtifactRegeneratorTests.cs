@@ -253,6 +253,106 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
         Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "legacyclifx", "latest", "opencli.json")));
     }
 
+    [Fact]
+    public void Regenerates_TitleCase_CliFx_Crawl_When_OpenCli_Is_Missing()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "trainingmoduleconvertor", "0.0.9");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "TrainingModuleConvertor",
+                ["version"] = "0.0.9",
+                ["command"] = "training-module-convertor",
+                ["cliFramework"] = "CliFx",
+                ["status"] = "partial",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "crawled-from-help",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/trainingmoduleconvertor/0.0.9/metadata.json",
+                    ["opencliSource"] = "crawled-from-help",
+                    ["crawlPath"] = "index/packages/trainingmoduleconvertor/0.0.9/crawl.json",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["documentCount"] = 2,
+                ["captureCount"] = 2,
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["result"] = new JsonObject
+                        {
+                            ["stdout"] =
+                                """
+                                Training Modules convertor v0.0.9
+                                  Training Modules convertor
+
+                                Usage
+                                  dotnet tool.dll [command] [options]
+
+                                Options
+                                  -h|--help         Shows help text.
+
+                                Commands
+                                  convert           Convert a module.
+                                """,
+                        },
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "convert",
+                        ["result"] = new JsonObject
+                        {
+                            ["stdout"] =
+                                """
+                                Description
+                                  Convert a module.
+
+                                Usage
+                                  dotnet tool.dll convert <folder> [options]
+
+                                Parameters
+                                * folder            Root folder.
+
+                                Options
+                                  -h|--help         Shows help text.
+                                """,
+                        },
+                    },
+                },
+            });
+
+        var regenerator = new CliFxCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+        Assert.Equal(0, result.FailedCount);
+        Assert.True(File.Exists(Path.Combine(versionRoot, "opencli.json")));
+
+        var openCli = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        Assert.Equal("crawled-from-clifx-help", openCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("convert", openCli["commands"]![0]!["name"]!.GetValue<string>());
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

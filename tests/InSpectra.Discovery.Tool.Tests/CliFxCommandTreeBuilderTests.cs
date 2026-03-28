@@ -70,4 +70,33 @@ public sealed class CliFxCommandTreeBuilderTests
         Assert.Equal("app", app.DisplayName);
         Assert.Equal(new[] { "build", "run" }, app.Children.Select(child => child.DisplayName).ToArray());
     }
+
+    [Fact]
+    public void Preserves_Help_Command_Order_When_Building_Siblings()
+    {
+        var builder = new CliFxCommandTreeBuilder();
+        var helpDocuments = new Dictionary<string, CliFxHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: ["demo [command] [...]"],
+                Parameters: [],
+                Options: [],
+                Commands:
+                [
+                    new CliFxHelpItem("gen-docker", false, "Generate docker-compose file."),
+                    new CliFxHelpItem("gen", false, "Generate a self-signed certificate."),
+                    new CliFxHelpItem("gen-kubernetes", false, "Generate Kubernetes resources."),
+                ]),
+        };
+
+        var tree = builder.Build(
+            new Dictionary<string, CliFxCommandDefinition>(StringComparer.OrdinalIgnoreCase),
+            helpDocuments);
+
+        Assert.Equal(new[] { "gen-docker", "gen", "gen-kubernetes" }, tree.Select(node => node.DisplayName).ToArray());
+    }
 }
