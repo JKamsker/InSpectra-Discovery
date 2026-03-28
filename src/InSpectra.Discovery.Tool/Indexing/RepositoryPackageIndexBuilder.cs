@@ -334,7 +334,7 @@ internal static class RepositoryPackageIndexBuilder
     {
         foreach (var record in orderedRecords)
         {
-            var sourceRepositoryUrl = NormalizeRepositoryUrl(record["sourceRepositoryUrl"]?.GetValue<string>());
+            var sourceRepositoryUrl = PackageVersionResolver.NormalizeRepositoryUrl(record["sourceRepositoryUrl"]?.GetValue<string>());
             if (!string.IsNullOrWhiteSpace(sourceRepositoryUrl))
             {
                 return sourceRepositoryUrl;
@@ -347,7 +347,7 @@ internal static class RepositoryPackageIndexBuilder
             return projectUrl;
         }
 
-        return NormalizeRepositoryUrl(existingSummary?["links"]?["source"]?.GetValue<string>());
+        return PackageVersionResolver.NormalizeRepositoryUrl(existingSummary?["links"]?["source"]?.GetValue<string>());
     }
 
     private static string? BuildNuGetPackageUrl(string? packageId)
@@ -366,19 +366,6 @@ internal static class RepositoryPackageIndexBuilder
         return Uri.TryCreate(normalized, UriKind.Absolute, out _)
             ? normalized
             : null;
-    }
-
-    private static string? NormalizeRepositoryUrl(string? value)
-    {
-        var normalized = NormalizeLinkUrl(value);
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            return null;
-        }
-
-        return normalized.EndsWith(".git", StringComparison.OrdinalIgnoreCase)
-            ? normalized[..^4]
-            : normalized;
     }
 
     private static bool LooksLikeRepositoryUrl(string value)

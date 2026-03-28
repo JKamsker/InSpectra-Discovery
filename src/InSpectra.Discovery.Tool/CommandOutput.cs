@@ -11,12 +11,6 @@ internal sealed class CommandOutput
         _stderr = stderr;
     }
 
-    public void WriteHelp(HelpTopic topic)
-        => HelpText.Write(_stdout, topic);
-
-    public void WriteVersion()
-        => HelpText.WriteVersion(_stdout);
-
     public void WriteProgress(string message)
         => _stderr.WriteLine(message);
 
@@ -67,24 +61,6 @@ internal sealed class CommandOutput
         }
 
         return exitCode;
-    }
-
-    public async Task<int> WriteUsageErrorAsync(CliUsageException exception, CancellationToken cancellationToken)
-    {
-        if (exception.JsonRequested)
-        {
-            return await WriteErrorAsync(
-                kind: "usage",
-                message: exception.Message,
-                exitCode: 2,
-                json: true,
-                cancellationToken: cancellationToken);
-        }
-
-        _stderr.WriteLine(exception.Message);
-        _stderr.WriteLine();
-        HelpText.Write(_stderr, exception.Topic);
-        return 2;
     }
 
     private void WriteSummary(IReadOnlyList<SummaryRow> rows)

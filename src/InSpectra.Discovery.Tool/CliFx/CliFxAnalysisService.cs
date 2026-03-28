@@ -67,9 +67,9 @@ internal sealed class CliFxAnalysisService
         try
         {
             using var scope = ToolRuntime.CreateNuGetApiClientScope();
-            var (registrationLeaf, catalogLeaf) = await ResolvePackageVersionAsync(scope.Client, packageId, version, cancellationToken);
+            var (registrationLeaf, catalogLeaf) = await PackageVersionResolver.ResolveAsync(scope.Client, packageId, version, cancellationToken);
             result["projectUrl"] = catalogLeaf.ProjectUrl;
-            result["sourceRepositoryUrl"] = NormalizeRepositoryUrl(catalogLeaf.Repository?.Url);
+            result["sourceRepositoryUrl"] = PackageVersionResolver.NormalizeRepositoryUrl(catalogLeaf.Repository?.Url);
             result["packageContentUrl"] = registrationLeaf.PackageContent;
 
             var packageInspection = await new PackageArchiveInspector(scope.Client).InspectAsync(registrationLeaf.PackageContent, cancellationToken);
@@ -227,40 +227,6 @@ internal sealed class CliFxAnalysisService
         result["disposition"] = "success";
     }
 
-    private static async Task<(RegistrationLeafDocument Leaf, CatalogLeaf CatalogLeaf)> ResolvePackageVersionAsync(
-        NuGetApiClient apiClient,
-        string packageId,
-        string version,
-        CancellationToken cancellationToken)
-    {
-        var resources = await apiClient.GetServiceResourcesAsync(BootstrapOptions.DefaultServiceIndexUrl, cancellationToken);
-        var registrationBaseUrl = resources.GetRequiredResource(
-            "RegistrationsBaseUrl/3.6.0",
-            "RegistrationsBaseUrl/3.4.0",
-            "RegistrationsBaseUrl/3.0.0-rc",
-            "RegistrationsBaseUrl/3.0.0-beta");
-        var registrationIndex = await apiClient.GetRegistrationIndexAsync(registrationBaseUrl, packageId, cancellationToken);
-
-        foreach (var pageReference in registrationIndex.Items)
-        {
-            var leaves = pageReference.Items ?? (await apiClient.GetRegistrationPageAsync(pageReference.Id, cancellationToken)).Items;
-            var match = leaves.FirstOrDefault(candidate => string.Equals(candidate.CatalogEntry.Version, version, StringComparison.OrdinalIgnoreCase));
-            if (match is null)
-            {
-                continue;
-            }
-
-            var leaf = await apiClient.GetRegistrationLeafAsync(match.Id ?? $"{pageReference.Id.TrimEnd('/')}/{version}.json", cancellationToken);
-            var catalogLeaf = await apiClient.GetCatalogLeafAsync(leaf.CatalogEntryUrl, cancellationToken);
-            return (leaf, catalogLeaf);
-        }
-
-        throw new InvalidOperationException($"Could not resolve package '{packageId}' version '{version}' from the NuGet registration index.");
-    }
-
     private static Dictionary<string, CliFxCommandDefinition> NormalizeCommandLookup(IReadOnlyDictionary<string, CliFxCommandDefinition> commands)
         => new(commands, StringComparer.OrdinalIgnoreCase);
-
-    private static string? NormalizeRepositoryUrl(string? value)
-        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }
