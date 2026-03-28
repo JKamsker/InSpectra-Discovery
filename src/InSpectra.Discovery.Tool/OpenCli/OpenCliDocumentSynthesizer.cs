@@ -60,27 +60,13 @@ internal static class OpenCliDocumentSynthesizer
         };
 
         var parametersNode = GetElements(commandNode, "Parameters").FirstOrDefault();
-        var options = new JsonArray();
-        foreach (var option in GetElements(parametersNode, "Option"))
-        {
-            var converted = ConvertOption(option);
-            if (converted is not null)
-            {
-                options.Add(converted);
-            }
-        }
-
+        var options = ConvertOptions(parametersNode);
         if (options.Count > 0)
         {
             command["options"] = options;
         }
 
-        var arguments = new JsonArray();
-        foreach (var argument in GetElements(parametersNode, "Argument"))
-        {
-            arguments.Add(ConvertArgument(argument));
-        }
-
+        var arguments = ConvertArguments(parametersNode);
         if (arguments.Count > 0)
         {
             command["arguments"] = arguments;
@@ -95,6 +81,12 @@ internal static class OpenCliDocumentSynthesizer
         var children = new JsonArray();
         foreach (var child in GetElements(commandNode, "Command"))
         {
+            if (IsDefaultCommand(child))
+            {
+                HoistDefaultCommand(command, children, child, commandPath);
+                continue;
+            }
+
             children.Add(ConvertCommand(child, commandPath));
         }
 
@@ -155,7 +147,7 @@ internal static class OpenCliDocumentSynthesizer
         var clrType = GetSimplifiedClrTypeName(GetAttributeValue(argumentNode, "ClrType"));
         var argument = new JsonObject
         {
-            ["name"] = GetAttributeValue(argumentNode, "Name"),
+            ["name"] = NormalizeArgumentName(GetAttributeValue(argumentNode, "Name")),
             ["required"] = GetBoolean(argumentNode, "Required"),
             ["arity"] = BuildArity(GetBoolean(argumentNode, "Required") ? 1 : 0, IsVectorKind(GetAttributeValue(argumentNode, "Kind"))),
             ["hidden"] = GetBoolean(argumentNode, "Hidden", GetBoolean(argumentNode, "IsHidden")),
@@ -182,10 +174,13 @@ internal static class OpenCliDocumentSynthesizer
         return argument;
     }
 
-    private static JsonArray ConvertExamples(XElement commandNode, IReadOnlyList<string> commandPath)
+    private static JsonArray ConvertExamples(
+        XElement commandNode,
+        IReadOnlyList<string> commandPath,
+        bool treatDefaultCommandAsParent = false)
     {
         var commandName = GetAttributeValue(commandNode, "Name") ?? string.Empty;
-        if (string.Equals(commandName, "__default_command", StringComparison.Ordinal))
+        if (string.Equals(commandName, "__default_command", StringComparison.Ordinal) && !treatDefaultCommandAsParent)
         {
             return [];
         }
@@ -200,7 +195,9 @@ internal static class OpenCliDocumentSynthesizer
             return [];
         }
 
-        var startSequence = commandPath.Count > 0 ? commandPath.ToArray() : [commandName];
+        var startSequence = treatDefaultCommandAsParent
+            ? commandPath.ToArray()
+            : commandPath.Count > 0 ? commandPath.ToArray() : [commandName];
         var examples = new JsonArray();
         var index = 0;
 
@@ -232,6 +229,85 @@ internal static class OpenCliDocumentSynthesizer
         }
 
         return examples;
+    }
+
+    private static JsonArray ConvertOptions(XElement? parametersNode)
+    {
+        var options = new JsonArray();
+        foreach (var option in GetElements(parametersNode, "Option"))
+        {
+            var converted = ConvertOption(option);
+            if (converted is not null)
+            {
+                options.Add(converted);
+            }
+        }
+
+        return options;
+    }
+
+    private static JsonArray ConvertArguments(XElement? parametersNode)
+    {
+        var arguments = new JsonArray();
+        foreach (var argument in GetElements(parametersNode, "Argument"))
+        {
+            arguments.Add(ConvertArgument(argument));
+        }
+
+        return arguments;
+    }
+
+    private static void HoistDefaultCommand(
+        JsonObject command,
+        JsonArray childCommands,
+        XElement defaultChild,
+        IReadOnlyList<string> commandPath)
+    {
+        var parametersNode = GetElements(defaultChild, "Parameters").FirstOrDefault();
+        MergeArrayProperty(command, "options", ConvertOptions(parametersNode));
+        MergeArrayProperty(command, "arguments", ConvertArguments(parametersNode));
+
+        if (command["description"] is null)
+        {
+            var description = GetDescriptionText(defaultChild);
+            if (!string.IsNullOrWhiteSpace(description))
+            {
+                command["description"] = description;
+            }
+        }
+
+        MergeArrayProperty(command, "examples", ConvertExamples(defaultChild, commandPath, treatDefaultCommandAsParent: true));
+
+        foreach (var nestedChild in GetElements(defaultChild, "Command"))
+        {
+            if (IsDefaultCommand(nestedChild))
+            {
+                HoistDefaultCommand(command, childCommands, nestedChild, commandPath);
+                continue;
+            }
+
+            childCommands.Add(ConvertCommand(nestedChild, commandPath));
+        }
+    }
+
+    private static void MergeArrayProperty(JsonObject target, string propertyName, JsonArray additions)
+    {
+        if (additions.Count == 0)
+        {
+            return;
+        }
+
+        var targetArray = target[propertyName] as JsonArray;
+        if (targetArray is null)
+        {
+            targetArray = new JsonArray();
+            target[propertyName] = targetArray;
+        }
+
+        foreach (var addition in additions)
+        {
+            targetArray.Add(addition?.DeepClone());
+        }
     }
 
     private static bool StartsWithSequence(IReadOnlyList<string> tokens, int index, IReadOnlyList<string> sequence)
@@ -326,6 +402,22 @@ internal static class OpenCliDocumentSynthesizer
         return GetBoolean(commandNode, "IsDefault") || string.IsNullOrWhiteSpace(commandName)
             ? "__default_command"
             : commandName;
+    }
+
+    private static bool IsDefaultCommand(XElement commandNode)
+        => string.Equals(NormalizeCommandName(commandNode), "__default_command", StringComparison.Ordinal);
+
+    private static string NormalizeArgumentName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "value";
+        }
+
+        var normalized = System.Text.RegularExpressions.Regex.Replace(value.Trim(), @"[^A-Za-z0-9]+", "-")
+            .Trim('-')
+            .ToLowerInvariant();
+        return string.IsNullOrWhiteSpace(normalized) ? "value" : normalized;
     }
 
     private static string? GetDescriptionText(XElement? node)

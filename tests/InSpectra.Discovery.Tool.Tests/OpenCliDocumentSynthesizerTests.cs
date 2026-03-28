@@ -73,7 +73,7 @@ public sealed class OpenCliDocumentSynthesizerTests
     }
 
     [Fact]
-    public void ConvertFromXmldoc_Normalizes_Blank_Default_Command_Names_And_Omits_Empty_Examples()
+    public void ConvertFromXmldoc_Hoists_Nested_Default_Command_Inputs_And_Omits_Empty_Examples()
     {
         var xml = XDocument.Parse(
             """
@@ -92,11 +92,33 @@ public sealed class OpenCliDocumentSynthesizerTests
 
         var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample", "1.2.3");
         var config = document["commands"]![0]!.AsObject();
-        var nestedDefault = config["commands"]![0]!.AsObject();
 
-        Assert.Equal("__default_command", nestedDefault["name"]!.GetValue<string>());
-        Assert.True(nestedDefault["hidden"]!.GetValue<bool>());
+        Assert.False(config.ContainsKey("commands"));
+        Assert.Contains(config["options"]!.AsArray(), option =>
+            string.Equals(option?["name"]?.GetValue<string>(), "--force", StringComparison.Ordinal));
         Assert.False(config.ContainsKey("examples"));
-        Assert.False(nestedDefault.ContainsKey("examples"));
+    }
+
+    [Fact]
+    public void ConvertFromXmldoc_Normalizes_Display_Argument_Names()
+    {
+        var xml = XDocument.Parse(
+            """
+            <Model>
+              <Command Name="generate">
+                <Parameters>
+                  <Argument Name="URL or input file" Required="false" Kind="scalar" ClrType="System.String">
+                    <Description>Input source</Description>
+                  </Argument>
+                </Parameters>
+              </Command>
+            </Model>
+            """);
+
+        var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample", "1.2.3");
+        var command = document["commands"]![0]!.AsObject();
+        var argument = command["arguments"]![0]!.AsObject();
+
+        Assert.Equal("url-or-input-file", argument["name"]!.GetValue<string>());
     }
 }
