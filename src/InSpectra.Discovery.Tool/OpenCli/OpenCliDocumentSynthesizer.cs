@@ -5,23 +5,26 @@ internal static class OpenCliDocumentSynthesizer
 {
     public static JsonObject ConvertFromXmldoc(XDocument xmlDocument, string title, string version = "1.0")
     {
-        var rootCommands = new JsonArray();
-        foreach (var command in GetElements(xmlDocument.Root, "Command"))
-        {
-            rootCommands.Add(ConvertCommand(command, []));
-        }
+        var rootCommands = GetElements(xmlDocument.Root, "Command")
+            .Select(command => ConvertCommand(command, []))
+            .ToList();
 
         JsonNode? defaultOptions = null;
-        foreach (var command in rootCommands.OfType<JsonObject>())
+        JsonNode? defaultArguments = null;
+        var visibleRootCommands = new JsonArray();
+        foreach (var command in rootCommands)
         {
             if (string.Equals(command["name"]?.GetValue<string>(), "__default_command", StringComparison.Ordinal))
             {
                 defaultOptions = command["options"]?.DeepClone();
-                break;
+                defaultArguments = command["arguments"]?.DeepClone();
+                continue;
             }
+
+            visibleRootCommands.Add(command);
         }
 
-        return new JsonObject
+        var document = new JsonObject
         {
             ["opencli"] = "0.1-draft",
             ["info"] = new JsonObject
@@ -36,14 +39,17 @@ internal static class OpenCliDocumentSynthesizer
                 ["sourceArtifact"] = "xmldoc.xml",
                 ["generator"] = "InSpectra.Discovery",
             },
-            ["options"] = defaultOptions,
-            ["commands"] = rootCommands,
+            ["commands"] = visibleRootCommands,
         };
+
+        AddIfPresent(document, "options", defaultOptions);
+        AddIfPresent(document, "arguments", defaultArguments);
+        return document;
     }
 
     private static JsonObject ConvertCommand(XElement commandNode, IReadOnlyList<string> parentPath)
     {
-        var commandName = GetAttributeValue(commandNode, "Name") ?? string.Empty;
+        var commandName = NormalizeCommandName(commandNode);
         var commandPath = parentPath.Concat([commandName]).ToArray();
         var command = new JsonObject
         {
@@ -96,7 +102,12 @@ internal static class OpenCliDocumentSynthesizer
 
         command["hidden"] = string.Equals(commandName, "__default_command", StringComparison.Ordinal)
             || GetBoolean(commandNode, "Hidden", GetBoolean(commandNode, "IsHidden"));
-        command["examples"] = ConvertExamples(commandNode, commandPath);
+        var examples = ConvertExamples(commandNode, commandPath);
+        if (examples.Count > 0)
+        {
+            command["examples"] = examples;
+        }
+
         return command;
     }
 
@@ -112,7 +123,6 @@ internal static class OpenCliDocumentSynthesizer
         var option = new JsonObject
         {
             ["name"] = name,
-            ["required"] = GetBoolean(optionNode, "Required"),
             ["recursive"] = GetBoolean(optionNode, "Recursive"),
             ["hidden"] = GetBoolean(optionNode, "Hidden", GetBoolean(optionNode, "IsHidden")),
         };
@@ -144,11 +154,7 @@ internal static class OpenCliDocumentSynthesizer
         {
             ["name"] = GetAttributeValue(argumentNode, "Name"),
             ["required"] = GetBoolean(argumentNode, "Required"),
-            ["arity"] = new JsonObject
-            {
-                ["minimum"] = 1,
-                ["maximum"] = 1,
-            },
+            ["arity"] = BuildArity(GetBoolean(argumentNode, "Required") ? 1 : 0, IsVectorKind(GetAttributeValue(argumentNode, "Kind"))),
             ["hidden"] = GetBoolean(argumentNode, "Hidden", GetBoolean(argumentNode, "IsHidden")),
         };
 
@@ -254,24 +260,26 @@ internal static class OpenCliDocumentSynthesizer
         }
 
         var argumentName = string.IsNullOrWhiteSpace(value) || string.Equals(value, "NULL", StringComparison.Ordinal) ? "VALUE" : value;
-        return new JsonObject
+        var argument = new JsonObject
         {
             ["name"] = argumentName,
             ["required"] = true,
-            ["arity"] = new JsonObject
-            {
-                ["minimum"] = 1,
-                ["maximum"] = 1,
-            },
-            ["metadata"] = new JsonArray
+            ["arity"] = BuildArity(1, IsVectorKind(kind)),
+        };
+
+        if (!string.IsNullOrWhiteSpace(clrType))
+        {
+            argument["metadata"] = new JsonArray
             {
                 new JsonObject
                 {
                     ["name"] = "ClrType",
                     ["value"] = clrType,
                 }
-            },
-        };
+            };
+        }
+
+        return argument;
     }
 
     private static (string? Name, List<string> Aliases) GetOptionAliases(string? shortValue, string? longValue)
@@ -309,12 +317,23 @@ internal static class OpenCliDocumentSynthesizer
         return string.IsNullOrWhiteSpace(value) ? defaultValue : string.Equals(value.Trim(), "true", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static string NormalizeCommandName(XElement commandNode)
+    {
+        var commandName = GetAttributeValue(commandNode, "Name")?.Trim();
+        return GetBoolean(commandNode, "IsDefault") || string.IsNullOrWhiteSpace(commandName)
+            ? "__default_command"
+            : commandName;
+    }
+
     private static string? GetDescriptionText(XElement? node)
     {
         var descriptionNode = GetElements(node, "Description").FirstOrDefault();
         var value = descriptionNode?.Value?.Trim();
         return string.IsNullOrWhiteSpace(value) ? null : value;
     }
+
+    private static bool IsVectorKind(string? kind)
+        => string.Equals(kind?.Trim(), "vector", StringComparison.OrdinalIgnoreCase);
 
     private static string? GetSimplifiedClrTypeName(string? clrType)
     {
@@ -351,5 +370,28 @@ internal static class OpenCliDocumentSynthesizer
         }
 
         return array;
+    }
+
+    private static JsonObject BuildArity(int minimum, bool isVector)
+    {
+        var arity = new JsonObject
+        {
+            ["minimum"] = minimum,
+        };
+
+        if (!isVector)
+        {
+            arity["maximum"] = 1;
+        }
+
+        return arity;
+    }
+
+    private static void AddIfPresent(JsonObject target, string propertyName, JsonNode? value)
+    {
+        if (value is not null)
+        {
+            target[propertyName] = value;
+        }
     }
 }

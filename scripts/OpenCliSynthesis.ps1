@@ -51,6 +51,15 @@ function ConvertTo-XmlBoolean {
 
 function Get-CollectionCount {
     param([AllowNull()][object]$Value)
+
+    if ($null -eq $Value) {
+        return 0
+    }
+
+    if ($Value -is [System.Collections.ICollection]) {
+        return $Value.Count
+    }
+
     return @($Value).Count
 }
 
@@ -152,20 +161,22 @@ function New-OpenCliOptionArgument {
     }
 
     $argumentName = if ([string]::IsNullOrWhiteSpace($Value) -or $Value -eq 'NULL') { 'VALUE' } else { $Value }
-    return [ordered]@{
+    $argument = [ordered]@{
         name = $argumentName
         required = $true
-        arity = [ordered]@{
-            minimum = 1
-            maximum = 1
-        }
-        metadata = @(
+        arity = New-OpenCliArity -Minimum 1 -Kind $Kind
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($ClrType)) {
+        $argument.metadata = @(
             [ordered]@{
                 name = 'ClrType'
                 value = $ClrType
             }
         )
     }
+
+    return $argument
 }
 
 function Convert-XmldocOptionToOpenCliOption {
@@ -188,7 +199,6 @@ function Convert-XmldocOptionToOpenCliOption {
 
     $option = [ordered]@{
         name = $aliasParts.name
-        required = ConvertTo-XmlBoolean (Get-XmlAttributeValue -Node $OptionNode -Name 'Required')
     }
 
     if ((Get-CollectionCount $aliasParts.aliases) -gt 0) {
@@ -216,13 +226,11 @@ function Convert-XmldocArgumentToOpenCliArgument {
     param([Parameter(Mandatory = $true)][object]$ArgumentNode)
 
     $clrType = Get-SimplifiedClrTypeName (Get-XmlAttributeValue -Node $ArgumentNode -Name 'ClrType')
+    $required = ConvertTo-XmlBoolean (Get-XmlAttributeValue -Node $ArgumentNode -Name 'Required')
     $argument = [ordered]@{
         name = [string](Get-XmlAttributeValue -Node $ArgumentNode -Name 'Name')
-        required = ConvertTo-XmlBoolean (Get-XmlAttributeValue -Node $ArgumentNode -Name 'Required')
-        arity = [ordered]@{
-            minimum = 1
-            maximum = 1
-        }
+        required = $required
+        arity = New-OpenCliArity -Minimum $(if ($required) { 1 } else { 0 }) -Kind (Get-XmlAttributeValue -Node $ArgumentNode -Name 'Kind')
     }
 
     $description = Get-XmlDescriptionText -Node $ArgumentNode
@@ -244,6 +252,34 @@ function Convert-XmldocArgumentToOpenCliArgument {
     }
 
     return $argument
+}
+
+function New-OpenCliArity {
+    param(
+        [int]$Minimum,
+        [AllowNull()][string]$Kind
+    )
+
+    $arity = [ordered]@{
+        minimum = $Minimum
+    }
+
+    if ($Kind -ine 'vector') {
+        $arity.maximum = 1
+    }
+
+    return $arity
+}
+
+function Get-NormalizedCommandName {
+    param([Parameter(Mandatory = $true)][object]$CommandNode)
+
+    $commandName = [string](Get-XmlAttributeValue -Node $CommandNode -Name 'Name')
+    if ((ConvertTo-XmlBoolean (Get-XmlAttributeValue -Node $CommandNode -Name 'IsDefault')) -or [string]::IsNullOrWhiteSpace($commandName)) {
+        return '__default_command'
+    }
+
+    return $commandName
 }
 
 function Test-ExampleStartSequence {
@@ -281,7 +317,7 @@ function Convert-XmldocExamplesToOpenCliExamples {
         [string[]]$CommandPath
     )
 
-    $commandName = [string](Get-XmlAttributeValue -Node $CommandNode -Name 'Name')
+    $commandName = Get-NormalizedCommandName -CommandNode $CommandNode
     if ($commandName -eq '__default_command') {
         return @()
     }
@@ -351,7 +387,7 @@ function Convert-XmldocCommandToOpenCliCommand {
         [string[]]$ParentPath = @()
     )
 
-    $commandName = [string](Get-XmlAttributeValue -Node $CommandNode -Name 'Name')
+    $commandName = Get-NormalizedCommandName -CommandNode $CommandNode
     $commandPath = @($ParentPath + $commandName)
 
     $command = [ordered]@{
@@ -398,7 +434,11 @@ function Convert-XmldocCommandToOpenCliCommand {
             -Default:(ConvertTo-XmlBoolean (Get-XmlAttributeValue -Node $CommandNode -Name 'IsHidden'))
     }
 
-    $command.examples = Convert-XmldocExamplesToOpenCliExamples -CommandNode $CommandNode -CommandPath $commandPath
+    $examples = Convert-XmldocExamplesToOpenCliExamples -CommandNode $CommandNode -CommandPath $commandPath
+    if ((Get-CollectionCount $examples) -gt 0) {
+        $command.examples = $examples
+    }
+
     return $command
 }
 
@@ -420,11 +460,19 @@ function Convert-XmldocToOpenCliDocument {
 
     $defaultCommand = $rootCommands | Where-Object name -eq '__default_command' | Select-Object -First 1
     $defaultOptions = $null
-    if ($defaultCommand -and $defaultCommand.PSObject.Properties['options']) {
-        $defaultOptions = $defaultCommand.options
+    $defaultArguments = $null
+    if ($defaultCommand -and $defaultCommand.Contains('options')) {
+        $defaultOptions = $defaultCommand['options']
+    }
+    if ($defaultCommand -and $defaultCommand.Contains('arguments')) {
+        $defaultArguments = $defaultCommand['arguments']
     }
 
-    return [ordered]@{
+    $visibleRootCommands = @(
+        $rootCommands | Where-Object name -ne '__default_command'
+    )
+
+    $document = [ordered]@{
         opencli = '0.1-draft'
         info = [ordered]@{
             title = $Title
@@ -436,7 +484,16 @@ function Convert-XmldocToOpenCliDocument {
             sourceArtifact = 'xmldoc.xml'
             generator = 'InSpectra.Discovery'
         }
-        options = if ($defaultOptions) { $defaultOptions } else { $null }
-        commands = $rootCommands
+        commands = $visibleRootCommands
     }
+
+    if ($defaultOptions) {
+        $document.options = $defaultOptions
+    }
+
+    if ($defaultArguments) {
+        $document.arguments = $defaultArguments
+    }
+
+    return $document
 }
