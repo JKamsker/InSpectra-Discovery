@@ -9,4 +9,14 @@ internal static class OpenCliArtifactSourceSupport
             "synthesized-from-xmldoc" => "xmldoc-synthesized",
             _ => null,
         };
+
+    public static string? InferArtifactSource(string? analysisMode)
+        => analysisMode switch
+        {
+            "native" => "tool-output",
+            "help" => "crawled-from-help",
+            "clifx" => "crawled-from-clifx-help",
+            "xmldoc" => "synthesized-from-xmldoc",
+            _ => null,
+        };
 }

@@ -284,7 +284,7 @@ internal sealed class PromotionApplyCommandService
         string? xmlDocContent = null;
         if (openCliArtifactPath is not null && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out var parsedOpenCli, out _))
         {
-            openCliSource = ResolveOpenCliSource(parsedOpenCli!);
+            openCliSource = ResolveOpenCliSource(parsedOpenCli!, result);
             OpenCliDocumentSanitizer.EnsureArtifactSource(parsedOpenCli!, openCliSource);
             openCliDocument = OpenCliDocumentSanitizer.Sanitize(parsedOpenCli!);
         }
@@ -341,8 +341,7 @@ internal sealed class PromotionApplyCommandService
         {
             if (hasOpenCliOutput)
             {
-                openCliStep["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, openCliPath);
-                openCliStep["artifactSource"] = openCliSource;
+                BackfillOpenCliStepMetadata(openCliStep, repositoryRoot, openCliPath, openCliSource, inferredOpenCliClassification);
             }
             else
             {
@@ -379,12 +378,7 @@ internal sealed class PromotionApplyCommandService
 
         if (openCliIntrospection is not null && hasOpenCliOutput)
         {
-            if (string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.Ordinal))
-            {
-                openCliIntrospection["synthesizedArtifact"] = true;
-            }
-
-            openCliIntrospection["artifactSource"] = openCliSource;
+            BackfillOpenCliIntrospectionMetadata(openCliIntrospection, openCliSource, inferredOpenCliClassification);
             introspection["opencli"] = openCliIntrospection;
         }
 
@@ -442,13 +436,70 @@ internal sealed class PromotionApplyCommandService
     private static int GetAttempt(JsonObject result)
         => result["attempt"]?.GetValue<int?>() ?? 0;
 
-    private static string ResolveOpenCliSource(JsonObject document)
-        => document["x-inspectra"]?["artifactSource"]?.GetValue<string>() switch
-        {
-            { Length: > 0 } artifactSource => artifactSource,
-            _ => "tool-output",
-        };
+    private static string ResolveOpenCliSource(JsonObject document, JsonObject result)
+        => FirstNonEmpty(
+            document["x-inspectra"]?["artifactSource"]?.GetValue<string>(),
+            result["artifacts"]?["opencliSource"]?.GetValue<string>(),
+            result["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>(),
+            result["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>(),
+            OpenCliArtifactSourceSupport.InferArtifactSource(result["analysisMode"]?.GetValue<string>()),
+            "tool-output");
 
     private static string? InferOpenCliClassification(string? openCliSource)
         => OpenCliArtifactSourceSupport.InferClassification(openCliSource);
+
+    private static void BackfillOpenCliStepMetadata(
+        JsonObject openCliStep,
+        string repositoryRoot,
+        string openCliPath,
+        string? openCliSource,
+        string? inferredOpenCliClassification)
+    {
+        if (string.IsNullOrWhiteSpace(openCliStep["status"]?.GetValue<string>()))
+        {
+            openCliStep["status"] = "ok";
+        }
+
+        openCliStep["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, openCliPath);
+        if (!string.IsNullOrWhiteSpace(openCliSource))
+        {
+            openCliStep["artifactSource"] = openCliSource;
+        }
+
+        if (string.IsNullOrWhiteSpace(openCliStep["classification"]?.GetValue<string>())
+            && !string.IsNullOrWhiteSpace(inferredOpenCliClassification))
+        {
+            openCliStep["classification"] = inferredOpenCliClassification;
+        }
+    }
+
+    private static void BackfillOpenCliIntrospectionMetadata(
+        JsonObject openCliIntrospection,
+        string? openCliSource,
+        string? inferredOpenCliClassification)
+    {
+        if (string.IsNullOrWhiteSpace(openCliIntrospection["status"]?.GetValue<string>()))
+        {
+            openCliIntrospection["status"] = "ok";
+        }
+
+        if (string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.Ordinal))
+        {
+            openCliIntrospection["synthesizedArtifact"] = true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(openCliSource))
+        {
+            openCliIntrospection["artifactSource"] = openCliSource;
+        }
+
+        if (string.IsNullOrWhiteSpace(openCliIntrospection["classification"]?.GetValue<string>())
+            && !string.IsNullOrWhiteSpace(inferredOpenCliClassification))
+        {
+            openCliIntrospection["classification"] = inferredOpenCliClassification;
+        }
+    }
+
+    private static string FirstNonEmpty(params string?[] values)
+        => values.First(value => !string.IsNullOrWhiteSpace(value))!;
 }

@@ -495,6 +495,145 @@ public sealed class PromotionApplyCommandServiceTests
     }
 
     [Fact]
+    public async Task ApplyUntrustedAsync_Backfills_Partial_Help_OpenCli_Metadata_From_Analysis_Mode()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Legacy.Help.Tool",
+                            ["latestVersion"] = "2.1.0",
+                            ["totalDownloads"] = 175,
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-help-legacy",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Legacy.Help.Tool",
+                            ["version"] = "2.1.0",
+                            ["attempt"] = 1,
+                            ["command"] = "legacy-help",
+                            ["analysisMode"] = "help",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-legacy-help-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Legacy.Help.Tool",
+                    ["version"] = "2.1.0",
+                    ["batchId"] = "batch-help-legacy",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analysisMode"] = "help",
+                    ["analyzedAt"] = "2026-03-27T02:00:00Z",
+                    ["disposition"] = "success",
+                    ["packageUrl"] = "https://www.nuget.org/packages/Legacy.Help.Tool/2.1.0",
+                    ["packageContentUrl"] = "https://nuget.test/legacy.help.tool.2.1.0.nupkg",
+                    ["catalogEntryUrl"] = "https://nuget.test/catalog/legacy.help.tool.2.1.0.json",
+                    ["command"] = "legacy-help",
+                    ["introspection"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                    },
+                    ["steps"] = new JsonObject
+                    {
+                        ["opencli"] = new JsonObject
+                        {
+                            ["status"] = "ok",
+                        },
+                    },
+                    ["timings"] = new JsonObject
+                    {
+                        ["totalMs"] = 180,
+                        ["crawlMs"] = 90,
+                    },
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-legacy-help-tool", "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                    ["info"] = new JsonObject
+                    {
+                        ["title"] = "Legacy Help Tool",
+                        ["version"] = "2.1.0",
+                    },
+                    ["commands"] = new JsonArray(),
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-legacy-help-tool", "crawl.json"),
+                new JsonObject
+                {
+                    ["documentCount"] = 2,
+                    ["captureCount"] = 2,
+                    ["commands"] = new JsonArray(),
+                });
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var metadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "legacy.help.tool", "2.1.0", "metadata.json"));
+            Assert.Equal("crawled-from-help", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+            Assert.Equal("crawled-from-help", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal("help-crawl", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
+            Assert.Equal("crawled-from-help", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal("help-crawl", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+
+            var openCli = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "legacy.help.tool", "2.1.0", "opencli.json"));
+            Assert.Equal("crawled-from-help", openCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
     public async Task ApplyUntrustedAsync_Backfills_Missing_CliFx_OpenCli_Provenance_Nodes()
     {
         ToolRuntime.Initialize();
