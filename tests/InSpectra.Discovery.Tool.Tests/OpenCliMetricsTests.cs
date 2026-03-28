@@ -103,4 +103,67 @@ public sealed class OpenCliMetricsTests
             Directory.Delete(repositoryRoot, recursive: true);
         }
     }
+
+    [Fact]
+    public void SortPackageSummariesForAllIndex_Falls_Back_To_Versioned_OpenCli_When_Latest_Mirror_Is_Invalid()
+    {
+        var repositoryRoot = Path.Combine(Path.GetTempPath(), "inspectra-opencli-metrics-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(repositoryRoot);
+
+        try
+        {
+            var latestOpenCliPath = Path.Combine(repositoryRoot, "index", "packages", "fallback-invalid-tool", "latest", "opencli.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(latestOpenCliPath)!);
+            File.WriteAllText(latestOpenCliPath, "{not valid json");
+
+            var metadataPath = Path.Combine(repositoryRoot, "index", "packages", "fallback-invalid-tool", "latest", "metadata.json");
+            File.WriteAllText(
+                metadataPath,
+                """
+                {
+                  "steps": {
+                    "opencli": {
+                      "path": "index/packages/fallback-invalid-tool/1.0.0/opencli.json"
+                    }
+                  }
+                }
+                """);
+
+            var versionedOpenCliPath = Path.Combine(repositoryRoot, "index", "packages", "fallback-invalid-tool", "1.0.0", "opencli.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(versionedOpenCliPath)!);
+            File.WriteAllText(
+                versionedOpenCliPath,
+                """
+                {
+                  "opencli": "0.1-draft",
+                  "commands": [
+                    {
+                      "name": "serve",
+                      "description": "Serve content."
+                    }
+                  ]
+                }
+                """);
+
+            var summary = new JsonObject
+            {
+                ["packageId"] = "Fallback.Invalid.Tool",
+                ["latestPaths"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/fallback-invalid-tool/latest/metadata.json",
+                    ["opencliPath"] = "index/packages/fallback-invalid-tool/latest/opencli.json",
+                },
+            };
+
+            var sorted = OpenCliMetrics.SortPackageSummariesForAllIndex([summary], repositoryRoot);
+
+            var updated = Assert.Single(sorted);
+            Assert.Equal(0, updated["commandGroupCount"]?.GetValue<int>());
+            Assert.Equal(1, updated["commandCount"]?.GetValue<int>());
+        }
+        finally
+        {
+            Directory.Delete(repositoryRoot, recursive: true);
+        }
+    }
 }

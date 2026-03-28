@@ -191,8 +191,29 @@ function Get-OpenCliMetricsFromPath {
         return Get-OpenCliMetricsFromDocument -OpenCliDocument $null
     }
 
-    $document = Get-Content -Path $OpenCliPath -Raw | ConvertFrom-Json -Depth 100
+    try {
+        $document = Get-Content -Path $OpenCliPath -Raw | ConvertFrom-Json -Depth 100
+    }
+    catch {
+        return Get-OpenCliMetricsFromDocument -OpenCliDocument $null
+    }
+
     return Get-OpenCliMetricsFromDocument -OpenCliDocument $document
+}
+
+function Import-OpenCliJsonDocument {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $null
+    }
+
+    try {
+        return Get-Content -Path $Path -Raw | ConvertFrom-Json -Depth 100
+    }
+    catch {
+        return $null
+    }
 }
 
 function Resolve-ExistingOpenCliPath {
@@ -228,31 +249,40 @@ function Resolve-OpenCliPathForSummary {
     )
 
     $latestPaths = Get-OpenCliOptionalPropertyValue -InputObject $Summary -Name 'latestPaths'
-    $latestOpenCliPath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
-        Get-OpenCliOptionalPropertyValue -InputObject $latestPaths -Name 'opencliPath'
-    )
-    if ($latestOpenCliPath) {
-        return $latestOpenCliPath
+    foreach ($relativePath in @(
+        Get-OpenCliOptionalPropertyValue -InputObject $latestPaths -Name 'opencliPath',
+        Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject ((Get-OpenCliCollection -Value (Get-OpenCliOptionalPropertyValue -InputObject $Summary -Name 'versions') | Select-Object -First 1)) -Name 'paths') -Name 'opencliPath'
+    )) {
+        $candidatePath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @($relativePath)
+        if (-not $candidatePath) {
+            continue
+        }
+
+        if ($null -ne (Import-OpenCliJsonDocument -Path $candidatePath)) {
+            return $candidatePath
+        }
     }
 
     $metadataPath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
         Get-OpenCliOptionalPropertyValue -InputObject $latestPaths -Name 'metadataPath'
     )
     if ($metadataPath) {
-        $metadata = Get-Content -Path $metadataPath -Raw | ConvertFrom-Json -Depth 100
+        $metadata = Import-OpenCliJsonDocument -Path $metadataPath
+        if ($null -eq $metadata) {
+            return $null
+        }
+
         $metadataOpenCliPath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
             Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliPath',
-            Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'path'
+            Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'path',
+            Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject ((Get-OpenCliCollection -Value (Get-OpenCliOptionalPropertyValue -InputObject $Summary -Name 'versions') | Select-Object -First 1)) -Name 'paths') -Name 'opencliPath'
         )
-        if ($metadataOpenCliPath) {
+        if ($metadataOpenCliPath -and $null -ne (Import-OpenCliJsonDocument -Path $metadataOpenCliPath)) {
             return $metadataOpenCliPath
         }
     }
 
-    $latestVersionRecord = @(Get-OpenCliCollection -Value (Get-OpenCliOptionalPropertyValue -InputObject $Summary -Name 'versions')) | Select-Object -First 1
-    return Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
-        Get-OpenCliOptionalPropertyValue -InputObject (Get-OpenCliOptionalPropertyValue -InputObject $latestVersionRecord -Name 'paths') -Name 'opencliPath'
-    )
+    return $null
 }
 
 function Add-OpenCliMetricsToPackageSummary {

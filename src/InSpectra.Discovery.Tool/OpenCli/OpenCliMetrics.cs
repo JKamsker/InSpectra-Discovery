@@ -9,7 +9,9 @@ internal static class OpenCliMetrics
             return OpenCliMetricsResult.Empty;
         }
 
-        return GetFromDocument(JsonNode.Parse(File.ReadAllText(openCliPath)));
+        return OpenCliArtifactLoadSupport.TryLoadJsonNode(openCliPath, out var document)
+            ? GetFromDocument(document)
+            : OpenCliMetricsResult.Empty;
     }
 
     public static OpenCliMetricsResult GetFromDocument(JsonNode? openCliDocument)
@@ -58,8 +60,7 @@ internal static class OpenCliMetrics
         => packageSummaries
             .Select(summary =>
             {
-                var openCliFullPath = ResolveOpenCliPath(summary, repositoryRoot);
-                var metrics = GetFromPath(openCliFullPath);
+                var metrics = ResolveOpenCliMetrics(summary, repositoryRoot);
                 return new
                 {
                     Summary = ApplyToPackageSummary(summary, metrics),
@@ -73,50 +74,41 @@ internal static class OpenCliMetrics
             .Select(item => item.Summary)
             .ToList();
 
-    private static string? ResolveOpenCliPath(JsonObject summary, string repositoryRoot)
+    private static OpenCliMetricsResult ResolveOpenCliMetrics(JsonObject summary, string repositoryRoot)
     {
         var latestPaths = summary["latestPaths"] as JsonObject;
-        var resolved = ResolveExistingPath(
+        var versionedOpenCliPath = summary["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault()?["paths"]?["opencliPath"]?.GetValue<string>();
+
+        if (OpenCliArtifactLoadSupport.TryLoadFirstJsonNode(
             repositoryRoot,
-            latestPaths?["opencliPath"]?.GetValue<string>());
-        if (resolved is not null)
+            [latestPaths?["opencliPath"]?.GetValue<string>(), versionedOpenCliPath],
+            out var directDocument,
+            out _))
         {
-            return resolved;
+            return GetFromDocument(directDocument);
         }
 
-        var metadataPath = ResolveExistingPath(
+        var metadataPath = OpenCliArtifactLoadSupport.ResolveExistingPath(
             repositoryRoot,
             latestPaths?["metadataPath"]?.GetValue<string>());
         if (metadataPath is not null)
         {
-            var metadata = JsonNode.Parse(File.ReadAllText(metadataPath)) as JsonObject;
-            resolved = ResolveExistingPath(
-                repositoryRoot,
-                metadata?["artifacts"]?["opencliPath"]?.GetValue<string>(),
-                metadata?["steps"]?["opencli"]?["path"]?.GetValue<string>());
-            if (resolved is not null)
+            if (PromotionArtifactSupport.TryLoadJsonObject(metadataPath, out var metadata) && metadata is not null
+                && OpenCliArtifactLoadSupport.TryLoadFirstJsonNode(
+                    repositoryRoot,
+                    [
+                        metadata["artifacts"]?["opencliPath"]?.GetValue<string>(),
+                        metadata["steps"]?["opencli"]?["path"]?.GetValue<string>(),
+                        versionedOpenCliPath,
+                    ],
+                    out var metadataDocument,
+                    out _))
             {
-                return resolved;
+                return GetFromDocument(metadataDocument);
             }
         }
 
-        return ResolveExistingPath(
-            repositoryRoot,
-            summary["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault()?["paths"]?["opencliPath"]?.GetValue<string>());
-    }
-
-    private static string? ResolveExistingPath(string repositoryRoot, params string?[] relativePaths)
-    {
-        foreach (var relativePath in relativePaths.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var candidatePath = Path.Combine(repositoryRoot, relativePath!);
-            if (File.Exists(candidatePath))
-            {
-                return candidatePath;
-            }
-        }
-
-        return null;
+        return OpenCliMetricsResult.Empty;
     }
 
     private static void AddOptionMetrics(MetricsState state, JsonArray? options)
