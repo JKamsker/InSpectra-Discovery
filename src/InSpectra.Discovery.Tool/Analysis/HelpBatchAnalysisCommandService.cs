@@ -2,16 +2,18 @@ using System.Text.Json.Nodes;
 
 internal sealed class HelpBatchAnalysisCommandService
 {
-    private readonly IHelpBatchAnalysisRunner _runner;
+    private readonly IHelpBatchAnalysisRunner _helpRunner;
+    private readonly ICliFxBatchAnalysisRunner _cliFxRunner;
 
     public HelpBatchAnalysisCommandService()
-        : this(new ToolHelpBatchAnalysisRunner())
+        : this(new ToolHelpBatchAnalysisRunner(), new CliFxBatchAnalysisRunner())
     {
     }
 
-    internal HelpBatchAnalysisCommandService(IHelpBatchAnalysisRunner runner)
+    internal HelpBatchAnalysisCommandService(IHelpBatchAnalysisRunner helpRunner, ICliFxBatchAnalysisRunner cliFxRunner)
     {
-        _runner = runner;
+        _helpRunner = helpRunner;
+        _cliFxRunner = cliFxRunner;
     }
 
     public async Task<int> RunAsync(
@@ -57,7 +59,8 @@ internal sealed class HelpBatchAnalysisCommandService
 
         foreach (var item in plan.Items)
         {
-            if (!string.Equals(item.AnalysisMode, "help", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(item.AnalysisMode, "help", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(item.AnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase))
             {
                 skippedItems.Add(new JsonObject
                 {
@@ -146,7 +149,9 @@ internal sealed class HelpBatchAnalysisCommandService
             ? BuildArtifactName(item.PackageId, item.Version)
             : item.ArtifactName;
         var itemOutputRoot = Path.Combine(downloadRoot, artifactName);
-        var exitCode = await _runner.RunAsync(item, itemOutputRoot, batchId, source, timeouts, cancellationToken);
+        var exitCode = string.Equals(item.AnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase)
+            ? await _cliFxRunner.RunAsync(item, itemOutputRoot, batchId, source, timeouts, cancellationToken)
+            : await _helpRunner.RunAsync(item, itemOutputRoot, batchId, source, timeouts, cancellationToken);
         var resultPath = Path.Combine(itemOutputRoot, "result.json");
         var result = File.Exists(resultPath)
             ? JsonNode.Parse(await File.ReadAllTextAsync(resultPath, cancellationToken))?.AsObject()
@@ -178,6 +183,7 @@ internal sealed class HelpBatchAnalysisCommandService
             ["version"] = item.Version,
             ["attempt"] = item.Attempt,
             ["command"] = item.CommandName,
+            ["analysisMode"] = item.AnalysisMode,
             ["artifactName"] = artifactName,
             ["packageUrl"] = FirstNonEmpty(
                 result?["packageUrl"]?.GetValue<string>(),
@@ -268,6 +274,17 @@ internal interface IHelpBatchAnalysisRunner
         CancellationToken cancellationToken);
 }
 
+internal interface ICliFxBatchAnalysisRunner
+{
+    Task<int> RunAsync(
+        HelpBatchItem item,
+        string outputRoot,
+        string batchId,
+        string source,
+        HelpBatchTimeouts timeouts,
+        CancellationToken cancellationToken);
+}
+
 internal sealed class ToolHelpBatchAnalysisRunner : IHelpBatchAnalysisRunner
 {
     private readonly ToolHelpAnalysisService _service = new();
@@ -288,6 +305,31 @@ internal sealed class ToolHelpBatchAnalysisRunner : IHelpBatchAnalysisRunner
             item.Attempt,
             source,
             item.CliFramework,
+            timeouts.InstallTimeoutSeconds,
+            timeouts.AnalysisTimeoutSeconds,
+            timeouts.CommandTimeoutSeconds,
+            cancellationToken);
+}
+
+internal sealed class CliFxBatchAnalysisRunner : ICliFxBatchAnalysisRunner
+{
+    private readonly CliFxAnalysisService _service = new();
+
+    public Task<int> RunAsync(
+        HelpBatchItem item,
+        string outputRoot,
+        string batchId,
+        string source,
+        HelpBatchTimeouts timeouts,
+        CancellationToken cancellationToken)
+        => _service.RunQuietAsync(
+            item.PackageId,
+            item.Version,
+            item.CommandName,
+            outputRoot,
+            batchId,
+            item.Attempt,
+            source,
             timeouts.InstallTimeoutSeconds,
             timeouts.AnalysisTimeoutSeconds,
             timeouts.CommandTimeoutSeconds,

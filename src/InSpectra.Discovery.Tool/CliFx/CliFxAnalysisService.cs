@@ -8,6 +8,33 @@ internal sealed class CliFxAnalysisService
     private readonly CliFxOpenCliBuilder _openCliBuilder = new();
     private readonly CliFxCoverageClassifier _coverageClassifier = new();
 
+    public Task<int> RunQuietAsync(
+        string packageId,
+        string version,
+        string? commandName,
+        string outputRoot,
+        string batchId,
+        int attempt,
+        string source,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        CancellationToken cancellationToken)
+        => RunCoreAsync(
+            packageId,
+            version,
+            commandName,
+            outputRoot,
+            batchId,
+            attempt,
+            source,
+            installTimeoutSeconds,
+            analysisTimeoutSeconds,
+            commandTimeoutSeconds,
+            json: false,
+            suppressOutput: true,
+            cancellationToken);
+
     public async Task<int> RunAsync(
         string packageId,
         string version,
@@ -20,6 +47,35 @@ internal sealed class CliFxAnalysisService
         int analysisTimeoutSeconds,
         int commandTimeoutSeconds,
         bool json,
+        CancellationToken cancellationToken)
+        => await RunCoreAsync(
+            packageId,
+            version,
+            commandName,
+            outputRoot,
+            batchId,
+            attempt,
+            source,
+            installTimeoutSeconds,
+            analysisTimeoutSeconds,
+            commandTimeoutSeconds,
+            json,
+            suppressOutput: false,
+            cancellationToken);
+
+    private async Task<int> RunCoreAsync(
+        string packageId,
+        string version,
+        string? commandName,
+        string outputRoot,
+        string batchId,
+        int attempt,
+        string source,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        bool json,
+        bool suppressOutput,
         CancellationToken cancellationToken)
     {
         var generatedAt = DateTimeOffset.UtcNow;
@@ -130,6 +186,11 @@ internal sealed class CliFxAnalysisService
                 {
                 }
             }
+        }
+
+        if (suppressOutput)
+        {
+            return 0;
         }
 
         var output = ToolRuntime.CreateOutput();

@@ -11,7 +11,7 @@ internal sealed class ToolAnalysisDescriptorResolver : IToolAnalysisDescriptorRe
         var (leaf, catalogLeaf) = await PackageVersionResolver.ResolveAsync(scope.Client, packageId, version, cancellationToken);
         var packageInspection = await new PackageArchiveInspector(scope.Client).InspectAsync(leaf.PackageContent, cancellationToken);
         var cliFramework = DetectCliFramework(catalogLeaf, packageInspection);
-        var (preferredMode, reason) = SelectMode(catalogLeaf, packageInspection);
+        var (preferredMode, reason) = SelectMode(catalogLeaf, packageInspection, cliFramework);
 
         return new ToolAnalysisDescriptor(
             packageId,
@@ -38,10 +38,17 @@ internal sealed class ToolAnalysisDescriptorResolver : IToolAnalysisDescriptorRe
         return CliFrameworkCatalogClassifier.Detect(catalogLeaf);
     }
 
-    private static (string PreferredMode, string Reason) SelectMode(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection)
+    private static (string PreferredMode, string Reason) SelectMode(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection, string? cliFramework)
         => HasConfirmedSpectreCli(catalogLeaf, packageInspection)
             ? ("native", "confirmed-spectre-console-cli")
-            : ("help", "generic-help-crawl");
+            : HasConfirmedCliFx(cliFramework)
+                ? ("clifx", "confirmed-clifx")
+                : ("help", "generic-help-crawl");
+
+    private static bool HasConfirmedCliFx(string? cliFramework)
+        => !string.IsNullOrWhiteSpace(cliFramework)
+            && (string.Equals(cliFramework, "CliFx", StringComparison.OrdinalIgnoreCase)
+                || cliFramework.StartsWith("CliFx + ", StringComparison.OrdinalIgnoreCase));
 
     private static bool HasConfirmedSpectreCli(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection)
     {

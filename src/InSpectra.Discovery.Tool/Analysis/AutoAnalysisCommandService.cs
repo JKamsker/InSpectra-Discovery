@@ -31,28 +31,48 @@ internal interface IAutoAnalysisHelpRunner
         CancellationToken cancellationToken);
 }
 
+internal interface IAutoAnalysisCliFxRunner
+{
+    Task RunAsync(
+        string packageId,
+        string version,
+        string? commandName,
+        string outputRoot,
+        string batchId,
+        int attempt,
+        string source,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        CancellationToken cancellationToken);
+}
+
 internal sealed class AutoAnalysisCommandService
 {
     private readonly IToolAnalysisDescriptorResolver _descriptorResolver;
     private readonly IAutoAnalysisNativeRunner _nativeRunner;
     private readonly IAutoAnalysisHelpRunner _helpRunner;
+    private readonly IAutoAnalysisCliFxRunner _cliFxRunner;
 
     public AutoAnalysisCommandService()
         : this(
             new ToolAnalysisDescriptorResolver(),
             new AutoAnalysisNativeRunnerAdapter(),
-            new AutoAnalysisHelpRunnerAdapter())
+            new AutoAnalysisHelpRunnerAdapter(),
+            new AutoAnalysisCliFxRunnerAdapter())
     {
     }
 
     internal AutoAnalysisCommandService(
         IToolAnalysisDescriptorResolver descriptorResolver,
         IAutoAnalysisNativeRunner nativeRunner,
-        IAutoAnalysisHelpRunner helpRunner)
+        IAutoAnalysisHelpRunner helpRunner,
+        IAutoAnalysisCliFxRunner cliFxRunner)
     {
         _descriptorResolver = descriptorResolver;
         _nativeRunner = nativeRunner;
         _helpRunner = helpRunner;
+        _cliFxRunner = cliFxRunner;
     }
 
     public Task<int> RunAsync(
@@ -134,6 +154,26 @@ internal sealed class AutoAnalysisCommandService
                     return await WriteResultAsync(packageId, version, resultPath, nativeResult, json, suppressOutput, cancellationToken);
                 }
             }
+        }
+
+        if (string.Equals(descriptor.PreferredAnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase))
+        {
+            await _cliFxRunner.RunAsync(
+                packageId,
+                version,
+                descriptor.CommandName,
+                outputDirectory,
+                batchId,
+                attempt,
+                source,
+                installTimeoutSeconds,
+                analysisTimeoutSeconds,
+                commandTimeoutSeconds,
+                cancellationToken);
+            var cliFxResult = LoadResult(resultPath) ?? CreateFailureResult(packageId, version, batchId, attempt, source, "The selected analyzer did not write result.json.");
+            ApplyDescriptor(cliFxResult, descriptor, "clifx", null);
+            RepositoryPathResolver.WriteJsonFile(resultPath, cliFxResult);
+            return await WriteResultAsync(packageId, version, resultPath, cliFxResult, json, suppressOutput, cancellationToken);
         }
 
         await _helpRunner.RunAsync(
@@ -284,5 +324,13 @@ internal sealed class AutoAnalysisCommandService
 
         public async Task RunAsync(string packageId, string version, string? commandName, string outputRoot, string batchId, int attempt, string source, string? cliFramework, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
             => await _service.RunQuietAsync(packageId, version, commandName, outputRoot, batchId, attempt, source, cliFramework, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, cancellationToken);
+    }
+
+    private sealed class AutoAnalysisCliFxRunnerAdapter : IAutoAnalysisCliFxRunner
+    {
+        private readonly CliFxAnalysisService _service = new();
+
+        public async Task RunAsync(string packageId, string version, string? commandName, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+            => await _service.RunQuietAsync(packageId, version, commandName, outputRoot, batchId, attempt, source, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, cancellationToken);
     }
 }

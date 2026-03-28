@@ -78,7 +78,9 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(runner);
+        var service = new HelpBatchAnalysisCommandService(
+            runner,
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -107,6 +109,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
 
         var expectedItem = expected["items"]?.AsArray().OfType<JsonObject>().Single()
             ?? throw new InvalidOperationException("Expected one item.");
+        Assert.Equal("help", expectedItem["analysisMode"]?.GetValue<string>());
         Assert.Equal("System.CommandLine", expectedItem["cliFramework"]?.GetValue<string>());
         Assert.Equal(1234L, expectedItem["totalDownloads"]?.GetValue<long>());
         Assert.Equal("analysis-sample.tool-1.2.3", expectedItem["artifactName"]?.GetValue<string>());
@@ -160,7 +163,9 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(runner);
+        var service = new HelpBatchAnalysisCommandService(
+            runner,
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -245,7 +250,9 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(runner);
+        var service = new HelpBatchAnalysisCommandService(
+            runner,
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -271,6 +278,88 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             ?? throw new InvalidOperationException("Expected one skipped item.");
         Assert.Equal("Cake.Tool", skipped["packageId"]?.GetValue<string>());
         Assert.Equal("native", skipped["analysisMode"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RunAsync_RoutesCliFxItems_ToCliFxRunner()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "plans", "help-batch.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["batchId"] = "help-batch-004",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "CliFx.Tool",
+                        ["version"] = "2.0.0",
+                        ["command"] = "clifx-tool",
+                        ["cliFramework"] = "CliFx",
+                        ["analysisMode"] = "clifx",
+                    },
+                },
+            });
+
+        var helpRunner = new FakeHelpBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("Help runner should not run."));
+        var cliFxRunner = new FakeCliFxBatchAnalysisRunner((item, outputRoot, batchId, source, timeouts) =>
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = item.PackageId,
+                    ["version"] = item.Version,
+                    ["batchId"] = batchId,
+                    ["attempt"] = item.Attempt,
+                    ["source"] = source,
+                    ["cliFramework"] = item.CliFramework,
+                    ["disposition"] = "success",
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                });
+            return 0;
+        });
+
+        var service = new HelpBatchAnalysisCommandService(helpRunner, cliFxRunner);
+        var exitCode = await service.RunAsync(
+            repositoryRoot,
+            "plans/help-batch.json",
+            "artifacts/help-batch",
+            batchId: null,
+            source: "help-index-batch",
+            targetBranch: "main",
+            installTimeoutSeconds: 300,
+            analysisTimeoutSeconds: 600,
+            commandTimeoutSeconds: 60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Empty(helpRunner.Invocations);
+        Assert.Single(cliFxRunner.Invocations);
+        Assert.Equal("CliFx.Tool", cliFxRunner.Invocations[0].PackageId);
+
+        var expected = ParseJsonObject(Path.Combine(repositoryRoot, "artifacts", "help-batch", "plan", "expected.json"));
+        var expectedItem = expected["items"]?.AsArray().OfType<JsonObject>().Single()
+            ?? throw new InvalidOperationException("Expected one item.");
+        Assert.Equal("clifx", expectedItem["analysisMode"]?.GetValue<string>());
+        Assert.Equal("CliFx", expectedItem["cliFramework"]?.GetValue<string>());
     }
 
     private static JsonObject ParseJsonObject(string path)
@@ -303,6 +392,31 @@ public sealed class HelpBatchAnalysisCommandServiceTests
     }
 
     private sealed record FakeInvocation(string OutputRoot, string BatchId, string Source, HelpBatchTimeouts Timeouts, string PackageId);
+
+    private sealed class FakeCliFxBatchAnalysisRunner : ICliFxBatchAnalysisRunner
+    {
+        private readonly Func<HelpBatchItem, string, string, string, HelpBatchTimeouts, int> _handler;
+
+        public FakeCliFxBatchAnalysisRunner(Func<HelpBatchItem, string, string, string, HelpBatchTimeouts, int> handler)
+        {
+            _handler = handler;
+        }
+
+        public List<FakeInvocation> Invocations { get; } = [];
+
+        public Task<int> RunAsync(
+            HelpBatchItem item,
+            string outputRoot,
+            string batchId,
+            string source,
+            HelpBatchTimeouts timeouts,
+            CancellationToken cancellationToken)
+        {
+            Directory.CreateDirectory(outputRoot);
+            Invocations.Add(new FakeInvocation(outputRoot, batchId, source, timeouts, item.PackageId));
+            return Task.FromResult(_handler(item, outputRoot, batchId, source, timeouts));
+        }
+    }
 
     private sealed class TemporaryDirectory : IDisposable
     {

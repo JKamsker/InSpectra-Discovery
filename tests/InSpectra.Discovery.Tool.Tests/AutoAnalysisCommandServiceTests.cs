@@ -22,7 +22,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 "https://nuget.test/sample.tool.1.2.3.nupkg",
                 "https://nuget.test/catalog/sample.tool.1.2.3.json")),
             new FakeNativeRunner((path, _, _, _, _, _, _, _) => WriteResult(path, "success")),
-            new FakeHelpRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("Help fallback should not run.")));
+            new FakeHelpRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("Help fallback should not run.")),
+            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
 
         var exitCode = await service.RunAsync(
             "Sample.Tool",
@@ -71,7 +72,8 @@ public sealed class AutoAnalysisCommandServiceTests
             {
                 capturedCommandName = commandName;
                 WriteResult(path, "success", cliFramework: framework);
-            }));
+            }),
+            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
 
         var exitCode = await service.RunAsync(
             "Broken.Tool",
@@ -122,7 +124,8 @@ public sealed class AutoAnalysisCommandServiceTests
             {
                 capturedCommandName = commandName;
                 WriteResult(path, "success", cliFramework: framework);
-            }));
+            }),
+            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
 
         var exitCode = await service.RunAsync(
             "Cake.Tool",
@@ -168,7 +171,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 "https://nuget.test/cake.tool.6.1.0.nupkg",
                 "https://nuget.test/catalog/cake.tool.6.1.0.json")),
             new FakeNativeRunner((path, _, _, _, _, _, _, _) => WriteResult(path, "success", includeOpenCliArtifact: false, includeXmlDocArtifact: true)),
-            new FakeHelpRunner((path, _, _, _, _, _, _, _, _, _) => WriteResult(path, "terminal-failure", "help-crawl-failed", includeOpenCliArtifact: false)));
+            new FakeHelpRunner((path, _, _, _, _, _, _, _, _, _) => WriteResult(path, "terminal-failure", "help-crawl-failed", includeOpenCliArtifact: false)),
+            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
 
         var exitCode = await service.RunAsync(
             "Cake.Tool",
@@ -191,6 +195,57 @@ public sealed class AutoAnalysisCommandServiceTests
         Assert.Null(result["fallback"]);
         Assert.Null(result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
         Assert.Equal("xmldoc.xml", result["artifacts"]?["xmldocArtifact"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RunAsync_UsesCliFxRunner_WhenPreferredModeIsCliFx()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        string? capturedCommandName = null;
+
+        var service = new AutoAnalysisCommandService(
+            new FakeDescriptorResolver(new ToolAnalysisDescriptor(
+                "CliFx.Tool",
+                "2.0.0",
+                "clifx-tool",
+                "CliFx",
+                "clifx",
+                "confirmed-clifx",
+                "https://www.nuget.org/packages/CliFx.Tool/2.0.0",
+                "https://nuget.test/clifx.tool.2.0.0.nupkg",
+                "https://nuget.test/catalog/clifx.tool.2.0.0.json")),
+            new FakeNativeRunner((_, _, _, _, _, _, _, _) => throw new InvalidOperationException("Native runner should not run.")),
+            new FakeHelpRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("Help runner should not run.")),
+            new FakeCliFxRunner((path, _, commandName, _, _, _, _, _, _, _) =>
+            {
+                capturedCommandName = commandName;
+                WriteResult(path, "success", cliFramework: "CliFx");
+            }));
+
+        var exitCode = await service.RunAsync(
+            "CliFx.Tool",
+            "2.0.0",
+            outputRoot,
+            "batch-005",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal("clifx-tool", capturedCommandName);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("clifx", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("CliFx", result["cliFramework"]?.GetValue<string>());
+        Assert.Null(result["fallback"]);
     }
 
     private static void WriteResult(
@@ -249,6 +304,15 @@ public sealed class AutoAnalysisCommandServiceTests
         public Task RunAsync(string packageId, string version, string? commandName, string outputRoot, string batchId, int attempt, string source, string? cliFramework, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
         {
             handler(outputRoot, packageId, commandName, version, batchId, attempt, cliFramework, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeCliFxRunner(Action<string, string, string?, string, string, int, int, int, int, string> handler) : IAutoAnalysisCliFxRunner
+    {
+        public Task RunAsync(string packageId, string version, string? commandName, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+        {
+            handler(outputRoot, packageId, commandName, version, batchId, attempt, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, source);
             return Task.CompletedTask;
         }
     }
