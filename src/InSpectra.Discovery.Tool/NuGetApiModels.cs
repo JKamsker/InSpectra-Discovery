@@ -70,7 +70,8 @@ internal sealed record RegistrationPageLeaf(
     string? Id,
     DateTimeOffset CommitTimeStamp,
     CatalogEntry CatalogEntry,
-    string PackageContent);
+    string PackageContent,
+    bool HasEmbeddedCatalogEntry);
 
 internal sealed record RegistrationLeafDocument(
     string? Id,

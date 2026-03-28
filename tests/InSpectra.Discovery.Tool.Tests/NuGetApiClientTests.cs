@@ -84,6 +84,34 @@ public sealed class NuGetApiClientTests
     }
 
     [Fact]
+    public async Task GetRegistrationPageAsync_Parses_String_CatalogEntry_Payload()
+    {
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [RegistrationPageUrl] = """
+                {
+                  "items": [
+                    {
+                      "@id": "https://nuget.test/registration/cute/2.15.0.json",
+                      "commitTimeStamp": "2026-03-27T13:29:43.8550432+01:00",
+                      "catalogEntry": "https://nuget.test/catalog/cute.2.15.0.json",
+                      "packageContent": "https://nuget.test/flat/cute.2.15.0.nupkg"
+                    }
+                  ]
+                }
+                """,
+        }));
+        var client = new NuGetApiClient(httpClient);
+
+        var page = await client.GetRegistrationPageAsync(RegistrationPageUrl, CancellationToken.None);
+
+        var leaf = Assert.Single(page.Items);
+        Assert.Equal(CatalogEntryUrl, leaf.CatalogEntry.Id);
+        Assert.Equal("2.15.0", leaf.CatalogEntry.Version);
+        Assert.False(leaf.HasEmbeddedCatalogEntry);
+    }
+
+    [Fact]
     public async Task GetRegistrationLeafAsync_ParsesPermalinkPayload()
     {
         using var httpClient = new HttpClient(new StubHttpMessageHandler(new Dictionary<string, string>(StringComparer.Ordinal)

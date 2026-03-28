@@ -63,6 +63,9 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
         Assert.Equal("ok", metadata["status"]?.GetValue<string>());
         Assert.Equal("tool-output", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
         Assert.Equal("tool-output", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("json-ready", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
+        Assert.Equal("json-ready", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+        Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "native.tool", "latest", "opencli.json")));
     }
 
     [Fact]

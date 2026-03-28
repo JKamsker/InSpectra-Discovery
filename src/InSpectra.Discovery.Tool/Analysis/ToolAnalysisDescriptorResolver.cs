@@ -41,14 +41,9 @@ internal sealed class ToolAnalysisDescriptorResolver : IToolAnalysisDescriptorRe
     private static (string PreferredMode, string Reason) SelectMode(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection, string? cliFramework)
         => HasConfirmedSpectreCli(catalogLeaf, packageInspection)
             ? ("native", "confirmed-spectre-console-cli")
-            : HasConfirmedCliFx(cliFramework)
+            : CliFrameworkSupport.HasCliFx(cliFramework)
                 ? ("clifx", "confirmed-clifx")
                 : ("help", "generic-help-crawl");
-
-    private static bool HasConfirmedCliFx(string? cliFramework)
-        => !string.IsNullOrWhiteSpace(cliFramework)
-            && (string.Equals(cliFramework, "CliFx", StringComparison.OrdinalIgnoreCase)
-                || cliFramework.StartsWith("CliFx + ", StringComparison.OrdinalIgnoreCase));
 
     private static bool HasConfirmedSpectreCli(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection)
     {

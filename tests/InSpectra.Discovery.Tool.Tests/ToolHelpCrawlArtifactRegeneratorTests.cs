@@ -502,7 +502,72 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
         Assert.Equal("crawled-from-help", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
         Assert.Equal("index/packages/samplehelp/1.0.0/opencli.json", metadata["steps"]?["opencli"]?["path"]?.GetValue<string>());
         Assert.Equal("crawled-from-help", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("help-crawl", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
         Assert.Equal("crawled-from-help", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("help-crawl", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+        Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "samplehelp", "latest", "opencli.json")));
+    }
+
+    [Fact]
+    public void Regenerator_Rebuilds_Generic_Help_When_OpenCli_Is_Missing_Using_Metadata_Provenance()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "samplehelp", "1.0.0");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "SampleHelp",
+                ["version"] = "1.0.0",
+                ["command"] = "samplehelp",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "crawled-from-help",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["crawlPath"] = "index/packages/samplehelp/1.0.0/crawl.json",
+                    ["opencliSource"] = "crawled-from-help",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            samplehelp 1.0.0
+
+                            Usage: samplehelp [options]
+
+                            Options:
+                              --verbose  Verbose output.
+                            """,
+                    },
+                },
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+        Assert.True(File.Exists(Path.Combine(versionRoot, "opencli.json")));
+        Assert.Equal("crawled-from-help", ParseJsonObject(Path.Combine(versionRoot, "opencli.json"))["x-inspectra"]?["artifactSource"]?.GetValue<string>());
     }
 
     private static JsonObject ParseJsonObject(string path)

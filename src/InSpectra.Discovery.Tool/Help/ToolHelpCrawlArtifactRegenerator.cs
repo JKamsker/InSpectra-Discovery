@@ -14,7 +14,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             return new HelpCrawlArtifactRegenerationResult(0, 0, 0, 0, 0, [], []);
         }
 
-        var candidates = EnumerateCandidates(packagesRoot).ToList();
+        var candidates = EnumerateCandidates(root, packagesRoot).ToList();
         var rewritten = new List<string>();
         var failed = new List<string>();
         var unchangedCount = 0;
@@ -24,7 +24,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             try
             {
                 var regenerated = RegenerateOpenCli(candidate);
-                var existing = JsonNode.Parse(File.ReadAllText(candidate.OpenCliPath));
+                var existing = TryLoadJsonNode(candidate.OpenCliPath);
                 var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
                 if (openCliChanged)
                 {
@@ -160,15 +160,15 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         return documents;
     }
 
-    private static IEnumerable<HelpCrawlArtifactCandidate> EnumerateCandidates(string packagesRoot)
+    private static IEnumerable<HelpCrawlArtifactCandidate> EnumerateCandidates(string repositoryRoot, string packagesRoot)
         => Directory.GetFiles(packagesRoot, "metadata.json", SearchOption.AllDirectories)
             .Where(path => !string.Equals(Path.GetFileName(Path.GetDirectoryName(path)), "latest", StringComparison.OrdinalIgnoreCase))
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-            .Select(TryCreateCandidate)
+            .Select(path => TryCreateCandidate(repositoryRoot, path))
             .Where(candidate => candidate is not null)
             .Select(candidate => candidate!);
 
-    private static HelpCrawlArtifactCandidate? TryCreateCandidate(string metadataPath)
+    private static HelpCrawlArtifactCandidate? TryCreateCandidate(string repositoryRoot, string metadataPath)
     {
         var versionDirectory = Path.GetDirectoryName(metadataPath);
         if (string.IsNullOrWhiteSpace(versionDirectory))
@@ -177,20 +177,32 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         }
 
         var crawlPath = Path.Combine(versionDirectory, "crawl.json");
-        var openCliPath = Path.Combine(versionDirectory, "opencli.json");
-        if (!File.Exists(crawlPath) || !File.Exists(openCliPath))
-        {
-            return null;
-        }
-
-        var openCli = JsonNode.Parse(File.ReadAllText(openCliPath));
-        var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>();
-        if (!string.Equals(artifactSource, "crawled-from-help", StringComparison.OrdinalIgnoreCase))
+        if (!File.Exists(crawlPath))
         {
             return null;
         }
 
         var metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject();
+        var openCliRelativePath = metadata?["artifacts"]?["opencliPath"]?.GetValue<string>();
+        var openCliPath = string.IsNullOrWhiteSpace(openCliRelativePath)
+            ? Path.Combine(versionDirectory, "opencli.json")
+            : Path.Combine(repositoryRoot, openCliRelativePath);
+        var openCli = TryLoadJsonNode(openCliPath);
+        var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
+            ?? metadata?["artifacts"]?["opencliSource"]?.GetValue<string>()
+            ?? metadata?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
+        if (!string.Equals(artifactSource, "crawled-from-help", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var cliFramework = metadata?["cliFramework"]?.GetValue<string>()
+            ?? openCli?["x-inspectra"]?["cliFramework"]?.GetValue<string>();
+        if (CliFrameworkSupport.HasCliFx(cliFramework))
+        {
+            return null;
+        }
+
         var packageId = metadata?["packageId"]?.GetValue<string>();
         var version = metadata?["version"]?.GetValue<string>();
         var commandName = metadata?["command"]?.GetValue<string>();
@@ -203,7 +215,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             packageId,
             version,
             commandName,
-            metadata?["cliFramework"]?.GetValue<string>(),
+            cliFramework,
             metadataPath,
             crawlPath,
             openCliPath);
@@ -213,6 +225,23 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         => string.IsNullOrWhiteSpace(commandKey)
             ? []
             : commandKey.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static JsonNode? TryLoadJsonNode(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonNode.Parse(File.ReadAllText(path));
+        }
+        catch
+        {
+            return null;
+        }
+    }
 }
 
 internal sealed record HelpCrawlArtifactRegenerationResult(

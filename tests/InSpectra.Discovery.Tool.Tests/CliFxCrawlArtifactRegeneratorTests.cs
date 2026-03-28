@@ -353,6 +353,67 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
         Assert.Equal("convert", openCli["commands"]![0]!["name"]!.GetValue<string>());
     }
 
+    [Fact]
+    public void Regenerates_Mixed_Framework_CliFx_Crawl()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "mixedclifx", "1.0.0");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "MixedCliFx",
+                ["version"] = "1.0.0",
+                ["command"] = "mixed",
+                ["cliFramework"] = "CliFx + System.CommandLine",
+                ["artifacts"] = new JsonObject
+                {
+                    ["crawlPath"] = "index/packages/mixedclifx/1.0.0/crawl.json",
+                    ["opencliSource"] = "crawled-from-help",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["documentCount"] = 1,
+                ["captureCount"] = 1,
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["result"] = new JsonObject
+                        {
+                            ["stdout"] =
+                                """
+                                mixed 1.0.0
+
+                                USAGE
+                                  mixed [options]
+
+                                OPTIONS
+                                  -h|--help         Shows help text.
+                                """,
+                        },
+                    },
+                },
+            });
+
+        var regenerator = new CliFxCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+        Assert.Equal("CliFx + System.CommandLine", ParseJsonObject(Path.Combine(versionRoot, "opencli.json"))["x-inspectra"]?["cliFramework"]?.GetValue<string>());
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

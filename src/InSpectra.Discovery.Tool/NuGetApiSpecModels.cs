@@ -56,7 +56,7 @@ internal sealed record RegistrationPageSpec(
 internal sealed record RegistrationPageLeafSpec(
     [property: JsonPropertyName("@id")] string? Id,
     [property: JsonPropertyName("commitTimeStamp")] DateTimeOffset? CommitTimeStamp,
-    [property: JsonPropertyName("catalogEntry")] CatalogEntrySpec? CatalogEntry,
+    [property: JsonPropertyName("catalogEntry")] JsonElement? CatalogEntry,
     [property: JsonPropertyName("packageContent")] string? PackageContent);
 
 internal sealed record RegistrationLeafDocumentSpec(

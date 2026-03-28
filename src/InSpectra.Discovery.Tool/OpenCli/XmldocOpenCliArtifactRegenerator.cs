@@ -93,6 +93,7 @@ internal sealed class XmldocOpenCliArtifactRegenerator
         var steps = metadata["steps"] as JsonObject;
         var openCliStep = steps?["opencli"] as JsonObject;
         var xmlDocRelativePath = artifacts?["xmldocPath"]?.GetValue<string>();
+        var crawlRelativePath = artifacts?["crawlPath"]?.GetValue<string>();
         var openCliRelativePath = artifacts?["opencliPath"]?.GetValue<string>();
         var artifactSource = artifacts?["opencliSource"]?.GetValue<string>()
             ?? openCliStep?["artifactSource"]?.GetValue<string>();
@@ -109,21 +110,28 @@ internal sealed class XmldocOpenCliArtifactRegenerator
                 ?? artifactSource;
         }
 
+        var hasXmlDoc = !string.IsNullOrWhiteSpace(xmlDocRelativePath);
+        var hasCrawl = !string.IsNullOrWhiteSpace(crawlRelativePath);
         var shouldBackfillMissingOpenCli = string.IsNullOrWhiteSpace(openCliRelativePath)
-            && !string.IsNullOrWhiteSpace(xmlDocRelativePath)
+            && hasXmlDoc
+            && !hasCrawl
             && !openCliExists;
+        var shouldRepairBlankXmldocProvenance = hasXmlDoc
+            && !hasCrawl
+            && string.IsNullOrWhiteSpace(artifactSource);
         if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
-            && !shouldBackfillMissingOpenCli)
+            && !shouldBackfillMissingOpenCli
+            && !shouldRepairBlankXmldocProvenance)
         {
             return null;
         }
 
-        if (string.IsNullOrWhiteSpace(xmlDocRelativePath))
+        if (!hasXmlDoc)
         {
             return null;
         }
 
-        var xmlDocPath = Path.Combine(repositoryRoot, xmlDocRelativePath);
+        var xmlDocPath = Path.Combine(repositoryRoot, xmlDocRelativePath!);
         if (!File.Exists(xmlDocPath))
         {
             return null;

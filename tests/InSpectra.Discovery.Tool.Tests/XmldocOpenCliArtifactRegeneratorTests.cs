@@ -193,7 +193,9 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
         Assert.Equal("synthesized-from-xmldoc", metadata["artifacts"]?["opencliSource"]?.GetValue<string>());
         Assert.Equal("index/packages/sample.tool/1.2.3/opencli.json", metadata["steps"]?["opencli"]?["path"]?.GetValue<string>());
         Assert.Equal("synthesized-from-xmldoc", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("xmldoc-synthesized", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
         Assert.Equal("synthesized-from-xmldoc", metadata["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("xmldoc-synthesized", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
         Assert.True(metadata["introspection"]?["opencli"]?["synthesizedArtifact"]?.GetValue<bool>());
     }
 
@@ -346,6 +348,63 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
         Assert.Equal(1, result.RewrittenCount);
         Assert.Equal(0, result.FailedCount);
         Assert.Equal("sample", ParseJsonObject(openCliPath)["info"]?["title"]?.GetValue<string>());
+        Assert.Equal("synthesized-from-xmldoc", ParseJsonObject(metadataPath)["artifacts"]?["opencliSource"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Repairs_Blank_Provenance_When_Xmldoc_Artifacts_Exist()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "advocu", "0.4.0");
+        var metadataPath = Path.Combine(versionRoot, "metadata.json");
+        var openCliPath = Path.Combine(versionRoot, "opencli.json");
+        RepositoryPathResolver.WriteTextFile(
+            Path.Combine(versionRoot, "xmldoc.xml"),
+            """
+            <Model>
+              <Command Name="__default_command">
+                <Description>Advocu CLI</Description>
+              </Command>
+            </Model>
+            """);
+        RepositoryPathResolver.WriteJsonFile(
+            metadataPath,
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Advocu",
+                ["version"] = "0.4.0",
+                ["command"] = "advocu",
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/advocu/0.4.0/metadata.json",
+                    ["opencliPath"] = "index/packages/advocu/0.4.0/opencli.json",
+                    ["xmldocPath"] = "index/packages/advocu/0.4.0/xmldoc.xml",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            openCliPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "stale",
+                    ["version"] = "0.4.0",
+                },
+                ["commands"] = new JsonArray(),
+            });
+
+        var regenerator = new XmldocOpenCliArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
         Assert.Equal("synthesized-from-xmldoc", ParseJsonObject(metadataPath)["artifacts"]?["opencliSource"]?.GetValue<string>());
     }
 

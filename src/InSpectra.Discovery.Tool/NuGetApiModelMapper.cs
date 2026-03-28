@@ -76,11 +76,15 @@ internal static class NuGetApiModelMapper
             Items: OptionalList(spec.Items, ToModel));
 
     private static RegistrationPageLeaf ToModel(RegistrationPageLeafSpec spec)
-        => new(
+    {
+        var (catalogEntry, hasEmbeddedCatalogEntry) = ToRegistrationPageCatalogEntry(spec.CatalogEntry, spec.Id, spec.PackageContent);
+        return new RegistrationPageLeaf(
             Id: spec.Id,
             CommitTimeStamp: RequiredDateTimeOffset(spec.CommitTimeStamp, "commitTimeStamp"),
-            CatalogEntry: ToModel(RequiredObject(spec.CatalogEntry, "catalogEntry")),
-            PackageContent: RequiredString(spec.PackageContent, "packageContent"));
+            CatalogEntry: catalogEntry,
+            PackageContent: RequiredString(spec.PackageContent, "packageContent"),
+            HasEmbeddedCatalogEntry: hasEmbeddedCatalogEntry);
+    }
 
     private static CatalogEntry ToModel(CatalogEntrySpec spec)
         => new(
@@ -95,6 +99,79 @@ internal static class NuGetApiModelMapper
             Repository: ToModel(spec.Repository),
             ReadmeUrl: spec.ReadmeUrl,
             Version: RequiredString(spec.Version, "version"));
+
+    private static (CatalogEntry CatalogEntry, bool HasEmbeddedCatalogEntry) ToRegistrationPageCatalogEntry(
+        JsonElement? catalogEntryElement,
+        string? leafId,
+        string? packageContent)
+    {
+        if (catalogEntryElement is null)
+        {
+            throw new JsonException("Required property 'catalogEntry' was not present.");
+        }
+
+        return catalogEntryElement.Value.ValueKind switch
+        {
+            JsonValueKind.Object => (
+                ToModel(JsonSerializer.Deserialize<CatalogEntrySpec>(catalogEntryElement.Value.GetRawText())
+                    ?? throw new JsonException("Required property 'catalogEntry' was null.")),
+                true),
+            JsonValueKind.String => (
+                new CatalogEntry(
+                    Id: catalogEntryElement.Value.GetString()
+                        ?? throw new JsonException("Required property 'catalogEntry' was not present."),
+                    Authors: null,
+                    Description: null,
+                    LicenseExpression: null,
+                    LicenseUrl: null,
+                    Listed: null,
+                    ProjectUrl: null,
+                    Published: null,
+                    Repository: null,
+                    ReadmeUrl: null,
+                    Version: ExtractRegistrationPageVersion(leafId, packageContent)),
+                false),
+            _ => throw new JsonException("Required property 'catalogEntry' was not an object or string."),
+        };
+    }
+
+    private static string ExtractRegistrationPageVersion(string? leafId, string? packageContent)
+        => ExtractVersionFromLeafUrl(leafId)
+            ?? ExtractVersionFromPackageContent(packageContent)
+            ?? throw new JsonException("Could not infer version from registration page leaf.");
+
+    private static string? ExtractVersionFromLeafUrl(string? leafId)
+    {
+        if (string.IsNullOrWhiteSpace(leafId) || !Uri.TryCreate(leafId, UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        var segment = uri.Segments.LastOrDefault()?.Trim('/');
+        return string.IsNullOrWhiteSpace(segment) || !segment.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : segment[..^5];
+    }
+
+    private static string? ExtractVersionFromPackageContent(string? packageContent)
+    {
+        if (string.IsNullOrWhiteSpace(packageContent) || !Uri.TryCreate(packageContent, UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        var fileName = Path.GetFileName(uri.LocalPath);
+        if (string.IsNullOrWhiteSpace(fileName) || !fileName.EndsWith(".nupkg", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var trimmed = fileName[..^6];
+        var lastDot = trimmed.LastIndexOf('.');
+        return lastDot > 0 && lastDot < trimmed.Length - 1
+            ? trimmed[(lastDot + 1)..]
+            : null;
+    }
 
     private static CatalogRepository? ToModel(CatalogRepositorySpec? spec)
         => spec is null
