@@ -15,6 +15,12 @@ internal static class ValidatedGenericHelpFrameworkCases
                 ?? throw new InvalidOperationException($"Plan item '{item.PackageId} {item.Version}' is missing cliFramework.");
             var commandName = item.CommandName
                 ?? throw new InvalidOperationException($"Plan item '{item.PackageId} {item.Version}' is missing command.");
+            if (item.ExpectedCommands.Count == 0 &&
+                item.ExpectedOptions.Count == 0 &&
+                item.ExpectedArguments.Count == 0)
+            {
+                throw new InvalidOperationException($"Plan item '{item.PackageId} {item.Version}' is missing live expectations.");
+            }
 
             data.Add(new ToolHelpAnalysisServiceLiveTests.LiveToolCase(
                 framework,
@@ -25,16 +31,6 @@ internal static class ValidatedGenericHelpFrameworkCases
                 item.ExpectedOptions,
                 item.ExpectedArguments));
         }
-
-        // Cake.Tool stays outside the generic-help batch plan because the repository
-        // already indexes it through the richer native OpenCLI/XMLDoc path.
-        data.Add(new ToolHelpAnalysisServiceLiveTests.LiveToolCase(
-            "Spectre.Console.Cli",
-            "Cake.Tool",
-            "6.1.0",
-            "dotnet-cake",
-            expectedOptions: ["--verbosity"],
-            expectedArguments: ["SCRIPT"]));
 
         return data;
     }

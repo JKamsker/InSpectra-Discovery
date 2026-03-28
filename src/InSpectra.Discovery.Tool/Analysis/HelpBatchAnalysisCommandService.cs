@@ -48,13 +48,27 @@ internal sealed class HelpBatchAnalysisCommandService
             commandTimeoutSeconds);
         var snapshotLookup = LoadCurrentSnapshotLookup(root);
         var expectedItems = new JsonArray();
+        var skippedItems = new JsonArray();
         var failures = new List<string>();
+        var selectedCount = 0;
 
         Directory.CreateDirectory(downloadRoot);
         Directory.CreateDirectory(Path.Combine(downloadRoot, "plan"));
 
         foreach (var item in plan.Items)
         {
+            if (!string.Equals(item.AnalysisMode, "help", StringComparison.OrdinalIgnoreCase))
+            {
+                skippedItems.Add(new JsonObject
+                {
+                    ["packageId"] = item.PackageId,
+                    ["version"] = item.Version,
+                    ["analysisMode"] = item.AnalysisMode,
+                    ["reason"] = $"analysisMode '{item.AnalysisMode}' is not supported by run-help-batch.",
+                });
+                continue;
+            }
+
             var outcome = await RunItemAsync(
                 downloadRoot,
                 resolvedBatchId,
@@ -63,6 +77,7 @@ internal sealed class HelpBatchAnalysisCommandService
                 timeouts,
                 snapshotLookup,
                 cancellationToken);
+            selectedCount++;
             expectedItems.Add(outcome.ExpectedItem);
 
             if (outcome.Success)
@@ -82,10 +97,10 @@ internal sealed class HelpBatchAnalysisCommandService
             ["sourcePlanPath"] = RepositoryPathResolver.GetRelativePath(root, planFile),
             ["sourceSnapshotPath"] = "state/discovery/dotnet-tools.current.json",
             ["targetBranch"] = targetBranch,
-            ["selectedCount"] = plan.Items.Count,
-            ["skippedCount"] = 0,
+            ["selectedCount"] = selectedCount,
+            ["skippedCount"] = skippedItems.Count,
             ["items"] = expectedItems,
-            ["skipped"] = new JsonArray(),
+            ["skipped"] = skippedItems,
         });
 
         var output = ToolRuntime.CreateOutput();
@@ -93,7 +108,7 @@ internal sealed class HelpBatchAnalysisCommandService
         {
             return await output.WriteErrorAsync(
                 kind: "partial-failure",
-                message: $"Help batch completed with {failures.Count} failure(s) out of {plan.Items.Count}. Expected plan: {expectedPath}. First failure: {failures[0]}",
+                message: $"Help batch completed with {failures.Count} failure(s) out of {selectedCount} runnable item(s). Expected plan: {expectedPath}. First failure: {failures[0]}",
                 exitCode: 1,
                 json: json,
                 cancellationToken: cancellationToken);
@@ -103,13 +118,15 @@ internal sealed class HelpBatchAnalysisCommandService
             new
             {
                 batchId = resolvedBatchId,
-                selectedCount = plan.Items.Count,
-                successCount = plan.Items.Count,
+                selectedCount,
+                skippedCount = skippedItems.Count,
+                successCount = selectedCount,
                 expectedPlanPath = expectedPath,
             },
             [
                 new SummaryRow("Batch", resolvedBatchId),
-                new SummaryRow("Selected items", plan.Items.Count.ToString()),
+                new SummaryRow("Selected items", selectedCount.ToString()),
+                new SummaryRow("Skipped items", skippedItems.Count.ToString()),
                 new SummaryRow("Expected plan", expectedPath),
             ],
             json,

@@ -112,9 +112,9 @@ dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-help-batch --p
 dotnet run --project src/InSpectra.Discovery.Tool -- promotion apply-untrusted --download-root artifacts/help-batches/validated-frameworks
 ```
 
-The sample plan in [docs/Plans/validated-generic-help-frameworks.json](docs/Plans/validated-generic-help-frameworks.json) covers validated representatives for `CliFx`, `Argu`, `McMaster.Extensions.CommandLineUtils`, `Cocona`, `DocoptNet`, `System.CommandLine`, `CommandLineParser`, `Mono.Options / NDesk.Options`, `Microsoft.Extensions.CommandLineUtils`, `ConsoleAppFramework`, `CommandDotNet`, and `PowerArgs`.
+The sample plan in [docs/Plans/validated-generic-help-frameworks.json](docs/Plans/validated-generic-help-frameworks.json) covers validated representatives for `CliFx`, `Argu`, `McMaster.Extensions.CommandLineUtils`, `Spectre.Console.Cli`, `Cocona`, `DocoptNet`, `System.CommandLine`, `CommandLineParser`, `Mono.Options / NDesk.Options`, `Microsoft.Extensions.CommandLineUtils`, `ConsoleAppFramework`, `CommandDotNet`, and `PowerArgs`.
 
-`Cake.Tool` is intentionally not in that sample plan because it is already fully indexed through the native path; re-promoting it from help-only output would downgrade that version to a partial entry.
+Items can declare `"analysisMode": "help"` or `"analysisMode": "native"`. `run-help-batch` only executes the `help` items and records the others in the plan's `skipped` array. The checked-in plan uses that for `Cake.Tool`, which stays indexed through the richer native OpenCLI/XMLDoc path instead of being downgraded to a help-only partial entry.
 
 ### Output artifacts
 
