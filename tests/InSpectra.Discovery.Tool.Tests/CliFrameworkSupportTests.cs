@@ -3,6 +3,17 @@ using Xunit;
 public sealed class CliFrameworkSupportTests
 {
     [Theory]
+    [InlineData("CliFx", true)]
+    [InlineData("CliFx + System.CommandLine", true)]
+    [InlineData("System.CommandLine + CliFx", true)]
+    [InlineData("System.CommandLine", false)]
+    [InlineData(null, false)]
+    public void HasCliFx_Detects_CliFx_In_Combined_Labels(string? cliFramework, bool expected)
+    {
+        Assert.Equal(expected, CliFrameworkSupport.HasCliFx(cliFramework));
+    }
+
+    [Theory]
     [InlineData(null, "CliFx + System.CommandLine", true)]
     [InlineData("CliFx", "CliFx + System.CommandLine", true)]
     [InlineData("System.CommandLine", "CliFx + System.CommandLine", true)]

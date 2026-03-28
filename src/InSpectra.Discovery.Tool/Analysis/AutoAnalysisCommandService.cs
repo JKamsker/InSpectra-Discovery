@@ -157,7 +157,15 @@ internal sealed class AutoAnalysisCommandService
             }
         }
 
-        if (string.Equals(descriptor.PreferredAnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase))
+        var shouldUseCliFx = string.Equals(descriptor.PreferredAnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase);
+        var shouldUseHelp = string.Equals(descriptor.PreferredAnalysisMode, "help", StringComparison.OrdinalIgnoreCase);
+        if (!shouldUseCliFx && !shouldUseHelp)
+        {
+            shouldUseCliFx = CliFrameworkSupport.HasCliFx(descriptor.CliFramework);
+            shouldUseHelp = !shouldUseCliFx;
+        }
+
+        if (shouldUseCliFx)
         {
             await _cliFxRunner.RunAsync(
                 packageId,
@@ -173,9 +181,16 @@ internal sealed class AutoAnalysisCommandService
                 commandTimeoutSeconds,
                 cancellationToken);
             var cliFxResult = LoadResult(resultPath) ?? CreateFailureResult(packageId, version, batchId, attempt, source, "The selected analyzer did not write result.json.");
-            ApplyDescriptor(cliFxResult, descriptor, "clifx", null);
+            ApplyDescriptor(cliFxResult, descriptor, "clifx", nativeResult);
             RepositoryPathResolver.WriteJsonFile(resultPath, cliFxResult);
             return await WriteResultAsync(packageId, version, resultPath, cliFxResult, json, suppressOutput, cancellationToken);
+        }
+
+        if (!shouldUseHelp)
+        {
+            var failure = CreateFailureResult(packageId, version, batchId, attempt, source, "The selected analyzer mode did not resolve to a non-Spectre fallback.");
+            RepositoryPathResolver.WriteJsonFile(resultPath, failure);
+            return await WriteResultAsync(packageId, version, resultPath, failure, json, suppressOutput, cancellationToken);
         }
 
         await _helpRunner.RunAsync(

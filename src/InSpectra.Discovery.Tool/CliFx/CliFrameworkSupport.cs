@@ -2,8 +2,8 @@ internal static class CliFrameworkSupport
 {
     public static bool HasCliFx(string? cliFramework)
         => !string.IsNullOrWhiteSpace(cliFramework)
-            && (string.Equals(cliFramework, "CliFx", StringComparison.OrdinalIgnoreCase)
-                || cliFramework.StartsWith("CliFx + ", StringComparison.OrdinalIgnoreCase));
+            && cliFramework.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Any(part => string.Equals(part, "CliFx", StringComparison.OrdinalIgnoreCase));
 
     public static bool ShouldReplace(string? existingCliFramework, string? candidateCliFramework)
     {

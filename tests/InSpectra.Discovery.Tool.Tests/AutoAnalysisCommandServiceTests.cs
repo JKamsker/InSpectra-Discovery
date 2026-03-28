@@ -100,6 +100,59 @@ public sealed class AutoAnalysisCommandServiceTests
     }
 
     [Fact]
+    public async Task RunAsync_FallsBackToCliFx_WhenNativeResultIsNotSuccessful_ForCliFxDescriptor()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        string? capturedCommandName = null;
+
+        var service = new AutoAnalysisCommandService(
+            new FakeDescriptorResolver(new ToolAnalysisDescriptor(
+                "Mixed.Tool",
+                "0.2.0",
+                "mixed",
+                "System.CommandLine + CliFx",
+                "native",
+                "confirmed-spectre-console-cli",
+                "https://www.nuget.org/packages/Mixed.Tool/0.2.0",
+                "https://nuget.test/mixed.tool.0.2.0.nupkg",
+                "https://nuget.test/catalog/mixed.tool.0.2.0.json")),
+            new FakeNativeRunner((path, _, _, _, _, _, _, _) => WriteResult(path, "retryable-failure", "unsupported-command")),
+            new FakeHelpRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("Help fallback should not run.")),
+            new FakeCliFxRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                capturedCommandName = commandName;
+                Assert.Equal("System.CommandLine + CliFx", cliFramework);
+                WriteResult(path, "success", cliFramework: "CliFx");
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Mixed.Tool",
+            "0.2.0",
+            outputRoot,
+            "batch-002b",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal("mixed", capturedCommandName);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("clifx", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("System.CommandLine + CliFx", result["cliFramework"]?.GetValue<string>());
+        Assert.Equal("native", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("unsupported-command", result["fallback"]?["classification"]?.GetValue<string>());
+    }
+
+    [Fact]
     public async Task RunAsync_FallsBackToHelp_WhenNativeSuccessDoesNotIncludeOpenCliArtifact()
     {
         ToolRuntime.Initialize();
