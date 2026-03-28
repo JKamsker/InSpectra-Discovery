@@ -36,8 +36,12 @@ internal sealed partial class ToolHelpTextParser
     public ToolHelpDocument Parse(string text)
     {
         var lines = Normalize(text);
-        var firstMeaningfulLine = lines.FirstOrDefault(line => !string.IsNullOrWhiteSpace(line))?.Trim();
-        if (LooksLikeRejectedHelpInvocation(firstMeaningfulLine))
+        var firstMeaningfulLines = lines
+            .Select(line => line.Trim())
+            .Where(line => !string.IsNullOrWhiteSpace(line))
+            .Take(2)
+            .ToArray();
+        if (LooksLikeRejectedHelpInvocation(firstMeaningfulLines.FirstOrDefault(), firstMeaningfulLines.Skip(1).FirstOrDefault()))
         {
             return new ToolHelpDocument(null, null, null, null, [], [], [], []);
         }
@@ -81,6 +85,13 @@ internal sealed partial class ToolHelpTextParser
                         currentSection = IgnoredSectionName;
                     }
 
+                    continue;
+                }
+
+                if (string.Equals(matchedHeader, "COMMAND", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals(currentSection, "examples", StringComparison.OrdinalIgnoreCase)
+                    && string.IsNullOrWhiteSpace(inlineValue))
+                {
                     continue;
                 }
 
@@ -153,7 +164,7 @@ internal sealed partial class ToolHelpTextParser
             commands = InferCommands(preamble, sawInventoryHeader);
         }
 
-        var applicationDescription = JoinLines(preamble.Skip(descriptionStartIndex));
+        var applicationDescription = ToolHelpApplicationDescriptionInference.Infer(preamble, descriptionStartIndex);
         var commandDescription = JoinLines(descriptionLines ?? []);
         return new ToolHelpDocument(
             Title: title,
@@ -304,11 +315,6 @@ internal sealed partial class ToolHelpTextParser
 
         if (kind == ItemKind.Command)
         {
-            if (ToolHelpCommandPrototypeSupport.LooksLikeBareShortLongOptionRow(rawLine))
-            {
-                return false;
-            }
-
             var allowsBlankDescriptionLine = ToolHelpCommandPrototypeSupport.AllowsBlankDescriptionLine(key);
             if (!char.IsWhiteSpace(rawLine, 0) && string.IsNullOrWhiteSpace(description))
             {
@@ -584,6 +590,17 @@ internal sealed partial class ToolHelpTextParser
         return RejectedHelpInvocationRegex().IsMatch(line.Trim());
     }
 
+    private static bool LooksLikeRejectedHelpInvocation(string? firstLine, string? secondLine)
+    {
+        if (LooksLikeRejectedHelpInvocation(firstLine))
+        {
+            return true;
+        }
+
+        return string.Equals(firstLine?.Trim(), "ERROR(S):", StringComparison.OrdinalIgnoreCase)
+            && LooksLikeRejectedHelpInvocation(secondLine);
+    }
+
     private static bool LooksLikeArgumentKey(string key)
         => key.Length > 0
             && !key.Contains(' ', StringComparison.Ordinal)
@@ -756,7 +773,7 @@ internal sealed partial class ToolHelpTextParser
     [GeneratedRegex(@"^(?:trace|debug|info|warn|warning|fail|error):\s|^\[\d{2}:\d{2}:\d{2}\s+[A-Z]{3}\]\s", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex StructuredLogPrefixRegex();
 
-    [GeneratedRegex(@"^(?:--help|-h|/\?)\s+is an unknown (?:parameter|option|argument)\b|^Invalid usage\b|^Unknown argument or flag for value --help\b|^(?:unknown|unrecognized)\s+(?:option|parameter|argument)\b.*(?:--help|-h|/\?)\b|^(?:unknown|unrecognized)\s+command\b.*\bhelp\b|^usage error\b.*(?:--help|-h|/\?)\b|^error\(\d+\):\s+unknown command-line option\s+(?:--help|-h|/\?)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?:--help|-h|-\?|/\?)\s+is an unknown (?:parameter|option|argument)\b|^Invalid usage\b|^Unknown argument or flag for value --help\b|^(?:unknown|unrecognized)\s+(?:option|parameter|argument)\b.*(?:--help|-h|-\?|/\?)\b|^(?:unknown|unrecognized)\s+command\b.*\bhelp\b|^usage error\b.*(?:--help|-h|-\?|/\?)\b|^error\(\d+\):\s+unknown command-line option\s+(?:--help|-h|-\?|/\?)\b|^Verb\s+'(?:--help|-h|-\?|/\?)'\s+is not recognized\.$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex RejectedHelpInvocationRegex();
 
     [GeneratedRegex(@"^Package Id\s{2,}Version\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]

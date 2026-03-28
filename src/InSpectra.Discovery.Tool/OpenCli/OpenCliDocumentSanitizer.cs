@@ -122,6 +122,11 @@ internal static class OpenCliDocumentSanitizer
                 }
             }
 
+            if (string.Equals(arrayContext, "options", StringComparison.Ordinal))
+            {
+                NormalizeOptionObject(obj);
+            }
+
             if (obj["options"] is JsonArray options)
             {
                 DeduplicateSafeOptionCollisions(options);
@@ -177,6 +182,24 @@ internal static class OpenCliDocumentSanitizer
         {
             return false;
         }
+    }
+
+    private static void NormalizeOptionObject(JsonObject option)
+    {
+        var description = option["description"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return;
+        }
+
+        var trimmedDescription = TrimTrailingDescriptionNoise(description);
+        if (TryGetInformationalDescriptionPrefix(trimmedDescription, out var normalizedDescription))
+        {
+            option["description"] = normalizedDescription;
+            return;
+        }
+
+        option["description"] = trimmedDescription;
     }
 
     private static void DeduplicateSafeOptionCollisions(JsonArray options)
@@ -417,6 +440,23 @@ internal static class OpenCliDocumentSanitizer
 
     private static bool IsInformationalOptionDescription(string description)
         => InformationalOptionDescriptions.Contains(description);
+
+    private static bool TryGetInformationalDescriptionPrefix(string description, out string normalizedDescription)
+    {
+        foreach (var informationalDescription in InformationalOptionDescriptions)
+        {
+            if (!description.StartsWith(informationalDescription, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            normalizedDescription = informationalDescription;
+            return true;
+        }
+
+        normalizedDescription = string.Empty;
+        return false;
+    }
 
     private static bool AreCompatibleDescriptions(
         string leftDescription,

@@ -140,6 +140,10 @@ internal sealed partial class ToolHelpOpenCliBuilder
         var arguments = helpDocument.Arguments.Count > 0
             ? helpDocument.Arguments
             : ExtractUsageArguments(commandName, commandPath, helpDocument.UsageLines, helpDocument.Commands.Count > 0);
+        if (arguments.Count == 0)
+        {
+            arguments = ToolHelpOptionDescriptionArgumentInference.Infer(helpDocument.Options);
+        }
 
         if (arguments.Count == 0)
         {

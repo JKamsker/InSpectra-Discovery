@@ -145,4 +145,32 @@ public sealed class OpenCliDocumentSanitizerTests
         Assert.Equal("--version", version!["name"]?.GetValue<string>());
         Assert.Equal("Display version information.", version["description"]?.GetValue<string>());
     }
+
+    [Fact]
+    public void Sanitize_Trims_Trailing_Noise_From_Single_Informational_Option()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Display version information.\nvalue pos. 0",
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var version = Assert.Single(document["options"]!.AsArray());
+        Assert.Equal("--version", version!["name"]?.GetValue<string>());
+        Assert.Equal("Display version information.", version["description"]?.GetValue<string>());
+    }
 }

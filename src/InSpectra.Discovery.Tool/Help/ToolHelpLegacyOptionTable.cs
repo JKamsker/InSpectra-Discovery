@@ -12,6 +12,11 @@ internal static partial class ToolHelpLegacyOptionTable
         IReadOnlyList<string> candidateLines,
         IReadOnlyList<string> usageLines)
     {
+        if (ToolHelpRootCommandInventoryInference.LooksLikeAliasCommandInventoryBlock(candidateLines))
+        {
+            return [];
+        }
+
         var commandLineParserOptionLines = TryExtractCommandLineParserOptionLines(candidateLines);
         if (commandLineParserOptionLines.Count > 0)
         {
@@ -44,7 +49,7 @@ internal static partial class ToolHelpLegacyOptionTable
                 continue;
             }
 
-            if (currentRowCaptured && rawLine.Length > 0 && char.IsWhiteSpace(rawLine, 0))
+            if (currentRowCaptured && ShouldContinueCommandLineParserOptionRow(rawLine))
             {
                 results.Add(rawLine);
                 continue;
@@ -97,6 +102,22 @@ internal static partial class ToolHelpLegacyOptionTable
         }
 
         return hasRows ? results : [];
+    }
+
+    private static bool ShouldContinueCommandLineParserOptionRow(string rawLine)
+    {
+        if (rawLine.Length == 0 || !char.IsWhiteSpace(rawLine, 0))
+        {
+            return false;
+        }
+
+        var trimmed = rawLine.TrimStart();
+        if (PositionalArgumentRowRegex().IsMatch(trimmed))
+        {
+            return false;
+        }
+
+        return !StructuredHeadingRegex().IsMatch(trimmed);
     }
 
     private static IReadOnlyList<string> TryExtractLooseBlockLines(IReadOnlyList<string> lines)
@@ -593,6 +614,12 @@ internal static partial class ToolHelpLegacyOptionTable
 
     [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_\.\-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex CommandLineParserOptionRowRegex();
+
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s{2,}\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex PositionalArgumentRowRegex();
+
+    [GeneratedRegex(@"^(?:#+\s*[A-Za-z][\p{L}\p{M}\s]*|[A-Za-z][\p{L}\p{M}\s]+:)\s*$", RegexOptions.Compiled)]
+    private static partial Regex StructuredHeadingRegex();
 
     [GeneratedRegex(@"(?<=[a-z0-9])([A-Z])", RegexOptions.Compiled)]
     private static partial Regex KebabCaseRegex();

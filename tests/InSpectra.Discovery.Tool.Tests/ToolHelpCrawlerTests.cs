@@ -68,6 +68,57 @@ public sealed class ToolHelpCrawlerTests
     }
 
     [Fact]
+    public async Task CrawlAsync_Continues_After_CommandLineParser_BadVerb_Help_Probe()
+    {
+        var runtime = new FakeToolCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            return key switch
+            {
+                "--help" => Result(
+                    stdout:
+                    """
+                    ERROR(S):
+                      Verb '--help' is not recognized.
+
+                      --help    Display this help screen.
+                    """,
+                    exitCode: 1),
+                "-h" => Result(
+                    stdout:
+                    """
+                    ERROR(S):
+                      Verb '-h' is not recognized.
+
+                      --help    Display this help screen.
+                    """,
+                    exitCode: 1),
+                "-?" => Result(
+                    stdout:
+                    """
+                    demo 1.0.0
+
+                      --verbose    Verbose output.
+                      --help       Display this help screen.
+                    """),
+                _ => throw new InvalidOperationException($"Unexpected invocation: '{key}'."),
+            };
+        });
+        var crawler = new ToolHelpCrawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "demo",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(new[] { "--help", "-h", "-?" }, runtime.Invocations.Select(args => string.Join(' ', args)).ToArray());
+        Assert.True(result.Documents.ContainsKey(string.Empty));
+        Assert.Equal("-?", result.CaptureSummaries[string.Empty].HelpInvocation);
+    }
+
+    [Fact]
     public async Task CrawlAsync_Stops_Probing_A_Subcommand_After_Terminal_NonHelp_Output()
     {
         var runtime = new FakeToolCommandRuntime(arguments =>

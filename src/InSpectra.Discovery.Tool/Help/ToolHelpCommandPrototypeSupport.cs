@@ -5,6 +5,28 @@ internal static partial class ToolHelpCommandPrototypeSupport
     public static bool AllowsBlankDescriptionLine(string key)
         => LooksLikeCommandPrototype(key) || LooksLikeBareCommandToken(key);
 
+    public static bool TryParseBareShortLongAliasRow(
+        string rawLine,
+        out string shortAlias,
+        out string longToken,
+        out string description)
+    {
+        shortAlias = string.Empty;
+        longToken = string.Empty;
+        description = string.Empty;
+
+        var match = BareShortLongAliasRowRegex().Match(rawLine);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        shortAlias = match.Groups["short"].Value.Trim();
+        longToken = match.Groups["long"].Value.Trim();
+        description = match.Groups["description"].Value.Trim();
+        return shortAlias.Length > 0 && longToken.Length > 0 && description.Length > 0;
+    }
+
     public static bool LooksLikeCommandPrototype(string key)
     {
         if (LooksLikeCommandAliasList(key))
@@ -19,7 +41,7 @@ internal static partial class ToolHelpCommandPrototypeSupport
     }
 
     public static bool LooksLikeBareShortLongOptionRow(string rawLine)
-        => BareShortLongOptionRowRegex().IsMatch(rawLine);
+        => BareShortLongAliasRowRegex().IsMatch(rawLine);
 
     private static bool LooksLikeCommandAliasList(string key)
     {
@@ -68,6 +90,6 @@ internal static partial class ToolHelpCommandPrototypeSupport
             && char.IsLetter(segment[0])
             && segment.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' or '.' or ':' or '+');
 
-    [GeneratedRegex(@"^\s*[A-Za-z0-9\?]\s*,\s*[A-Za-z][A-Za-z0-9_.-]*\s{2,}\S", RegexOptions.Compiled)]
-    private static partial Regex BareShortLongOptionRowRegex();
+    [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_.-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
+    private static partial Regex BareShortLongAliasRowRegex();
 }

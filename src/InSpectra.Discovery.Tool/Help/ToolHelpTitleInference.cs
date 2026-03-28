@@ -16,8 +16,15 @@ internal static partial class ToolHelpTitleInference
                 continue;
             }
 
+            if (firstNonEmptyIndex is null && IsIgnorableLeadingLine(line.Trim()))
+            {
+                continue;
+            }
+
             firstNonEmptyIndex ??= index;
-            if (index > firstNonEmptyIndex.Value && string.IsNullOrWhiteSpace(preamble[index - 1]))
+            if (index > firstNonEmptyIndex.Value
+                && string.IsNullOrWhiteSpace(preamble[index - 1])
+                && !ShouldContinueTitleSearch(preamble[firstNonEmptyIndex.Value].Trim()))
             {
                 break;
             }
@@ -51,6 +58,11 @@ internal static partial class ToolHelpTitleInference
         }
 
         var firstLine = preamble[firstNonEmptyIndex.Value].Trim();
+        if (LooksLikeUsagePrototype(firstLine) && !string.IsNullOrWhiteSpace(usageDerivedTitle))
+        {
+            return (usageDerivedTitle, null, firstNonEmptyIndex.Value + 1);
+        }
+
         if (LooksLikeStatusTitle(firstLine) && !string.IsNullOrWhiteSpace(usageDerivedTitle))
         {
             return (usageDerivedTitle, null, firstNonEmptyIndex.Value + 1);
@@ -88,11 +100,32 @@ internal static partial class ToolHelpTitleInference
     private static bool LooksLikeStatusTitle(string line)
         => line.StartsWith("running ", StringComparison.OrdinalIgnoreCase);
 
+    private static bool LooksLikeUsagePrototype(string line)
+        => line.Contains('[', StringComparison.Ordinal)
+            || line.Contains('<', StringComparison.Ordinal)
+            || line.Contains("--", StringComparison.Ordinal)
+            || line.Contains(" | ", StringComparison.Ordinal);
+
+    private static bool ShouldContinueTitleSearch(string firstLine)
+        => LooksLikeUsagePrototype(firstLine)
+            || InventoryEntryRegex().IsMatch(firstLine);
+
     private static bool LooksLikeTitleVersionLine(string line, string title, string version)
         => !StackTraceLineRegex().IsMatch(line)
+            && !LooksLikeTransientStatusLine(title, version)
             && !title.Contains(":line", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(title, "Version", StringComparison.OrdinalIgnoreCase)
             && version.Count(char.IsDigit) > 1;
+
+    private static bool IsIgnorableLeadingLine(string line)
+        => string.Equals(line, "HELP:", StringComparison.OrdinalIgnoreCase)
+            || LooksLikeStatusTitle(line)
+            || StandaloneHelpHeadingRegex().IsMatch(line)
+            || TransientStatusLineRegex().IsMatch(line);
+
+    private static bool LooksLikeTransientStatusLine(string title, string version)
+        => TransientStatusTitleRegex().IsMatch(title)
+            && DurationLikeVersionRegex().IsMatch(version);
 
     [GeneratedRegex(@"^(?<title>.+?)\s+(?<version>v?\d[\w\.\-\+]*)$", RegexOptions.Compiled)]
     private static partial Regex TitleLineRegex();
@@ -102,4 +135,19 @@ internal static partial class ToolHelpTitleInference
 
     [GeneratedRegex(@"^\s*at\s+.+\s+in\s+.+:line\s+\d+\s*$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex StackTraceLineRegex();
+
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*(?:\s+[A-Za-z][A-Za-z0-9_.-]*)*\s{2,}\S.*$", RegexOptions.Compiled)]
+    private static partial Regex InventoryEntryRegex();
+
+    [GeneratedRegex(@"^(?:help|usage):$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex StandaloneHelpHeadingRegex();
+
+    [GeneratedRegex(@"^(?:finished|completed|elapsed)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex TransientStatusTitleRegex();
+
+    [GeneratedRegex(@"^\d+(?:\.\d+)?(?:ms|s|sec|secs|seconds?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex DurationLikeVersionRegex();
+
+    [GeneratedRegex(@"^(?:finished|completed|elapsed)\s+\d+(?:\.\d+)?(?:ms|s|sec|secs|seconds?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex TransientStatusLineRegex();
 }
