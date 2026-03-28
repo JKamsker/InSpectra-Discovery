@@ -23,7 +23,12 @@ internal sealed class NativeOpenCliArtifactRegenerator
                 var existingNode = TryLoadJsonNode(candidate.OpenCliPath);
                 if (existingNode is not JsonObject existing)
                 {
-                    var rejectedMetadataChanged = RejectMalformedNativeArtifact(root, candidate.MetadataPath, candidate.OpenCliPath);
+                    var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
+                        root,
+                        candidate.MetadataPath,
+                        candidate.OpenCliPath,
+                        "Stored OpenCLI artifact is not a JSON object.",
+                        xmldocPath: candidate.XmlDocPath);
                     var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
                     if (!rejectedMetadataChanged && !rejectedStateChanged)
                     {
@@ -158,59 +163,6 @@ internal sealed class NativeOpenCliArtifactRegenerator
         }
 
         return new NativeOpenCliArtifactCandidate(packageId, version, metadataPath, openCliPath, xmlDocPath);
-    }
-
-    private static bool RejectMalformedNativeArtifact(string repositoryRoot, string metadataPath, string openCliPath)
-    {
-        var metadata = TryLoadJsonNode(metadataPath) as JsonObject;
-        if (metadata is null)
-        {
-            return false;
-        }
-
-        var original = metadata.DeepClone();
-        if (File.Exists(openCliPath))
-        {
-            File.Delete(openCliPath);
-        }
-
-        var artifacts = metadata["artifacts"] as JsonObject ?? new JsonObject();
-        artifacts.Remove("opencliPath");
-        artifacts.Remove("opencliSource");
-        metadata["artifacts"] = artifacts;
-
-        if (string.Equals(metadata["status"]?.GetValue<string>(), "ok", StringComparison.OrdinalIgnoreCase))
-        {
-            metadata["status"] = "partial";
-        }
-
-        var message = "Stored OpenCLI artifact is not a JSON object.";
-        var steps = metadata["steps"] as JsonObject ?? new JsonObject();
-        var openCliStep = steps["opencli"] as JsonObject ?? new JsonObject();
-        openCliStep["status"] = "failed";
-        openCliStep["classification"] = "invalid-opencli-artifact";
-        openCliStep["message"] = message;
-        openCliStep.Remove("path");
-        openCliStep.Remove("artifactSource");
-        steps["opencli"] = openCliStep;
-        metadata["steps"] = steps;
-
-        var introspection = metadata["introspection"] as JsonObject ?? new JsonObject();
-        var openCliIntrospection = introspection["opencli"] as JsonObject ?? new JsonObject();
-        openCliIntrospection["status"] = "invalid-output";
-        openCliIntrospection["classification"] = "invalid-opencli-artifact";
-        openCliIntrospection["message"] = message;
-        openCliIntrospection.Remove("artifactSource");
-        introspection["opencli"] = openCliIntrospection;
-        metadata["introspection"] = introspection;
-
-        if (JsonNode.DeepEquals(original, metadata))
-        {
-            return false;
-        }
-
-        RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
-        return true;
     }
 
     private static JsonNode? TryLoadJsonNode(string path)

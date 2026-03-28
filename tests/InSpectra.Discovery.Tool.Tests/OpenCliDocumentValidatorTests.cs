@@ -25,7 +25,7 @@ public sealed class OpenCliDocumentValidatorTests
     }
 
     [Fact]
-    public void TryLoadValidDocument_Accepts_Minimal_OpenCli_Object()
+    public void TryLoadValidDocument_Accepts_Minimal_OpenCli_With_Surface()
     {
         using var tempDirectory = new TemporaryDirectory();
         var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
@@ -34,6 +34,13 @@ public sealed class OpenCliDocumentValidatorTests
             new JsonObject
             {
                 ["opencli"] = "0.1-draft",
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                    },
+                },
             });
 
         var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out var document, out var reason);
@@ -95,6 +102,143 @@ public sealed class OpenCliDocumentValidatorTests
 
         Assert.False(valid);
         Assert.Equal("OpenCLI artifact has a non-string entry at '$.commands[0].examples[0]'.", reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Rejects_Null_Arrays()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["arguments"] = null,
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                    },
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact has a null 'arguments' property at '$'.", reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Rejects_Empty_Surface()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "demo",
+                    ["version"] = "1.0.0",
+                },
+                ["commands"] = new JsonArray(),
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact does not expose any commands, options, or arguments.", reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Rejects_Default_Command_Nodes()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "__default_command",
+                    },
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact contains a '__default_command' node at '$.commands[0]'.", reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Rejects_Duplicate_Option_Tokens()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--help",
+                        ["aliases"] = new JsonArray
+                        {
+                            "-h",
+                        },
+                    },
+                    new JsonObject
+                    {
+                        ["name"] = "-h",
+                    },
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact has a duplicate option token '-h' at '$.options[1]' colliding with '$.options[0]'.", reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Rejects_NonPublishable_Info_Text()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "No embedding provider configured. Defaulting to LocalONNX which requires native ONNX runtime. If this fails, set EmbeddingProvider to OpenAI via: demo --config set EmbeddingProvider=OpenAI",
+                },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                    },
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact has a non-publishable 'info.title' value.", reason);
     }
 
     private sealed class TemporaryDirectory : IDisposable

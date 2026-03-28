@@ -252,7 +252,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     }
 
     [Fact]
-    public void Regenerator_Falls_Back_To_Minimal_OpenCli_When_Root_Capture_Is_Unparseable()
+    public void Regenerator_Rejects_Unparseable_Root_Capture_As_Invalid_OpenCli()
     {
         ToolRuntime.Initialize();
 
@@ -312,15 +312,16 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
         Assert.Equal(1, result.CandidateCount);
         Assert.Equal(1, result.RewrittenCount);
         Assert.Equal(0, result.FailedCount);
+        Assert.False(File.Exists(Path.Combine(versionRoot, "opencli.json")));
 
-        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
-        Assert.Equal("antlr4cg", regenerated["info"]?["title"]?.GetValue<string>());
-        Assert.Equal("2.3.0", regenerated["info"]?["version"]?.GetValue<string>());
-        Assert.Empty(regenerated["commands"]!.AsArray());
+        var metadata = ParseJsonObject(Path.Combine(versionRoot, "metadata.json"));
+        Assert.Equal("partial", metadata["status"]?.GetValue<string>());
+        Assert.Null(metadata["artifacts"]?["opencliPath"]);
+        Assert.Equal("invalid-opencli-artifact", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
     [Fact]
-    public void Regenerator_Falls_Back_To_Minimal_OpenCli_When_Root_Capture_Is_Only_Interactive_Error_Output()
+    public void Regenerator_Rejects_Interactive_Error_Output_As_Invalid_OpenCli()
     {
         ToolRuntime.Initialize();
 
@@ -388,12 +389,12 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
 
         Assert.Equal(1, result.CandidateCount);
         Assert.Equal(1, result.RewrittenCount);
+        Assert.False(File.Exists(Path.Combine(versionRoot, "opencli.json")));
 
-        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
-        Assert.Equal("b2cconsoleclient", regenerated["info"]?["title"]?.GetValue<string>());
-        Assert.Equal("1.0.0", regenerated["info"]?["version"]?.GetValue<string>());
-        Assert.Null(regenerated["info"]?["description"]);
-        Assert.Empty(regenerated["commands"]!.AsArray());
+        var metadata = ParseJsonObject(Path.Combine(versionRoot, "metadata.json"));
+        Assert.Equal("partial", metadata["status"]?.GetValue<string>());
+        Assert.Equal("invalid-output", metadata["introspection"]?["opencli"]?["status"]?.GetValue<string>());
+        Assert.Equal("invalid-opencli-artifact", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
     [Fact]

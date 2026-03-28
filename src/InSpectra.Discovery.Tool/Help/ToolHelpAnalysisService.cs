@@ -254,6 +254,16 @@ internal sealed class ToolHelpAnalysisService
             openCliDocument["x-inspectra"]!["cliFramework"] = result["cliFramework"]!.GetValue<string>();
         }
 
+        if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
+        {
+            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "opencli",
+                classification: "invalid-opencli-artifact",
+                validationError ?? "Generated OpenCLI artifact is not publishable.");
+            return;
+        }
+
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
         NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "help-crawl", artifactSource: "crawled-from-help");

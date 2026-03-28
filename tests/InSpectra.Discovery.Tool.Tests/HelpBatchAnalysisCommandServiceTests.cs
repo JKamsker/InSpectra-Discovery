@@ -75,6 +75,13 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                 new JsonObject
                 {
                     ["opencli"] = "0.1-draft",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                        },
+                    },
                 });
             RepositoryPathResolver.WriteJsonFile(
                 Path.Combine(outputRoot, "crawl.json"),
@@ -254,6 +261,13 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                 new JsonObject
                 {
                     ["opencli"] = "0.1-draft",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                        },
+                    },
                 });
             RepositoryPathResolver.WriteJsonFile(
                 Path.Combine(outputRoot, "crawl.json"),
@@ -347,6 +361,13 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                 new JsonObject
                 {
                     ["opencli"] = "0.1-draft",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                        },
+                    },
                 });
             RepositoryPathResolver.WriteJsonFile(
                 Path.Combine(outputRoot, "crawl.json"),
@@ -434,7 +455,19 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                         ["crawlArtifact"] = "crawl.json",
                     },
                 });
-            RepositoryPathResolver.WriteJsonFile(Path.Combine(outputRoot, "opencli.json"), new JsonObject { ["opencli"] = "0.1-draft" });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                        },
+                    },
+                });
             RepositoryPathResolver.WriteJsonFile(Path.Combine(outputRoot, "crawl.json"), new JsonObject { ["commands"] = new JsonArray() });
             return 0;
         });
@@ -516,6 +549,93 @@ public sealed class HelpBatchAnalysisCommandServiceTests
                     },
                 });
             RepositoryPathResolver.WriteJsonFile(Path.Combine(outputRoot, "opencli.json"), new JsonObject { ["opencli"] = "0.1-draft" });
+            return 0;
+        });
+
+        var service = new HelpBatchAnalysisCommandService(
+            runner,
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+        var exitCode = await service.RunAsync(
+            repositoryRoot,
+            "plans/help-batch.json",
+            "artifacts/help-batch",
+            batchId: null,
+            source: "help-index-batch",
+            targetBranch: "main",
+            installTimeoutSeconds: 300,
+            analysisTimeoutSeconds: 600,
+            commandTimeoutSeconds: 60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(1, exitCode);
+    }
+
+    [Fact]
+    public async Task RunAsync_Treats_Help_Success_With_Empty_OpenCli_Surface_As_Failure()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "plans", "help-batch.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["batchId"] = "help-batch-007",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "Help.Tool",
+                        ["version"] = "2.1.0",
+                        ["command"] = "help-tool",
+                        ["analysisMode"] = "help",
+                    },
+                },
+            });
+
+        var runner = new FakeHelpBatchAnalysisRunner((item, outputRoot, batchId, source, timeouts) =>
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = item.PackageId,
+                    ["version"] = item.Version,
+                    ["batchId"] = batchId,
+                    ["attempt"] = item.Attempt,
+                    ["source"] = source,
+                    ["analysisMode"] = "help",
+                    ["disposition"] = "success",
+                    ["command"] = item.CommandName,
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["crawlArtifact"] = "crawl.json",
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                    ["info"] = new JsonObject
+                    {
+                        ["title"] = "help-tool",
+                        ["version"] = "2.1.0",
+                    },
+                    ["commands"] = new JsonArray(),
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "crawl.json"),
+                new JsonObject
+                {
+                    ["commands"] = new JsonArray(),
+                });
             return 0;
         });
 

@@ -243,6 +243,14 @@ public sealed class DocsCommandServiceTests
                 {
                     ["artifactSource"] = "crawled-from-help",
                 },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
+                },
             });
         RepositoryPathResolver.WriteTextFile(Path.Combine(versionRoot, "xmldoc.xml"), "<Model />");
         RepositoryPathResolver.WriteJsonFile(
@@ -338,6 +346,14 @@ public sealed class DocsCommandServiceTests
                 {
                     ["artifactSource"] = "tool-output",
                 },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
+                },
                 ["commands"] = new JsonArray(),
             });
 
@@ -365,6 +381,14 @@ public sealed class DocsCommandServiceTests
             new JsonObject
             {
                 ["opencli"] = "0.1-draft",
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
+                },
                 ["commands"] = new JsonArray(),
             });
 
@@ -442,6 +466,14 @@ public sealed class DocsCommandServiceTests
                 {
                     ["artifactSource"] = "crawled-from-help",
                 },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
+                },
                 ["commands"] = new JsonArray(),
             });
 
@@ -515,6 +547,14 @@ public sealed class DocsCommandServiceTests
                 ["x-inspectra"] = new JsonObject
                 {
                     ["artifactSource"] = "tool-output",
+                },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
                 },
                 ["commands"] = new JsonArray(),
             });
@@ -604,6 +644,14 @@ public sealed class DocsCommandServiceTests
                 ["x-inspectra"] = new JsonObject
                 {
                     ["artifactSource"] = "tool-output",
+                },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
                 },
                 ["commands"] = new JsonArray(),
             });
@@ -705,6 +753,14 @@ public sealed class DocsCommandServiceTests
                 {
                     ["artifactSource"] = "tool-output",
                 },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
+                },
                 ["commands"] = new JsonArray(),
             });
 
@@ -780,6 +836,14 @@ public sealed class DocsCommandServiceTests
             new JsonObject
             {
                 ["opencli"] = "0.1-draft",
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
+                },
                 ["commands"] = new JsonArray(),
             });
 
@@ -854,6 +918,14 @@ public sealed class DocsCommandServiceTests
                 ["x-inspectra"] = new JsonObject
                 {
                     ["artifactSource"] = "tool-output",
+                },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
                 },
                 ["commands"] = new JsonArray(),
             });

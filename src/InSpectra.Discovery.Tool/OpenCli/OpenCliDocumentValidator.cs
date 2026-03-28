@@ -1,7 +1,12 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
-internal static class OpenCliDocumentValidator
+internal static partial class OpenCliDocumentValidator
 {
+    private static readonly string[] CommandLikeArrayProperties = ["arguments", "commands", "examples", "options"];
+    private static readonly string[] OptionArrayProperties = ["acceptedValues", "aliases", "arguments", "metadata"];
+    private static readonly string[] ArgumentArrayProperties = ["acceptedValues", "metadata"];
+
     public static bool TryLoadValidDocument(string path, out JsonObject? document, out string? reason)
     {
         document = null;
@@ -13,28 +18,7 @@ internal static class OpenCliDocumentValidator
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(parsedDocument["opencli"]?.GetValue<string>()))
-        {
-            reason = "OpenCLI artifact is missing the root 'opencli' marker.";
-            return false;
-        }
-
-        if (parsedDocument["info"] is not null && parsedDocument["info"] is not JsonObject)
-        {
-            reason = "OpenCLI artifact has a non-object 'info' property.";
-            return false;
-        }
-
-        foreach (var arrayProperty in new[] { "arguments", "commands", "options" })
-        {
-            if (parsedDocument[arrayProperty] is not null && parsedDocument[arrayProperty] is not JsonArray)
-            {
-                reason = $"OpenCLI artifact has a non-array '{arrayProperty}' property.";
-                return false;
-            }
-        }
-
-        if (!TryValidateCommandLikeNode(parsedDocument, "$", out reason))
+        if (!TryValidateDocument(parsedDocument, out reason))
         {
             return false;
         }
@@ -43,50 +27,374 @@ internal static class OpenCliDocumentValidator
         return true;
     }
 
-    private static bool TryValidateCommandLikeNode(JsonObject node, string path, out string? reason)
+    public static bool TryValidateDocument(JsonObject document, out string? reason)
     {
         reason = null;
 
-        foreach (var arrayProperty in new[] { "arguments", "commands", "options" })
+        if (string.IsNullOrWhiteSpace(GetString(document["opencli"])))
         {
-            if (node[arrayProperty] is not JsonArray array)
-            {
-                continue;
-            }
-
-            for (var index = 0; index < array.Count; index++)
-            {
-                if (array[index] is not JsonObject child)
-                {
-                    reason = $"OpenCLI artifact has a non-object entry at '{path}.{arrayProperty}[{index}]'.";
-                    return false;
-                }
-
-                if (string.Equals(arrayProperty, "commands", StringComparison.Ordinal)
-                    && !TryValidateCommandLikeNode(child, $"{path}.{arrayProperty}[{index}]", out reason))
-                {
-                    return false;
-                }
-            }
+            reason = "OpenCLI artifact is missing the root 'opencli' marker.";
+            return false;
         }
 
-        if (node["examples"] is JsonArray examples)
+        if (!TryValidateInfo(document, out reason))
         {
-            for (var index = 0; index < examples.Count; index++)
-            {
-                if (examples[index] is not JsonValue value || !value.TryGetValue<string>(out _))
-                {
-                    reason = $"OpenCLI artifact has a non-string entry at '{path}.examples[{index}]'.";
-                    return false;
-                }
-            }
+            return false;
         }
-        else if (node["examples"] is not null)
+
+        if (!TryValidateCommandLikeNode(document, "$", isRoot: true, out reason))
         {
-            reason = $"OpenCLI artifact has a non-array 'examples' property at '{path}'.";
+            return false;
+        }
+
+        if (!HasPublishableSurface(document))
+        {
+            reason = "OpenCLI artifact does not expose any commands, options, or arguments.";
             return false;
         }
 
         return true;
     }
+
+    private static bool TryValidateInfo(JsonObject document, out string? reason)
+    {
+        reason = null;
+
+        if (!document.TryGetPropertyValue("info", out var infoNode) || infoNode is null)
+        {
+            return true;
+        }
+
+        if (infoNode is not JsonObject info)
+        {
+            reason = "OpenCLI artifact has a non-object 'info' property.";
+            return false;
+        }
+
+        var title = GetString(info["title"]);
+        if (LooksLikeNonPublishableTitle(title))
+        {
+            reason = "OpenCLI artifact has a non-publishable 'info.title' value.";
+            return false;
+        }
+
+        var description = GetString(info["description"]);
+        if (LooksLikeNonPublishableDescription(description))
+        {
+            reason = "OpenCLI artifact has a non-publishable 'info.description' value.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateCommandLikeNode(JsonObject node, string path, bool isRoot, out string? reason)
+    {
+        reason = null;
+
+        foreach (var arrayProperty in CommandLikeArrayProperties)
+        {
+            if (!TryValidateArrayProperty(node, arrayProperty, path, out reason))
+            {
+                return false;
+            }
+        }
+
+        if (node["examples"] is JsonArray examples
+            && !TryValidateStringEntries(examples, $"{path}.examples", out reason))
+        {
+            return false;
+        }
+
+        if (!isRoot && string.Equals(GetString(node["name"]), "__default_command", StringComparison.Ordinal))
+        {
+            reason = $"OpenCLI artifact contains a '__default_command' node at '{path}'.";
+            return false;
+        }
+
+        var optionNodes = new List<JsonObject>();
+        if (node["options"] is JsonArray options)
+        {
+            for (var index = 0; index < options.Count; index++)
+            {
+                if (options[index] is not JsonObject option)
+                {
+                    reason = $"OpenCLI artifact has a non-object entry at '{path}.options[{index}]'.";
+                    return false;
+                }
+
+                optionNodes.Add(option);
+                if (!TryValidateOptionNode(option, $"{path}.options[{index}]", out reason))
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (!TryValidateOptionCollisions(optionNodes, path, out reason))
+        {
+            return false;
+        }
+
+        if (node["arguments"] is JsonArray arguments)
+        {
+            for (var index = 0; index < arguments.Count; index++)
+            {
+                if (arguments[index] is not JsonObject argument)
+                {
+                    reason = $"OpenCLI artifact has a non-object entry at '{path}.arguments[{index}]'.";
+                    return false;
+                }
+
+                if (!TryValidateArgumentNode(argument, $"{path}.arguments[{index}]", out reason))
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (node["commands"] is JsonArray commands)
+        {
+            for (var index = 0; index < commands.Count; index++)
+            {
+                if (commands[index] is not JsonObject command)
+                {
+                    reason = $"OpenCLI artifact has a non-object entry at '{path}.commands[{index}]'.";
+                    return false;
+                }
+
+                if (!TryValidateCommandLikeNode(command, $"{path}.commands[{index}]", isRoot: false, out reason))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateOptionNode(JsonObject node, string path, out string? reason)
+    {
+        reason = null;
+
+        foreach (var arrayProperty in OptionArrayProperties)
+        {
+            if (!TryValidateArrayProperty(node, arrayProperty, path, out reason))
+            {
+                return false;
+            }
+        }
+
+        if (node["aliases"] is JsonArray aliases
+            && !TryValidateStringEntries(aliases, $"{path}.aliases", out reason))
+        {
+            return false;
+        }
+
+        if (node["acceptedValues"] is JsonArray acceptedValues
+            && !TryValidateStringEntries(acceptedValues, $"{path}.acceptedValues", out reason))
+        {
+            return false;
+        }
+
+        if (node["arguments"] is JsonArray arguments)
+        {
+            for (var index = 0; index < arguments.Count; index++)
+            {
+                if (arguments[index] is not JsonObject argument)
+                {
+                    reason = $"OpenCLI artifact has a non-object entry at '{path}.arguments[{index}]'.";
+                    return false;
+                }
+
+                if (!TryValidateArgumentNode(argument, $"{path}.arguments[{index}]", out reason))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateArgumentNode(JsonObject node, string path, out string? reason)
+    {
+        reason = null;
+
+        foreach (var arrayProperty in ArgumentArrayProperties)
+        {
+            if (!TryValidateArrayProperty(node, arrayProperty, path, out reason))
+            {
+                return false;
+            }
+        }
+
+        if (node["acceptedValues"] is JsonArray acceptedValues
+            && !TryValidateStringEntries(acceptedValues, $"{path}.acceptedValues", out reason))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateArrayProperty(JsonObject node, string propertyName, string path, out string? reason)
+    {
+        reason = null;
+
+        if (!node.TryGetPropertyValue(propertyName, out var value))
+        {
+            return true;
+        }
+
+        if (value is null)
+        {
+            reason = $"OpenCLI artifact has a null '{propertyName}' property at '{path}'.";
+            return false;
+        }
+
+        if (value is not JsonArray)
+        {
+            reason = $"OpenCLI artifact has a non-array '{propertyName}' property at '{path}'.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateStringEntries(JsonArray array, string path, out string? reason)
+    {
+        reason = null;
+
+        for (var index = 0; index < array.Count; index++)
+        {
+            if (array[index] is not JsonValue value || !value.TryGetValue<string>(out _))
+            {
+                reason = $"OpenCLI artifact has a non-string entry at '{path}[{index}]'.";
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateOptionCollisions(
+        IReadOnlyList<JsonObject> optionNodes,
+        string path,
+        out string? reason)
+    {
+        reason = null;
+        var seenTokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        for (var index = 0; index < optionNodes.Count; index++)
+        {
+            var optionPath = $"{path}.options[{index}]";
+            foreach (var token in EnumerateOptionTokens(optionNodes[index]))
+            {
+                if (seenTokens.TryGetValue(token, out var existingPath))
+                {
+                    reason = $"OpenCLI artifact has a duplicate option token '{token}' at '{optionPath}' colliding with '{existingPath}'.";
+                    return false;
+                }
+
+                seenTokens[token] = optionPath;
+            }
+        }
+
+        return true;
+    }
+
+    private static IEnumerable<string> EnumerateOptionTokens(JsonObject optionNode)
+    {
+        var name = GetString(optionNode["name"]);
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            yield return name.Trim();
+        }
+
+        if (optionNode["aliases"] is not JsonArray aliases)
+        {
+            yield break;
+        }
+
+        foreach (var alias in aliases)
+        {
+            var aliasValue = GetString(alias);
+            if (!string.IsNullOrWhiteSpace(aliasValue))
+            {
+                yield return aliasValue.Trim();
+            }
+        }
+    }
+
+    private static bool HasPublishableSurface(JsonObject document)
+        => HasVisibleItems(document["options"] as JsonArray)
+            || HasVisibleItems(document["arguments"] as JsonArray)
+            || HasVisibleCommandSurface(document["commands"] as JsonArray);
+
+    private static bool HasVisibleCommandSurface(JsonArray? commands)
+    {
+        foreach (var command in commands?.OfType<JsonObject>() ?? [])
+        {
+            if (IsVisible(command)
+                || HasVisibleItems(command["options"] as JsonArray)
+                || HasVisibleItems(command["arguments"] as JsonArray)
+                || HasVisibleCommandSurface(command["commands"] as JsonArray))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasVisibleItems(JsonArray? items)
+        => items?.OfType<JsonObject>().Any(IsVisible) == true;
+
+    private static bool IsVisible(JsonObject node)
+        => node["hidden"]?.GetValue<bool?>() != true;
+
+    private static bool LooksLikeNonPublishableTitle(string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return false;
+        }
+
+        var trimmed = title.Trim();
+        return trimmed.Length > 120
+            || trimmed.Contains('\n', StringComparison.Ordinal)
+            || trimmed.Contains(". ", StringComparison.Ordinal)
+            || TitleNoiseRegex().IsMatch(trimmed)
+            || PathOrUrlRegex().IsMatch(trimmed);
+    }
+
+    private static bool LooksLikeNonPublishableDescription(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return false;
+        }
+
+        var trimmed = description.Trim();
+        return DescriptionNoiseRegex().IsMatch(trimmed)
+            || trimmed.Contains("\n   at ", StringComparison.Ordinal)
+            || trimmed.Contains("\nat ", StringComparison.Ordinal)
+            || trimmed.Contains("/tmp/inspectra-help-", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Contains("/usr/share/dotnet/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? GetString(JsonNode? node)
+        => node is JsonValue value && value.TryGetValue<string>(out var text)
+            ? text
+            : null;
+
+    [GeneratedRegex(@"^(?:usage\b|version:|help:|unhandled exception\b|unexpected argument\b|invalid arguments?\b|now listening on\b|application started\b|hosting failed to start\b)|\b(?:Unhandled exception|Unexpected argument|Invalid arguments|Now listening on|Application started|Hosting failed to start)\b|\bDefaulting to\b.*\brequires\b.+\bruntime\b|\bvia:\b.+(?:--|/)", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex TitleNoiseRegex();
+
+    [GeneratedRegex(@"https?://|[A-Za-z]:\\|/tmp/|/usr/|\.dll\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex PathOrUrlRegex();
+
+    [GeneratedRegex(@"Unhandled exception\b|Hosting failed to start\b|Now listening on:|Application started\.|Microsoft\.Hosting\.Lifetime|System\.[A-Za-z]+Exception\b|Traceback \(most recent call last\):|Press any key to exit|Cannot read keys when either application does not have a console|You must install or update \.NET|A fatal error was encountered|It was not possible to find any compatible framework version|required to execute the application was not found|\bMCP\b.*\btransport\b|\btransport\b.*\bMCP\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex DescriptionNoiseRegex();
 }

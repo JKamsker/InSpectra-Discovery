@@ -24,6 +24,25 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             try
             {
                 var regenerated = RegenerateOpenCli(candidate);
+                if (!OpenCliDocumentValidator.TryValidateDocument(regenerated, out var validationError))
+                {
+                    var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
+                        root,
+                        candidate.MetadataPath,
+                        candidate.OpenCliPath,
+                        validationError ?? "Generated OpenCLI artifact is not publishable.",
+                        crawlPath: candidate.CrawlPath);
+                    var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
+                    if (!rejectedMetadataChanged && !rejectedStateChanged)
+                    {
+                        unchangedCount++;
+                        continue;
+                    }
+
+                    rewritten.Add(candidate.DisplayName);
+                    continue;
+                }
+
                 var existing = TryLoadJsonNode(candidate.OpenCliPath);
                 var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
                 if (openCliChanged)

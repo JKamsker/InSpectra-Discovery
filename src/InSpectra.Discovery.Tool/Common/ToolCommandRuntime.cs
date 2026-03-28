@@ -35,7 +35,7 @@ internal class ToolCommandRuntime
             Directories: values.Values.Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
     }
 
-    public async Task<ProcessResult> InvokeProcessCaptureAsync(
+    public virtual async Task<ProcessResult> InvokeProcessCaptureAsync(
         string filePath,
         IReadOnlyList<string> argumentList,
         string workingDirectory,

@@ -98,9 +98,14 @@ internal sealed class ToolHelpCrawler
             {
                 return capture;
             }
+
+            if (capture.IsTerminalNonHelp)
+            {
+                return capture;
+            }
         }
 
-        return bestCapture ?? new ToolHelpCapture(null, null, null, null);
+        return bestCapture ?? new ToolHelpCapture(null, null, null, null, false);
     }
 
     private ToolHelpCapture BuildCapture(
@@ -133,25 +138,48 @@ internal sealed class ToolHelpCrawler
         var helpInvocation = invokedArguments.Count == 0
             ? null
             : string.Join(' ', invokedArguments);
-        return new ToolHelpCapture(helpInvocation, processResult, bestDocument, bestPayload);
+        var isTerminalNonHelp = bestDocument is null && candidates.Any(ToolHelpDocumentInspector.LooksLikeTerminalNonHelpPayload);
+        return new ToolHelpCapture(helpInvocation, processResult, bestDocument, bestPayload, isTerminalNonHelp);
     }
 
-    private static IReadOnlyList<string[]> BuildHelpInvocations(IReadOnlyList<string> commandSegments)
+    internal static IReadOnlyList<string[]> BuildHelpInvocations(IReadOnlyList<string> commandSegments)
     {
         var invocations = new List<string[]>
         {
             commandSegments.Concat(new[] { "--help" }).ToArray(),
             commandSegments.Concat(new[] { "-h" }).ToArray(),
+            commandSegments.Concat(new[] { "-?" }).ToArray(),
+            commandSegments.Concat(new[] { "/help" }).ToArray(),
+            commandSegments.Concat(new[] { "/?" }).ToArray(),
         };
 
-        if (commandSegments.Count > 0)
-        {
-            invocations.Add((new[] { "help" }).Concat(commandSegments).ToArray());
-        }
+        invocations.AddRange(BuildKeywordHelpInvocations(commandSegments));
+        invocations.Add(commandSegments.ToArray());
 
         return invocations
             .Distinct(new ToolHelpInvocationComparer())
             .ToArray();
+    }
+
+    private static IEnumerable<string[]> BuildKeywordHelpInvocations(IReadOnlyList<string> commandSegments)
+    {
+        if (commandSegments.Count == 0)
+        {
+            yield return ["help"];
+            yield break;
+        }
+
+        yield return (new[] { "help" }).Concat(commandSegments).ToArray();
+
+        for (var index = 1; index < commandSegments.Count; index++)
+        {
+            yield return commandSegments.Take(index)
+                .Concat(new[] { "help" })
+                .Concat(commandSegments.Skip(index))
+                .ToArray();
+        }
+
+        yield return commandSegments.Concat(new[] { "help" }).ToArray();
     }
 
     private static IReadOnlyList<string> SelectPayloadCandidates(ToolCommandRuntime.ProcessResult processResult)
@@ -186,6 +214,11 @@ internal sealed class ToolHelpCrawler
             return 100 + ToolHelpDocumentInspector.Score(capture.Document);
         }
 
+        if (capture.IsTerminalNonHelp)
+        {
+            return 4;
+        }
+
         if (capture.ProcessResult?.TimedOut == true)
         {
             return 3;
@@ -206,7 +239,8 @@ internal sealed class ToolHelpCrawler
         string? HelpInvocation,
         ToolCommandRuntime.ProcessResult? ProcessResult,
         ToolHelpDocument? Document,
-        string? ParsedPayload)
+        string? ParsedPayload,
+        bool IsTerminalNonHelp)
     {
         public JsonObject ToJsonObject(IReadOnlyList<string> commandSegments)
         {
@@ -218,6 +252,7 @@ internal sealed class ToolHelpCrawler
                 ["result"] = ProcessResult?.ToJsonObject(),
                 ["parsed"] = Document?.HasContent ?? false,
                 ["payload"] = ParsedPayload,
+                ["terminalNonHelp"] = IsTerminalNonHelp,
             };
         }
 
@@ -228,6 +263,7 @@ internal sealed class ToolHelpCrawler
                 Command: commandName,
                 HelpInvocation: HelpInvocation,
                 Parsed: Document?.HasContent ?? false,
+                TerminalNonHelp: IsTerminalNonHelp,
                 TimedOut: ProcessResult?.TimedOut ?? false,
                 ExitCode: ProcessResult?.ExitCode,
                 Stdout: ToolCommandRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
@@ -241,6 +277,7 @@ internal sealed record ToolHelpCaptureSummary(
     string Command,
     string? HelpInvocation,
     bool Parsed,
+    bool TerminalNonHelp,
     bool TimedOut,
     int? ExitCode,
     string? Stdout,

@@ -233,7 +233,7 @@ public sealed class PromotionApplyCommandServiceTests
                         {
                             ["name"] = "serve",
                             ["description"] = null,
-                            ["arguments"] = null,
+                            ["arguments"] = new JsonArray(),
                             ["examples"] = new JsonArray(),
                         },
                     },
@@ -460,6 +460,14 @@ public sealed class PromotionApplyCommandServiceTests
                         ["artifactSource"] = "crawled-from-help",
                         ["helpDocumentCount"] = 4,
                     },
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                            ["description"] = "Verbose output.",
+                        },
+                    },
                     ["commands"] = new JsonArray(),
                 });
 
@@ -594,6 +602,14 @@ public sealed class PromotionApplyCommandServiceTests
                     {
                         ["title"] = "Legacy Help Tool",
                         ["version"] = "2.2.0",
+                    },
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                            ["description"] = "Verbose output.",
+                        },
                     },
                     ["commands"] = new JsonArray(),
                 });
@@ -856,6 +872,14 @@ public sealed class PromotionApplyCommandServiceTests
                         ["title"] = "Legacy Help Tool",
                         ["version"] = "2.1.0",
                     },
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                            ["description"] = "Verbose output.",
+                        },
+                    },
                     ["commands"] = new JsonArray(),
                 });
 
@@ -993,6 +1017,14 @@ public sealed class PromotionApplyCommandServiceTests
                         ["title"] = "native-exit-tool",
                         ["version"] = "1.0.0",
                     },
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                            ["description"] = "Verbose output.",
+                        },
+                    },
                     ["commands"] = new JsonArray(),
                 });
 
@@ -1124,6 +1156,14 @@ public sealed class PromotionApplyCommandServiceTests
                     ["x-inspectra"] = new JsonObject
                     {
                         ["artifactSource"] = "crawled-from-clifx-help",
+                    },
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                            ["description"] = "Verbose output.",
+                        },
                     },
                     ["commands"] = new JsonArray(),
                 });
@@ -1848,6 +1888,14 @@ public sealed class PromotionApplyCommandServiceTests
                 new JsonObject
                 {
                     ["opencli"] = "0.1-draft",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--verbose",
+                            ["description"] = "Verbose output.",
+                        },
+                    },
                     ["commands"] = new JsonArray(),
                 });
             RepositoryPathResolver.WriteJsonFile(
@@ -2557,6 +2605,14 @@ public sealed class PromotionApplyCommandServiceTests
                     ["title"] = command,
                     ["version"] = "1.0",
                 },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
+                },
                 ["commands"] = new JsonArray(),
             });
     }
@@ -2632,6 +2688,14 @@ public sealed class PromotionApplyCommandServiceTests
                 ["x-inspectra"] = new JsonObject
                 {
                     ["artifactSource"] = artifactSource,
+                },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--verbose",
+                        ["description"] = "Verbose output.",
+                    },
                 },
                 ["commands"] = new JsonArray(),
             });

@@ -1,4 +1,6 @@
-internal static class ToolHelpDocumentInspector
+using System.Text.RegularExpressions;
+
+internal static partial class ToolHelpDocumentInspector
 {
     public static int Score(ToolHelpDocument document)
         => document.UsageLines.Count * 10
@@ -32,6 +34,21 @@ internal static class ToolHelpDocumentInspector
 
     public static bool IsCompatible(string[] commandSegments, ToolHelpDocument document)
         => IsCompatible((IReadOnlyList<string>)commandSegments, document);
+
+    public static bool LooksLikeTerminalNonHelpPayload(string? payload)
+    {
+        var normalized = ToolCommandRuntime.NormalizeConsoleText(payload);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return false;
+        }
+
+        return TerminalNonHelpPayloadRegex().IsMatch(normalized)
+            || normalized.Contains("\n   at ", StringComparison.Ordinal)
+            || normalized.Contains("\nat ", StringComparison.Ordinal)
+            || normalized.Contains("/tmp/inspectra-help-", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("/usr/share/dotnet/", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool HasStructuredContent(ToolHelpDocument document)
         => document.UsageLines.Count > 0
@@ -80,6 +97,9 @@ internal static class ToolHelpDocumentInspector
 
         return false;
     }
+
+    [GeneratedRegex(@"Unhandled exception\b|Hosting failed to start\b|Now listening on:|Application started\.|Microsoft\.Hosting\.Lifetime|System\.[A-Za-z]+Exception\b|Traceback \(most recent call last\):|Press any key to exit|Cannot read keys when either application does not have a console|You must install or update \.NET|A fatal error was encountered|It was not possible to find any compatible framework version|required to execute the application was not found|No executable found matching command|No embedding provider configured|Auto-downloading\b|Downloaded\b|\bMCP\b.*\btransport\b|\btransport\b.*\bMCP\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    private static partial Regex TerminalNonHelpPayloadRegex();
 }
 
 internal sealed class ToolHelpInvocationComparer : IEqualityComparer<string[]>
