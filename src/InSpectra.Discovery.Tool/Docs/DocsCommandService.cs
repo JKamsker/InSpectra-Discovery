@@ -151,15 +151,11 @@ internal sealed class DocsCommandService
                 continue;
             }
 
-            var openCliRelativePath = latestPaths?["opencliPath"]?.GetValue<string>()
-                ?? metadata["artifacts"]?["opencliPath"]?.GetValue<string>();
-            if (string.IsNullOrWhiteSpace(openCliRelativePath))
-            {
-                continue;
-            }
-
-            var openCliPath = Path.Combine(root, openCliRelativePath);
-            if (!File.Exists(openCliPath))
+            var openCliPath = ResolveExistingOpenCliPath(
+                root,
+                latestPaths?["opencliPath"]?.GetValue<string>(),
+                metadata["artifacts"]?["opencliPath"]?.GetValue<string>());
+            if (openCliPath is null)
             {
                 continue;
             }
@@ -354,6 +350,20 @@ internal sealed class DocsCommandService
         => value is JsonValue jsonValue &&
            jsonValue.TryGetValue<string>(out var text) &&
            !string.IsNullOrWhiteSpace(text);
+
+    private static string? ResolveExistingOpenCliPath(string repositoryRoot, params string?[] relativePaths)
+    {
+        foreach (var relativePath in relativePaths.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var candidatePath = Path.Combine(repositoryRoot, relativePath!);
+            if (File.Exists(candidatePath))
+            {
+                return candidatePath;
+            }
+        }
+
+        return null;
+    }
 
     private static string ToAnchorSlug(string value)
     {
