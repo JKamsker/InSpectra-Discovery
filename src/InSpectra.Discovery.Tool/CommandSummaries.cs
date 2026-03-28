@@ -24,6 +24,15 @@ internal sealed record IndexDeltaSpectreConsoleCliCommandSummary(
     int MatchedPackageCount,
     int QueueCount);
 
+internal sealed record IndexDeltaAllToolsCommandSummary(
+    string Command,
+    string InputDeltaPath,
+    string OutputDeltaPath,
+    string QueueOutputPath,
+    int ScannedChangeCount,
+    int MatchedPackageCount,
+    int QueueCount);
+
 internal sealed record SpectreConsoleFilterCommandSummary(
     string Command,
     string InputPath,

@@ -21,8 +21,9 @@ try
 
             catalog.AddBranch("delta", delta =>
             {
-                delta.SetDescription("Incremental catalog discovery and Spectre CLI queue narrowing.");
+                delta.SetDescription("Incremental catalog discovery and scheduled queue generation.");
                 delta.AddCommand<CatalogDeltaDiscoverCommand>("discover").WithDescription("Discover added or updated dotnet tools since the saved catalog cursor.");
+                delta.AddCommand<CatalogDeltaQueueAllToolsCommand>("queue-all-tools").WithDescription("Queue all changed current dotnet tools for scheduled analysis.");
                 delta.AddCommand<CatalogDeltaQueueSpectreCliCommand>("queue-spectre-cli").WithDescription("Narrow the latest delta to Spectre.Console.Cli evidence and emit a queue.");
             });
 
@@ -39,6 +40,8 @@ try
         {
             queue.SetDescription("Build CI queue and batch plan artifacts.");
             queue.AddCommand<QueueBackfillIndexedMetadataCommand>("backfill-indexed-metadata").WithDescription("Build a queue of missing indexed package history versions.");
+            queue.AddCommand<QueueBackfillCurrentAnalysisCommand>("backfill-current-analysis").WithDescription("Build a ranked queue of current latest tool versions that still need usable analysis.");
+            queue.AddCommand<QueueBackfillLegacyTerminalNegativeCommand>("backfill-legacy-terminal-negative").WithDescription("Build a queue of current packages still marked terminal-negative by the legacy Spectre-only analyzer.");
             queue.AddCommand<QueueDispatchPlanCommand>("dispatch-plan").WithDescription("Split a queue into workflow dispatch batches.");
             queue.AddCommand<QueueUntrustedBatchPlanCommand>("untrusted-batch-plan").WithDescription("Select and enrich a queue slice for untrusted analysis.");
         });
@@ -46,6 +49,7 @@ try
         config.AddBranch("analysis", analysis =>
         {
             analysis.SetDescription("Run sandboxed package analysis.");
+            analysis.AddCommand<AnalysisRunAutoCommand>("run-auto").WithDescription("Prefer native Spectre OpenCLI analysis and fall back to generic help crawl.");
             analysis.AddCommand<AnalysisRunHelpBatchCommand>("run-help-batch").WithDescription("Run generic help analysis for a plan and emit a promotion-ready expected.json batch.");
             analysis.AddCommand<AnalysisRunHelpCommand>("run-help").WithDescription("Install a tool, crawl `--help`, and synthesize OpenCLI from generic help output.");
             analysis.AddCommand<AnalysisRunCliFxCommand>("run-clifx").WithDescription("Install a CliFx-based tool and synthesize OpenCLI from recursive help crawl.");

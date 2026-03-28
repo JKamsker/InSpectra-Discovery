@@ -9,8 +9,8 @@ internal sealed class QueueDispatchPlanCommand : AsyncCommand<QueueDispatchPlanC
     public sealed class Settings : GlobalSettings
     {
         [CommandOption("--queue <PATH>")]
-        [DefaultValue("state/discovery/dotnet-tools.spectre-console-cli.queue.json")]
-        public string QueuePath { get; set; } = "state/discovery/dotnet-tools.spectre-console-cli.queue.json";
+        [DefaultValue("state/discovery/dotnet-tools.all-tools.queue.json")]
+        public string QueuePath { get; set; } = "state/discovery/dotnet-tools.all-tools.queue.json";
 
         [CommandOption("--target-branch <NAME>")]
         public string TargetBranch { get; set; } = string.Empty;

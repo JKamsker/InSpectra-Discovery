@@ -116,6 +116,42 @@ internal sealed class CatalogCommandService
             cancellationToken);
     }
 
+    public async Task<int> RunDeltaQueueAllToolsAsync(IndexDeltaAllToolsOptions options, CancellationToken cancellationToken)
+    {
+        var output = ToolRuntime.CreateOutput();
+        var builder = new DotnetToolDeltaQueueBuilder();
+        var computation = await builder.RunAsync(
+            options,
+            options.Json ? null : output.WriteProgress,
+            cancellationToken);
+
+        var outputDeltaPath = Path.GetFullPath(options.OutputDeltaPath);
+        var queueOutputPath = Path.GetFullPath(options.QueueOutputPath);
+
+        await WriteJsonFileAsync(outputDeltaPath, computation.Delta, cancellationToken);
+        await WriteJsonFileAsync(queueOutputPath, computation.Queue, cancellationToken);
+
+        return await output.WriteSuccessAsync(
+            new IndexDeltaAllToolsCommandSummary(
+                "catalog delta queue-all-tools",
+                Path.GetFullPath(options.InputDeltaPath),
+                outputDeltaPath,
+                queueOutputPath,
+                computation.Delta.ScannedChangeCount,
+                computation.Delta.PackageCount,
+                computation.Queue.ItemCount),
+            [
+                new SummaryRow("Command", "catalog delta queue-all-tools"),
+                new SummaryRow("Input delta", Path.GetFullPath(options.InputDeltaPath)),
+                new SummaryRow("Scanned changes", computation.Delta.ScannedChangeCount.ToString()),
+                new SummaryRow("Queued current", computation.Queue.ItemCount.ToString()),
+                new SummaryRow("Output delta", outputDeltaPath),
+                new SummaryRow("Queue output", queueOutputPath),
+            ],
+            options.Json,
+            cancellationToken);
+    }
+
     public async Task<int> RunFilterAsync(SpectreConsoleFilterOptions options, CancellationToken cancellationToken)
     {
         var output = ToolRuntime.CreateOutput();

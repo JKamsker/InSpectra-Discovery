@@ -61,6 +61,10 @@ internal sealed record UntrustedBatchPlanItem(
     string? PackageUrl,
     string? PackageContentUrl,
     string? CatalogEntryUrl,
+    string? Command,
+    string? CliFramework,
+    string? AnalysisMode,
+    string? AnalysisReason,
     int Attempt,
     string ArtifactName,
     string RunsOn,
@@ -91,3 +95,17 @@ internal sealed record RunnerSelection(
     IReadOnlyList<string> RuntimeRids,
     string? InspectionError,
     string HintSource);
+
+internal sealed record LegacyTerminalNegativeQueueComputation(
+    int CurrentPackageCount,
+    int EligibleLegacyNegativeCount,
+    DotnetToolQueueSnapshot Queue);
+
+internal sealed record CurrentAnalysisBackfillQueueComputation(
+    int CurrentPackageCount,
+    int EligiblePackageCount,
+    int MissingCount,
+    int LegacyTerminalNegativeCount,
+    int LegacyTerminalFailureCount,
+    int RetryableCount,
+    DotnetToolQueueSnapshot Queue);

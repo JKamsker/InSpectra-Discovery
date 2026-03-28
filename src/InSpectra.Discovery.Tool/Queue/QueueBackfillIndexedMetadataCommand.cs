@@ -4,7 +4,7 @@ using System.ComponentModel;
 
 internal sealed class QueueBackfillIndexedMetadataCommand : AsyncCommand<QueueBackfillIndexedMetadataCommand.Settings>
 {
-    private readonly QueueCommandService _service = new();
+    private readonly QueueBackfillCommandService _service = new();
 
     public sealed class Settings : GlobalSettings
     {
