@@ -59,6 +59,7 @@ internal sealed class DocsCommandService
             {
                 packageId,
                 commandName = latestVersionRecord?["command"]?.GetValue<string>(),
+                cliFramework = package["cliFramework"]?.GetValue<string>(),
                 versionCount = package["versions"]?.AsArray().Count ?? 0,
                 latestVersion,
                 createdAt = packageTimestamps.CreatedAt,

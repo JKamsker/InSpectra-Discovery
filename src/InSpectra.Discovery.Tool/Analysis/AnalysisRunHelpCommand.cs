@@ -31,6 +31,9 @@ internal sealed class AnalysisRunHelpCommand : AsyncCommand<AnalysisRunHelpComma
         [DefaultValue("help-crawl")]
         public string Source { get; set; } = "help-crawl";
 
+        [CommandOption("--cli-framework <NAME>")]
+        public string? CliFramework { get; set; }
+
         [CommandOption("--install-timeout-seconds <NUMBER>")]
         [DefaultValue(300)]
         public int InstallTimeoutSeconds { get; set; } = 300;
@@ -65,6 +68,7 @@ internal sealed class AnalysisRunHelpCommand : AsyncCommand<AnalysisRunHelpComma
             settings.BatchId,
             settings.Attempt,
             settings.Source,
+            settings.CliFramework,
             settings.InstallTimeoutSeconds,
             settings.AnalysisTimeoutSeconds,
             settings.CommandTimeoutSeconds,

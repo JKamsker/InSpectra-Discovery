@@ -14,6 +14,7 @@ internal sealed class ToolHelpAnalysisService
         string batchId,
         int attempt,
         string source,
+        string? cliFramework,
         int installTimeoutSeconds,
         int analysisTimeoutSeconds,
         int commandTimeoutSeconds,
@@ -29,15 +30,19 @@ internal sealed class ToolHelpAnalysisService
         Directory.CreateDirectory(outputDirectory);
         Directory.CreateDirectory(tempRoot);
 
-        var result = CreateResult(packageId, version, commandName, batchId, attempt, source, generatedAt);
+        var result = CreateResult(packageId, version, commandName, batchId, attempt, source, cliFramework, generatedAt);
 
         try
         {
             using var scope = ToolRuntime.CreateNuGetApiClientScope();
             var (registrationLeaf, catalogLeaf) = await ResolvePackageVersionAsync(scope.Client, packageId, version, cancellationToken);
+            result["packageUrl"] = $"https://www.nuget.org/packages/{packageId}/{version}";
             result["projectUrl"] = catalogLeaf.ProjectUrl;
             result["sourceRepositoryUrl"] = NormalizeRepositoryUrl(catalogLeaf.Repository?.Url);
+            result["registrationLeafUrl"] = registrationLeaf.Id;
+            result["catalogEntryUrl"] = registrationLeaf.CatalogEntryUrl;
             result["packageContentUrl"] = registrationLeaf.PackageContent;
+            result["publishedAt"] = registrationLeaf.Published?.ToUniversalTime().ToString("O");
 
             var packageInspection = await new PackageArchiveInspector(scope.Client).InspectAsync(registrationLeaf.PackageContent, cancellationToken);
             var resolvedCommandName = string.IsNullOrWhiteSpace(commandName) ? packageInspection.ToolCommandNames.FirstOrDefault() : commandName;
@@ -178,6 +183,11 @@ internal sealed class ToolHelpAnalysisService
         }
 
         var openCliDocument = _openCliBuilder.Build(commandName, version, crawl.Documents);
+        if (!string.IsNullOrWhiteSpace(result["cliFramework"]?.GetValue<string>()))
+        {
+            openCliDocument["x-inspectra"]!["cliFramework"] = result["cliFramework"]!.GetValue<string>();
+        }
+
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), new JsonObject
         {
@@ -197,6 +207,7 @@ internal sealed class ToolHelpAnalysisService
         string batchId,
         int attempt,
         string source,
+        string? cliFramework,
         DateTimeOffset generatedAt)
         => new()
         {
@@ -207,11 +218,16 @@ internal sealed class ToolHelpAnalysisService
             ["batchId"] = batchId,
             ["attempt"] = attempt,
             ["source"] = source,
+            ["cliFramework"] = cliFramework,
             ["analyzedAt"] = generatedAt.ToString("O"),
             ["disposition"] = "retryable-failure",
             ["failureMessage"] = null,
+            ["publishedAt"] = null,
+            ["packageUrl"] = null,
             ["projectUrl"] = null,
             ["sourceRepositoryUrl"] = null,
+            ["registrationLeafUrl"] = null,
+            ["catalogEntryUrl"] = null,
             ["packageContentUrl"] = null,
             ["timings"] = new JsonObject
             {

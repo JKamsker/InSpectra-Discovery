@@ -59,6 +59,7 @@ public sealed class ToolHelpAnalysisServiceLiveTests
                 batchId: $"live-{testCase.Framework}",
                 attempt: 1,
                 source: "live-help-test",
+                cliFramework: testCase.Framework,
                 installTimeoutSeconds: 300,
                 analysisTimeoutSeconds: 600,
                 commandTimeoutSeconds: 60,
@@ -75,6 +76,8 @@ public sealed class ToolHelpAnalysisServiceLiveTests
             var result = JsonNode.Parse(await File.ReadAllTextAsync(resultPath));
             var document = JsonNode.Parse(await File.ReadAllTextAsync(openCliPath));
             Assert.Equal("success", result?["disposition"]?.GetValue<string>());
+            Assert.Equal(testCase.Framework, result?["cliFramework"]?.GetValue<string>());
+            Assert.Equal(testCase.Framework, document?["x-inspectra"]?["cliFramework"]?.GetValue<string>());
 
             foreach (var expectedCommand in testCase.ExpectedCommands)
             {

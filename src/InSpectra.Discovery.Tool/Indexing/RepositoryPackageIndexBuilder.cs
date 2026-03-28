@@ -119,6 +119,7 @@ internal static class RepositoryPackageIndexBuilder
             ["schemaVersion"] = 1,
             ["packageId"] = packageId,
             ["trusted"] = latest["trusted"]?.GetValue<bool?>(),
+            ["cliFramework"] = latest["cliFramework"]?.GetValue<string>(),
             ["totalDownloads"] = totalDownloads,
             ["links"] = new JsonObject
             {
@@ -141,6 +142,7 @@ internal static class RepositoryPackageIndexBuilder
                 ["evaluatedAt"] = ToIsoTimestamp(record["evaluatedAt"]),
                 ["status"] = record["status"]?.GetValue<string>(),
                 ["command"] = record["command"]?.GetValue<string>(),
+                ["cliFramework"] = record["cliFramework"]?.GetValue<string>(),
                 ["timings"] = record["timings"]?.DeepClone(),
                 ["paths"] = record["artifacts"]?.DeepClone(),
             }).ToArray()),
@@ -178,6 +180,7 @@ internal static class RepositoryPackageIndexBuilder
             {
                 ["packageId"] = packageId,
                 ["commandName"] = latestVersionRecord?["command"]?.GetValue<string>(),
+                ["cliFramework"] = package["cliFramework"]?.GetValue<string>(),
                 ["versionCount"] = package["versions"]?.AsArray().Count ?? 0,
                 ["latestVersion"] = latestVersion,
                 ["createdAt"] = packageTimestamps.CreatedAt,

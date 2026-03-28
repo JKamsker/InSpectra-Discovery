@@ -115,6 +115,7 @@ public sealed class PromotionApplyCommandServiceTests
                             ["packageId"] = "Sample.Tool",
                             ["version"] = "1.2.3",
                             ["attempt"] = 1,
+                            ["cliFramework"] = "System.CommandLine",
                             ["packageUrl"] = "https://www.nuget.org/packages/Sample.Tool/1.2.3",
                             ["packageContentUrl"] = "https://nuget.test/sample.tool.1.2.3.nupkg",
                             ["catalogEntryUrl"] = "https://nuget.test/catalog/sample.tool.1.2.3.json",
@@ -134,6 +135,7 @@ public sealed class PromotionApplyCommandServiceTests
                     ["attempt"] = 1,
                     ["trusted"] = false,
                     ["source"] = "analyze-untrusted-batch",
+                    ["cliFramework"] = "System.CommandLine",
                     ["analyzedAt"] = "2026-03-27T01:00:00Z",
                     ["disposition"] = "success",
                     ["retryEligible"] = false,
@@ -215,6 +217,7 @@ public sealed class PromotionApplyCommandServiceTests
 
             var sampleMetadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "1.2.3", "metadata.json"));
             Assert.Equal(1234L, sampleMetadata["totalDownloads"]?.GetValue<long>());
+            Assert.Equal("System.CommandLine", sampleMetadata["cliFramework"]?.GetValue<string>());
 
             var existingPackageIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "existing.tool", "index.json"));
             Assert.Equal(4321L, existingPackageIndex["totalDownloads"]?.GetValue<long>());
@@ -224,6 +227,7 @@ public sealed class PromotionApplyCommandServiceTests
 
             var samplePackageIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "index.json"));
             Assert.Equal(1234L, samplePackageIndex["totalDownloads"]?.GetValue<long>());
+            Assert.Equal("System.CommandLine", samplePackageIndex["cliFramework"]?.GetValue<string>());
             Assert.Equal("https://www.nuget.org/packages/Sample.Tool", samplePackageIndex["links"]?["nuget"]?.GetValue<string>());
             Assert.Equal("https://sample.tool.example", samplePackageIndex["links"]?["project"]?.GetValue<string>());
             Assert.Equal("https://github.com/example/sample.tool", samplePackageIndex["links"]?["source"]?.GetValue<string>());
@@ -231,12 +235,14 @@ public sealed class PromotionApplyCommandServiceTests
             var allIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "all.json"));
             Assert.Equal(4321L, FindPackage(allIndex, "Existing.Tool")["totalDownloads"]?.GetValue<long>());
             Assert.Equal(1234L, FindPackage(allIndex, "Sample.Tool")["totalDownloads"]?.GetValue<long>());
+            Assert.Equal("System.CommandLine", FindPackage(allIndex, "Sample.Tool")["cliFramework"]?.GetValue<string>());
             Assert.Equal("https://github.com/example/existing.tool", FindPackage(allIndex, "Existing.Tool")["links"]?["source"]?.GetValue<string>());
             Assert.Equal("https://github.com/example/sample.tool", FindPackage(allIndex, "Sample.Tool")["links"]?["source"]?.GetValue<string>());
 
             var browserIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "index.json"));
             Assert.Equal(4321L, FindPackage(browserIndex, "Existing.Tool")["totalDownloads"]?.GetValue<long>());
             Assert.Equal(1234L, FindPackage(browserIndex, "Sample.Tool")["totalDownloads"]?.GetValue<long>());
+            Assert.Equal("System.CommandLine", FindPackage(browserIndex, "Sample.Tool")["cliFramework"]?.GetValue<string>());
         }
         finally
         {

@@ -275,6 +275,7 @@ internal sealed class PromotionApplyCommandService
             ["packageId"] = packageId,
             ["version"] = version,
             ["trusted"] = false,
+            ["cliFramework"] = result["cliFramework"]?.GetValue<string>(),
             ["source"] = result["source"]?.GetValue<string>(),
             ["batchId"] = result["batchId"]?.GetValue<string>(),
             ["attempt"] = result["attempt"]?.GetValue<int?>(),
@@ -475,6 +476,11 @@ internal sealed class PromotionApplyCommandService
         if (result["totalDownloads"] is null && item["totalDownloads"] is not null)
         {
             result["totalDownloads"] = item["totalDownloads"]?.DeepClone();
+        }
+
+        if (result["cliFramework"] is null && item["cliFramework"] is not null)
+        {
+            result["cliFramework"] = item["cliFramework"]?.DeepClone();
         }
     }
 
