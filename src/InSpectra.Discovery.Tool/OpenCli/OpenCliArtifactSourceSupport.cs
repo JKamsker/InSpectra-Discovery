@@ -19,4 +19,25 @@ internal static class OpenCliArtifactSourceSupport
             "xmldoc" => "synthesized-from-xmldoc",
             _ => null,
         };
+
+    public static string? InferAnalysisMode(string? artifactSource)
+        => artifactSource switch
+        {
+            "tool-output" => "native",
+            "crawled-from-help" => "help",
+            "crawled-from-clifx-help" => "clifx",
+            "synthesized-from-xmldoc" => "xmldoc",
+            _ => null,
+        };
+
+    public static string? InferAnalysisModeFromClassification(string? classification)
+        => classification switch
+        {
+            "json-ready" => "native",
+            "json-ready-with-nonzero-exit" => "native",
+            "help-crawl" => "help",
+            "clifx-crawl" => "clifx",
+            "xmldoc-synthesized" => "xmldoc",
+            _ => null,
+        };
 }

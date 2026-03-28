@@ -114,14 +114,19 @@ internal sealed class PromotionApplyCommandService
                 var xmlDocExists = xmlDocArtifactPath is not null;
                 string? openCliValidationError = null;
                 string? xmlDocValidationError = null;
+                JsonObject? openCliDocument = null;
                 JsonObject? crawlDocument = null;
                 var hasUsableOpenCli = openCliArtifactPath is not null
-                    && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out _, out openCliValidationError);
+                    && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out openCliDocument, out openCliValidationError);
                 var hasUsableCrawl = crawlArtifactPath is not null
                     && PromotionArtifactSupport.TryLoadJsonObject(crawlArtifactPath, out crawlDocument);
                 var hasUsableXmlDoc = xmlDocArtifactPath is not null
                     && TryLoadXmlArtifact(xmlDocArtifactPath, out xmlDocValidationError);
-                var selectedAnalysisMode = ResolveAnalysisMode(item, result, hasUsableCrawl ? crawlDocument : null);
+                var selectedAnalysisMode = ResolveAnalysisMode(
+                    hasUsableOpenCli ? openCliDocument : null,
+                    hasUsableCrawl ? crawlDocument : null,
+                    item,
+                    result);
                 BackfillAnalysisModeSelection(result, selectedAnalysisMode);
                 var requiresCrawlArtifact = HelpBatchArtifactSupport.RequiresCrawlArtifact(selectedAnalysisMode);
                 var declaredMissing = new List<string>();
@@ -470,16 +475,44 @@ internal sealed class PromotionApplyCommandService
             OpenCliArtifactSourceSupport.InferArtifactSource(result["analysisMode"]?.GetValue<string>()),
             "tool-output") ?? "tool-output";
 
-    private static string? ResolveAnalysisMode(JsonObject item, JsonObject result, JsonObject? crawlArtifact)
+    private static string? ResolveAnalysisMode(
+        JsonObject? openCliArtifact,
+        JsonObject? crawlArtifact,
+        JsonObject item,
+        JsonObject result)
         => FirstNonEmpty(
+            InferAnalysisModeFromOpenCli(openCliArtifact),
+            OpenCliArtifactSourceSupport.InferAnalysisMode(result["artifacts"]?["opencliSource"]?.GetValue<string>()),
+            InferCliFxModeFromCrawl(crawlArtifact),
+            crawlArtifact is not null ? PreferCrawlBackedMode(result["analysisMode"]?.GetValue<string>()) : null,
+            crawlArtifact is not null ? PreferCrawlBackedMode(item["analysisMode"]?.GetValue<string>()) : null,
             result["analysisMode"]?.GetValue<string>(),
             item["analysisMode"]?.GetValue<string>(),
-            InferAnalysisModeFromCrawl(crawlArtifact));
+            InferAnalysisModeFromOpenCliClassification(
+                result["steps"]?["opencli"] as JsonObject,
+                result["introspection"]?["opencli"] as JsonObject),
+            crawlArtifact is not null ? "help" : null);
 
-    private static string? InferAnalysisModeFromCrawl(JsonObject? crawlArtifact)
+    private static string? InferAnalysisModeFromOpenCli(JsonObject? openCliArtifact)
+        => OpenCliArtifactSourceSupport.InferAnalysisMode(
+            openCliArtifact?["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+
+    private static string? InferAnalysisModeFromOpenCliClassification(params JsonObject?[] sources)
+        => sources
+            .Select(source => OpenCliArtifactSourceSupport.InferAnalysisModeFromClassification(
+                source?["classification"]?.GetValue<string>()))
+            .FirstOrDefault(mode => !string.IsNullOrWhiteSpace(mode));
+
+    private static string? InferCliFxModeFromCrawl(JsonObject? crawlArtifact)
         => crawlArtifact is null
             ? null
-            : crawlArtifact["staticCommands"] is JsonArray ? "clifx" : "help";
+            : crawlArtifact["staticCommands"] is JsonArray ? "clifx" : null;
+
+    private static string? PreferCrawlBackedMode(string? analysisMode)
+        => string.Equals(analysisMode, "help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(analysisMode, "clifx", StringComparison.OrdinalIgnoreCase)
+                ? analysisMode
+                : null;
 
     private static void BackfillAnalysisModeSelection(JsonObject result, string? analysisMode)
     {
@@ -488,10 +521,7 @@ internal sealed class PromotionApplyCommandService
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(result["analysisMode"]?.GetValue<string>()))
-        {
-            result["analysisMode"] = analysisMode;
-        }
+        result["analysisMode"] = analysisMode;
 
         var analysisSelection = result["analysisSelection"] as JsonObject;
         if (analysisSelection is null)
@@ -500,10 +530,7 @@ internal sealed class PromotionApplyCommandService
             result["analysisSelection"] = analysisSelection;
         }
 
-        if (analysisSelection["selectedMode"] is null)
-        {
-            analysisSelection["selectedMode"] = analysisMode;
-        }
+        analysisSelection["selectedMode"] = analysisMode;
 
         if (analysisSelection["preferredMode"] is null)
         {
