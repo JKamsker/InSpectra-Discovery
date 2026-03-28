@@ -14,10 +14,7 @@ internal sealed class PromotionApplyCommandService
         var stateRoot = Path.Combine(repositoryRoot, "state");
         var now = DateTimeOffset.UtcNow;
         var downloadDirectory = Path.GetFullPath(downloadRoot);
-        var expectedPath = Directory.GetFiles(downloadDirectory, "expected.json", SearchOption.AllDirectories).FirstOrDefault()
-            ?? throw new InvalidOperationException($"expected.json was not found under '{downloadRoot}'.");
-        var plan = JsonNode.Parse(await File.ReadAllTextAsync(expectedPath, cancellationToken))?.AsObject()
-            ?? throw new InvalidOperationException($"Plan '{expectedPath}' is empty.");
+        var plan = await PromotionPlanSupport.LoadMergedPlanAsync(downloadDirectory, cancellationToken);
 
         var resultLookup = new Dictionary<string, (JsonObject Result, string ArtifactDirectory)>(StringComparer.OrdinalIgnoreCase);
         foreach (var resultPath in Directory.GetFiles(downloadDirectory, "result.json", SearchOption.AllDirectories))
@@ -35,10 +32,10 @@ internal sealed class PromotionApplyCommandService
         var summary = new JsonObject
         {
             ["schemaVersion"] = 1,
-            ["batchId"] = plan["batchId"]?.GetValue<string>(),
-            ["targetBranch"] = plan["targetBranch"]?.GetValue<string>() ?? "main",
+            ["batchId"] = plan.BatchId,
+            ["targetBranch"] = plan.TargetBranch,
             ["promotedAt"] = now.ToString("O"),
-            ["expectedCount"] = plan["items"]?.AsArray().Count ?? 0,
+            ["expectedCount"] = plan.Items.Count,
             ["successCount"] = 0,
             ["terminalNegativeCount"] = 0,
             ["retryableFailureCount"] = 0,
@@ -49,7 +46,7 @@ internal sealed class PromotionApplyCommandService
             ["nonSuccessItems"] = new JsonArray(),
         };
 
-        foreach (var item in plan["items"]?.AsArray().OfType<JsonObject>() ?? [])
+        foreach (var item in plan.Items.OfType<JsonObject>())
         {
             var key = $"{item["packageId"]?.GetValue<string>()}|{item["version"]?.GetValue<string>()}";
             var hasResultArtifact = resultLookup.TryGetValue(key, out var resultEntry);
@@ -60,7 +57,7 @@ internal sealed class PromotionApplyCommandService
                     item["attempt"]?.GetValue<int?>() ?? 1,
                     "missing-result-artifact",
                     "No result artifact was uploaded for this matrix item.",
-                    plan["batchId"]?.GetValue<string>() ?? string.Empty,
+                    plan.BatchId ?? string.Empty,
                     now);
             PromotionResultSupport.MergePlanItemIntoResult(item, result);
             var artifactDirectory = hasResultArtifact ? resultEntry.ArtifactDirectory : null;
@@ -97,7 +94,7 @@ internal sealed class PromotionApplyCommandService
                         result["attempt"]?.GetValue<int?>() ?? item["attempt"]?.GetValue<int?>() ?? 1,
                         "missing-success-artifact",
                         message,
-                        plan["batchId"]?.GetValue<string>() ?? string.Empty,
+                        plan.BatchId ?? string.Empty,
                         now);
                     artifactDirectory = null;
                 }

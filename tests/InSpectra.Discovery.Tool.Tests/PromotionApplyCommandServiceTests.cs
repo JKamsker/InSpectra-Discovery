@@ -272,6 +272,112 @@ public sealed class PromotionApplyCommandServiceTests
         }
     }
 
+    [Fact]
+    public async Task ApplyUntrustedAsync_MergesMultipleExpectedPlans()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 2,
+                    ["source"] = new JsonObject
+                    {
+                        ["serviceIndexUrl"] = "https://api.nuget.org/v3/index.json",
+                        ["sortOrder"] = "totalDownloads-desc",
+                    },
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Alpha.Tool",
+                            ["latestVersion"] = "1.0.0",
+                            ["totalDownloads"] = 300,
+                            ["projectUrl"] = "https://alpha.example",
+                        },
+                        new JsonObject
+                        {
+                            ["packageId"] = "Beta.Tool",
+                            ["latestVersion"] = "2.0.0",
+                            ["totalDownloads"] = 200,
+                            ["projectUrl"] = "https://beta.example",
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan-a", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-a",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Alpha.Tool",
+                            ["version"] = "1.0.0",
+                            ["attempt"] = 1,
+                            ["totalDownloads"] = 300,
+                        },
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan-b", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-b",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Beta.Tool",
+                            ["version"] = "2.0.0",
+                            ["attempt"] = 1,
+                            ["totalDownloads"] = 200,
+                        },
+                    },
+                });
+
+            WriteSuccessAnalysis(downloadRoot, "Alpha.Tool", "1.0.0", "alpha", 300);
+            WriteSuccessAnalysis(downloadRoot, "Beta.Tool", "2.0.0", "beta", 200);
+
+            var summaryPath = Path.Combine(repositoryRoot, "promotion-summary.json");
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryPath, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var summary = ParseJsonObject(summaryPath);
+            Assert.Equal("aggregate-2-plans", summary["batchId"]?.GetValue<string>());
+            Assert.Equal(2, summary["expectedCount"]?.GetValue<int>());
+            Assert.Equal(2, summary["successCount"]?.GetValue<int>());
+
+            Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "alpha.tool", "1.0.0", "metadata.json")));
+            Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "beta.tool", "2.0.0", "metadata.json")));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
@@ -300,5 +406,63 @@ public sealed class PromotionApplyCommandServiceTests
                 Directory.Delete(Path, recursive: true);
             }
         }
+    }
+
+    private static void WriteSuccessAnalysis(string downloadRoot, string packageId, string version, string command, long totalDownloads)
+    {
+        var artifactDirectory = Path.Combine(downloadRoot, $"analysis-{packageId.ToLowerInvariant()}");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(artifactDirectory, "result.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = packageId,
+                ["version"] = version,
+                ["batchId"] = "batch",
+                ["attempt"] = 1,
+                ["trusted"] = false,
+                ["source"] = "analyze-untrusted-batch",
+                ["cliFramework"] = "System.CommandLine",
+                ["analyzedAt"] = "2026-03-27T01:00:00Z",
+                ["disposition"] = "success",
+                ["packageUrl"] = $"https://www.nuget.org/packages/{packageId}/{version}",
+                ["packageContentUrl"] = $"https://nuget.test/{packageId.ToLowerInvariant()}.{version}.nupkg",
+                ["registrationLeafUrl"] = $"https://nuget.test/registration/{packageId.ToLowerInvariant()}/{version}.json",
+                ["catalogEntryUrl"] = $"https://nuget.test/catalog/{packageId.ToLowerInvariant()}.{version}.json",
+                ["projectUrl"] = $"https://{packageId.ToLowerInvariant()}.example",
+                ["publishedAt"] = "2026-03-27T00:30:00Z",
+                ["totalDownloads"] = totalDownloads,
+                ["command"] = command,
+                ["steps"] = new JsonObject
+                {
+                    ["install"] = new JsonObject
+                    {
+                        ["status"] = "ok",
+                    },
+                    ["opencli"] = null,
+                    ["xmldoc"] = null,
+                },
+                ["timings"] = new JsonObject
+                {
+                    ["totalMs"] = 100,
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["opencliArtifact"] = "opencli.json",
+                    ["xmldocArtifact"] = null,
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(artifactDirectory, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = command,
+                    ["version"] = "1.0",
+                },
+                ["commands"] = new JsonArray(),
+            });
     }
 }

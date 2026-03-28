@@ -151,7 +151,7 @@ A global manifest at `index/all.json` lists all indexed packages with their late
 | `dispatch-discovery-queue-analysis` | On demand | Slices the analysis queue into batches |
 | `analyze-untrusted-batch` | On demand | Runs sandboxed analysis on queued tools |
 | `promote-untrusted-analysis-results` | On demand | Promotes successful results into the main index |
-| `index-unindexed-nuget-tools` | On demand | Builds the current unindexed backlog, analyzes 250-item batches in parallel, and promotes aggregate results |
+| `index-unindexed-nuget-tools` | On demand | Builds the current unindexed backlog, analyzes 250-item batches in parallel, and promotes by merging the batch plans/artifacts |
 | `queue-indexed-metadata-backfill` | On demand | Backfills historical versions for indexed packages |
 
 ## Prerequisites

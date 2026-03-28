@@ -108,7 +108,7 @@ jobs:
           "queue_item_count=$($queue.queueCount)" >> $env:GITHUB_OUTPUT
           "queue_artifact_name=current-analysis-backfill-queue" >> $env:GITHUB_OUTPUT
 
-      - name: Build global plan and dispatch plan
+      - name: Build dispatch plan
         id: dispatch
         if: ${{ steps.queue.outputs.queue_item_count != '0' }}
         shell: pwsh
@@ -119,7 +119,6 @@ jobs:
           $batchPrefix = '${{ inputs.batch_prefix }}'
           $batchSize = [int]'${{ inputs.batch_size }}'
           $dispatchPath = Join-Path $env:RUNNER_TEMP 'queue-dispatch-plan.json'
-          $expectedPath = Join-Path $env:RUNNER_TEMP 'expected.json'
           $globalBatchId = "$batchPrefix-all-$([DateTimeOffset]::UtcNow.ToString('yyyyMMddTHHmmssZ').ToLowerInvariant())"
 
           $dispatchPlan = inspectra-discovery `
@@ -137,18 +136,6 @@ jobs:
           }
 
           $dispatchPlan = $dispatchPlan.data
-
-          $globalPlan = inspectra-discovery `
-            queue untrusted-batch-plan `
-            --queue $queuePath `
-            --batch-id $globalBatchId `
-            --output $expectedPath `
-            --target-branch $targetBranch `
-            --json | ConvertFrom-Json
-
-          if (-not $globalPlan.ok) {
-            throw $globalPlan.error.message
-          }
 
           "target_branch=$targetBranch" >> $env:GITHUB_OUTPUT
           "queue_item_count=$($dispatchPlan.queueItemCount)" >> $env:GITHUB_OUTPUT
@@ -173,15 +160,6 @@ jobs:
           if-no-files-found: error
           retention-days: ${{ fromJson(inputs.artifact_retention_days) }}
 
-      - name: Upload global expected plan
-        if: ${{ steps.queue.outputs.queue_item_count != '0' }}
-        uses: actions/upload-artifact@v6
-        with:
-          name: global-untrusted-plan
-          path: ${{ runner.temp }}/expected.json
-          if-no-files-found: error
-          retention-days: ${{ fromJson(inputs.artifact_retention_days) }}
-
   analyze:
     needs: plan
     if: ${{ needs.plan.outputs.queue_item_count != '0' }}
@@ -199,7 +177,7 @@ jobs:
       target_branch: ${{ matrix.targetBranch }}
       force_reanalyze: "false"
       queue_artifact_name: ${{ needs.plan.outputs.queue_artifact_name }}
-      upload_plan_artifact: "false"
+      upload_plan_artifact: "true"
       artifact_retention_days: ${{ inputs.artifact_retention_days }}
     secrets: inherit
 
