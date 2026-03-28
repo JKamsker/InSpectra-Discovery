@@ -113,10 +113,13 @@ internal sealed class PromotionApplyCommandService
                 var crawlExists = crawlArtifactPath is not null;
                 var xmlDocExists = xmlDocArtifactPath is not null;
                 string? openCliValidationError = null;
+                string? xmlDocValidationError = null;
                 var hasUsableOpenCli = openCliArtifactPath is not null
                     && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out _, out openCliValidationError);
                 var hasUsableCrawl = crawlArtifactPath is not null
                     && PromotionArtifactSupport.TryLoadJsonObject(crawlArtifactPath, out _);
+                var hasUsableXmlDoc = xmlDocArtifactPath is not null
+                    && TryLoadXmlArtifact(xmlDocArtifactPath, out xmlDocValidationError);
                 var requiresCrawlArtifact = HelpBatchArtifactSupport.RequiresCrawlArtifact(
                     result["analysisMode"]?.GetValue<string>() ?? item["analysisMode"]?.GetValue<string>());
                 var declaredMissing = new List<string>();
@@ -150,9 +153,14 @@ internal sealed class PromotionApplyCommandService
                     invalidArtifacts.Add(crawlArtifact!);
                 }
 
+                if (xmlDocArtifactPath is not null && !hasUsableXmlDoc)
+                {
+                    invalidArtifacts.Add(xmlDocArtifact!);
+                }
+
                 if (declaredMissing.Count > 0
                     || invalidArtifacts.Count > 0
-                    || !(hasUsableOpenCli || xmlDocExists)
+                    || !(hasUsableOpenCli || hasUsableXmlDoc)
                     || (requiresCrawlArtifact && !hasUsableCrawl))
                 {
                     var message = declaredMissing.Count > 0
@@ -160,6 +168,8 @@ internal sealed class PromotionApplyCommandService
                         : invalidArtifacts.Count > 0
                             ? !string.IsNullOrWhiteSpace(openCliValidationError)
                                 ? openCliValidationError
+                                : !string.IsNullOrWhiteSpace(xmlDocValidationError)
+                                    ? xmlDocValidationError
                                 : "Success result declared JSON artifact(s) that are not usable JSON objects: " + string.Join(", ", invalidArtifacts)
                         : requiresCrawlArtifact && !hasUsableCrawl
                             ? "Success result did not include a usable crawl.json artifact."
@@ -475,6 +485,21 @@ internal sealed class PromotionApplyCommandService
         }
 
         return InferOpenCliClassification(openCliSource);
+    }
+
+    private static bool TryLoadXmlArtifact(string xmlDocArtifactPath, out string? validationError)
+    {
+        try
+        {
+            _ = XDocument.Parse(File.ReadAllText(xmlDocArtifactPath));
+            validationError = null;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            validationError = ex.Message;
+            return false;
+        }
     }
 
     private static void BackfillOpenCliStepMetadata(

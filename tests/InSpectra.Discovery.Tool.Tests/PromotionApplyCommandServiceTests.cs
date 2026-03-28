@@ -1655,6 +1655,103 @@ public sealed class PromotionApplyCommandServiceTests
     }
 
     [Fact]
+    public async Task ApplyUntrustedAsync_Rejects_Malformed_Xmldoc_Even_When_OpenCli_Is_Valid()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Broken.Mixed.Tool",
+                            ["latestVersion"] = "1.0.0",
+                            ["totalDownloads"] = 12,
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-broken-mixed-xml",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Broken.Mixed.Tool",
+                            ["version"] = "1.0.0",
+                            ["attempt"] = 1,
+                            ["command"] = "broken-mixed-tool",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-broken-mixed-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Broken.Mixed.Tool",
+                    ["version"] = "1.0.0",
+                    ["batchId"] = "batch-broken-mixed-xml",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analyzedAt"] = "2026-03-27T05:30:00Z",
+                    ["disposition"] = "success",
+                    ["command"] = "broken-mixed-tool",
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["xmldocArtifact"] = "xmldoc.xml",
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-broken-mixed-tool", "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                    ["commands"] = new JsonArray(),
+                });
+            RepositoryPathResolver.WriteTextFile(
+                Path.Combine(downloadRoot, "analysis-broken-mixed-tool", "xmldoc.xml"),
+                "<Model><Command></Model>");
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var state = ParseJsonObject(Path.Combine(repositoryRoot, "state", "packages", "broken.mixed.tool", "1.0.0.json"));
+            Assert.Equal("retryable-failure", state["currentStatus"]?.GetValue<string>());
+            Assert.False(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "broken.mixed.tool", "1.0.0", "metadata.json")));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
     public async Task ApplyUntrustedAsync_MergesMultipleExpectedPlans()
     {
         ToolRuntime.Initialize();
