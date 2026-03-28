@@ -542,6 +542,42 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Does_Not_Infer_Commands_From_DotnetToolList_Headers()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            UpdateAllDotnetTools 1.0.0
+
+            Package Id               Version      Commands
+            ------------------------------------------------
+            updatealldotnettools     1.0.0        UpdateAllDotnetTools
+            """);
+
+        Assert.Equal("UpdateAllDotnetTools", document.Title);
+        Assert.Empty(document.Commands);
+    }
+
+    [Fact]
+    public void Does_Not_Infer_Commands_From_Template_Install_Headers()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            RapidFire CLI
+
+            Template Name            Short Name   Language   Tags
+            ---------------------------------------------------------
+            rapidfire-api            rf-api       [C#]       Web/API
+            """);
+
+        Assert.Equal("RapidFire CLI", document.Title);
+        Assert.Empty(document.Commands);
+    }
+
+    [Fact]
     public void Does_Not_Start_New_Command_From_Indented_Wrapped_Description_Or_Help_Hints()
     {
         var parser = new ToolHelpTextParser();

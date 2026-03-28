@@ -45,9 +45,11 @@ internal sealed partial class ToolHelpTextParser
         var preamble = new List<string>();
         string? currentSection = null;
         string? commandHeader = null;
+        var sawInventoryHeader = false;
         foreach (var rawLine in lines)
         {
             var line = rawLine.TrimEnd();
+            sawInventoryHeader |= LooksLikeInventoryHeaderLine(line.Trim());
             if (TryParseIgnoredSectionHeader(line))
             {
                 currentSection = IgnoredSectionName;
@@ -126,7 +128,7 @@ internal sealed partial class ToolHelpTextParser
         var commands = ParseItems(commandLines ?? [], ItemKind.Command);
         if (commands.Count == 0)
         {
-            commands = InferCommands(preamble, sections, parsedUsageLines, parsedOptions);
+            commands = InferCommands(preamble, sections, parsedUsageLines, parsedOptions, sawInventoryHeader);
         }
 
         var applicationDescription = JoinLines(preamble.Skip(descriptionStartIndex));
@@ -327,13 +329,15 @@ internal sealed partial class ToolHelpTextParser
         IReadOnlyList<string> preamble,
         IReadOnlyDictionary<string, List<string>> sections,
         IReadOnlyList<string> usageLines,
-        IReadOnlyList<ToolHelpItem> options)
+        IReadOnlyList<ToolHelpItem> options,
+        bool sawInventoryHeader)
     {
         if (sections.ContainsKey("usage")
             || sections.ContainsKey("options")
             || sections.ContainsKey("arguments")
             || usageLines.Count > 0
-            || options.Count > 0)
+            || options.Count > 0
+            || sawInventoryHeader)
         {
             return [];
         }
@@ -430,6 +434,7 @@ internal sealed partial class ToolHelpTextParser
             ? false
             : IsFrameworkNoiseLine(trimmed)
                 || IsStructuredLogLine(trimmed)
+                || LooksLikeInventoryHeaderLine(trimmed)
                 || trimmed.StartsWith("Visit http://", StringComparison.OrdinalIgnoreCase)
                 || trimmed.StartsWith("Visit https://", StringComparison.OrdinalIgnoreCase)
                 || trimmed.StartsWith("NSwag bin directory:", StringComparison.OrdinalIgnoreCase)
@@ -500,6 +505,10 @@ internal sealed partial class ToolHelpTextParser
         => line.StartsWith("Use '", StringComparison.OrdinalIgnoreCase)
             && line.Contains("--help", StringComparison.OrdinalIgnoreCase);
 
+    private static bool LooksLikeInventoryHeaderLine(string line)
+        => DotnetToolListHeaderRegex().IsMatch(line)
+            || TemplateInstallHeaderRegex().IsMatch(line);
+
     private static bool LooksLikeMarkdownTableLine(string line)
         => line.StartsWith("|", StringComparison.Ordinal)
             && line.EndsWith("|", StringComparison.Ordinal)
@@ -525,6 +534,12 @@ internal sealed partial class ToolHelpTextParser
 
     [GeneratedRegex(@"^(?:--help|-h|/\?)\s+is an unknown (?:parameter|option|argument)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex RejectedHelpInvocationRegex();
+
+    [GeneratedRegex(@"^Package Id\s{2,}Version\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex DotnetToolListHeaderRegex();
+
+    [GeneratedRegex(@"^Template Name\s{2,}Short Name\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex TemplateInstallHeaderRegex();
 
     private enum ItemKind
     {
