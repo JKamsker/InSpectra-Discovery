@@ -35,6 +35,12 @@ internal sealed partial class ToolHelpTextParser
     public ToolHelpDocument Parse(string text)
     {
         var lines = Normalize(text);
+        var firstMeaningfulLine = lines.FirstOrDefault(line => !string.IsNullOrWhiteSpace(line))?.Trim();
+        if (LooksLikeRejectedHelpInvocation(firstMeaningfulLine))
+        {
+            return new ToolHelpDocument(null, null, null, null, [], [], [], []);
+        }
+
         var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var preamble = new List<string>();
         string? currentSection = null;
@@ -100,7 +106,7 @@ internal sealed partial class ToolHelpTextParser
                 sections[currentSection].Add(line);
             }
         }
-        var (title, version) = ParseTitleAndVersion(preamble);
+        var (title, version, descriptionStartIndex) = ParseTitleAndVersion(preamble);
         if (!string.IsNullOrWhiteSpace(commandHeader))
         {
             title = commandHeader;
@@ -123,7 +129,7 @@ internal sealed partial class ToolHelpTextParser
             commands = InferCommands(preamble, sections, parsedUsageLines, parsedOptions);
         }
 
-        var applicationDescription = JoinLines(preamble.Skip(string.IsNullOrWhiteSpace(title) ? 0 : 1));
+        var applicationDescription = JoinLines(preamble.Skip(descriptionStartIndex));
         var commandDescription = JoinLines(descriptionLines ?? []);
         return new ToolHelpDocument(
             Title: title,
@@ -219,7 +225,7 @@ internal sealed partial class ToolHelpTextParser
 
             var currentIndentation = GetIndentation(rawLine);
             var canStartNewItem = TryParseItemStart(rawLine, kind, out var parsedKey, out var parsedRequired, out var parsedDescription)
-                && !(kind == ItemKind.Argument && key is not null && currentIndentation > indentation);
+                && !((kind == ItemKind.Argument || kind == ItemKind.Command) && key is not null && currentIndentation > indentation);
             if (canStartNewItem)
             {
                 FlushItem(items, kind, key, isRequired, description);
@@ -347,18 +353,33 @@ internal sealed partial class ToolHelpTextParser
         items.Add(new ToolHelpItem(key, isRequired, string.IsNullOrWhiteSpace(description) ? null : description.Trim()));
     }
 
-    private static (string? Title, string? Version) ParseTitleAndVersion(IReadOnlyList<string> preamble)
+    private static (string? Title, string? Version, int DescriptionStartIndex) ParseTitleAndVersion(IReadOnlyList<string> preamble)
     {
-        var firstLine = preamble.FirstOrDefault(line => !string.IsNullOrWhiteSpace(line))?.Trim();
-        if (string.IsNullOrWhiteSpace(firstLine))
+        int? firstNonEmptyIndex = null;
+
+        for (var index = 0; index < preamble.Count; index++)
         {
-            return (null, null);
+            var line = preamble[index];
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                continue;
+            }
+
+            firstNonEmptyIndex ??= index;
+            var match = TitleLineRegex().Match(line.Trim());
+            if (match.Success)
+            {
+                return (match.Groups["title"].Value.Trim(), match.Groups["version"].Value.Trim(), index + 1);
+            }
         }
 
-        var match = TitleLineRegex().Match(firstLine);
-        return match.Success
-            ? (match.Groups["title"].Value.Trim(), match.Groups["version"].Value.Trim())
-            : (firstLine, null);
+        if (firstNonEmptyIndex is null)
+        {
+            return (null, null, 0);
+        }
+
+        var firstLine = preamble[firstNonEmptyIndex.Value].Trim();
+        return (firstLine, null, firstNonEmptyIndex.Value + 1);
     }
 
     private static IReadOnlyList<string> TrimNonEmpty(IEnumerable<string> lines)
@@ -423,7 +444,11 @@ internal sealed partial class ToolHelpTextParser
     }
 
     private static bool IsNoiseContinuationLine(ItemKind kind, string rawLine)
-        => kind == ItemKind.Argument && IsArgumentNoiseLine(rawLine.Trim());
+    {
+        var trimmed = rawLine.Trim();
+        return (kind == ItemKind.Argument && IsArgumentNoiseLine(trimmed))
+            || (kind == ItemKind.Command && LooksLikeSubcommandHelpHint(trimmed));
+    }
 
     private static bool IsArgumentNoiseLine(string line)
         => line.StartsWith("Press <enter>", StringComparison.OrdinalIgnoreCase)
@@ -431,10 +456,21 @@ internal sealed partial class ToolHelpTextParser
 
     private static bool IsFrameworkNoiseLine(string line)
         => string.Equals(line, "Error parsing", StringComparison.OrdinalIgnoreCase)
-            || CommandLineErrorTokenRegex().IsMatch(line);
+            || CommandLineErrorTokenRegex().IsMatch(line)
+            || LooksLikeRejectedHelpInvocation(line);
 
     private static bool IsStructuredLogLine(string line)
         => StructuredLogPrefixRegex().IsMatch(line);
+
+    private static bool LooksLikeRejectedHelpInvocation(string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return false;
+        }
+
+        return RejectedHelpInvocationRegex().IsMatch(line.Trim());
+    }
 
     private static bool LooksLikeArgumentKey(string key)
         => key.Length > 0
@@ -460,6 +496,10 @@ internal sealed partial class ToolHelpTextParser
             && char.IsLetter(trimmed[0]);
     }
 
+    private static bool LooksLikeSubcommandHelpHint(string line)
+        => line.StartsWith("Use '", StringComparison.OrdinalIgnoreCase)
+            && line.Contains("--help", StringComparison.OrdinalIgnoreCase);
+
     private static bool LooksLikeMarkdownTableLine(string line)
         => line.StartsWith("|", StringComparison.Ordinal)
             && line.EndsWith("|", StringComparison.Ordinal)
@@ -480,8 +520,11 @@ internal sealed partial class ToolHelpTextParser
     [GeneratedRegex(@"^CommandLine\.[A-Za-z]+Error$", RegexOptions.Compiled)]
     private static partial Regex CommandLineErrorTokenRegex();
 
-    [GeneratedRegex(@"^(?:trace|debug|info|warn|warning|fail|error):\s", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?:trace|debug|info|warn|warning|fail|error):\s|^\[\d{2}:\d{2}:\d{2}\s+[A-Z]{3}\]\s", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex StructuredLogPrefixRegex();
+
+    [GeneratedRegex(@"^(?:--help|-h|/\?)\s+is an unknown (?:parameter|option|argument)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex RejectedHelpInvocationRegex();
 
     private enum ItemKind
     {

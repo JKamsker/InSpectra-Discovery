@@ -188,6 +188,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
             {
                 var value = match.Groups["name"].Value.Trim();
                 if (string.Equals(value, "command", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(value, "subcommand", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(value, "options", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;

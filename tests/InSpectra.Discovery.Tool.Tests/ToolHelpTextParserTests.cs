@@ -501,4 +501,67 @@ public sealed class ToolHelpTextParserTests
         Assert.Contains(document.Commands, command => string.Equals(command.Key, "otel", StringComparison.Ordinal));
         Assert.DoesNotContain(document.Commands, command => command.Key.Contains(',', StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Ignores_Bracketed_Structured_Log_Prefixes_When_Resolving_Title()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            [12:52:57 INF] AttackSurfaceAnalyzer v.2.3.331+569f4d0249
+            Asa 2.3.331+569f4d0249
+            © Microsoft Corporation. All rights reserved.
+
+              collect           Collect operating system metrics
+              monitor           Continue running and monitor activity
+            """);
+
+        Assert.Equal("Asa", document.Title);
+        Assert.Equal("2.3.331+569f4d0249", document.Version);
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "collect", StringComparison.Ordinal));
+        Assert.DoesNotContain(document.Commands, command => command.Key.StartsWith("[12:52:57", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Rejects_Explicit_Help_Switch_Rejection_Preambles()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            --help is an unknown parameter
+            Usage of the tool (argument names case insensitive, values case insensitive where marked, arguments can be given in any order):
+            octo-ckc [-[shortTerm] or [/ or --][longTerm] [argument value]] ...
+            """);
+
+        Assert.False(document.HasContent);
+        Assert.Null(document.Title);
+        Assert.Empty(document.Options);
+        Assert.Empty(document.Commands);
+    }
+
+    [Fact]
+    public void Does_Not_Start_New_Command_From_Indented_Wrapped_Description_Or_Help_Hints()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            USAGE: Propulsion.Tool [--help] <subcommand> [<options>]
+
+            SUBCOMMANDS:
+
+                init <options>        Initialize auxiliary store (Supported for `cosmos`
+                                      Only).
+                initpg <options>      Initialize a postgres checkpoint store
+
+                Use 'Propulsion.Tool <subcommand> --help' for additional information.
+            """);
+
+        var init = Assert.Single(document.Commands.Where(command => string.Equals(command.Key, "init", StringComparison.Ordinal)));
+        Assert.Contains("Only).", init.Description, StringComparison.Ordinal);
+        Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "Only).", StringComparison.Ordinal));
+        Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "Use", StringComparison.Ordinal));
+    }
 }

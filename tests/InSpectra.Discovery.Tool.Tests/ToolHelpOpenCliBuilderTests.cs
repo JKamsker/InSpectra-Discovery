@@ -114,4 +114,30 @@ public sealed class ToolHelpOpenCliBuilderTests
         Assert.Equal("PATH", options[1]!["arguments"]![0]!["name"]!.GetValue<string>());
         Assert.True(options[1]!["arguments"]![0]!["required"]!.GetValue<bool>());
     }
+
+    [Fact]
+    public void Does_Not_Emit_Subcommand_Usage_Placeholders_As_Arguments()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: ["demo <subcommand> [<options>]"],
+                Arguments: [],
+                Options: [],
+                Commands:
+                [
+                    new ToolHelpItem("sync", false, "Synchronize data"),
+                ]),
+        };
+
+        var document = builder.Build("demo", "1.0.0", helpDocuments);
+
+        Assert.Null(document["arguments"]);
+        Assert.Single(document["commands"]!.AsArray());
+    }
 }
