@@ -535,6 +535,95 @@ public sealed class DocsCommandServiceTests
     }
 
     [Fact]
+    public async Task BuildFullyIndexedDocumentationReportAsync_Falls_Back_To_Versioned_OpenCli_When_Latest_Mirror_Is_Invalid()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "all.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packages"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "Fallback.Invalid.Tool",
+                        ["latestPaths"] = new JsonObject
+                        {
+                            ["metadataPath"] = "index/packages/fallback.invalid.tool/latest/metadata.json",
+                            ["opencliPath"] = "index/packages/fallback.invalid.tool/latest/opencli.json",
+                        },
+                        ["versions"] = new JsonArray
+                        {
+                            new JsonObject
+                            {
+                                ["paths"] = new JsonObject
+                                {
+                                    ["opencliPath"] = "index/packages/fallback.invalid.tool/1.0.0/opencli.json",
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "packages", "fallback.invalid.tool", "latest", "metadata.json"),
+            new JsonObject
+            {
+                ["packageId"] = "Fallback.Invalid.Tool",
+                ["version"] = "1.0.0",
+                ["status"] = "ok",
+                ["introspection"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["classification"] = "json-ready",
+                        ["artifactSource"] = "tool-output",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["opencliPath"] = "index/packages/fallback.invalid.tool/latest/opencli.json",
+                    ["opencliSource"] = "tool-output",
+                },
+            });
+        RepositoryPathResolver.WriteTextFile(
+            Path.Combine(repositoryRoot, "index", "packages", "fallback.invalid.tool", "latest", "opencli.json"),
+            "{not valid json");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "packages", "fallback.invalid.tool", "1.0.0", "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "tool-output",
+                },
+                ["commands"] = new JsonArray(),
+            });
+
+        var service = new DocsCommandService();
+        var exitCode = await service.BuildFullyIndexedDocumentationReportAsync(
+            repositoryRoot,
+            "index/all.json",
+            "docs/report.md",
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+
+        var report = File.ReadAllText(Path.Combine(repositoryRoot, "docs", "report.md"));
+        Assert.Contains("Packages in scope: 1", report, StringComparison.Ordinal);
+        Assert.Contains("Fallback.Invalid.Tool", report, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task BuildFullyIndexedDocumentationReportAsync_Falls_Back_To_OpenCli_Step_Path_When_Artifacts_Path_Is_Missing()
     {
         ToolRuntime.Initialize();

@@ -136,8 +136,7 @@ internal sealed class DocsCommandService
                 continue;
             }
 
-            var metadata = JsonNode.Parse(await File.ReadAllTextAsync(metadataPath, cancellationToken))?.AsObject();
-            if (metadata is null)
+            if (!PromotionArtifactSupport.TryLoadJsonObject(metadataPath, out var metadata) || metadata is null)
             {
                 continue;
             }
@@ -151,18 +150,20 @@ internal sealed class DocsCommandService
                 continue;
             }
 
-            var openCliPath = ResolveExistingOpenCliPath(
+            if (!OpenCliArtifactLoadSupport.TryLoadFirstValidOpenCliDocument(
                 root,
+                [
                 latestPaths?["opencliPath"]?.GetValue<string>(),
                 metadata["artifacts"]?["opencliPath"]?.GetValue<string>(),
                 metadata["steps"]?["opencli"]?["path"]?.GetValue<string>(),
-                package["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault()?["paths"]?["opencliPath"]?.GetValue<string>());
-            if (openCliPath is null)
+                package["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault()?["paths"]?["opencliPath"]?.GetValue<string>(),
+                ],
+                out var openCli,
+                out _))
             {
                 continue;
             }
 
-            var openCli = JsonNode.Parse(await File.ReadAllTextAsync(openCliPath, cancellationToken));
             var artifactSource = FirstNonEmpty(
                 openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>(),
                 metadata["artifacts"]?["opencliSource"]?.GetValue<string>(),
@@ -354,20 +355,6 @@ internal sealed class DocsCommandService
         => value is JsonValue jsonValue &&
            jsonValue.TryGetValue<string>(out var text) &&
            !string.IsNullOrWhiteSpace(text);
-
-    private static string? ResolveExistingOpenCliPath(string repositoryRoot, params string?[] relativePaths)
-    {
-        foreach (var relativePath in relativePaths.Where(path => !string.IsNullOrWhiteSpace(path)).Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var candidatePath = Path.Combine(repositoryRoot, relativePath!);
-            if (File.Exists(candidatePath))
-            {
-                return candidatePath;
-            }
-        }
-
-        return null;
-    }
 
     private static string? FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));

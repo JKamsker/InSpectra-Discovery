@@ -249,6 +249,55 @@ function Resolve-ExistingOpenCliPath {
     return $null
 }
 
+function Import-JsonDocument {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    if (-not (Test-Path -LiteralPath $Path)) {
+        return $null
+    }
+
+    try {
+        return Get-Content -Path $Path -Raw | ConvertFrom-Json -Depth 100
+    }
+    catch {
+        return $null
+    }
+}
+
+function Resolve-ValidOpenCliDocument {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot,
+
+        [AllowNull()][object[]]$RelativePaths
+    )
+
+    foreach ($relativePath in @($RelativePaths)) {
+        $candidate = [string]$relativePath
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            continue
+        }
+
+        $fullPath = Join-Path $RepositoryRoot $candidate
+        $document = Import-JsonDocument -Path $fullPath
+        if ($null -eq $document) {
+            continue
+        }
+
+        $openCliMarker = [string](Get-OptionalPropertyValue -InputObject $document -Name 'opencli')
+        if ([string]::IsNullOrWhiteSpace($openCliMarker)) {
+            continue
+        }
+
+        return [pscustomobject]@{
+            Path = $fullPath
+            Document = $document
+        }
+    }
+
+    return $null
+}
+
 function Test-IsReportableOpenCliClassification {
     param([AllowNull()][string]$Classification)
 
@@ -297,7 +346,10 @@ foreach ($package in Get-Collection -Value (Get-OptionalPropertyValue -InputObje
         continue
     }
 
-    $metadata = Get-Content -Path $metadataPath -Raw | ConvertFrom-Json -Depth 100
+    $metadata = Import-JsonDocument -Path $metadataPath
+    if ($null -eq $metadata) {
+        continue
+    }
     $packageStatus = [string](Get-OptionalPropertyValue -InputObject $metadata -Name 'status')
     $openCliClassification = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'introspection') -Name 'opencli') -Name 'classification')
     if ($packageStatus -ne 'ok') {
@@ -309,17 +361,17 @@ foreach ($package in Get-Collection -Value (Get-OptionalPropertyValue -InputObje
     }
 
     $latestVersionRecord = @(Get-Collection -Value (Get-OptionalPropertyValue -InputObject $package -Name 'versions')) | Select-Object -First 1
-    $openCliPath = Resolve-ExistingOpenCliPath -RepositoryRoot $RepositoryRoot -RelativePaths @(
+    $openCliEntry = Resolve-ValidOpenCliDocument -RepositoryRoot $RepositoryRoot -RelativePaths @(
         Get-OptionalPropertyValue -InputObject $latestPaths -Name 'opencliPath',
         Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliPath',
         Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'path',
         Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $latestVersionRecord -Name 'paths') -Name 'opencliPath'
     )
-    if (-not $openCliPath) {
+    if ($null -eq $openCliEntry) {
         continue
     }
 
-    $openCli = Get-Content -Path $openCliPath -Raw | ConvertFrom-Json -Depth 100
+    $openCli = $openCliEntry.Document
     $artifactSource = Get-FirstNonEmptyText -Values @(
         Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $openCli -Name 'x-inspectra') -Name 'artifactSource',
         Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliSource',
