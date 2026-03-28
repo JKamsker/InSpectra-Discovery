@@ -85,82 +85,120 @@ internal sealed class CliFxOpenCliBuilder
 
     private JsonArray? BuildOptions(CliFxCommandDefinition? command, CliFxHelpDocument? helpDocument)
     {
-        if (helpDocument?.Options.Count is > 0)
-        {
-            var array = new JsonArray();
-            foreach (var option in helpDocument.Options)
-            {
-                var names = CliFxOptionNameSupport.Parse(option.Key);
-                var definition = command?.Options.FirstOrDefault(candidate =>
-                    (names.LongName is not null && string.Equals(candidate.Name, names.LongName, StringComparison.OrdinalIgnoreCase))
-                    || (names.ShortName is not null && candidate.ShortName == names.ShortName));
-
-                array.Add(BuildOptionNode(
-                    names.LongName is not null ? $"--{names.LongName}" : $"-{names.ShortName}",
-                    definition,
-                    helpDocument,
-                    option.Description,
-                    option.IsRequired,
-                    names.LongName,
-                    names.ShortName));
-            }
-
-            return array.Count > 0 ? array : null;
-        }
-
-        if (command?.Options.Count is not > 0)
+        if (helpDocument?.Options.Count is not > 0 && command?.Options.Count is not > 0)
         {
             return null;
         }
 
-        var metadataOptions = new JsonArray();
-        foreach (var option in command.Options)
+        var array = new JsonArray();
+        var remainingMetadataOptions = command?.Options.ToList() ?? [];
+        foreach (var option in helpDocument?.Options ?? [])
         {
-            metadataOptions.Add(BuildOptionNode(CliFxOptionNameSupport.GetPrimaryName(option), option, null, option.Description, option.IsRequired, option.Name, option.ShortName));
+            var names = CliFxOptionNameSupport.Parse(option.Key);
+            var definition = remainingMetadataOptions.FirstOrDefault(candidate =>
+                (names.LongName is not null && string.Equals(candidate.Name, names.LongName, StringComparison.OrdinalIgnoreCase))
+                || (names.ShortName is not null && candidate.ShortName == names.ShortName));
+            if (definition is not null)
+            {
+                remainingMetadataOptions.Remove(definition);
+            }
+
+            array.Add(BuildOptionNode(
+                names.LongName is not null ? $"--{names.LongName}" : $"-{names.ShortName}",
+                definition,
+                helpDocument,
+                option.Description,
+                option.IsRequired,
+                names.LongName,
+                names.ShortName));
         }
 
-        return metadataOptions.Count > 0 ? metadataOptions : null;
+        foreach (var option in remainingMetadataOptions)
+        {
+            array.Add(BuildOptionNode(
+                CliFxOptionNameSupport.GetPrimaryName(option),
+                option,
+                null,
+                option.Description,
+                option.IsRequired,
+                option.Name,
+                option.ShortName));
+        }
+
+        return array.Count > 0 ? array : null;
     }
 
     private JsonArray? BuildArguments(CliFxCommandDefinition? command, CliFxHelpDocument? helpDocument)
     {
-        if (helpDocument?.Parameters.Count is > 0)
+        if (command?.Parameters.Count is > 0)
         {
             var array = new JsonArray();
-            for (var index = 0; index < helpDocument.Parameters.Count; index++)
+            var helpParameters = helpDocument?.Parameters.ToList() ?? [];
+            var matchedHelpParameters = new bool[helpParameters.Count];
+            var useIndexFallback = helpParameters.Count == command.Parameters.Count;
+            for (var index = 0; index < command.Parameters.Count; index++)
             {
-                var parameter = helpDocument.Parameters[index];
-                var definition = command?.Parameters.ElementAtOrDefault(index);
+                var definition = command.Parameters[index];
+                var helpParameterIndex = FindHelpParameterIndex(helpParameters, matchedHelpParameters, definition.Name);
+                if (helpParameterIndex < 0 && useIndexFallback && !matchedHelpParameters[index])
+                {
+                    helpParameterIndex = index;
+                }
+
+                CliFxHelpItem? parameter = null;
+                if (helpParameterIndex >= 0)
+                {
+                    matchedHelpParameters[helpParameterIndex] = true;
+                    parameter = helpParameters[helpParameterIndex];
+                }
+
+                array.Add(BuildArgumentNode(
+                    definition.Name,
+                    definition.IsRequired,
+                    definition.IsSequence,
+                    parameter?.Description ?? definition.Description,
+                    definition.ClrType,
+                    definition.AcceptedValues));
+            }
+
+            for (var index = 0; index < helpParameters.Count; index++)
+            {
+                if (matchedHelpParameters[index])
+                {
+                    continue;
+                }
+
+                var parameter = helpParameters[index];
                 array.Add(BuildArgumentNode(
                     parameter.Key,
-                    definition?.IsRequired ?? parameter.IsRequired,
-                    definition?.IsSequence ?? false,
-                    parameter.Description ?? definition?.Description,
-                    definition?.ClrType,
-                    definition?.AcceptedValues));
+                    parameter.IsRequired,
+                    isSequence: false,
+                    parameter.Description,
+                    clrType: null,
+                    acceptedValues: null));
             }
 
             return array.Count > 0 ? array : null;
         }
 
-        if (command?.Parameters.Count is not > 0)
+        if (helpDocument?.Parameters.Count is not > 0)
         {
             return null;
         }
 
-        var metadataArguments = new JsonArray();
-        foreach (var parameter in command.Parameters)
+        var helpArguments = new JsonArray();
+        foreach (var parameter in helpDocument.Parameters)
         {
-            metadataArguments.Add(BuildArgumentNode(
-                parameter.Name,
+            helpArguments.Add(BuildArgumentNode(
+                parameter.Key,
                 parameter.IsRequired,
-                parameter.IsSequence,
+                isSequence: false,
                 parameter.Description,
-                parameter.ClrType,
-                parameter.AcceptedValues));
+                clrType: null,
+                acceptedValues: null));
         }
 
-        return metadataArguments.Count > 0 ? metadataArguments : null;
+        return helpArguments.Count > 0 ? helpArguments : null;
     }
 
     private JsonObject BuildOptionNode(
@@ -339,6 +377,31 @@ internal sealed class CliFxOpenCliBuilder
         return arity;
     }
 
+    private static int FindHelpParameterIndex(
+        IReadOnlyList<CliFxHelpItem> helpParameters,
+        IReadOnlyList<bool> matchedHelpParameters,
+        string parameterName)
+    {
+        var normalizedParameterName = NormalizeParameterLookupKey(parameterName);
+        for (var index = 0; index < helpParameters.Count; index++)
+        {
+            if (matchedHelpParameters[index])
+            {
+                continue;
+            }
+
+            if (string.Equals(
+                NormalizeParameterLookupKey(helpParameters[index].Key),
+                normalizedParameterName,
+                StringComparison.Ordinal))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
     private static void ApplyInputMetadata(JsonObject node, string? clrType, IReadOnlyList<string>? acceptedValues, string? environmentVariable)
     {
         var metadata = new JsonArray();
@@ -410,6 +473,11 @@ internal sealed class CliFxOpenCliBuilder
         var normalized = builder.ToString().Trim('_');
         return string.IsNullOrWhiteSpace(normalized) ? "VALUE" : normalized;
     }
+
+    private static string NormalizeParameterLookupKey(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : Regex.Replace(value.Trim(), @"[^A-Za-z0-9]+", string.Empty).ToLowerInvariant();
 
     private static void AddIfPresent(JsonObject target, string propertyName, JsonNode? value)
     {

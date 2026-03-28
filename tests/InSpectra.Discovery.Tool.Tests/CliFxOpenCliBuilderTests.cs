@@ -265,4 +265,61 @@ public sealed class CliFxOpenCliBuilderTests
         Assert.Equal("PATH", options[1]!["arguments"]![0]!["name"]!.GetValue<string>());
         Assert.Null(options[2]!["arguments"]);
     }
+
+    [Fact]
+    public void Preserves_Metadata_Only_Options_And_Parameters_When_Help_Is_Partial()
+    {
+        var builder = new CliFxOpenCliBuilder();
+        var staticCommands = new Dictionary<string, CliFxCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["upload"] = new(
+                Name: "upload",
+                Description: "Upload artifacts",
+                Parameters:
+                [
+                    new CliFxParameterDefinition(0, "source", true, false, "System.String", "Source path", []),
+                    new CliFxParameterDefinition(1, "destination", false, false, "System.String", "Destination path", []),
+                ],
+                Options:
+                [
+                    new CliFxOptionDefinition("visible", null, false, false, false, "System.String", "Visible option", null, []),
+                    new CliFxOptionDefinition("hidden", null, false, false, false, "System.String", "Hidden metadata option", null, []),
+                ]),
+        };
+
+        var helpDocuments = new Dictionary<string, CliFxHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["upload"] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: "Upload artifacts",
+                UsageLines: ["demo upload <destination> --visible <value> [options]"],
+                Parameters:
+                [
+                    new CliFxHelpItem("destination", false, "Destination from help"),
+                ],
+                Options:
+                [
+                    new CliFxHelpItem("--visible", true, "Visible option from help"),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build("demo", "1.0.0", staticCommands, helpDocuments);
+        var command = Assert.Single(document["commands"]!.AsArray())!.AsObject();
+
+        var arguments = command["arguments"]!.AsArray();
+        Assert.Equal(2, arguments.Count);
+        Assert.Equal("source", arguments[0]!["name"]!.GetValue<string>());
+        Assert.True(arguments[0]!["required"]!.GetValue<bool>());
+        Assert.Equal("destination", arguments[1]!["name"]!.GetValue<string>());
+        Assert.False(arguments[1]!["required"]!.GetValue<bool>());
+        Assert.Equal("Destination from help", arguments[1]!["description"]!.GetValue<string>());
+
+        var options = command["options"]!.AsArray();
+        Assert.Equal(2, options.Count);
+        Assert.Equal("--visible", options[0]!["name"]!.GetValue<string>());
+        Assert.Equal("--hidden", options[1]!["name"]!.GetValue<string>());
+    }
 }
