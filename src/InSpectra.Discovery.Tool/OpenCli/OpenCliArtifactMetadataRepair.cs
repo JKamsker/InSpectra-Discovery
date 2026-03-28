@@ -25,10 +25,18 @@ internal static class OpenCliArtifactMetadataRepair
         {
             artifacts["crawlPath"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, crawlPath);
         }
+        else
+        {
+            artifacts.Remove("crawlPath");
+        }
 
         if (!string.IsNullOrWhiteSpace(xmldocPath))
         {
             artifacts["xmldocPath"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, xmldocPath);
+        }
+        else
+        {
+            artifacts.Remove("xmldocPath");
         }
 
         metadata["artifacts"] = artifacts;
@@ -52,6 +60,10 @@ internal static class OpenCliArtifactMetadataRepair
             var xmlDocStep = steps["xmldoc"] as JsonObject ?? new JsonObject();
             xmlDocStep["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, xmldocPath);
             steps["xmldoc"] = xmlDocStep;
+        }
+        else if (steps["xmldoc"] is JsonObject xmlDocStep)
+        {
+            xmlDocStep.Remove("path");
         }
 
         metadata["steps"] = steps;

@@ -38,7 +38,8 @@ internal sealed class NativeOpenCliArtifactRegenerator
                     candidate.MetadataPath,
                     candidate.OpenCliPath,
                     "tool-output");
-                if (!openCliChanged && !metadataChanged)
+                var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
+                if (!openCliChanged && !metadataChanged && !stateChanged)
                 {
                     unchangedCount++;
                     continue;
@@ -50,6 +51,11 @@ internal sealed class NativeOpenCliArtifactRegenerator
             {
                 failed.Add($"{candidate.DisplayName}: {ex.Message}");
             }
+        }
+
+        if (candidates.Count > 0)
+        {
+            RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex: true);
         }
 
         return new NativeOpenCliArtifactRegenerationResult(

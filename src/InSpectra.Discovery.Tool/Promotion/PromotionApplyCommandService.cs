@@ -139,7 +139,10 @@ internal sealed class PromotionApplyCommandService
 
                 if (openCliArtifactPath is not null && !hasUsableOpenCli)
                 {
-                    invalidArtifacts.Add(openCliArtifact!);
+                    if (!xmlDocExists)
+                    {
+                        invalidArtifacts.Add(openCliArtifact!);
+                    }
                 }
 
                 if (crawlArtifactPath is not null && !hasUsableCrawl)

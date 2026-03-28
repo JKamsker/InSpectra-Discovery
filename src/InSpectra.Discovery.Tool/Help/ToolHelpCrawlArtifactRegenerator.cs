@@ -37,7 +37,8 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
                     candidate.OpenCliPath,
                     "crawled-from-help",
                     crawlPath: candidate.CrawlPath);
-                if (!openCliChanged && !metadataChanged)
+                var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
+                if (!openCliChanged && !metadataChanged && !stateChanged)
                 {
                     unchangedCount++;
                     continue;
@@ -49,6 +50,11 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             {
                 failed.Add($"{candidate.DisplayName}: {ex.Message}");
             }
+        }
+
+        if (candidates.Count > 0)
+        {
+            RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex: true);
         }
 
         return new HelpCrawlArtifactRegenerationResult(

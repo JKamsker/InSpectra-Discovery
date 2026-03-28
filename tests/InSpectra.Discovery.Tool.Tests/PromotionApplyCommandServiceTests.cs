@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Xunit;
 
+[Collection("PromotionApplyCommandService")]
 public sealed class PromotionApplyCommandServiceTests
 {
     [Fact]

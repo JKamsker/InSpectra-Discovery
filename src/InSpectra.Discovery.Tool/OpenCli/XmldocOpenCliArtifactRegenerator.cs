@@ -36,7 +36,8 @@ internal sealed class XmldocOpenCliArtifactRegenerator
                     "synthesized-from-xmldoc",
                     xmldocPath: candidate.XmlDocPath,
                     synthesizedArtifact: true);
-                if (!openCliChanged && !metadataChanged)
+                var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
+                if (!openCliChanged && !metadataChanged && !stateChanged)
                 {
                     unchangedCount++;
                     continue;
@@ -48,6 +49,11 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             {
                 failed.Add($"{candidate.DisplayName}: {ex.Message}");
             }
+        }
+
+        if (candidates.Count > 0)
+        {
+            RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex: true);
         }
 
         return new XmldocOpenCliArtifactRegenerationResult(
@@ -110,8 +116,14 @@ internal sealed class XmldocOpenCliArtifactRegenerator
                 ?? artifactSource;
         }
 
-        var hasXmlDoc = !string.IsNullOrWhiteSpace(xmlDocRelativePath);
-        var hasCrawl = !string.IsNullOrWhiteSpace(crawlRelativePath);
+        var xmlDocPath = string.IsNullOrWhiteSpace(xmlDocRelativePath)
+            ? null
+            : Path.Combine(repositoryRoot, xmlDocRelativePath);
+        var hasXmlDoc = !string.IsNullOrWhiteSpace(xmlDocPath) && File.Exists(xmlDocPath);
+        var crawlPath = string.IsNullOrWhiteSpace(crawlRelativePath)
+            ? null
+            : Path.Combine(repositoryRoot, crawlRelativePath);
+        var hasCrawl = !string.IsNullOrWhiteSpace(crawlPath) && File.Exists(crawlPath);
         var shouldBackfillMissingOpenCli = string.IsNullOrWhiteSpace(openCliRelativePath)
             && hasXmlDoc
             && !hasCrawl
@@ -131,8 +143,7 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             return null;
         }
 
-        var xmlDocPath = Path.Combine(repositoryRoot, xmlDocRelativePath!);
-        if (!File.Exists(xmlDocPath))
+        if (xmlDocPath is null)
         {
             return null;
         }
