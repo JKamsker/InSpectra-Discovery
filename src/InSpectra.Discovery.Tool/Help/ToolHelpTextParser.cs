@@ -125,9 +125,16 @@ internal sealed partial class ToolHelpTextParser
         sections.TryGetValue("arguments", out var argumentLines);
         sections.TryGetValue("options", out var optionLines);
         sections.TryGetValue("commands", out var commandLines);
-        SplitArgumentSectionLines(argumentLines ?? [], out var parsedArgumentLines, out var optionStyleArgumentLines);
-        var parsedUsageLines = TrimNonEmpty(usageLines ?? ToolHelpPreambleInference.InferUsageLines(preamble));
+        var usageSectionParts = ToolHelpUsageSectionSplitter.Split(usageLines ?? []);
+        var rawArgumentLines = new List<string>(argumentLines ?? []);
+        rawArgumentLines.AddRange(usageSectionParts.ArgumentLines);
+        SplitArgumentSectionLines(rawArgumentLines, out var parsedArgumentLines, out var optionStyleArgumentLines);
+        var parsedUsageLines = TrimNonEmpty(
+            usageSectionParts.UsageLines.Count > 0
+                ? usageSectionParts.UsageLines
+                : ToolHelpPreambleInference.InferUsageLines(preamble));
         var rawOptionLines = new List<string>(optionLines ?? ToolHelpLegacyOptionTable.InferOptionLines(preamble, title, parsedUsageLines));
+        rawOptionLines.AddRange(usageSectionParts.OptionLines);
         rawOptionLines.AddRange(optionStyleArgumentLines);
         var parsedOptions = ParseItems(
             ToolHelpLegacyOptionTable.NormalizeOptionLines(rawOptionLines),
@@ -236,9 +243,15 @@ internal sealed partial class ToolHelpTextParser
                 continue;
             }
 
+            if (kind == ItemKind.Option
+                && TryParsePositionalArgumentRow(rawLine.TrimStart(), out _, out _, out _))
+            {
+                continue;
+            }
+
             var currentIndentation = GetIndentation(rawLine);
             var canStartNewItem = TryParseItemStart(rawLine, kind, out var parsedKey, out var parsedRequired, out var parsedDescription)
-                && !((kind == ItemKind.Argument || kind == ItemKind.Command) && key is not null && currentIndentation > indentation);
+                && !(key is not null && currentIndentation > indentation);
             if (canStartNewItem)
             {
                 FlushItem(items, kind, key, isRequired, description);
@@ -303,6 +316,11 @@ internal sealed partial class ToolHelpTextParser
         if (kind == ItemKind.Command && LooksLikeMarkdownTableLine(trimmedStart))
         {
             return false;
+        }
+
+        if (kind == ItemKind.Argument && TryParsePositionalArgumentRow(trimmedStart, out key, out isRequired, out description))
+        {
+            return true;
         }
 
         var match = ItemRegex().Match(trimmedStart);
@@ -377,6 +395,32 @@ internal sealed partial class ToolHelpTextParser
         }
 
         return true;
+    }
+
+    private static bool TryParsePositionalArgumentRow(string rawLine, out string key, out bool isRequired, out string? description)
+    {
+        key = string.Empty;
+        description = null;
+        isRequired = false;
+
+        var match = PositionalArgumentRowRegex().Match(rawLine);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        key = NormalizeArgumentKey(match.Groups["key"].Value);
+        description = match.Groups["description"].Success
+            ? match.Groups["description"].Value.Trim()
+            : null;
+        if (!string.IsNullOrWhiteSpace(description)
+            && description.StartsWith("Required.", StringComparison.OrdinalIgnoreCase))
+        {
+            isRequired = true;
+            description = description["Required.".Length..].TrimStart();
+        }
+
+        return LooksLikeArgumentKey(key);
     }
 
     private static IReadOnlyList<ToolHelpItem> InferCommands(
@@ -580,7 +624,8 @@ internal sealed partial class ToolHelpTextParser
     private static bool IsNoiseContinuationLine(ItemKind kind, string rawLine)
     {
         var trimmed = rawLine.Trim();
-        return (kind == ItemKind.Argument && IsArgumentNoiseLine(trimmed))
+        return IsFrameworkNoiseLine(trimmed)
+            || (kind == ItemKind.Argument && IsArgumentNoiseLine(trimmed))
             || (kind == ItemKind.Command && LooksLikeSubcommandHelpHint(trimmed));
     }
 
@@ -784,6 +829,9 @@ internal sealed partial class ToolHelpTextParser
 
     [GeneratedRegex(@"^(?<prefix>\* )?(?<key>\S.*?)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex ItemRegex();
+
+    [GeneratedRegex(@"^(?<key>[A-Za-z][A-Za-z0-9_.-]*)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex PositionalArgumentRowRegex();
 
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();

@@ -281,7 +281,13 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
             ?? metadata?["artifacts"]?["opencliSource"]?.GetValue<string>()
             ?? metadata?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
-        if (!string.Equals(artifactSource, "crawled-from-help", StringComparison.OrdinalIgnoreCase))
+        var openCliClassification = metadata?["steps"]?["opencli"]?["classification"]?.GetValue<string>();
+        var analysisMode = metadata?["analysisMode"]?.GetValue<string>();
+        var recoverRejectedHelpArtifact =
+            string.Equals(openCliClassification, "invalid-opencli-artifact", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(analysisMode, "help", StringComparison.OrdinalIgnoreCase);
+        if (!string.Equals(artifactSource, "crawled-from-help", StringComparison.OrdinalIgnoreCase)
+            && !recoverRejectedHelpArtifact)
         {
             return null;
         }

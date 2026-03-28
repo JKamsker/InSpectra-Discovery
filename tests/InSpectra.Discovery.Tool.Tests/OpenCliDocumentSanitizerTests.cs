@@ -77,4 +77,72 @@ public sealed class OpenCliDocumentSanitizerTests
         Assert.False(serve.ContainsKey("options"));
         Assert.False(serve.ContainsKey("examples"));
     }
+
+    [Fact]
+    public void Sanitize_Merges_Same_Option_When_Descriptions_Are_NearEquivalent()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--input",
+                    ["description"] = "Parse the given string as input.",
+                    ["aliases"] = new JsonArray("-i"),
+                },
+                new JsonObject
+                {
+                    ["name"] = "--input",
+                    ["description"] = "Parse input string.",
+                    ["aliases"] = new JsonArray("-i"),
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var options = document["options"]!.AsArray();
+        var input = Assert.Single(options);
+        Assert.Equal("--input", input!["name"]?.GetValue<string>());
+        Assert.Contains(input["aliases"]!.AsArray(), alias => string.Equals(alias?.GetValue<string>(), "-i", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Sanitize_Merges_Informational_Option_When_Trailing_Positional_Noise_Is_Present()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                },
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Display version information.\nvalue pos. 0",
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var version = Assert.Single(document["options"]!.AsArray());
+        Assert.Equal("--version", version!["name"]?.GetValue<string>());
+        Assert.Equal("Display version information.", version["description"]?.GetValue<string>());
+    }
 }
