@@ -62,7 +62,16 @@ internal sealed class ToolHelpAnalysisService
         Directory.CreateDirectory(outputDirectory);
         Directory.CreateDirectory(tempRoot);
 
-        var result = CreateResult(packageId, version, commandName, batchId, attempt, source, cliFramework, generatedAt);
+        var result = NonSpectreAnalysisResultSupport.CreateInitialResult(
+            packageId,
+            version,
+            commandName,
+            batchId,
+            attempt,
+            source,
+            cliFramework,
+            analysisMode: "help",
+            analyzedAt: generatedAt);
 
         try
         {
@@ -84,8 +93,11 @@ internal sealed class ToolHelpAnalysisService
             }
             if (string.IsNullOrWhiteSpace(resolvedCommandName))
             {
-                result["failureMessage"] = $"No tool command could be resolved for package '{packageId}' version '{version}'.";
-                result["disposition"] = "terminal-failure";
+                NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                    result,
+                    phase: "bootstrap",
+                    classification: "tool-command-missing",
+                    $"No tool command could be resolved for package '{packageId}' version '{version}'.");
             }
             else
             {
@@ -108,20 +120,27 @@ internal sealed class ToolHelpAnalysisService
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && analysisTimeout.IsCancellationRequested)
                 {
-                    result["failureMessage"] = $"Help analysis exceeded the overall timeout of {analysisTimeoutSeconds} seconds.";
-                    result["disposition"] = "retryable-failure";
+                    NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                        result,
+                        phase: "analysis",
+                        classification: "analysis-timeout",
+                        $"Help analysis exceeded the overall timeout of {analysisTimeoutSeconds} seconds.");
                 }
             }
         }
         catch (Exception ex)
         {
-            result["failureMessage"] = ex.Message;
-            result["disposition"] = "retryable-failure";
+            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                result,
+                phase: result["phase"]?.GetValue<string>() ?? "bootstrap",
+                classification: result["classification"]?.GetValue<string>() ?? "unexpected-exception",
+                ex.Message);
         }
         finally
         {
             stopwatch.Stop();
             result["timings"]!.AsObject()["totalMs"] = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds);
+            NonSpectreAnalysisResultSupport.FinalizeFailureSignature(result);
             RepositoryPathResolver.WriteJsonFile(resultPath, result);
 
             _runtime.TerminateSandboxProcesses(tempRoot);
@@ -195,18 +214,24 @@ internal sealed class ToolHelpAnalysisService
 
         if (installResult.TimedOut || installResult.ExitCode != 0)
         {
-            result["failureMessage"] = ToolCommandRuntime.NormalizeConsoleText(installResult.Stdout)
+            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                result,
+                phase: "install",
+                classification: installResult.TimedOut ? "install-timeout" : "install-failed",
+                ToolCommandRuntime.NormalizeConsoleText(installResult.Stdout)
                 ?? ToolCommandRuntime.NormalizeConsoleText(installResult.Stderr)
-                ?? "Tool installation failed.";
-            result["disposition"] = "terminal-failure";
+                ?? "Tool installation failed.");
             return;
         }
 
         var commandPath = _runtime.ResolveInstalledCommandPath(installDirectory, commandName);
         if (commandPath is null)
         {
-            result["failureMessage"] = $"Installed tool command '{commandName}' was not found.";
-            result["disposition"] = "terminal-failure";
+            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                result,
+                phase: "install",
+                classification: "installed-command-missing",
+                $"Installed tool command '{commandName}' was not found.");
             return;
         }
 
@@ -219,8 +244,11 @@ internal sealed class ToolHelpAnalysisService
         WriteCrawlArtifact(outputDirectory, result, CrawlArtifactBuilder.Build(crawl.Documents.Count, crawl.Captures));
         if (crawl.Documents.Count == 0)
         {
-            result["failureMessage"] = "No help documents could be captured from the installed tool.";
-            result["disposition"] = "terminal-failure";
+            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "crawl",
+                classification: "help-crawl-empty",
+                "No help documents could be captured from the installed tool.");
             return;
         }
 
@@ -232,7 +260,7 @@ internal sealed class ToolHelpAnalysisService
 
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        result["disposition"] = "success";
+        NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "help-crawl", artifactSource: "crawled-from-help");
     }
 
     private static void WriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
@@ -240,51 +268,5 @@ internal sealed class ToolHelpAnalysisService
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), crawlArtifact);
         result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
     }
-
-    private static JsonObject CreateResult(
-        string packageId,
-        string version,
-        string? commandName,
-        string batchId,
-        int attempt,
-        string source,
-        string? cliFramework,
-        DateTimeOffset generatedAt)
-        => new()
-        {
-            ["schemaVersion"] = 1,
-            ["packageId"] = packageId,
-            ["version"] = version,
-            ["command"] = commandName,
-            ["batchId"] = batchId,
-            ["attempt"] = attempt,
-            ["source"] = source,
-            ["cliFramework"] = cliFramework,
-            ["analyzedAt"] = generatedAt.ToString("O"),
-            ["disposition"] = "retryable-failure",
-            ["failureMessage"] = null,
-            ["publishedAt"] = null,
-            ["packageUrl"] = null,
-            ["projectUrl"] = null,
-            ["sourceRepositoryUrl"] = null,
-            ["registrationLeafUrl"] = null,
-            ["catalogEntryUrl"] = null,
-            ["packageContentUrl"] = null,
-            ["timings"] = new JsonObject
-            {
-                ["totalMs"] = null,
-                ["installMs"] = null,
-                ["crawlMs"] = null,
-            },
-            ["steps"] = new JsonObject
-            {
-                ["install"] = null,
-            },
-            ["artifacts"] = new JsonObject
-            {
-                ["opencliArtifact"] = null,
-                ["crawlArtifact"] = null,
-            },
-        };
 
 }

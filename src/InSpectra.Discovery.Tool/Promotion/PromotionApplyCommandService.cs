@@ -267,7 +267,20 @@ internal sealed class PromotionApplyCommandService
             File.Delete(xmlDocPath);
         }
 
+        var inferredOpenCliClassification = InferOpenCliClassification(openCliSource);
         var openCliStep = result["steps"]?["opencli"]?.DeepClone() as JsonObject;
+        if (openCliStep is null && hasOpenCliOutput)
+        {
+            openCliStep = new JsonObject
+            {
+                ["status"] = "ok",
+            };
+            if (!string.IsNullOrWhiteSpace(inferredOpenCliClassification))
+            {
+                openCliStep["classification"] = inferredOpenCliClassification;
+            }
+        }
+
         if (openCliStep is not null)
         {
             if (hasOpenCliOutput)
@@ -296,6 +309,18 @@ internal sealed class PromotionApplyCommandService
 
         var introspection = result["introspection"]?.DeepClone() as JsonObject ?? new JsonObject();
         var openCliIntrospection = introspection["opencli"]?.DeepClone() as JsonObject;
+        if (openCliIntrospection is null && hasOpenCliOutput)
+        {
+            openCliIntrospection = new JsonObject
+            {
+                ["status"] = "ok",
+            };
+            if (!string.IsNullOrWhiteSpace(inferredOpenCliClassification))
+            {
+                openCliIntrospection["classification"] = inferredOpenCliClassification;
+            }
+        }
+
         if (openCliIntrospection is not null && hasOpenCliOutput)
         {
             if (string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.Ordinal))
@@ -366,5 +391,15 @@ internal sealed class PromotionApplyCommandService
         {
             { Length: > 0 } artifactSource => artifactSource,
             _ => "tool-output",
+        };
+
+    private static string? InferOpenCliClassification(string? openCliSource)
+        => openCliSource switch
+        {
+            "tool-output" => "json-ready",
+            "crawled-from-help" => "help-crawl",
+            "crawled-from-clifx-help" => "clifx-crawl",
+            "synthesized-from-xmldoc" => "xmldoc-synthesized",
+            _ => null,
         };
 }

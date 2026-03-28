@@ -87,53 +87,39 @@ internal sealed class CliFxAnalysisService
         Directory.CreateDirectory(outputDirectory);
         Directory.CreateDirectory(tempRoot);
 
-        var result = new JsonObject
-        {
-            ["schemaVersion"] = 1,
-            ["packageId"] = packageId,
-            ["version"] = version,
-            ["command"] = commandName,
-            ["batchId"] = batchId,
-            ["attempt"] = attempt,
-            ["source"] = source,
-            ["analyzedAt"] = generatedAt.ToString("O"),
-            ["disposition"] = "retryable-failure",
-            ["failureMessage"] = null,
-            ["projectUrl"] = null,
-            ["sourceRepositoryUrl"] = null,
-            ["packageContentUrl"] = null,
-            ["timings"] = new JsonObject
-            {
-                ["totalMs"] = null,
-                ["installMs"] = null,
-                ["crawlMs"] = null,
-            },
-            ["steps"] = new JsonObject
-            {
-                ["install"] = null,
-            },
-            ["coverage"] = null,
-            ["artifacts"] = new JsonObject
-            {
-                ["opencliArtifact"] = null,
-                ["crawlArtifact"] = null,
-            },
-        };
+        var result = NonSpectreAnalysisResultSupport.CreateInitialResult(
+            packageId,
+            version,
+            commandName,
+            batchId,
+            attempt,
+            source,
+            cliFramework: "CliFx",
+            analysisMode: "clifx",
+            analyzedAt: generatedAt);
+        result["coverage"] = null;
 
         try
         {
             using var scope = ToolRuntime.CreateNuGetApiClientScope();
             var (registrationLeaf, catalogLeaf) = await PackageVersionResolver.ResolveAsync(scope.Client, packageId, version, cancellationToken);
+            result["packageUrl"] = $"https://www.nuget.org/packages/{packageId}/{version}";
             result["projectUrl"] = catalogLeaf.ProjectUrl;
             result["sourceRepositoryUrl"] = PackageVersionResolver.NormalizeRepositoryUrl(catalogLeaf.Repository?.Url);
+            result["registrationLeafUrl"] = registrationLeaf.Id;
+            result["catalogEntryUrl"] = registrationLeaf.CatalogEntryUrl;
             result["packageContentUrl"] = registrationLeaf.PackageContent;
+            result["publishedAt"] = registrationLeaf.Published?.ToUniversalTime().ToString("O");
 
             var packageInspection = await new PackageArchiveInspector(scope.Client).InspectAsync(registrationLeaf.PackageContent, cancellationToken);
             var resolvedCommandName = string.IsNullOrWhiteSpace(commandName) ? packageInspection.ToolCommandNames.FirstOrDefault() : commandName;
             if (string.IsNullOrWhiteSpace(resolvedCommandName))
             {
-                result["failureMessage"] = $"No tool command could be resolved for package '{packageId}' version '{version}'.";
-                result["disposition"] = "terminal-failure";
+                NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                    result,
+                    phase: "bootstrap",
+                    classification: "tool-command-missing",
+                    $"No tool command could be resolved for package '{packageId}' version '{version}'.");
             }
             else
             {
@@ -156,20 +142,27 @@ internal sealed class CliFxAnalysisService
                 }
                 catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && analysisTimeout.IsCancellationRequested)
                 {
-                    result["failureMessage"] = $"CliFx analysis exceeded the overall timeout of {analysisTimeoutSeconds} seconds.";
-                    result["disposition"] = "retryable-failure";
+                    NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                        result,
+                        phase: "analysis",
+                        classification: "analysis-timeout",
+                        $"CliFx analysis exceeded the overall timeout of {analysisTimeoutSeconds} seconds.");
                 }
             }
         }
         catch (Exception ex)
         {
-            result["failureMessage"] = ex.Message;
-            result["disposition"] = "retryable-failure";
+            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                result,
+                phase: result["phase"]?.GetValue<string>() ?? "bootstrap",
+                classification: result["classification"]?.GetValue<string>() ?? "unexpected-exception",
+                ex.Message);
         }
         finally
         {
             stopwatch.Stop();
             result["timings"]!.AsObject()["totalMs"] = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds);
+            NonSpectreAnalysisResultSupport.FinalizeFailureSignature(result);
             RepositoryPathResolver.WriteJsonFile(resultPath, result);
 
             _runtime.TerminateSandboxProcesses(tempRoot);
@@ -243,18 +236,24 @@ internal sealed class CliFxAnalysisService
 
         if (installResult.TimedOut || installResult.ExitCode != 0)
         {
-            result["failureMessage"] = CliFxToolRuntime.NormalizeConsoleText(installResult.Stdout)
+            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                result,
+                phase: "install",
+                classification: installResult.TimedOut ? "install-timeout" : "install-failed",
+                CliFxToolRuntime.NormalizeConsoleText(installResult.Stdout)
                 ?? CliFxToolRuntime.NormalizeConsoleText(installResult.Stderr)
-                ?? "Tool installation failed.";
-            result["disposition"] = "terminal-failure";
+                ?? "Tool installation failed.");
             return;
         }
 
         var commandPath = _runtime.ResolveInstalledCommandPath(installDirectory, commandName);
         if (commandPath is null)
         {
-            result["failureMessage"] = $"Installed tool command '{commandName}' was not found.";
-            result["disposition"] = "terminal-failure";
+            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+                result,
+                phase: "install",
+                classification: "installed-command-missing",
+                $"Installed tool command '{commandName}' was not found.");
             return;
         }
 
@@ -277,15 +276,18 @@ internal sealed class CliFxAnalysisService
                 CliFxCrawlArtifactSupport.BuildMetadata(staticCommands, coverageJson)));
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
-            result["failureMessage"] = "No CliFx help documents or metadata commands could be captured from the installed tool.";
-            result["disposition"] = "terminal-failure";
+            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "crawl",
+                classification: "clifx-crawl-empty",
+                "No CliFx help documents or metadata commands could be captured from the installed tool.");
             return;
         }
 
         var openCliDocument = _openCliBuilder.Build(commandName, version, staticCommands, crawl.Documents);
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        result["disposition"] = "success";
+        NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "clifx-crawl", artifactSource: "crawled-from-clifx-help");
     }
 
     private static Dictionary<string, CliFxCommandDefinition> NormalizeCommandLookup(IReadOnlyDictionary<string, CliFxCommandDefinition> commands)
