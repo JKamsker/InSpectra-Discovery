@@ -368,7 +368,8 @@ function Write-SuccessArtifacts {
         $openCliTitle = if ($Result.command) { [string]$Result.command } else { [string]$Result.packageId }
         $openCliDocument = Convert-XmldocToOpenCliDocument `
             -XmlDocument $xmlDocument `
-            -Title $openCliTitle
+            -Title $openCliTitle `
+            -Version ([string]$Result.version)
         $openCliSource = 'synthesized-from-xmldoc'
     }
 

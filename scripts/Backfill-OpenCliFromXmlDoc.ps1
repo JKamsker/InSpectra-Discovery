@@ -163,7 +163,8 @@ foreach ($metadataFile in $metadataFiles) {
     $openCliTitle = if ($metadata.command) { [string]$metadata.command } else { [string]$metadata.packageId }
     $openCliDocument = Convert-XmldocToOpenCliDocument `
         -XmlDocument $xmlDocument `
-        -Title $openCliTitle
+        -Title $openCliTitle `
+        -Version ([string]$metadata.version)
 
     $versionDirectory = Split-Path -Parent $metadataFile.FullName
     $openCliPath = Join-Path $versionDirectory 'opencli.json'
