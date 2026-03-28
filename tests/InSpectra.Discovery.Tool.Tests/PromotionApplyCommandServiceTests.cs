@@ -737,6 +737,186 @@ public sealed class PromotionApplyCommandServiceTests
     }
 
     [Fact]
+    public async Task ApplyUntrustedAsync_Rejects_Malformed_OpenCli_Artifacts()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Malformed.Tool",
+                            ["latestVersion"] = "1.0.0",
+                            ["totalDownloads"] = 25,
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-malformed",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Malformed.Tool",
+                            ["version"] = "1.0.0",
+                            ["attempt"] = 1,
+                            ["command"] = "malformed-tool",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-malformed-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Malformed.Tool",
+                    ["version"] = "1.0.0",
+                    ["batchId"] = "batch-malformed",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analyzedAt"] = "2026-03-27T04:30:00Z",
+                    ["disposition"] = "success",
+                    ["command"] = "malformed-tool",
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                        ["xmldocArtifact"] = null,
+                    },
+                });
+            RepositoryPathResolver.WriteTextFile(
+                Path.Combine(downloadRoot, "analysis-malformed-tool", "opencli.json"),
+                "{not valid json");
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var state = ParseJsonObject(Path.Combine(repositoryRoot, "state", "packages", "malformed.tool", "1.0.0.json"));
+            Assert.Equal("retryable-failure", state["currentStatus"]?.GetValue<string>());
+            Assert.False(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "malformed.tool", "1.0.0", "metadata.json")));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
+    public async Task ApplyUntrustedAsync_Downgrades_Invalid_Xmldoc_Artifacts_Without_Aborting()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Broken.Xml.Tool",
+                            ["latestVersion"] = "1.0.0",
+                            ["totalDownloads"] = 10,
+                        },
+                    },
+                });
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-broken-xml",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Broken.Xml.Tool",
+                            ["version"] = "1.0.0",
+                            ["attempt"] = 1,
+                            ["command"] = "broken-xml-tool",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-broken-xml-tool", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Broken.Xml.Tool",
+                    ["version"] = "1.0.0",
+                    ["batchId"] = "batch-broken-xml",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analyzedAt"] = "2026-03-27T05:30:00Z",
+                    ["disposition"] = "success",
+                    ["command"] = "broken-xml-tool",
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = null,
+                        ["xmldocArtifact"] = "xmldoc.xml",
+                    },
+                });
+            RepositoryPathResolver.WriteTextFile(
+                Path.Combine(downloadRoot, "analysis-broken-xml-tool", "xmldoc.xml"),
+                "<Model><Command></Model>");
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var state = ParseJsonObject(Path.Combine(repositoryRoot, "state", "packages", "broken.xml.tool", "1.0.0.json"));
+            Assert.Equal("retryable-failure", state["currentStatus"]?.GetValue<string>());
+            Assert.False(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "broken.xml.tool", "1.0.0", "metadata.json")));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
+    [Fact]
     public async Task ApplyUntrustedAsync_Rejects_Artifacts_Outside_The_Result_Directory()
     {
         ToolRuntime.Initialize();

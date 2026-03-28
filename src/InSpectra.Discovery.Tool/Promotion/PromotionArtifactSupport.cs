@@ -27,8 +27,16 @@ internal static class PromotionArtifactSupport
             return false;
         }
 
-        document = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
-        return document is not null;
+        try
+        {
+            document = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
+            return document is not null;
+        }
+        catch
+        {
+            document = null;
+            return false;
+        }
     }
 
     public static bool SyncOptionalArtifact(string? artifactDirectory, string? artifactName, string destinationPath)

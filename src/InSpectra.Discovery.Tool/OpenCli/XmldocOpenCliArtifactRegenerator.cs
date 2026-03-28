@@ -22,9 +22,7 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             try
             {
                 var regenerated = RegenerateOpenCli(candidate);
-                var existing = File.Exists(candidate.OpenCliPath)
-                    ? JsonNode.Parse(File.ReadAllText(candidate.OpenCliPath))
-                    : null;
+                var existing = TryLoadJsonNode(candidate.OpenCliPath);
                 var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
                 if (openCliChanged)
                 {
@@ -103,15 +101,17 @@ internal sealed class XmldocOpenCliArtifactRegenerator
         var openCliPath = string.IsNullOrWhiteSpace(openCliRelativePath)
             ? Path.Combine(versionDirectory, "opencli.json")
             : Path.Combine(repositoryRoot, openCliRelativePath);
+        var openCliExists = File.Exists(openCliPath);
         if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
-            && File.Exists(openCliPath))
+            && openCliExists)
         {
-            artifactSource = JsonNode.Parse(File.ReadAllText(openCliPath))?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
+            artifactSource = TryReadArtifactSource(openCliPath)
                 ?? artifactSource;
         }
 
         var shouldBackfillMissingOpenCli = string.IsNullOrWhiteSpace(openCliRelativePath)
-            && !string.IsNullOrWhiteSpace(xmlDocRelativePath);
+            && !string.IsNullOrWhiteSpace(xmlDocRelativePath)
+            && !openCliExists;
         if (!string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase)
             && !shouldBackfillMissingOpenCli)
         {
@@ -137,6 +137,26 @@ internal sealed class XmldocOpenCliArtifactRegenerator
             xmlDocPath,
             openCliPath);
     }
+
+    private static JsonNode? TryLoadJsonNode(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonNode.Parse(File.ReadAllText(path));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? TryReadArtifactSource(string path)
+        => TryLoadJsonNode(path)?["x-inspectra"]?["artifactSource"]?.GetValue<string>();
 }
 
 internal sealed record XmldocOpenCliArtifactRegenerationResult(

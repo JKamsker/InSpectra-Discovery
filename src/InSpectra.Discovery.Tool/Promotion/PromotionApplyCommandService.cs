@@ -129,9 +129,26 @@ internal sealed class PromotionApplyCommandService
                 ? JsonNode.Parse(await File.ReadAllTextAsync(existingPackageIndexPath, cancellationToken))?.AsObject()
                 : null;
 
-            var indexedPaths = string.Equals(result["disposition"]?.GetValue<string>(), "success", StringComparison.Ordinal)
-                ? await WriteSuccessArtifactsAsync(repositoryRoot, packagesRoot, result, artifactDirectory, cancellationToken)
-                : null;
+            JsonObject? indexedPaths = null;
+            if (string.Equals(result["disposition"]?.GetValue<string>(), "success", StringComparison.Ordinal))
+            {
+                try
+                {
+                    indexedPaths = await WriteSuccessArtifactsAsync(repositoryRoot, packagesRoot, result, artifactDirectory, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    result = PromotionResultSupport.NewSyntheticFailureResult(
+                        item,
+                        result["attempt"]?.GetValue<int?>() ?? item["attempt"]?.GetValue<int?>() ?? 1,
+                        "invalid-success-artifact",
+                        $"Success artifacts could not be promoted: {ex.Message}",
+                        plan.BatchId ?? string.Empty,
+                        now);
+                    PromotionResultSupport.MergePlanItemIntoResult(item, result);
+                }
+            }
+
             var stateRecord = PromotionResultSupport.UpdateStateRecord(existingState, result, indexedPaths, now);
             RepositoryPathResolver.WriteJsonFile(statePath, stateRecord);
 
