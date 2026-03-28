@@ -72,6 +72,81 @@ function Copy-ObjectProperties {
     return $clone
 }
 
+function Get-ResultAttempt {
+    param([AllowNull()][object]$Result)
+
+    if ($null -eq $Result -or $null -eq $Result.attempt) {
+        return 0
+    }
+
+    return [int]$Result.attempt
+}
+
+function Get-PackageVersionKey {
+    param(
+        [Parameter(Mandatory = $true)][string]$PackageId,
+        [Parameter(Mandatory = $true)][string]$Version
+    )
+
+    return "$($PackageId.ToLowerInvariant())|$($Version.ToLowerInvariant())"
+}
+
+function Get-CompositeResultKey {
+    param(
+        [Parameter(Mandatory = $true)][string]$PackageId,
+        [Parameter(Mandatory = $true)][string]$Version,
+        [AllowNull()][string]$ArtifactName,
+        [AllowNull()][string]$CommandName
+    )
+
+    $discriminator = if (-not [string]::IsNullOrWhiteSpace($ArtifactName)) {
+        "artifact:$ArtifactName"
+    }
+    elseif (-not [string]::IsNullOrWhiteSpace($CommandName)) {
+        "command:$CommandName"
+    }
+    else {
+        ''
+    }
+
+    return "$(Get-PackageVersionKey -PackageId $PackageId -Version $Version)|$discriminator"
+}
+
+function Get-PlanItemKey {
+    param([Parameter(Mandatory = $true)][object]$Item)
+
+    return Get-CompositeResultKey `
+        -PackageId ([string]$Item.packageId) `
+        -Version ([string]$Item.version) `
+        -ArtifactName (if ($Item.PSObject.Properties.Name -contains 'artifactName') { [string]$Item.artifactName } else { $null }) `
+        -CommandName (if ($Item.PSObject.Properties.Name -contains 'command') { [string]$Item.command } else { $null })
+}
+
+function Get-ResultKeys {
+    param([Parameter(Mandatory = $true)][object]$Result)
+
+    $keys = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $packageId = [string]$Result.packageId
+    $version = [string]$Result.version
+
+    if ($Result.PSObject.Properties.Name -contains 'artifactName' -and -not [string]::IsNullOrWhiteSpace([string]$Result.artifactName)) {
+        [void]$keys.Add((Get-CompositeResultKey -PackageId $packageId -Version $version -ArtifactName ([string]$Result.artifactName) -CommandName $null))
+    }
+
+    if ($Result.PSObject.Properties.Name -contains 'artifactDirectoryFullPath' -and -not [string]::IsNullOrWhiteSpace([string]$Result.artifactDirectoryFullPath)) {
+        $artifactDirectoryName = Split-Path -Leaf ([string]$Result.artifactDirectoryFullPath)
+        if (-not [string]::IsNullOrWhiteSpace($artifactDirectoryName)) {
+            [void]$keys.Add((Get-CompositeResultKey -PackageId $packageId -Version $version -ArtifactName $artifactDirectoryName -CommandName $null))
+        }
+    }
+
+    if ($Result.PSObject.Properties.Name -contains 'command' -and -not [string]::IsNullOrWhiteSpace([string]$Result.command)) {
+        [void]$keys.Add((Get-CompositeResultKey -PackageId $packageId -Version $version -ArtifactName $null -CommandName ([string]$Result.command)))
+    }
+
+    return @($keys)
+}
+
 function Get-InferredAnalysisMode {
     param(
         [AllowNull()][object]$Result,
@@ -574,10 +649,20 @@ if (-not $expectedFile) { throw "expected.json was not found under '$DownloadRoo
 
 $Plan = Get-Content $expectedFile -Raw | ConvertFrom-Json
 $resultLookup = @{}
+$legacyResultLookup = @{}
 Get-ChildItem -Path $DownloadDirectory -Filter 'result.json' -Recurse | ForEach-Object {
     $record = Get-Content $_.FullName -Raw | ConvertFrom-Json
     $record | Add-Member -NotePropertyName artifactDirectoryFullPath -NotePropertyValue (Split-Path -Parent $_.FullName) -Force
-    $resultLookup["$($record.packageId.ToLowerInvariant())|$($record.version.ToLowerInvariant())"] = $record
+    foreach ($resultKey in @(Get-ResultKeys -Result $record)) {
+        if (-not $resultLookup.ContainsKey($resultKey) -or (Get-ResultAttempt -Result $record) -ge (Get-ResultAttempt -Result $resultLookup[$resultKey])) {
+            $resultLookup[$resultKey] = $record
+        }
+    }
+
+    $legacyKey = Get-PackageVersionKey -PackageId ([string]$record.packageId) -Version ([string]$record.version)
+    if (-not $legacyResultLookup.ContainsKey($legacyKey) -or (Get-ResultAttempt -Result $record) -ge (Get-ResultAttempt -Result $legacyResultLookup[$legacyKey])) {
+        $legacyResultLookup[$legacyKey] = $record
+    }
 }
 
 $summary = [ordered]@{
@@ -597,8 +682,20 @@ $summary = [ordered]@{
 }
 
 foreach ($item in $Plan.items) {
-    $key = "$($item.packageId.ToLowerInvariant())|$($item.version.ToLowerInvariant())"
-    $result = if ($resultLookup.ContainsKey($key)) { $resultLookup[$key] } else { $summary.missingCount++; New-SyntheticFailureResult -Item $item -Attempt $item.attempt -Classification 'missing-result-artifact' -Message 'No result artifact was uploaded for this matrix item.' }
+    $key = Get-PlanItemKey -Item $item
+    $hasExplicitLookup = $resultLookup.ContainsKey($key)
+    $result = if ($hasExplicitLookup) {
+        $resultLookup[$key]
+    }
+    elseif ((-not ($item.PSObject.Properties.Name -contains 'artifactName') -or [string]::IsNullOrWhiteSpace([string]$item.artifactName))
+        -and (-not ($item.PSObject.Properties.Name -contains 'command') -or [string]::IsNullOrWhiteSpace([string]$item.command))
+        -and $legacyResultLookup.ContainsKey((Get-PackageVersionKey -PackageId ([string]$item.packageId) -Version ([string]$item.version)))) {
+        $legacyResultLookup[(Get-PackageVersionKey -PackageId ([string]$item.packageId) -Version ([string]$item.version))]
+    }
+    else {
+        $summary.missingCount++
+        New-SyntheticFailureResult -Item $item -Attempt $item.attempt -Classification 'missing-result-artifact' -Message 'No result artifact was uploaded for this matrix item.'
+    }
     $artifactDir = if ($result.PSObject.Properties.Name -contains 'artifactDirectoryFullPath') { $result.artifactDirectoryFullPath } else { $null }
 
     if ($result.disposition -eq 'success') {
