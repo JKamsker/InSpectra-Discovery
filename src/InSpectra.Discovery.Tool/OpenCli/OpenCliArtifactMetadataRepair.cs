@@ -47,7 +47,10 @@ internal static class OpenCliArtifactMetadataRepair
         openCliStep["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, openCliPath);
         openCliStep["artifactSource"] = artifactSource;
         openCliStep.Remove("message");
-        var classification = OpenCliArtifactSourceSupport.InferClassification(artifactSource);
+        var classification = ResolveClassification(
+            artifactSource,
+            OpenCliArtifactSourceSupport.InferClassification(artifactSource),
+            openCliStep["classification"]?.GetValue<string>());
         if (!string.IsNullOrWhiteSpace(classification))
         {
             openCliStep["classification"] = classification;
@@ -73,6 +76,10 @@ internal static class OpenCliArtifactMetadataRepair
         openCliIntrospection["status"] = "ok";
         openCliIntrospection["artifactSource"] = artifactSource;
         openCliIntrospection.Remove("message");
+        classification = ResolveClassification(
+            artifactSource,
+            classification,
+            openCliIntrospection["classification"]?.GetValue<string>());
         if (!string.IsNullOrWhiteSpace(classification))
         {
             openCliIntrospection["classification"] = classification;
@@ -97,5 +104,19 @@ internal static class OpenCliArtifactMetadataRepair
 
         RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
         return true;
+    }
+
+    private static string? ResolveClassification(
+        string artifactSource,
+        string? inferredClassification,
+        string? existingClassification)
+    {
+        if (string.Equals(artifactSource, "tool-output", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(existingClassification, "json-ready-with-nonzero-exit", StringComparison.OrdinalIgnoreCase))
+        {
+            return existingClassification;
+        }
+
+        return !string.IsNullOrWhiteSpace(inferredClassification) ? inferredClassification : existingClassification;
     }
 }

@@ -30,6 +30,7 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
                     ["opencli"] = new JsonObject
                     {
                         ["status"] = "failed",
+                        ["classification"] = "json-ready-with-nonzero-exit",
                         ["message"] = "stale failure",
                     },
                 },
@@ -38,6 +39,7 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
                     ["opencli"] = new JsonObject
                     {
                         ["status"] = "unsupported",
+                        ["classification"] = "json-ready-with-nonzero-exit",
                         ["message"] = "stale introspection failure",
                         ["synthesizedArtifact"] = true,
                     },
@@ -86,11 +88,11 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
         Assert.Equal("index/packages/native.tool/1.2.3/xmldoc.xml", metadata["artifacts"]?["xmldocPath"]?.GetValue<string>());
         Assert.Equal("ok", metadata["steps"]?["opencli"]?["status"]?.GetValue<string>());
         Assert.Equal("tool-output", metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
-        Assert.Equal("json-ready", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
+        Assert.Equal("json-ready-with-nonzero-exit", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
         Assert.Null(metadata["steps"]?["opencli"]?["message"]);
         Assert.Equal("index/packages/native.tool/1.2.3/xmldoc.xml", metadata["steps"]?["xmldoc"]?["path"]?.GetValue<string>());
         Assert.Equal("ok", metadata["introspection"]?["opencli"]?["status"]?.GetValue<string>());
-        Assert.Equal("json-ready", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
+        Assert.Equal("json-ready-with-nonzero-exit", metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>());
         Assert.Null(metadata["introspection"]?["opencli"]?["message"]);
         Assert.Null(metadata["introspection"]?["opencli"]?["synthesizedArtifact"]);
         Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "native.tool", "latest", "opencli.json")));
