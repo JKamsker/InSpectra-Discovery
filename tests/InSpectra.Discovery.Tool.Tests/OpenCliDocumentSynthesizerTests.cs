@@ -26,7 +26,7 @@ public sealed class OpenCliDocumentSynthesizerTests
             </Model>
             """);
 
-        var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample");
+        var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample", "1.2.3");
 
         Assert.Contains(document["options"]!.AsArray(), option =>
             string.Equals(option?["name"]?.GetValue<string>(), "--verbose", StringComparison.Ordinal));
@@ -57,7 +57,7 @@ public sealed class OpenCliDocumentSynthesizerTests
             </Model>
             """);
 
-        var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample");
+        var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample", "1.2.3");
         var command = document["commands"]![0]!.AsObject();
         var option = command["options"]![0]!.AsObject();
         var optionArgument = option["arguments"]![0]!.AsObject();
@@ -88,7 +88,7 @@ public sealed class OpenCliDocumentSynthesizerTests
             </Model>
             """);
 
-        var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample");
+        var document = OpenCliDocumentSynthesizer.ConvertFromXmldoc(xml, "sample", "1.2.3");
         var config = document["commands"]![0]!.AsObject();
         var nestedDefault = config["commands"]![0]!.AsObject();
 

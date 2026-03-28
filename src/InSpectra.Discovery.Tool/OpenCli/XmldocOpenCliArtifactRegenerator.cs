@@ -66,7 +66,7 @@ internal sealed class XmldocOpenCliArtifactRegenerator
     private static JsonObject RegenerateOpenCli(XmldocOpenCliArtifactCandidate candidate)
     {
         var xmlDocument = XDocument.Parse(File.ReadAllText(candidate.XmlDocPath));
-        return OpenCliDocumentSynthesizer.ConvertFromXmldoc(xmlDocument, candidate.Title);
+        return OpenCliDocumentSynthesizer.ConvertFromXmldoc(xmlDocument, candidate.Title, candidate.Version);
     }
 
     private static IEnumerable<XmldocOpenCliArtifactCandidate> EnumerateCandidates(string repositoryRoot, string packagesRoot)

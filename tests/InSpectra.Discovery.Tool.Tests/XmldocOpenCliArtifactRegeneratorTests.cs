@@ -65,6 +65,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
 
         var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
         Assert.Equal("sample", regenerated["info"]?["title"]?.GetValue<string>());
+        Assert.Equal("1.2.3", regenerated["info"]?["version"]?.GetValue<string>());
         Assert.Contains(regenerated["options"]!.AsArray(), option =>
             string.Equals(option?["name"]?.GetValue<string>(), "--verbose", StringComparison.Ordinal));
     }
@@ -178,7 +179,8 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
             openCliPath,
             OpenCliDocumentSynthesizer.ConvertFromXmldoc(
                 XDocument.Parse(File.ReadAllText(xmlDocPath)),
-                "sample"));
+                "sample",
+                "1.2.3"));
 
         var regenerator = new XmldocOpenCliArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);

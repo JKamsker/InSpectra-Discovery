@@ -225,7 +225,8 @@ internal sealed class PromotionApplyCommandService
         {
             openCliDocument = OpenCliDocumentSynthesizer.ConvertFromXmldoc(
                 XDocument.Parse(xmlDocContent),
-                result["command"]?.GetValue<string>() ?? packageId);
+                result["command"]?.GetValue<string>() ?? packageId,
+                version);
             openCliSource = "synthesized-from-xmldoc";
         }
 

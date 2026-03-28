@@ -635,6 +635,7 @@ public sealed class PromotionApplyCommandServiceTests
 
             var openCli = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "xml.tool", "3.0.0", "opencli.json"));
             Assert.Equal("synthesized-from-xmldoc", openCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal("3.0.0", openCli["info"]?["version"]?.GetValue<string>());
         }
         finally
         {

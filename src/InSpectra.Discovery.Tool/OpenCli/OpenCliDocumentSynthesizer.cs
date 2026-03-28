@@ -3,7 +3,7 @@ using System.Xml.Linq;
 
 internal static class OpenCliDocumentSynthesizer
 {
-    public static JsonObject ConvertFromXmldoc(XDocument xmlDocument, string title, string version = "1.0")
+    public static JsonObject ConvertFromXmldoc(XDocument xmlDocument, string title, string version)
     {
         var rootCommands = GetElements(xmlDocument.Root, "Command")
             .Select(command => ConvertCommand(command, []))
