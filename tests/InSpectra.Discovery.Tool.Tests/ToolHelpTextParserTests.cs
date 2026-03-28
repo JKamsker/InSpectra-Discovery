@@ -472,6 +472,55 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Parses_Markdown_Short_Long_Description_Option_Tables()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            demo 1.0.0
+
+            Options:
+            | Short | Long           | Description       |
+            | ----- | -------------- | ----------------- |
+            | -f    | --file FILE    | Path to the file. |
+            | -v    | --verbose      | Verbose output.   |
+            """);
+
+        Assert.Contains(document.Options, option =>
+            string.Equals(option.Key, "-f, --file <FILE>", StringComparison.Ordinal)
+            && string.Equals(option.Description, "Path to the file.", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option =>
+            string.Equals(option.Key, "-v, --verbose", StringComparison.Ordinal)
+            && string.Equals(option.Description, "Verbose output.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Parses_Box_Drawing_Short_Option_Description_Tables()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            demo 1.0.0
+
+            ┌───────┬──────────────────┬───────────────────┐
+            │ Short │ Option           │ Description       │
+            ├───────┼──────────────────┼───────────────────┤
+            │ -f    │ --file FILE      │ Path to the file. │
+            │ -h    │ --help           │ Show help.        │
+            └───────┴──────────────────┴───────────────────┘
+            """);
+
+        Assert.Contains(document.Options, option =>
+            string.Equals(option.Key, "-f, --file <FILE>", StringComparison.Ordinal)
+            && string.Equals(option.Description, "Path to the file.", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option =>
+            string.Equals(option.Key, "-h, --help", StringComparison.Ordinal)
+            && string.Equals(option.Description, "Show help.", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Does_Not_Infer_Commands_From_Log_Prefixes_Or_Register_Dumps()
     {
         var parser = new ToolHelpTextParser();
@@ -728,6 +777,28 @@ public sealed class ToolHelpTextParserTests
         Assert.Contains(document.Options, option =>
             string.Equals(option.Key, "-cfg | --config-file", StringComparison.Ordinal)
             && string.Equals(option.Description, "Configuration file storing defaults.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Reattaches_Split_Long_Aliases_And_Metavars_From_Separate_Columns()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            Demo
+
+            Options:
+              -f  --file  FILE    Path to the file.
+              -h  -?, --help      Show help.
+            """);
+
+        Assert.Contains(document.Options, option =>
+            string.Equals(option.Key, "-f | --file <FILE>", StringComparison.Ordinal)
+            && string.Equals(option.Description, "Path to the file.", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option =>
+            string.Equals(option.Key, "-h | -? | --help", StringComparison.Ordinal)
+            && string.Equals(option.Description, "Show help.", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -109,7 +109,20 @@ internal static partial class ToolHelpLegacyOptionTable
 
     private static IReadOnlyList<string> TryExtractMarkdownTableLines(IReadOnlyList<string> lines)
     {
-        var headerIndex = Array.FindIndex(lines.ToArray(), IsMarkdownOptionTableHeader);
+        var headerIndex = -1;
+        StructuredOptionTableSchema? schema = null;
+        for (var index = 0; index < lines.Count; index++)
+        {
+            if (!TryGetMarkdownOptionTableSchema(lines[index], out var candidateSchema))
+            {
+                continue;
+            }
+
+            headerIndex = index;
+            schema = candidateSchema;
+            break;
+        }
+
         if (headerIndex < 0)
         {
             return [];
@@ -125,10 +138,27 @@ internal static partial class ToolHelpLegacyOptionTable
                 continue;
             }
 
-            if (TryBuildMarkdownRow(rawLine, out var syntheticLine))
+            if (!TrySplitMarkdownTableRow(rawLine, out var cells) || schema is null)
+            {
+                if (hasRows)
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            var rowKind = TryBuildStructuredRow(cells, schema.Value, out var syntheticLine);
+            if (rowKind == StructuredRowKind.Entry)
             {
                 results.Add(syntheticLine);
                 hasRows = true;
+                continue;
+            }
+
+            if (rowKind == StructuredRowKind.Continuation && hasRows)
+            {
+                results.Add(syntheticLine);
                 continue;
             }
 
@@ -143,7 +173,20 @@ internal static partial class ToolHelpLegacyOptionTable
 
     private static IReadOnlyList<string> TryExtractBoxTableLines(IReadOnlyList<string> lines)
     {
-        var headerIndex = Array.FindIndex(lines.ToArray(), IsBoxOptionTableHeader);
+        var headerIndex = -1;
+        StructuredOptionTableSchema? schema = null;
+        for (var index = 0; index < lines.Count; index++)
+        {
+            if (!TryGetBoxOptionTableSchema(lines[index], out var candidateSchema))
+            {
+                continue;
+            }
+
+            headerIndex = index;
+            schema = candidateSchema;
+            break;
+        }
+
         if (headerIndex < 0)
         {
             return [];
@@ -160,7 +203,7 @@ internal static partial class ToolHelpLegacyOptionTable
                 continue;
             }
 
-            if (!TrySplitBoxTableRow(rawLine, out var cells) || cells.Count < 2)
+            if (!TrySplitBoxTableRow(rawLine, out var cells) || schema is null)
             {
                 if (hasRows)
                 {
@@ -170,21 +213,18 @@ internal static partial class ToolHelpLegacyOptionTable
                 continue;
             }
 
-            var optionSpec = cells[0];
-            var description = cells[1];
-            if (!string.IsNullOrWhiteSpace(optionSpec)
-                && !string.IsNullOrWhiteSpace(description)
-                && (optionSpec.StartsWith("-", StringComparison.Ordinal) || optionSpec.StartsWith("/", StringComparison.Ordinal)))
+            var rowKind = TryBuildStructuredRow(cells, schema.Value, out var syntheticLine);
+            if (rowKind == StructuredRowKind.Entry)
             {
-                results.Add($"{NormalizeMarkdownOptionSpec(optionSpec)}  {description}");
+                results.Add(syntheticLine);
                 hasRows = true;
                 currentRowCaptured = true;
                 continue;
             }
 
-            if (currentRowCaptured && string.IsNullOrWhiteSpace(optionSpec) && !string.IsNullOrWhiteSpace(description))
+            if (rowKind == StructuredRowKind.Continuation && currentRowCaptured)
             {
-                results.Add(description);
+                results.Add(syntheticLine);
                 continue;
             }
 
@@ -244,25 +284,43 @@ internal static partial class ToolHelpLegacyOptionTable
         return true;
     }
 
-    private static bool TryBuildMarkdownRow(string rawLine, out string syntheticLine)
+    private static StructuredRowKind TryBuildStructuredRow(
+        IReadOnlyList<string> cells,
+        StructuredOptionTableSchema schema,
+        out string syntheticLine)
     {
         syntheticLine = string.Empty;
-        if (!TrySplitMarkdownTableRow(rawLine, out var cells) || cells.Count < 2)
+        if (schema.DescriptionIndex >= cells.Count)
         {
-            return false;
+            return StructuredRowKind.None;
         }
 
-        var optionSpec = cells[0];
-        var description = cells[1];
-        if (string.IsNullOrWhiteSpace(optionSpec)
-            || string.IsNullOrWhiteSpace(description)
+        var description = cells[schema.DescriptionIndex].Trim();
+        var optionParts = schema.OptionColumnIndexes
+            .Where(index => index < cells.Count)
+            .Select(index => cells[index].Trim())
+            .ToArray();
+        var optionSpec = string.Join(", ", optionParts.Where(part => !string.IsNullOrWhiteSpace(part)));
+
+        if (string.IsNullOrWhiteSpace(optionSpec))
+        {
+            if (string.IsNullOrWhiteSpace(description))
+            {
+                return StructuredRowKind.None;
+            }
+
+            syntheticLine = description;
+            return StructuredRowKind.Continuation;
+        }
+
+        if (string.IsNullOrWhiteSpace(description)
             || (!optionSpec.StartsWith("-", StringComparison.Ordinal) && !optionSpec.StartsWith("/", StringComparison.Ordinal)))
         {
-            return false;
+            return StructuredRowKind.None;
         }
 
         syntheticLine = $"{NormalizeMarkdownOptionSpec(optionSpec)}  {description}";
-        return true;
+        return StructuredRowKind.Entry;
     }
 
     private static bool IsLegacyTableHeader(string line)
@@ -273,35 +331,90 @@ internal static partial class ToolHelpLegacyOptionTable
     }
 
     private static bool IsMarkdownOptionTableHeader(string line)
+        => TryGetMarkdownOptionTableSchema(line, out _);
+
+    private static bool IsBoxOptionTableHeader(string line)
+        => TryGetBoxOptionTableSchema(line, out _);
+
+    private static bool TryGetMarkdownOptionTableSchema(string line, out StructuredOptionTableSchema schema)
     {
+        schema = default;
         if (!TrySplitMarkdownTableRow(line, out var cells))
         {
             return false;
         }
 
-        return cells.Count >= 2
-            && cells.Any(cell => cell.Contains("description", StringComparison.OrdinalIgnoreCase))
-            && cells.Any(cell =>
-                cell.Contains("argument", StringComparison.OrdinalIgnoreCase)
-                || cell.Contains("arguments", StringComparison.OrdinalIgnoreCase)
-                || cell.Contains("option", StringComparison.OrdinalIgnoreCase)
-                || cell.Contains("options", StringComparison.OrdinalIgnoreCase));
+        return TryCreateStructuredOptionTableSchema(cells, out schema);
     }
 
-    private static bool IsBoxOptionTableHeader(string line)
+    private static bool TryGetBoxOptionTableSchema(string line, out StructuredOptionTableSchema schema)
     {
+        schema = default;
         if (!TrySplitBoxTableRow(line, out var cells))
         {
             return false;
         }
 
-        return cells.Count >= 2
-            && cells.Any(cell => cell.Contains("description", StringComparison.OrdinalIgnoreCase))
-            && cells.Any(cell =>
-                cell.Contains("argument", StringComparison.OrdinalIgnoreCase)
-                || cell.Contains("arguments", StringComparison.OrdinalIgnoreCase)
-                || cell.Contains("option", StringComparison.OrdinalIgnoreCase)
-                || cell.Contains("options", StringComparison.OrdinalIgnoreCase));
+        return TryCreateStructuredOptionTableSchema(cells, out schema);
+    }
+
+    private static bool TryCreateStructuredOptionTableSchema(
+        IReadOnlyList<string> headerCells,
+        out StructuredOptionTableSchema schema)
+    {
+        schema = default;
+        if (headerCells.Count < 2)
+        {
+            return false;
+        }
+
+        var descriptionIndex = -1;
+        var optionColumnIndexes = new List<int>();
+
+        for (var index = 0; index < headerCells.Count; index++)
+        {
+            var header = headerCells[index].Trim();
+            if (header.Contains("description", StringComparison.OrdinalIgnoreCase))
+            {
+                descriptionIndex = index;
+                continue;
+            }
+
+            if (LooksLikeStructuredOptionHeader(header))
+            {
+                optionColumnIndexes.Add(index);
+            }
+        }
+
+        if (descriptionIndex < 0 || optionColumnIndexes.Count == 0)
+        {
+            return false;
+        }
+
+        schema = new StructuredOptionTableSchema(descriptionIndex, optionColumnIndexes);
+        return true;
+    }
+
+    private static bool LooksLikeStructuredOptionHeader(string header)
+    {
+        if (string.IsNullOrWhiteSpace(header))
+        {
+            return false;
+        }
+
+        return header.Contains("argument", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("arguments", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("option", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("options", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("parameter", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("parameters", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("flag", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("flags", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("alias", StringComparison.OrdinalIgnoreCase)
+            || header.Contains("aliases", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(header, "short", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(header, "long", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(header, "name", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsMarkdownTableSeparator(string line)
@@ -417,4 +530,15 @@ internal static partial class ToolHelpLegacyOptionTable
 
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
+
+    private readonly record struct StructuredOptionTableSchema(
+        int DescriptionIndex,
+        IReadOnlyList<int> OptionColumnIndexes);
+
+    private enum StructuredRowKind
+    {
+        None,
+        Entry,
+        Continuation,
+    }
 }

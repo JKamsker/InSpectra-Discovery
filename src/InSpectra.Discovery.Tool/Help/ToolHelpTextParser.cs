@@ -661,14 +661,11 @@ internal sealed partial class ToolHelpTextParser
         }
 
         var trimmed = description.Trim().TrimStart('|').TrimStart();
-        var match = OptionTokenRegex().Match(trimmed);
-        if (!match.Success || match.Index != 0)
+        if (!TryConsumeLeadingOptionAliasGroup(trimmed, out alias, out var remainder))
         {
             return false;
         }
 
-        alias = match.Value.Trim();
-        var remainder = trimmed[match.Length..];
         if (string.IsNullOrWhiteSpace(remainder))
         {
             normalizedDescription = null;
@@ -681,13 +678,6 @@ internal sealed partial class ToolHelpTextParser
         }
 
         var trimmedRemainder = remainder.TrimStart();
-        var leadingWhitespace = remainder.Length - trimmedRemainder.Length;
-        if (leadingWhitespace > 1)
-        {
-            normalizedDescription = trimmedRemainder;
-            return true;
-        }
-
         var separatorIndex = trimmedRemainder.IndexOf(' ');
         var candidatePlaceholder = separatorIndex >= 0
             ? trimmedRemainder[..separatorIndex]
@@ -695,7 +685,7 @@ internal sealed partial class ToolHelpTextParser
         var candidateDescription = separatorIndex >= 0
             ? trimmedRemainder[(separatorIndex + 1)..].TrimStart()
             : null;
-        if (IsBareOptionPlaceholder(candidatePlaceholder)
+        if (LooksLikeSplitColumnPlaceholder(candidatePlaceholder)
             || candidatePlaceholder.StartsWith("<", StringComparison.Ordinal)
             || candidatePlaceholder.StartsWith("[", StringComparison.Ordinal))
         {
@@ -706,6 +696,26 @@ internal sealed partial class ToolHelpTextParser
 
         normalizedDescription = trimmedRemainder;
         return true;
+    }
+
+    private static bool TryConsumeLeadingOptionAliasGroup(string text, out string aliasGroup, out string remainder)
+    {
+        aliasGroup = string.Empty;
+        remainder = text;
+
+        var match = LeadingOptionAliasGroupRegex().Match(text);
+        if (!match.Success || match.Index != 0)
+        {
+            return false;
+        }
+
+        aliasGroup = string.Join(
+            " | ",
+            match.Groups["group"].Value
+                .Split(new[] { '|', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(segment => !string.IsNullOrWhiteSpace(segment)));
+        remainder = text[match.Length..];
+        return !string.IsNullOrWhiteSpace(aliasGroup);
     }
 
     private static bool LooksLikeCommandDescription(string description)
@@ -758,6 +768,11 @@ internal sealed partial class ToolHelpTextParser
             && !value.StartsWith("-", StringComparison.Ordinal)
             && !value.StartsWith("/", StringComparison.Ordinal);
 
+    private static bool LooksLikeSplitColumnPlaceholder(string value)
+        => IsBareOptionPlaceholder(value)
+            && value.Any(char.IsLetter)
+            && value.Where(char.IsLetter).All(char.IsUpper);
+
     private static bool LooksLikeTitleVersionLine(string line, string title, string version)
         => !StackTraceLineRegex().IsMatch(line)
             && !title.Contains(":line", StringComparison.OrdinalIgnoreCase)
@@ -772,6 +787,9 @@ internal sealed partial class ToolHelpTextParser
 
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
+
+    [GeneratedRegex(@"^(?<group>(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*)(?:\s*(?:\||,)\s*(?:--[A-Za-z0-9][A-Za-z0-9\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9\?\-]*|/[A-Za-z0-9][A-Za-z0-9\?\-]*))*)", RegexOptions.Compiled)]
+    private static partial Regex LeadingOptionAliasGroupRegex();
 
     [GeneratedRegex(@"^(?<title>.+?)\s+(?<version>v?\d[\w\.\-\+]*)$", RegexOptions.Compiled)]
     private static partial Regex TitleLineRegex();
