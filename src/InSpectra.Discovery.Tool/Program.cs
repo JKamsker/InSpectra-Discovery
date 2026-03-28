@@ -60,6 +60,7 @@ try
         {
             docs.SetDescription("Generate derived discovery documentation artifacts.");
             docs.AddCommand<DocsRebuildIndexesCommand>("rebuild-indexes").WithDescription("Rebuild package summaries, index/all.json, and index/index.json from indexed metadata.");
+            docs.AddCommand<DocsRegenerateCliFxCrawlsCommand>("regenerate-clifx-crawls").WithDescription("Regenerate CliFx OpenCLI artifacts from stored crawl.json captures.");
             docs.AddCommand<DocsRegenerateHelpCrawlsCommand>("regenerate-help-crawls").WithDescription("Regenerate generic help OpenCLI artifacts from stored crawl.json captures.");
             docs.AddCommand<DocsRegenerateXmldocOpenCliCommand>("regenerate-xmldoc-opencli").WithDescription("Regenerate XMLDoc-synthesized OpenCLI artifacts from stored xmldoc.xml files.");
             docs.AddCommand<DocsBrowserIndexCommand>("browser-index").WithDescription("Build the lightweight browser index from index/all.json.");

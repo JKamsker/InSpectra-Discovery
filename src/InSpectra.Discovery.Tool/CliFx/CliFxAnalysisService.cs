@@ -274,10 +274,7 @@ internal sealed class CliFxAnalysisService
             CrawlArtifactBuilder.Build(
                 crawl.Documents.Count,
                 crawl.Captures,
-                new JsonObject
-                {
-                    ["coverage"] = coverageJson.DeepClone(),
-                }));
+                CliFxCrawlArtifactSupport.BuildMetadata(staticCommands, coverageJson)));
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
             result["failureMessage"] = "No CliFx help documents or metadata commands could be captured from the installed tool.";
