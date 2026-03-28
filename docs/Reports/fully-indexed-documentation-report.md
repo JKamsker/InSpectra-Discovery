@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-28 00:41:03+00:00
+Generated: 2026-03-28 04:32:50+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 151
+Packages in scope: 152
 
 Fully documented: 72
 
-Incomplete: 79
+Incomplete: 80
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -85,6 +85,7 @@ Incomplete: 79
 | [Spaceship.Console](#pkg-spaceship-console) | 1.0.1 | ok | xml-ready | 34/34 | 196/196 | 24/24 | 0/29 | FAIL |
 | [sqlct](#pkg-sqlct) | 0.1.0 | ok | xml-ready | 5/5 | 0/18 | 0/0 | 0/5 | FAIL |
 | [StewardEF](#pkg-stewardef) | 0.5.0-preview.3 | ok | xml-ready | 2/2 | 1/5 | 0/2 | 2/2 | FAIL |
+| [Substratum.Tools](#pkg-substratum-tools) | 2.5.1 | ok | xml-ready | 0/12 | 24/24 | 1/1 | 0/9 | FAIL |
 | [SwedishTestSsn](#pkg-swedishtestssn) | 1.1.0 | ok | xml-ready | 1/1 | 2/6 | 2/2 | 1/1 | FAIL |
 | [Test262Harness.Console](#pkg-test262harness-console) | 1.0.4 | ok | xml-ready | 1/1 | 4/7 | 0/0 | 0/1 | FAIL |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.1 | ok | xml-ready | 6/8 | 24/24 | 9/9 | 0/6 | FAIL |
@@ -1342,6 +1343,23 @@ Incomplete: 79
 - Missing option descriptions: convert-to-sql --migration, convert-to-sql --project, squash --target, squash --year
 - Missing argument descriptions: convert-to-sql <MigrationsDirectory>, squash <MigrationsDirectory>
 - Missing leaf command examples: None
+
+<a id="pkg-substratum-tools"></a>
+### Substratum.Tools
+
+- Version: `2.5.1`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `0/12`
+- Option documentation: `24/24`
+- Argument documentation: `1/1`
+- Leaf command examples: `0/9`
+- Overall: `FAIL`
+- Missing command descriptions: database, database sql, database update, migrate, migrations, migrations add, new, new endpoint, new entity, new event, new job, new webapp
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: database sql, database update, migrate, migrations add, new endpoint, new entity, new event, new job, new webapp
 
 <a id="pkg-swedishtestssn"></a>
 ### SwedishTestSsn
