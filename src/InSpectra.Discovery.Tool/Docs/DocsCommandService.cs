@@ -144,12 +144,9 @@ internal sealed class DocsCommandService
 
             var packageStatus = metadata["status"]?.GetValue<string>();
             var openCliClassification = metadata["introspection"]?["opencli"]?["classification"]?.GetValue<string>();
-            var artifactSource = metadata["artifacts"]?["opencliSource"]?.GetValue<string>()
-                ?? metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
 
             if (!string.Equals(packageStatus, "ok", StringComparison.OrdinalIgnoreCase) ||
-                !string.Equals(openCliClassification, "json-ready", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(artifactSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase))
+                !string.Equals(openCliClassification, "json-ready", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -168,6 +165,14 @@ internal sealed class DocsCommandService
             }
 
             var openCli = JsonNode.Parse(await File.ReadAllTextAsync(openCliPath, cancellationToken));
+            var artifactSource = metadata["artifacts"]?["opencliSource"]?.GetValue<string>()
+                ?? metadata["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>()
+                ?? openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>();
+            if (!string.Equals(artifactSource, "tool-output", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             var stats = new DocumentationStats();
             AddOptionStats(stats, "[root]", openCli?["options"] as JsonArray);
             AddArgumentStats(stats, "[root]", openCli?["arguments"] as JsonArray);
@@ -375,7 +380,7 @@ internal sealed class DocsCommandService
             string.Empty,
             $"Generated: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ssK}",
             string.Empty,
-            "Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.",
+            "Scope: latest package entries with status ok, whose OpenCLI classification is json-ready, and whose resolved OpenCLI provenance is tool-output.",
             string.Empty,
             "Completeness rule: visible commands, options, and arguments must all have non-empty descriptions, and every visible leaf command must have at least one non-empty example.",
             string.Empty,

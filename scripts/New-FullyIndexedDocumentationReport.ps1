@@ -258,11 +258,6 @@ foreach ($package in Get-Collection -Value (Get-OptionalPropertyValue -InputObje
     $metadata = Get-Content -Path $metadataPath -Raw | ConvertFrom-Json -Depth 100
     $packageStatus = [string](Get-OptionalPropertyValue -InputObject $metadata -Name 'status')
     $openCliClassification = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'introspection') -Name 'opencli') -Name 'classification')
-    $artifactSource = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliSource')
-    if ([string]::IsNullOrWhiteSpace($artifactSource)) {
-        $artifactSource = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'artifactSource')
-    }
-
     if ($packageStatus -ne 'ok') {
         continue
     }
@@ -290,6 +285,17 @@ foreach ($package in Get-Collection -Value (Get-OptionalPropertyValue -InputObje
     }
 
     $openCli = Get-Content -Path $openCliPath -Raw | ConvertFrom-Json -Depth 100
+    $artifactSource = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'artifacts') -Name 'opencliSource')
+    if ([string]::IsNullOrWhiteSpace($artifactSource)) {
+        $artifactSource = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $metadata -Name 'steps') -Name 'opencli') -Name 'artifactSource')
+    }
+    if ([string]::IsNullOrWhiteSpace($artifactSource)) {
+        $artifactSource = [string](Get-OptionalPropertyValue -InputObject (Get-OptionalPropertyValue -InputObject $openCli -Name 'x-inspectra') -Name 'artifactSource')
+    }
+    if ($artifactSource -ne 'tool-output') {
+        continue
+    }
+
     $stats = New-StatsState
 
     Add-OptionStats -Stats $stats -Location '[root]' -Options (Get-OptionalPropertyValue -InputObject $openCli -Name 'options')
@@ -351,7 +357,7 @@ $lines.Add('# Fully Indexed Package Documentation Report')
 $lines.Add('')
 $lines.Add("Generated: $generatedAt")
 $lines.Add('')
-$lines.Add("Scope: latest package entries with status `ok`, whose native OpenCLI artifact is `json-ready`, and whose OpenCLI was not `synthesized-from-xmldoc`.")
+$lines.Add("Scope: latest package entries with status `ok`, whose OpenCLI classification is `json-ready`, and whose resolved OpenCLI provenance is `tool-output`.")
 $lines.Add('')
 $lines.Add("Completeness rule: visible commands, options, and arguments must all have non-empty descriptions, and every visible leaf command must have at least one non-empty example.")
 $lines.Add('')
