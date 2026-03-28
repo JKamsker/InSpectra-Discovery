@@ -132,6 +132,7 @@ internal static class RepositoryPackageIndexBuilder
             {
                 ["metadataPath"] = $"index/packages/{lowerId}/latest/metadata.json",
                 ["opencliPath"] = latest["artifacts"]?["opencliPath"]?.GetValue<string>() is { Length: > 0 } ? $"index/packages/{lowerId}/latest/opencli.json" : null,
+                ["crawlPath"] = latest["artifacts"]?["crawlPath"]?.GetValue<string>() is { Length: > 0 } ? $"index/packages/{lowerId}/latest/crawl.json" : null,
                 ["xmldocPath"] = latest["artifacts"]?["xmldocPath"]?.GetValue<string>() is { Length: > 0 } ? $"index/packages/{lowerId}/latest/xmldoc.xml" : null,
             },
         };

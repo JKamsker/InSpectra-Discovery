@@ -263,12 +263,14 @@ public sealed class DocsCommandServiceTests
         Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "latest", "crawl.json")));
 
         var latestMetadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "latest", "metadata.json"));
+        var packageIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "index.json"));
         Assert.Equal("index/packages/sample.tool/latest/metadata.json", latestMetadata["artifacts"]?["metadataPath"]?.GetValue<string>());
         Assert.Equal("index/packages/sample.tool/latest/opencli.json", latestMetadata["artifacts"]?["opencliPath"]?.GetValue<string>());
         Assert.Equal("index/packages/sample.tool/latest/xmldoc.xml", latestMetadata["artifacts"]?["xmldocPath"]?.GetValue<string>());
         Assert.Equal("index/packages/sample.tool/latest/crawl.json", latestMetadata["artifacts"]?["crawlPath"]?.GetValue<string>());
         Assert.Equal("index/packages/sample.tool/latest/opencli.json", latestMetadata["steps"]?["opencli"]?["path"]?.GetValue<string>());
         Assert.Equal("index/packages/sample.tool/latest/xmldoc.xml", latestMetadata["steps"]?["xmldoc"]?["path"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/latest/crawl.json", packageIndex["latestPaths"]?["crawlPath"]?.GetValue<string>());
     }
 
     [Fact]

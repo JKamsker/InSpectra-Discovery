@@ -114,14 +114,16 @@ internal sealed class PromotionApplyCommandService
                 var xmlDocExists = xmlDocArtifactPath is not null;
                 string? openCliValidationError = null;
                 string? xmlDocValidationError = null;
+                JsonObject? crawlDocument = null;
                 var hasUsableOpenCli = openCliArtifactPath is not null
                     && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out _, out openCliValidationError);
                 var hasUsableCrawl = crawlArtifactPath is not null
-                    && PromotionArtifactSupport.TryLoadJsonObject(crawlArtifactPath, out _);
+                    && PromotionArtifactSupport.TryLoadJsonObject(crawlArtifactPath, out crawlDocument);
                 var hasUsableXmlDoc = xmlDocArtifactPath is not null
                     && TryLoadXmlArtifact(xmlDocArtifactPath, out xmlDocValidationError);
-                var requiresCrawlArtifact = HelpBatchArtifactSupport.RequiresCrawlArtifact(
-                    result["analysisMode"]?.GetValue<string>() ?? item["analysisMode"]?.GetValue<string>());
+                var selectedAnalysisMode = ResolveAnalysisMode(item, result, hasUsableCrawl ? crawlDocument : null);
+                BackfillAnalysisModeSelection(result, selectedAnalysisMode);
+                var requiresCrawlArtifact = HelpBatchArtifactSupport.RequiresCrawlArtifact(selectedAnalysisMode);
                 var declaredMissing = new List<string>();
                 var invalidArtifacts = new List<string>();
 
@@ -142,7 +144,7 @@ internal sealed class PromotionApplyCommandService
 
                 if (openCliArtifactPath is not null && !hasUsableOpenCli)
                 {
-                    if (!xmlDocExists)
+                    if (!hasUsableXmlDoc || requiresCrawlArtifact)
                     {
                         invalidArtifacts.Add(openCliArtifact!);
                     }
@@ -466,7 +468,48 @@ internal sealed class PromotionApplyCommandService
             result["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>(),
             result["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>(),
             OpenCliArtifactSourceSupport.InferArtifactSource(result["analysisMode"]?.GetValue<string>()),
-            "tool-output");
+            "tool-output") ?? "tool-output";
+
+    private static string? ResolveAnalysisMode(JsonObject item, JsonObject result, JsonObject? crawlArtifact)
+        => FirstNonEmpty(
+            result["analysisMode"]?.GetValue<string>(),
+            item["analysisMode"]?.GetValue<string>(),
+            InferAnalysisModeFromCrawl(crawlArtifact));
+
+    private static string? InferAnalysisModeFromCrawl(JsonObject? crawlArtifact)
+        => crawlArtifact is null
+            ? null
+            : crawlArtifact["staticCommands"] is JsonArray ? "clifx" : "help";
+
+    private static void BackfillAnalysisModeSelection(JsonObject result, string? analysisMode)
+    {
+        if (string.IsNullOrWhiteSpace(analysisMode))
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(result["analysisMode"]?.GetValue<string>()))
+        {
+            result["analysisMode"] = analysisMode;
+        }
+
+        var analysisSelection = result["analysisSelection"] as JsonObject;
+        if (analysisSelection is null)
+        {
+            analysisSelection = new JsonObject();
+            result["analysisSelection"] = analysisSelection;
+        }
+
+        if (analysisSelection["selectedMode"] is null)
+        {
+            analysisSelection["selectedMode"] = analysisMode;
+        }
+
+        if (analysisSelection["preferredMode"] is null)
+        {
+            analysisSelection["preferredMode"] = analysisMode;
+        }
+    }
 
     private static string? InferOpenCliClassification(string? openCliSource)
         => OpenCliArtifactSourceSupport.InferClassification(openCliSource);
@@ -550,6 +593,6 @@ internal sealed class PromotionApplyCommandService
         }
     }
 
-    private static string FirstNonEmpty(params string?[] values)
-        => values.First(value => !string.IsNullOrWhiteSpace(value))!;
+    private static string? FirstNonEmpty(params string?[] values)
+        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 }
