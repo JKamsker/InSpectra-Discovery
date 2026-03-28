@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Text.Json.Nodes;
 internal sealed class CliFxOpenCliBuilder
 {
@@ -97,6 +98,7 @@ internal sealed class CliFxOpenCliBuilder
                 array.Add(BuildOptionNode(
                     names.LongName is not null ? $"--{names.LongName}" : $"-{names.ShortName}",
                     definition,
+                    helpDocument,
                     option.Description,
                     option.IsRequired,
                     names.LongName,
@@ -114,7 +116,7 @@ internal sealed class CliFxOpenCliBuilder
         var metadataOptions = new JsonArray();
         foreach (var option in command.Options)
         {
-            metadataOptions.Add(BuildOptionNode(CliFxOptionNameSupport.GetPrimaryName(option), option, option.Description, option.IsRequired, option.Name, option.ShortName));
+            metadataOptions.Add(BuildOptionNode(CliFxOptionNameSupport.GetPrimaryName(option), option, null, option.Description, option.IsRequired, option.Name, option.ShortName));
         }
 
         return metadataOptions.Count > 0 ? metadataOptions : null;
@@ -164,6 +166,7 @@ internal sealed class CliFxOpenCliBuilder
     private JsonObject BuildOptionNode(
         string name,
         CliFxOptionDefinition? definition,
+        CliFxHelpDocument? helpDocument,
         string? description,
         bool required,
         string? longName,
@@ -183,7 +186,13 @@ internal sealed class CliFxOpenCliBuilder
             optionNode["aliases"] = aliases;
         }
 
-        var argument = BuildOptionArgument(definition, definition?.ValueName ?? definition?.Name ?? longName ?? shortName?.ToString() ?? "VALUE");
+        var argument = BuildOptionArgument(
+            definition,
+            helpDocument?.UsageLines,
+            definition?.ValueName ?? definition?.Name ?? longName ?? shortName?.ToString() ?? "VALUE",
+            required,
+            longName,
+            shortName);
         if (argument is not null)
         {
             optionNode["arguments"] = new JsonArray { argument };
@@ -213,11 +222,33 @@ internal sealed class CliFxOpenCliBuilder
         return argument;
     }
 
-    private JsonObject? BuildOptionArgument(CliFxOptionDefinition? definition, string fallbackName)
+    private JsonObject? BuildOptionArgument(
+        CliFxOptionDefinition? definition,
+        IReadOnlyList<string>? usageLines,
+        string fallbackName,
+        bool required,
+        string? longName,
+        char? shortName)
     {
         if (definition is null)
         {
-            return null;
+            var inferredName = InferOptionArgumentName(usageLines, longName, shortName);
+            if (string.IsNullOrWhiteSpace(inferredName))
+            {
+                if (!required)
+                {
+                    return null;
+                }
+
+                inferredName = fallbackName;
+            }
+
+            return new JsonObject
+            {
+                ["name"] = NormalizeOptionArgumentName(inferredName),
+                ["required"] = required,
+                ["arity"] = BuildArity(false, required ? 1 : 0),
+            };
         }
 
         var isNullableBool = string.Equals(definition.ClrType, "System.Nullable<System.Boolean>", StringComparison.Ordinal);
@@ -235,6 +266,62 @@ internal sealed class CliFxOpenCliBuilder
 
         ApplyInputMetadata(argument, definition.ClrType, definition.AcceptedValues, definition.EnvironmentVariable);
         return argument;
+    }
+
+    private static string? InferOptionArgumentName(IReadOnlyList<string>? usageLines, string? longName, char? shortName)
+    {
+        if (usageLines is not { Count: > 0 })
+        {
+            return null;
+        }
+
+        var tokens = new List<string>();
+        if (!string.IsNullOrWhiteSpace(longName))
+        {
+            tokens.Add($"--{CliFxOptionNameSupport.NormalizeLongName(longName)}");
+        }
+
+        if (shortName is not null)
+        {
+            tokens.Add($"-{shortName}");
+        }
+
+        foreach (var usageLine in usageLines)
+        {
+            foreach (var token in tokens)
+            {
+                var placeholder = TryExtractUsagePlaceholder(usageLine, token);
+                if (!string.IsNullOrWhiteSpace(placeholder))
+                {
+                    return placeholder;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string? TryExtractUsagePlaceholder(string usageLine, string token)
+    {
+        if (string.IsNullOrWhiteSpace(usageLine) || string.IsNullOrWhiteSpace(token))
+        {
+            return null;
+        }
+
+        var pattern = $@"(?:^|[\s\[(]){Regex.Escape(token)}(?:\s+|=)(?<placeholder><[^>]+>|[A-Z][A-Z0-9_-]*)";
+        var match = Regex.Match(usageLine, pattern, RegexOptions.CultureInvariant);
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var placeholder = match.Groups["placeholder"].Value.Trim();
+        if (placeholder.StartsWith("<", StringComparison.Ordinal) && placeholder.EndsWith(">", StringComparison.Ordinal))
+        {
+            placeholder = placeholder[1..^1];
+        }
+
+        return string.IsNullOrWhiteSpace(placeholder) ? null : placeholder;
     }
 
     private static JsonObject BuildArity(bool isSequence, int minimum)

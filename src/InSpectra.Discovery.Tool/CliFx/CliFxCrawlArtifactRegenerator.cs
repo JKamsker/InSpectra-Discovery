@@ -76,7 +76,7 @@ internal sealed class CliFxCrawlArtifactRegenerator
         var documents = new Dictionary<string, CliFxHelpDocument>(StringComparer.OrdinalIgnoreCase);
         foreach (var capture in captures?.OfType<JsonObject>() ?? [])
         {
-            var payload = capture["payload"]?.GetValue<string>();
+            var payload = ExtractPayload(capture);
             if (string.IsNullOrWhiteSpace(payload))
             {
                 continue;
@@ -94,6 +94,43 @@ internal sealed class CliFxCrawlArtifactRegenerator
 
         return documents;
     }
+
+    private static string? ExtractPayload(JsonObject capture)
+    {
+        var payload = ToolCommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>());
+        return !string.IsNullOrWhiteSpace(payload)
+            ? payload
+            : SelectBestPayload(capture["result"] as JsonObject);
+    }
+
+    private static string? SelectBestPayload(JsonObject? processResult)
+    {
+        if (processResult is null)
+        {
+            return null;
+        }
+
+        var stdout = ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>());
+        var stderr = ToolCommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
+
+        if (LooksLikeHelp(stdout))
+        {
+            return stdout;
+        }
+
+        if (LooksLikeHelp(stderr))
+        {
+            return stderr;
+        }
+
+        return stdout ?? stderr;
+    }
+
+    private static bool LooksLikeHelp(string? text)
+        => !string.IsNullOrWhiteSpace(text)
+            && (text.Contains("\nUSAGE\n", StringComparison.Ordinal)
+                || text.Contains("\nOPTIONS\n", StringComparison.Ordinal)
+                || text.Contains("\nCOMMANDS\n", StringComparison.Ordinal));
 
     private static bool HasContent(CliFxHelpDocument document)
         => !string.IsNullOrWhiteSpace(document.Title)
@@ -139,14 +176,19 @@ internal sealed class CliFxCrawlArtifactRegenerator
             return null;
         }
 
+        var metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject();
         var openCli = JsonNode.Parse(File.ReadAllText(openCliPath));
-        var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>();
-        if (!string.Equals(artifactSource, "crawled-from-clifx-help", StringComparison.OrdinalIgnoreCase))
+        var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
+            ?? metadata?["artifacts"]?["opencliSource"]?.GetValue<string>()
+            ?? metadata?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
+        var cliFramework = metadata?["cliFramework"]?.GetValue<string>()
+            ?? openCli?["x-inspectra"]?["cliFramework"]?.GetValue<string>();
+        if (!string.Equals(cliFramework, "CliFx", StringComparison.OrdinalIgnoreCase)
+            || !IsCliFxCrawlArtifactSource(artifactSource))
         {
             return null;
         }
 
-        var metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject();
         var packageId = metadata?["packageId"]?.GetValue<string>();
         var version = metadata?["version"]?.GetValue<string>();
         var commandName = metadata?["command"]?.GetValue<string>();
@@ -163,6 +205,10 @@ internal sealed class CliFxCrawlArtifactRegenerator
             crawlPath,
             openCliPath);
     }
+
+    private static bool IsCliFxCrawlArtifactSource(string? artifactSource)
+        => string.Equals(artifactSource, "crawled-from-clifx-help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(artifactSource, "crawled-from-help", StringComparison.OrdinalIgnoreCase);
 }
 
 internal sealed record CliFxCrawlArtifactRegenerationResult(

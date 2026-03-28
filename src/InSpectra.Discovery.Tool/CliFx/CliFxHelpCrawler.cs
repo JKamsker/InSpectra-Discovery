@@ -175,11 +175,13 @@ internal sealed class CliFxHelpCrawler
         public JsonObject ToJsonObject(IReadOnlyList<string> commandSegments)
         {
             var commandName = commandSegments.Count == 0 ? null : string.Join(' ', commandSegments);
+            var payload = ProcessResult is null ? null : SelectBestPayload(ProcessResult);
             return new JsonObject
             {
                 ["command"] = commandName,
                 ["helpSwitch"] = HelpSwitch,
                 ["result"] = ProcessResult?.ToJsonObject(),
+                ["payload"] = payload,
                 ["parsed"] = Document is null
                     ? false
                     : Document.UsageLines.Count > 0 || Document.Options.Count > 0 || Document.Commands.Count > 0,

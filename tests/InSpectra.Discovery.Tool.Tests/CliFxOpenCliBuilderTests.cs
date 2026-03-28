@@ -215,4 +215,54 @@ public sealed class CliFxOpenCliBuilderTests
         Assert.Equal("-s", option["name"]!.GetValue<string>());
         Assert.Equal("SCRIPT_PATH", argument["name"]!.GetValue<string>());
     }
+
+    [Fact]
+    public void Infers_HelpOnly_Option_Arguments_From_Usage_Lines()
+    {
+        var builder = new CliFxOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, CliFxHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: "Demo CLI",
+                CommandDescription: null,
+                UsageLines: ["demo [command] [...]"],
+                Parameters: [],
+                Options: [],
+                Commands:
+                [
+                    new CliFxHelpItem("upload", false, "Uploads a package"),
+                ]),
+            ["upload"] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: "Uploads a package",
+                UsageLines: ["demo upload --pat <token> [--folder <path>] [options]"],
+                Parameters: [],
+                Options:
+                [
+                    new CliFxHelpItem("-p|--pat", true, "Personal access token"),
+                    new CliFxHelpItem("-f|--folder", false, "Folder to upload"),
+                    new CliFxHelpItem("-h|--help", false, "Shows help text."),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build(
+            "demo",
+            "1.0.0",
+            new Dictionary<string, CliFxCommandDefinition>(StringComparer.OrdinalIgnoreCase),
+            helpDocuments);
+
+        var commandNode = Assert.Single(document["commands"]!.AsArray());
+        Assert.NotNull(commandNode);
+        var command = commandNode!.AsObject();
+
+        var options = command["options"]!.AsArray();
+        Assert.Equal("TOKEN", options[0]!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.Equal("PATH", options[1]!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.Null(options[2]!["arguments"]);
+    }
 }
