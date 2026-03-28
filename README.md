@@ -128,6 +128,8 @@ The sample plan in [docs/Plans/validated-generic-help-frameworks.json](docs/Plan
 
 Items can declare `"analysisMode": "help"` or `"analysisMode": "native"`. `run-help-batch` only executes the `help` items and records the others in the plan's `skipped` array. The checked-in plan uses that for `Cake.Tool`, which stays indexed through the richer native OpenCLI/XMLDoc path instead of being downgraded to a help-only partial entry.
 
+Crawler-based analysis now always emits `crawl.json`, even when the parser fails to synthesize a usable `opencli.json`, so raw help captures remain available for later parser fixes without re-running the tool.
+
 ### Output artifacts
 
 Each analyzed tool produces versioned artifacts under `index/packages/{packageId}/{version}/`:
@@ -136,6 +138,7 @@ Each analyzed tool produces versioned artifacts under `index/packages/{packageId
 |---|---|
 | `metadata.json` | Package info, detection results, introspection status, timing data |
 | `opencli.json` | Parsed CLI command structure |
+| `crawl.json` | Raw recursive help-crawl captures preserved for re-parsing and parser debugging |
 | `xmldoc.xml` | Extracted XML documentation |
 
 A global manifest at `index/all.json` lists all indexed packages with their latest status.
@@ -148,6 +151,7 @@ A global manifest at `index/all.json` lists all indexed packages with their late
 | `dispatch-discovery-queue-analysis` | On demand | Slices the analysis queue into batches |
 | `analyze-untrusted-batch` | On demand | Runs sandboxed analysis on queued tools |
 | `promote-untrusted-analysis-results` | On demand | Promotes successful results into the main index |
+| `index-unindexed-nuget-tools` | On demand | Builds the current unindexed backlog, analyzes 250-item batches in parallel, and promotes aggregate results |
 | `queue-indexed-metadata-backfill` | On demand | Backfills historical versions for indexed packages |
 
 ## Prerequisites
