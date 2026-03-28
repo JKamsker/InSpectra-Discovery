@@ -1,15 +1,15 @@
 # InSpectra-Discovery
 
 > **Companion repository for [InSpectra](https://github.com/JKamsker/InSpectra).**
-> This repo handles the automated discovery, filtering, and analysis of .NET CLI tools that use [Spectre.Console](https://spectreconsole.net/). The resulting index feeds the main InSpectra project.
+> This repo handles the automated discovery, filtering, and analysis of .NET CLI tools, with scheduled Spectre.Console.Cli discovery plus generic help-based indexing across other CLI frameworks. The resulting index feeds the main InSpectra project.
 
 ## What it does
 
 InSpectra-Discovery is an automated pipeline that:
 
 1. **Discovers** all dotnet-tool packages published on NuGet via the V3 catalog API.
-2. **Filters** packages down to those that depend on `Spectre.Console.Cli`.
-3. **Analyzes** each tool by installing it in a sandbox, extracting its CLI structure (`--opencli`) and XML documentation.
+2. **Filters** packages into analysis queues, including scheduled `Spectre.Console.Cli` discovery and manual/research-driven framework batches.
+3. **Analyzes** each tool by installing it in a sandbox, extracting its CLI structure from native `--opencli`, XML documentation, or a generic recursive `--help` crawl.
 4. **Maintains** a versioned index of analyzed tools with metadata, CLI structure, and documentation artifacts.
 5. **Runs continuously** via GitHub Actions workflows that detect new/updated packages and queue them for analysis.
 
@@ -67,6 +67,7 @@ extract xmldoc"| Results["Analysis results"]
 src/InSpectra.Discovery.Tool/        # .NET 8 tool/CLI (discovery, analysis, promotion)
 scripts/                             # Legacy/manual PowerShell helpers
 .github/workflows/                   # CI/CD pipelines (scheduled discovery, batch analysis)
+docs/Plans/                          # Reusable checked-in analysis plans
 index/                               # Output: analyzed tool index (all.json + per-package artifacts)
 state/                               # Persistent state (catalog cursors, queues, deltas)
 tests/                               # xUnit tests
@@ -103,6 +104,17 @@ Discovered tools are analyzed via the discovery CLI, which installs each tool in
 ```powershell
 dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-untrusted --package-id JellyfinCli --version 0.1.16 --output-root artifacts/analysis/jellyfincli --batch-id manual
 ```
+
+For non-Spectre tools that do not expose native `--opencli`, the generic help crawler can run a checked-in batch plan and emit a promotion-ready `expected.json`:
+
+```powershell
+dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-help-batch --plan docs/Plans/validated-generic-help-frameworks.json --output-root artifacts/help-batches/validated-frameworks --source help-index-batch
+dotnet run --project src/InSpectra.Discovery.Tool -- promotion apply-untrusted --download-root artifacts/help-batches/validated-frameworks
+```
+
+The sample plan in [docs/Plans/validated-generic-help-frameworks.json](docs/Plans/validated-generic-help-frameworks.json) covers validated representatives for `CliFx`, `Argu`, `McMaster.Extensions.CommandLineUtils`, `Cocona`, `DocoptNet`, `System.CommandLine`, `CommandLineParser`, `Mono.Options / NDesk.Options`, `Microsoft.Extensions.CommandLineUtils`, `ConsoleAppFramework`, `CommandDotNet`, and `PowerArgs`.
+
+`Cake.Tool` is intentionally not in that sample plan because it is already fully indexed through the native path; re-promoting it from help-only output would downgrade that version to a partial entry.
 
 ### Output artifacts
 
