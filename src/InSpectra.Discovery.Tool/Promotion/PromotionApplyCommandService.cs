@@ -204,6 +204,10 @@ internal sealed class PromotionApplyCommandService
                     PromotionResultSupport.MergePlanItemIntoResult(item, result);
                 }
             }
+            else
+            {
+                PromotionIndexCleanupSupport.RemoveIndexedVersionArtifacts(packagesRoot, packageId, version);
+            }
 
             var stateRecord = PromotionResultSupport.UpdateStateRecord(existingState, result, indexedPaths, now);
             RepositoryPathResolver.WriteJsonFile(statePath, stateRecord);

@@ -1582,6 +1582,101 @@ public sealed class PromotionApplyCommandServiceTests
         }
     }
 
+    [Fact]
+    public async Task ApplyUntrustedAsync_Removes_Stale_Indexed_Version_When_RePromotion_Fails()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var previousRepositoryRoot = Environment.GetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT");
+        Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", repositoryRoot);
+
+        try
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+                new JsonObject
+                {
+                    ["generatedAtUtc"] = "2026-03-27T00:00:00Z",
+                    ["packageType"] = "DotnetTool",
+                    ["packageCount"] = 1,
+                    ["packages"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Stale.Tool",
+                            ["latestVersion"] = "1.1.0",
+                            ["totalDownloads"] = 300,
+                        },
+                    },
+                });
+
+            WriteIndexedSuccess(repositoryRoot, "Stale.Tool", "1.0.0", "stale", "tool-output");
+            WriteIndexedSuccess(repositoryRoot, "Stale.Tool", "1.1.0", "stale", "crawled-from-help");
+            RepositoryPackageIndexBuilder.Rebuild(repositoryRoot, writeBrowserIndex: true);
+
+            var downloadRoot = Path.Combine(repositoryRoot, "downloads");
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "plan", "expected.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["batchId"] = "batch-stale-failure",
+                    ["targetBranch"] = "main",
+                    ["items"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["packageId"] = "Stale.Tool",
+                            ["version"] = "1.1.0",
+                            ["attempt"] = 1,
+                            ["command"] = "stale",
+                            ["analysisMode"] = "help",
+                        },
+                    },
+                });
+
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(downloadRoot, "analysis-stale.tool-1.1.0", "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = "Stale.Tool",
+                    ["version"] = "1.1.0",
+                    ["batchId"] = "batch-stale-failure",
+                    ["attempt"] = 1,
+                    ["source"] = "analyze-untrusted-batch",
+                    ["analysisMode"] = "help",
+                    ["analyzedAt"] = "2026-03-27T06:30:00Z",
+                    ["disposition"] = "retryable-failure",
+                    ["phase"] = "crawl",
+                    ["classification"] = "help-crawl-empty",
+                    ["failureMessage"] = "No help documents could be captured.",
+                    ["command"] = "stale",
+                });
+
+            var service = new PromotionApplyCommandService();
+            var exitCode = await service.ApplyUntrustedAsync(downloadRoot, summaryOutputPath: null, json: true, CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+            Assert.False(Directory.Exists(Path.Combine(repositoryRoot, "index", "packages", "stale.tool", "1.1.0")));
+
+            var latestMetadata = ParseJsonObject(Path.Combine(repositoryRoot, "index", "packages", "stale.tool", "latest", "metadata.json"));
+            Assert.Equal("1.0.0", latestMetadata["version"]?.GetValue<string>());
+
+            var state = ParseJsonObject(Path.Combine(repositoryRoot, "state", "packages", "stale.tool", "1.1.0.json"));
+            Assert.Equal("retryable-failure", state["currentStatus"]?.GetValue<string>());
+            Assert.Null(state["indexedPaths"]);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("INSPECTRA_DISCOVERY_REPO_ROOT", previousRepositoryRoot);
+        }
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
@@ -1668,5 +1763,92 @@ public sealed class PromotionApplyCommandServiceTests
                 },
                 ["commands"] = new JsonArray(),
             });
+    }
+
+    private static void WriteIndexedSuccess(string repositoryRoot, string packageId, string version, string command, string artifactSource)
+    {
+        var lowerId = packageId.ToLowerInvariant();
+        var lowerVersion = version.ToLowerInvariant();
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", lowerId, lowerVersion);
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = packageId,
+                ["version"] = version,
+                ["trusted"] = false,
+                ["analysisMode"] = artifactSource == "tool-output" ? "native" : "help",
+                ["source"] = "seed",
+                ["batchId"] = "seed",
+                ["attempt"] = 1,
+                ["status"] = "ok",
+                ["evaluatedAt"] = "2026-03-27T01:00:00Z",
+                ["publishedAt"] = version == "1.1.0" ? "2026-03-27T02:00:00Z" : "2026-03-27T00:30:00Z",
+                ["packageUrl"] = $"https://www.nuget.org/packages/{packageId}/{version}",
+                ["packageContentUrl"] = $"https://nuget.test/{lowerId}.{lowerVersion}.nupkg",
+                ["registrationLeafUrl"] = $"https://nuget.test/registration/{lowerId}/{lowerVersion}.json",
+                ["catalogEntryUrl"] = $"https://nuget.test/catalog/{lowerId}.{lowerVersion}.json",
+                ["command"] = command,
+                ["cliFramework"] = artifactSource == "tool-output" ? "System.CommandLine" : "CliFx",
+                ["introspection"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["status"] = "ok",
+                        ["classification"] = OpenCliArtifactSourceSupport.InferClassification(artifactSource),
+                        ["artifactSource"] = artifactSource,
+                    },
+                },
+                ["timings"] = new JsonObject
+                {
+                    ["totalMs"] = 100,
+                },
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["status"] = "ok",
+                        ["classification"] = OpenCliArtifactSourceSupport.InferClassification(artifactSource),
+                        ["artifactSource"] = artifactSource,
+                        ["path"] = $"index/packages/{lowerId}/{lowerVersion}/opencli.json",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = $"index/packages/{lowerId}/{lowerVersion}/metadata.json",
+                    ["opencliPath"] = $"index/packages/{lowerId}/{lowerVersion}/opencli.json",
+                    ["opencliSource"] = artifactSource,
+                },
+            });
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = command,
+                    ["version"] = version,
+                },
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = artifactSource,
+                },
+                ["commands"] = new JsonArray(),
+            });
+
+        if (artifactSource != "tool-output")
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(versionRoot, "crawl.json"),
+                new JsonObject
+                {
+                    ["documentCount"] = 1,
+                    ["captureCount"] = 1,
+                });
+        }
     }
 }
