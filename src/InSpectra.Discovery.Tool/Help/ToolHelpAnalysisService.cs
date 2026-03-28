@@ -6,6 +6,21 @@ internal sealed class ToolHelpAnalysisService
     private readonly ToolCommandRuntime _runtime = new();
     private readonly ToolHelpOpenCliBuilder _openCliBuilder = new();
 
+    public Task<int> RunQuietAsync(
+        string packageId,
+        string version,
+        string? commandName,
+        string outputRoot,
+        string batchId,
+        int attempt,
+        string source,
+        string? cliFramework,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        CancellationToken cancellationToken)
+        => RunCoreAsync(packageId, version, commandName, outputRoot, batchId, attempt, source, cliFramework, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, json: false, suppressOutput: true, cancellationToken);
+
     public async Task<int> RunAsync(
         string packageId,
         string version,
@@ -19,6 +34,23 @@ internal sealed class ToolHelpAnalysisService
         int analysisTimeoutSeconds,
         int commandTimeoutSeconds,
         bool json,
+        CancellationToken cancellationToken)
+        => await RunCoreAsync(packageId, version, commandName, outputRoot, batchId, attempt, source, cliFramework, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, json, suppressOutput: false, cancellationToken);
+
+    private async Task<int> RunCoreAsync(
+        string packageId,
+        string version,
+        string? commandName,
+        string outputRoot,
+        string batchId,
+        int attempt,
+        string source,
+        string? cliFramework,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        bool json,
+        bool suppressOutput,
         CancellationToken cancellationToken)
     {
         var generatedAt = DateTimeOffset.UtcNow;
@@ -102,6 +134,11 @@ internal sealed class ToolHelpAnalysisService
                 {
                 }
             }
+        }
+
+        if (suppressOutput)
+        {
+            return 0;
         }
 
         var output = ToolRuntime.CreateOutput();

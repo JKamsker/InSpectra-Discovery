@@ -1,0 +1,235 @@
+using System.Text.Json.Nodes;
+using Xunit;
+
+public sealed class HelpBatchAnalysisCommandServiceTests
+{
+    [Fact]
+    public async Task RunAsync_WritesPromotionReadyExpectedPlan()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "state", "discovery", "dotnet-tools.current.json"),
+            new JsonObject
+            {
+                ["generatedAtUtc"] = "2026-03-28T00:00:00Z",
+                ["packageCount"] = 1,
+                ["packages"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "Sample.Tool",
+                        ["totalDownloads"] = 1234,
+                        ["packageUrl"] = "https://www.nuget.org/packages/Sample.Tool/1.2.3",
+                        ["packageContentUrl"] = "https://nuget.test/sample.tool.1.2.3.nupkg",
+                        ["catalogEntryUrl"] = "https://nuget.test/catalog/sample.tool.1.2.3.json",
+                    },
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "plans", "help-batch.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["batchId"] = "help-batch-001",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "Sample.Tool",
+                        ["version"] = "1.2.3",
+                        ["command"] = "sample",
+                        ["cliFramework"] = "System.CommandLine",
+                    },
+                },
+            });
+
+        var runner = new FakeHelpBatchAnalysisRunner((item, outputRoot, batchId, source, timeouts) =>
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = item.PackageId,
+                    ["version"] = item.Version,
+                    ["batchId"] = batchId,
+                    ["attempt"] = item.Attempt,
+                    ["source"] = source,
+                    ["cliFramework"] = item.CliFramework,
+                    ["disposition"] = "success",
+                    ["packageUrl"] = "https://www.nuget.org/packages/Sample.Tool/1.2.3",
+                    ["packageContentUrl"] = "https://api.nuget.org/v3-flatcontainer/sample.tool/1.2.3/sample.tool.1.2.3.nupkg",
+                    ["catalogEntryUrl"] = "https://api.nuget.org/v3/catalog0/data/sample.tool.1.2.3.json",
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = "opencli.json",
+                    },
+                });
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "opencli.json"),
+                new JsonObject
+                {
+                    ["opencli"] = "0.1-draft",
+                });
+            return 0;
+        });
+
+        var service = new HelpBatchAnalysisCommandService(runner);
+        var exitCode = await service.RunAsync(
+            repositoryRoot,
+            "plans/help-batch.json",
+            "artifacts/help-batch",
+            batchId: null,
+            source: "help-index-batch",
+            targetBranch: "main",
+            installTimeoutSeconds: 300,
+            analysisTimeoutSeconds: 600,
+            commandTimeoutSeconds: 60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Single(runner.Invocations);
+        Assert.Equal("help-batch-001", runner.Invocations[0].BatchId);
+        Assert.Equal("help-index-batch", runner.Invocations[0].Source);
+        Assert.Equal(300, runner.Invocations[0].Timeouts.InstallTimeoutSeconds);
+
+        var expected = ParseJsonObject(Path.Combine(repositoryRoot, "artifacts", "help-batch", "plan", "expected.json"));
+        Assert.Equal("help-batch-001", expected["batchId"]?.GetValue<string>());
+        Assert.Equal("plans/help-batch.json", expected["sourcePlanPath"]?.GetValue<string>());
+        Assert.Equal("main", expected["targetBranch"]?.GetValue<string>());
+
+        var expectedItem = expected["items"]?.AsArray().OfType<JsonObject>().Single()
+            ?? throw new InvalidOperationException("Expected one item.");
+        Assert.Equal("System.CommandLine", expectedItem["cliFramework"]?.GetValue<string>());
+        Assert.Equal(1234L, expectedItem["totalDownloads"]?.GetValue<long>());
+        Assert.Equal("analysis-sample.tool-1.2.3", expectedItem["artifactName"]?.GetValue<string>());
+        Assert.Equal("https://api.nuget.org/v3-flatcontainer/sample.tool/1.2.3/sample.tool.1.2.3.nupkg", expectedItem["packageContentUrl"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RunAsync_ReturnsErrorWhenAnyItemFails()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "plans", "help-batch.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["batchId"] = "help-batch-002",
+                ["items"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["packageId"] = "Broken.Tool",
+                        ["version"] = "0.1.0",
+                        ["cliFramework"] = "CliFx",
+                    },
+                },
+            });
+
+        var runner = new FakeHelpBatchAnalysisRunner((item, outputRoot, batchId, source, timeouts) =>
+        {
+            RepositoryPathResolver.WriteJsonFile(
+                Path.Combine(outputRoot, "result.json"),
+                new JsonObject
+                {
+                    ["schemaVersion"] = 1,
+                    ["packageId"] = item.PackageId,
+                    ["version"] = item.Version,
+                    ["batchId"] = batchId,
+                    ["attempt"] = item.Attempt,
+                    ["source"] = source,
+                    ["disposition"] = "retryable-failure",
+                    ["failureMessage"] = "boom",
+                    ["artifacts"] = new JsonObject
+                    {
+                        ["opencliArtifact"] = null,
+                    },
+                });
+            return 0;
+        });
+
+        var service = new HelpBatchAnalysisCommandService(runner);
+        var exitCode = await service.RunAsync(
+            repositoryRoot,
+            "plans/help-batch.json",
+            "artifacts/help-batch",
+            batchId: null,
+            source: "help-index-batch",
+            targetBranch: "main",
+            installTimeoutSeconds: 300,
+            analysisTimeoutSeconds: 600,
+            commandTimeoutSeconds: 60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(1, exitCode);
+
+        var expected = ParseJsonObject(Path.Combine(repositoryRoot, "artifacts", "help-batch", "plan", "expected.json"));
+        var expectedItem = expected["items"]?.AsArray().OfType<JsonObject>().Single()
+            ?? throw new InvalidOperationException("Expected one item.");
+        Assert.Equal("CliFx", expectedItem["cliFramework"]?.GetValue<string>());
+        Assert.Equal("https://www.nuget.org/packages/Broken.Tool/0.1.0", expectedItem["packageUrl"]?.GetValue<string>());
+    }
+
+    private static JsonObject ParseJsonObject(string path)
+        => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
+           ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
+
+    private sealed class FakeHelpBatchAnalysisRunner : IHelpBatchAnalysisRunner
+    {
+        private readonly Func<HelpBatchItem, string, string, string, HelpBatchTimeouts, int> _handler;
+
+        public FakeHelpBatchAnalysisRunner(Func<HelpBatchItem, string, string, string, HelpBatchTimeouts, int> handler)
+        {
+            _handler = handler;
+        }
+
+        public List<FakeInvocation> Invocations { get; } = [];
+
+        public Task<int> RunAsync(
+            HelpBatchItem item,
+            string outputRoot,
+            string batchId,
+            string source,
+            HelpBatchTimeouts timeouts,
+            CancellationToken cancellationToken)
+        {
+            Directory.CreateDirectory(outputRoot);
+            Invocations.Add(new FakeInvocation(outputRoot, batchId, source, timeouts));
+            return Task.FromResult(_handler(item, outputRoot, batchId, source, timeouts));
+        }
+    }
+
+    private sealed record FakeInvocation(string OutputRoot, string BatchId, string Source, HelpBatchTimeouts Timeouts);
+
+    private sealed class TemporaryDirectory : IDisposable
+    {
+        public TemporaryDirectory()
+        {
+            Path = System.IO.Path.Combine(
+                System.IO.Path.GetTempPath(),
+                $"inspectra-tests-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Path);
+        }
+
+        public string Path { get; }
+
+        public void Dispose()
+        {
+            if (Directory.Exists(Path))
+            {
+                Directory.Delete(Path, recursive: true);
+            }
+        }
+    }
+}

@@ -46,6 +46,7 @@ try
         config.AddBranch("analysis", analysis =>
         {
             analysis.SetDescription("Run sandboxed package analysis.");
+            analysis.AddCommand<AnalysisRunHelpBatchCommand>("run-help-batch").WithDescription("Run generic help analysis for a plan and emit a promotion-ready expected.json batch.");
             analysis.AddCommand<AnalysisRunHelpCommand>("run-help").WithDescription("Install a tool, crawl `--help`, and synthesize OpenCLI from generic help output.");
             analysis.AddCommand<AnalysisRunCliFxCommand>("run-clifx").WithDescription("Install a CliFx-based tool and synthesize OpenCLI from recursive help crawl.");
             analysis.AddCommand<AnalysisRunUntrustedCommand>("run-untrusted").WithDescription("Install a package in an isolated sandbox and capture OpenCLI/XMLDoc outputs.");
