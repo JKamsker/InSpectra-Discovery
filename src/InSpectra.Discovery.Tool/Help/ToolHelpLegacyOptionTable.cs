@@ -37,22 +37,38 @@ internal static partial class ToolHelpLegacyOptionTable
     {
         var results = new List<string>();
         var hasRows = false;
+        var capturedAnyBlockRows = false;
         var currentRowCaptured = false;
+        var currentRowIndentation = -1;
 
         foreach (var rawLine in lines)
         {
-            if (TryBuildCommandLineParserOptionRow(rawLine, out var syntheticLine))
+            if (TryBuildCommandLineParserBlockRow(rawLine, out var rowLine))
             {
-                results.Add(syntheticLine);
+                results.Add(rowLine);
                 hasRows = true;
+                capturedAnyBlockRows = true;
                 currentRowCaptured = true;
+                currentRowIndentation = GetIndentation(rowLine);
                 continue;
             }
 
-            if (currentRowCaptured && ShouldContinueCommandLineParserOptionRow(rawLine))
+            if (currentRowCaptured && ShouldContinueCommandLineParserOptionRow(rawLine, currentRowIndentation))
             {
                 results.Add(rawLine);
                 continue;
+            }
+
+            if (capturedAnyBlockRows && string.IsNullOrWhiteSpace(rawLine))
+            {
+                results.Add(rawLine);
+                currentRowCaptured = false;
+                continue;
+            }
+
+            if (capturedAnyBlockRows)
+            {
+                break;
             }
 
             currentRowCaptured = false;
@@ -104,7 +120,7 @@ internal static partial class ToolHelpLegacyOptionTable
         return hasRows ? results : [];
     }
 
-    private static bool ShouldContinueCommandLineParserOptionRow(string rawLine)
+    private static bool ShouldContinueCommandLineParserOptionRow(string rawLine, int currentRowIndentation)
     {
         if (rawLine.Length == 0 || !char.IsWhiteSpace(rawLine, 0))
         {
@@ -112,7 +128,9 @@ internal static partial class ToolHelpLegacyOptionTable
         }
 
         var trimmed = rawLine.TrimStart();
-        if (PositionalArgumentRowRegex().IsMatch(trimmed))
+        if (GetIndentation(rawLine) <= currentRowIndentation
+            || PositionalArgumentRowRegex().IsMatch(trimmed)
+            || LooksLikeLooseOptionRow(rawLine))
         {
             return false;
         }
@@ -346,7 +364,8 @@ internal static partial class ToolHelpLegacyOptionTable
     private static bool TryBuildCommandLineParserOptionRow(string rawLine, out string syntheticLine)
     {
         syntheticLine = string.Empty;
-        var match = CommandLineParserOptionRowRegex().Match(rawLine);
+        var trimmedEnd = rawLine.TrimEnd();
+        var match = CommandLineParserOptionRowRegex().Match(trimmedEnd);
         if (!match.Success)
         {
             return false;
@@ -354,16 +373,38 @@ internal static partial class ToolHelpLegacyOptionTable
 
         var shortName = match.Groups["short"].Value.Trim();
         var longName = match.Groups["long"].Value.Trim();
-        var description = match.Groups["description"].Value.Trim();
+        var description = match.Groups["description"].Success
+            ? match.Groups["description"].Value.Trim()
+            : string.Empty;
         if (string.IsNullOrWhiteSpace(shortName)
-            || string.IsNullOrWhiteSpace(longName)
-            || string.IsNullOrWhiteSpace(description))
+            || string.IsNullOrWhiteSpace(longName))
         {
             return false;
         }
 
-        syntheticLine = $"-{shortName}, --{longName}  {description}";
+        var indentation = rawLine[..GetIndentation(rawLine)];
+        syntheticLine = string.IsNullOrWhiteSpace(description)
+            ? $"{indentation}-{shortName}, --{longName}"
+            : $"{indentation}-{shortName}, --{longName}  {description}";
         return true;
+    }
+
+    private static bool TryBuildCommandLineParserBlockRow(string rawLine, out string rowLine)
+    {
+        rowLine = string.Empty;
+        if (TryBuildCommandLineParserOptionRow(rawLine, out var syntheticLine))
+        {
+            rowLine = syntheticLine;
+            return true;
+        }
+
+        if (LooksLikeLooseOptionRow(rawLine) || PositionalArgumentRowRegex().IsMatch(rawLine.TrimStart()))
+        {
+            rowLine = rawLine;
+            return true;
+        }
+
+        return false;
     }
 
     private static StructuredRowKind TryBuildStructuredRow(
@@ -612,10 +653,10 @@ internal static partial class ToolHelpLegacyOptionTable
     [GeneratedRegex(@"^(?<name>[A-Za-z][A-Za-z0-9]*)\*?\s+\((?<short>-[A-Za-z][A-Za-z0-9]*)\)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex TableRowRegex();
 
-    [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_\.\-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_\.\-]*)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex CommandLineParserOptionRowRegex();
 
-    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s{2,}\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 
     [GeneratedRegex(@"^(?:#+\s*[A-Za-z][\p{L}\p{M}\s]*|[A-Za-z][\p{L}\p{M}\s]+:)\s*$", RegexOptions.Compiled)]

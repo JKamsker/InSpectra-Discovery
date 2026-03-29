@@ -90,7 +90,7 @@ internal static partial class ToolHelpTrailingStructuredBlockInference
             return false;
         }
 
-        var trimmed = rawLine.TrimStart();
+        var trimmed = rawLine.Trim();
         if (OptionRowRegex().IsMatch(trimmed) || ToolHelpCommandPrototypeSupport.LooksLikeBareShortLongOptionRow(rawLine))
         {
             rowKind = StructuredRowKind.Option;
@@ -112,7 +112,7 @@ internal static partial class ToolHelpTrailingStructuredBlockInference
     [GeneratedRegex(@"^(?:--?[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*)(?:\s*[,|]\s*(?:--?[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*))*?(?:\s{2,}\S.*)?$", RegexOptions.Compiled)]
     private static partial Regex OptionRowRegex();
 
-    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s{2,}\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 
     internal readonly record struct ToolHelpTrailingStructuredBlock(

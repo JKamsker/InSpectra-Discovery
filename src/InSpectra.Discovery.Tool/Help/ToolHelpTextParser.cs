@@ -151,7 +151,20 @@ internal sealed partial class ToolHelpTextParser
             .Skip(string.IsNullOrWhiteSpace(title) ? 0 : 1)
             .Concat(trailingStructuredBlock.OptionLines)
             .ToArray();
-        var rawOptionLines = new List<string>(optionLines ?? ToolHelpLegacyOptionTable.InferOptionLines(optionCandidateLines, parsedUsageLines));
+        IReadOnlyList<string> seededOptionLines = optionLines ?? ToolHelpLegacyOptionTable.InferOptionLines(optionCandidateLines, parsedUsageLines);
+        if (optionLines is null)
+        {
+            SplitArgumentSectionLines(seededOptionLines, out var inferredArgumentLines, out var inferredOptionLines);
+            rawArgumentLines.AddRange(inferredArgumentLines);
+            seededOptionLines = inferredOptionLines;
+        }
+
+        var fullTextInferredOptionLines = ToolHelpLegacyOptionTable.InferOptionLines(lines, parsedUsageLines);
+        SplitArgumentSectionLines(fullTextInferredOptionLines, out var fullTextInferredArgumentLines, out var fullTextInferredOptionOnlyLines);
+        AppendDistinctLines(rawArgumentLines, fullTextInferredArgumentLines);
+
+        var rawOptionLines = new List<string>(seededOptionLines);
+        AppendDistinctLines(rawOptionLines, fullTextInferredOptionOnlyLines);
         rawOptionLines.AddRange(usageSectionParts.OptionLines);
         rawOptionLines.AddRange(optionStyleArgumentLines);
         var parsedOptions = ParseItems(
@@ -429,6 +442,17 @@ internal sealed partial class ToolHelpTextParser
 
     private static IReadOnlyList<string> TrimNonEmpty(IEnumerable<string> lines)
         => lines.Select(line => line.Trim()).Where(line => line.Length > 0).ToArray();
+
+    private static void AppendDistinctLines(ICollection<string> target, IEnumerable<string> lines)
+    {
+        foreach (var line in lines)
+        {
+            if (!target.Contains(line, StringComparer.Ordinal))
+            {
+                target.Add(line);
+            }
+        }
+    }
 
     private static string? JoinLines(IEnumerable<string> lines)
     {
@@ -758,7 +782,7 @@ internal sealed partial class ToolHelpTextParser
     [GeneratedRegex(@"^(?<prefix>\* )?(?<key>\S.*?)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex ItemRegex();
 
-    [GeneratedRegex(@"^(?<key>[A-Za-z][A-Za-z0-9_.-]*)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?<key>[A-Za-z][A-Za-z0-9_.-]*)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))", RegexOptions.Compiled)]

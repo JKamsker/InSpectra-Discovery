@@ -167,7 +167,9 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             var compatibleDocument = document.HasContent && ToolHelpDocumentInspector.IsCompatible(commandSegments, document)
                 ? document
                 : null;
-            var score = compatibleDocument is not null ? ToolHelpDocumentInspector.Score(compatibleDocument) : 0;
+            var score = compatibleDocument is not null
+                ? ScorePayloadCandidate(storedCommand, compatibleDocument)
+                : 0;
             if (score <= bestScore)
             {
                 continue;
@@ -179,6 +181,37 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         }
 
         return bestDocument is not null ? bestPayload : null;
+    }
+
+    private static int ScorePayloadCandidate(string storedCommand, ToolHelpDocument document)
+    {
+        var score = ToolHelpDocumentInspector.Score(document);
+        if (string.IsNullOrWhiteSpace(storedCommand))
+        {
+            return score;
+        }
+
+        var storedCommandLeaf = ToolHelpCommandPathSupport.SplitSegments(storedCommand).LastOrDefault();
+        var hasLeafSurface = document.Options.Count > 0 || document.Arguments.Count > 0;
+        if (!hasLeafSurface
+            && document.Commands.Count > 0
+            && (string.Equals(storedCommandLeaf, "help", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(storedCommandLeaf, "version", StringComparison.OrdinalIgnoreCase)))
+        {
+            return int.MinValue;
+        }
+
+        if (hasLeafSurface)
+        {
+            score += 20;
+        }
+
+        if (!hasLeafSurface && document.Commands.Count > 0)
+        {
+            score -= 10;
+        }
+
+        return score;
     }
 
     private static IReadOnlyList<string> SelectPayloadCandidates(JsonObject capture)

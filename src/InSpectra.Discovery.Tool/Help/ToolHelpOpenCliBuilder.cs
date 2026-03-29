@@ -11,7 +11,6 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "DEFAULT",
         "ENTER",
         "FOR",
-        "KEY",
         "OF",
         "OPTIONAL",
         "OR",

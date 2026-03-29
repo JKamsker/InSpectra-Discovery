@@ -26,7 +26,7 @@ internal static partial class ToolHelpDocumentInspector
 
         if (document.Commands.Count > 0 || LooksLikeDispatcherUsage(document.UsageLines))
         {
-            return false;
+            return LooksLikeNestedDispatcher(commandSegments, document);
         }
 
         return document.Options.Count > 0
@@ -65,6 +65,38 @@ internal static partial class ToolHelpDocumentInspector
             || line.Contains("<command>", StringComparison.OrdinalIgnoreCase)
             || line.Contains("[subcommand]", StringComparison.OrdinalIgnoreCase)
             || line.Contains("<subcommand>", StringComparison.OrdinalIgnoreCase));
+
+    private static bool LooksLikeNestedDispatcher(
+        IReadOnlyList<string> commandSegments,
+        ToolHelpDocument document)
+    {
+        if (commandSegments.Count == 0 || document.Commands.Count == 0)
+        {
+            return false;
+        }
+
+        var leafSegment = commandSegments[^1];
+        var hasNonAuxiliaryChild = false;
+        foreach (var child in document.Commands)
+        {
+            if (string.Equals(child.Key, "help", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(child.Key, "version", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            hasNonAuxiliaryChild = true;
+            var firstChildSegment = child.Key
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .FirstOrDefault();
+            if (string.Equals(firstChildSegment, leafSegment, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return hasNonAuxiliaryChild;
+    }
 
     private static bool ContainsPath(string? line, IReadOnlyList<string> commandSegments)
     {

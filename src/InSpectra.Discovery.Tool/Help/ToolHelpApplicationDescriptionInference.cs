@@ -57,7 +57,7 @@ internal static partial class ToolHelpApplicationDescriptionInference
             || MarkdownHeadingRegex().IsMatch(line);
     }
 
-    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s{2,}\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 
     [GeneratedRegex(@"^.+?\s+v?\d[\w\.\-\+]*$", RegexOptions.Compiled)]
