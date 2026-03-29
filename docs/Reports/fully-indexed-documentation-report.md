@@ -1,18 +1,18 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-28 18:55:23+00:00
+Generated: 2026-03-29 13:16:17+00:00
 
-Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
+Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
 Completeness rule: visible commands, options, and arguments must all have non-empty descriptions, and every visible leaf command must have at least one non-empty example.
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 153
+Packages in scope: 161
 
-Fully documented: 72
+Fully documented: 75
 
-Incomplete: 81
+Incomplete: 86
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -36,11 +36,13 @@ Incomplete: 81
 | [CodexD.Cli](#pkg-codexd-cli) | 0.0.1 | ok | xml-ready | 8/8 | 57/61 | 1/3 | 0/6 | FAIL |
 | [ContextWeaver](#pkg-contextweaver) | 1.0.12 | ok | xml-ready | 1/1 | 9/9 | 0/0 | 0/1 | FAIL |
 | [CsProj](#pkg-csproj) | 2.0.0 | ok | xml-ready | 12/12 | 29/29 | 10/10 | 9/10 | FAIL |
+| [cute](#pkg-cute) | 2.14.5 | ok | requires-interactive-authentication | 36/36 | 382/382 | 0/0 | 0/31 | FAIL |
 | [Cyival.Build.Cli](#pkg-cyival-build-cli) | 0.2.2 | ok | xml-ready | 2/2 | 1/7 | 0/2 | 0/2 | FAIL |
 | [deicrypt](#pkg-deicrypt) | 2026.2.11.346 | ok | xml-ready | 2/2 | 0/2 | 4/4 | 2/2 | FAIL |
 | [Dev.Tools.Console](#pkg-dev-tools-console) | 0.0.5 | ok | xml-ready | 22/22 | 58/58 | 16/16 | 0/22 | FAIL |
 | [devdeer.tools.tocpm](#pkg-devdeer-tools-tocpm) | 1.4.0 | ok | xml-ready | 2/2 | 4/4 | 0/2 | 2/2 | FAIL |
 | [dgt.power](#pkg-dgt-power) | 2.1.0-beta.39 | ok | xml-ready | 37/47 | 109/147 | 9/9 | 16/42 | FAIL |
+| [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
 | [docfx-plus](#pkg-docfx-plus) | 2.0.4 | ok | xml-ready | 0/10 | 85/85 | 8/8 | 0/9 | FAIL |
 | [dotnet-busly](#pkg-dotnet-busly) | 0.44.0 | ok | xml-ready | 11/11 | 14/14 | 0/2 | 0/7 | FAIL |
 | [dotnet-gcm](#pkg-dotnet-gcm) | 2.7.0 | ok | xml-ready | 3/3 | 11/11 | 3/3 | 0/3 | FAIL |
@@ -58,7 +60,7 @@ Incomplete: 81
 | [kosh](#pkg-kosh) | 0.4.1 | ok | xml-ready | 4/4 | 2/2 | 0/0 | 0/4 | FAIL |
 | [MChris.DotnetCheck](#pkg-mchris-dotnetcheck) | 1.0.11 | ok | xml-ready | 10/10 | 18/18 | 1/1 | 3/8 | FAIL |
 | [Metalama.Tool](#pkg-metalama-tool) | 2026.1.6-preview | ok | xml-ready | 29/29 | 56/56 | 5/5 | 0/25 | FAIL |
-| [MetaMorph.Cli](#pkg-metamorph-cli) | 1.0.10 | ok | xml-ready | 0/11 | 10/10 | 12/12 | 0/11 | FAIL |
+| [MetaMorph.Cli](#pkg-metamorph-cli) | 1.0.11 | ok | xml-ready | 0/11 | 10/10 | 12/12 | 0/11 | FAIL |
 | [Momentum.Extensions.EventMarkdownGenerator](#pkg-momentum-extensions-eventmarkdowngenerator) | 0.0.9 | ok | xml-ready | 2/2 | 10/10 | 0/0 | 0/2 | FAIL |
 | [MrKWatkins.OakAsm.Tool](#pkg-mrkwatkins-oakasm-tool) | 0.8.2 | ok | xml-ready | 0/2 | 0/1 | 2/3 | 0/2 | FAIL |
 | [MrKWatkins.OakIO.Tool](#pkg-mrkwatkins-oakio-tool) | 1.0.4 | ok | xml-ready | 2/2 | 0/0 | 3/3 | 0/2 | FAIL |
@@ -69,6 +71,7 @@ Incomplete: 81
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.31 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [Notify.Console](#pkg-notify-console) | 1.1.0 | ok | xml-ready | 3/3 | 0/5 | 0/1 | 0/3 | FAIL |
 | [PasswordSafe.Cli](#pkg-passwordsafe-cli) | 2.0.2 | ok | xml-ready | 29/29 | 143/143 | 8/8 | 0/25 | FAIL |
+| [PhoenixCode.Lens](#pkg-phoenixcode-lens) | 1.4.2 | ok | requires-configuration | 7/7 | 18/18 | 0/0 | 0/7 | FAIL |
 | [pkgchk-cli](#pkg-pkgchk-cli) | 1.0.3 | ok | xml-ready | 3/3 | 33/33 | 3/3 | 0/3 | FAIL |
 | [Poke](#pkg-poke) | 0.4.0 | ok | xml-ready | 7/7 | 21/21 | 0/0 | 0/6 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
@@ -79,6 +82,7 @@ Incomplete: 81
 | [SA-OpenSearchTool](#pkg-sa-opensearchtool) | 2026.1.3.7 | ok | xml-ready | 18/18 | 51/51 | 5/5 | 0/15 | FAIL |
 | [ScatGirl.Cli](#pkg-scatgirl-cli) | 0.1.33 | ok | xml-ready | 4/4 | 12/13 | 6/6 | 3/4 | FAIL |
 | [ScatMan.Cli](#pkg-scatman-cli) | 0.1.52 | ok | xml-ready | 8/8 | 22/23 | 15/15 | 7/8 | FAIL |
+| [SceneGate.Hinox.Utils](#pkg-scenegate-hinox-utils) | 1.0.0 | ok | invalid-xml | 5/5 | 16/16 | 1/1 | 0/3 | FAIL |
 | [ShadcnBlazor.Cli](#pkg-shadcnblazor-cli) | 0.0.5 | ok | xml-ready | 6/6 | 9/9 | 2/2 | 0/5 | FAIL |
 | [Shirubasoft.Aspire.E2E.Cli](#pkg-shirubasoft-aspire-e2e-cli) | 2.0.4 | ok | xml-ready | 22/22 | 16/16 | 16/20 | 0/21 | FAIL |
 | [SJP.AvroTool](#pkg-sjp-avrotool) | 0.1.1 | ok | xml-ready | 3/3 | 6/6 | 4/4 | 0/3 | FAIL |
@@ -86,8 +90,9 @@ Incomplete: 81
 | [Spaceship.Console](#pkg-spaceship-console) | 1.0.1 | ok | xml-ready | 34/34 | 196/196 | 24/24 | 0/29 | FAIL |
 | [sqlct](#pkg-sqlct) | 0.1.0 | ok | xml-ready | 5/5 | 0/18 | 0/0 | 0/5 | FAIL |
 | [StewardEF](#pkg-stewardef) | 0.5.0-preview.3 | ok | xml-ready | 2/2 | 1/5 | 0/2 | 2/2 | FAIL |
-| [Substratum.Tools](#pkg-substratum-tools) | 2.5.1 | ok | xml-ready | 0/12 | 24/24 | 1/1 | 0/9 | FAIL |
+| [Substratum.Tools](#pkg-substratum-tools) | 2.6.0 | ok | xml-ready | 0/12 | 24/24 | 1/1 | 0/9 | FAIL |
 | [SwedishTestSsn](#pkg-swedishtestssn) | 1.1.0 | ok | xml-ready | 1/1 | 2/6 | 2/2 | 1/1 | FAIL |
+| [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
 | [Test262Harness.Console](#pkg-test262harness-console) | 1.0.4 | ok | xml-ready | 1/1 | 4/7 | 0/0 | 0/1 | FAIL |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.1 | ok | xml-ready | 6/8 | 24/24 | 9/9 | 0/6 | FAIL |
 | [Tolitech.Lino](#pkg-tolitech-lino) | 1.3.4 | ok | xml-ready | 83/84 | 110/110 | 1/1 | 0/56 | FAIL |
@@ -102,6 +107,7 @@ Incomplete: 81
 | [ARI](#pkg-ari) | 2026.2.11.743 | ok | xml-ready | 1/1 | 12/12 | 2/2 | 1/1 | PASS |
 | [atc-azure-digitaltwin](#pkg-atc-azure-digitaltwin) | 3.0.0 | ok | xml-ready | 47/47 | 142/142 | 0/0 | 33/33 | PASS |
 | [atc-coding-rules-updater](#pkg-atc-coding-rules-updater) | 2.0.236 | ok | xml-ready | 8/8 | 28/28 | 0/0 | 6/6 | PASS |
+| [atc-kusto](#pkg-atc-kusto) | 3.3.1 | ok | invalid-xml | 7/7 | 30/30 | 0/0 | 6/6 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [Betalgo.Blueflow.Chopper](#pkg-betalgo-blueflow-chopper) | 1.0.5 | ok | xml-ready | 0/0 | 5/5 | 0/0 | 0/0 | PASS |
 | [Blobify](#pkg-blobify) | 2026.2.11.541 | ok | xml-ready | 1/1 | 2/2 | 3/3 | 1/1 | PASS |
@@ -127,6 +133,7 @@ Incomplete: 81
 | [dotnet-overview](#pkg-dotnet-overview) | 4.2.0 | ok | xml-ready | 0/0 | 4/4 | 1/1 | 0/0 | PASS |
 | [dotnet-soddi](#pkg-dotnet-soddi) | 0.4.0 | ok | xml-ready | 4/4 | 18/18 | 4/4 | 4/4 | PASS |
 | [DotNetNuke.BulkInstall](#pkg-dotnetnuke-bulkinstall) | 10.2.4-bulk-install-packaging.1+335 | ok | xml-ready | 0/0 | 8/8 | 0/0 | 0/0 | PASS |
+| [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
 | [DotnetTokenKiller](#pkg-dotnettokenkiller) | 0.4.0 | ok | xml-ready | 21/21 | 36/36 | 8/8 | 18/18 | PASS |
 | [DPI](#pkg-dpi) | 2026.2.11.364 | ok | xml-ready | 3/3 | 7/7 | 1/1 | 2/2 | PASS |
 | [Garrard.CloudShare.Receiver](#pkg-garrard-cloudshare-receiver) | 0.1.9 | ok | xml-ready | 0/0 | 7/7 | 0/0 | 0/0 | PASS |
@@ -140,7 +147,7 @@ Incomplete: 81
 | [jinspect](#pkg-jinspect) | 0.2.2 | ok | xml-ready | 0/0 | 5/5 | 1/1 | 0/0 | PASS |
 | [json-minify](#pkg-json-minify) | 1.1.4 | ok | xml-ready | 2/2 | 3/3 | 3/3 | 2/2 | PASS |
 | [JTest.Cli](#pkg-jtest-cli) | 1.0.3 | ok | xml-ready | 5/5 | 18/18 | 6/6 | 5/5 | PASS |
-| [lazydotnet](#pkg-lazydotnet) | 0.5.4 | ok | xml-ready | 0/0 | 3/3 | 1/1 | 0/0 | PASS |
+| [lazydotnet](#pkg-lazydotnet) | 0.6.0 | ok | xml-ready | 0/0 | 3/3 | 1/1 | 0/0 | PASS |
 | [Locale.CLI](#pkg-locale-cli) | 0.0.11 | ok | xml-ready | 7/7 | 42/42 | 9/9 | 7/7 | PASS |
 | [Make](#pkg-make) | 0.11.0 | ok | xml-ready | 0/0 | 1/1 | 1/1 | 0/0 | PASS |
 | [MartinCostello.WaitForNuGetPackage](#pkg-martincostello-waitfornugetpackage) | 1.2.3 | ok | xml-ready | 0/0 | 5/5 | 1/1 | 0/0 | PASS |
@@ -159,6 +166,7 @@ Incomplete: 81
 | [Serilog.Sinks.File.Encrypt.Cli](#pkg-serilog-sinks-file-encrypt-cli) | 3.0.0 | ok | xml-ready | 2/2 | 8/8 | 1/1 | 2/2 | PASS |
 | [SharkyParser](#pkg-sharkyparser) | 2.0.0 | ok | xml-ready | 2/2 | 5/5 | 2/2 | 2/2 | PASS |
 | [Silverfly.TreeVisualizer](#pkg-silverfly-treevisualizer) | 1.7.0 | ok | xml-ready | 0/0 | 1/1 | 1/1 | 0/0 | PASS |
+| [slnx-mermaid](#pkg-slnx-mermaid) | 17.3.4 | ok | invalid-xml | 0/0 | 1/1 | 0/0 | 0/0 | PASS |
 | [soddi](#pkg-soddi) | 0.5.1 | ok | xml-ready | 4/4 | 18/18 | 4/4 | 4/4 | PASS |
 | [SteamFetch](#pkg-steamfetch) | 0.0.4 | ok | xml-ready | 3/3 | 3/3 | 6/6 | 3/3 | PASS |
 | [SwaggerDiff.Tool](#pkg-swaggerdiff-tool) | 1.5.2 | ok | xml-ready | 2/2 | 10/10 | 0/0 | 2/2 | PASS |
@@ -512,6 +520,23 @@ Incomplete: 81
 - Missing argument descriptions: None
 - Missing leaf command examples: modify prune-links
 
+<a id="pkg-cute"></a>
+### cute
+
+- Version: `2.14.5`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `requires-interactive-authentication`
+- Command documentation: `36/36`
+- Option documentation: `382/382`
+- Argument documentation: `0/0`
+- Leaf command examples: `0/31`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: app generate, chat, content delete, content download, content edit, content generate, content generate-test, content join, content publish, content replace, content set-default, content sync-api, content translate, content unpublish, content upload, eval content-generator, eval content-translator, eval naming, info, login, logout, server scheduler, server webhooks, type clone, type delete, type diff, type export, type import, type rename, type scaffold, version
+
 <a id="pkg-cyival-build-cli"></a>
 ### Cyival.Build.Cli
 
@@ -596,6 +621,23 @@ Incomplete: 81
 - Missing option descriptions: analyze --generate-report, analyze --generate-summary, analyze --inline, analyze --note-patches, analyze activelayer --generate-report, analyze activelayer --generate-summary, analyze activelayer --inline, analyze activelayer --note-patches, analyze entityallassets --generate-report, analyze entityallassets --generate-summary, analyze entityallassets --inline, analyze entityallassets --note-patches, analyze noactivelayer --generate-report, analyze noactivelayer --generate-summary, analyze noactivelayer --inline, analyze noactivelayer --note-patches, analyze redundantcomponents --generate-report, analyze redundantcomponents --generate-summary, analyze redundantcomponents --inline, analyze redundantcomponents --note-patches, analyze redundantpatches --generate-report, analyze redundantpatches --generate-summary, analyze redundantpatches --inline, analyze redundantpatches --note-patches, analyze toplayer --generate-report, analyze toplayer --generate-summary, analyze toplayer --inline, analyze toplayer --note-patches, export --inline, export bulkdeletes --inline, export calendars --inline, export documenttemplates --inline, export outlooktemplates --inline, export queues --inline, export routingruleconfigs --inline, export slaconfigs --inline, export teamtemplates --inline, export userroles --inline
 - Missing argument descriptions: None
 - Missing leaf command examples: analyze entityallassets, analyze redundantcomponents, analyze redundantpatches, export bulkdeletes, export calendars, export documenttemplates, export outlooktemplates, export queues, export routingruleconfigs, export slaconfigs, export teamtemplates, export userroles, import bulkdeletes, import calendar, import documenttemplates, import outlooktemplates, import queues, import routingruleconfigs, import secureconfigs, import slaconfigs, import teamtemplates, import userroles, profile delete, profile list, profile purge, profile select
+
+<a id="pkg-difflog"></a>
+### DiffLog
+
+- Version: `0.0.2`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `requires-configuration`
+- Command documentation: `3/3`
+- Option documentation: `24/24`
+- Argument documentation: `0/0`
+- Leaf command examples: `2/3`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: tags
 
 <a id="pkg-docfx-plus"></a>
 ### docfx-plus
@@ -889,7 +931,7 @@ Incomplete: 81
 <a id="pkg-metamorph-cli"></a>
 ### MetaMorph.Cli
 
-- Version: `1.0.10`
+- Version: `1.0.11`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -1073,6 +1115,23 @@ Incomplete: 81
 - Missing argument descriptions: None
 - Missing leaf command examples: config edit, config init, config path, config reset, config set, config show, db add, db create, db list, db remove, db set, db show, entry get, entry list, entry new, entry remove, entry renew, entry search, entry show, entry update, policy add, policy genpass, policy list, policy rm, policy update
 
+<a id="pkg-phoenixcode-lens"></a>
+### PhoenixCode.Lens
+
+- Version: `1.4.2`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `requires-configuration`
+- Command documentation: `7/7`
+- Option documentation: `18/18`
+- Argument documentation: `0/0`
+- Leaf command examples: `0/7`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: activate, analyze, config, info, report, run, scan
+
 <a id="pkg-pkgchk-cli"></a>
 ### pkgchk-cli
 
@@ -1243,6 +1302,23 @@ Incomplete: 81
 - Missing argument descriptions: None
 - Missing leaf command examples: meta
 
+<a id="pkg-scenegate-hinox-utils"></a>
+### SceneGate.Hinox.Utils
+
+- Version: `1.0.0`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `invalid-xml`
+- Command documentation: `5/5`
+- Option documentation: `16/16`
+- Argument documentation: `1/1`
+- Leaf command examples: `0/3`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: audio vab export, audio vab import, audio vab test
+
 <a id="pkg-shadcnblazor-cli"></a>
 ### ShadcnBlazor.Cli
 
@@ -1365,7 +1441,7 @@ Incomplete: 81
 <a id="pkg-substratum-tools"></a>
 ### Substratum.Tools
 
-- Version: `2.5.1`
+- Version: `2.6.0`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -1395,6 +1471,23 @@ Incomplete: 81
 - Missing option descriptions: swetestssn --limit, swetestssn --offset, [root] --limit, [root] --offset
 - Missing argument descriptions: None
 - Missing leaf command examples: None
+
+<a id="pkg-terevintosoftware-staticsitegenerator"></a>
+### TerevintoSoftware.StaticSiteGenerator
+
+- Version: `10.0.1`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `requires-configuration`
+- Command documentation: `1/1`
+- Option documentation: `9/9`
+- Argument documentation: `1/1`
+- Leaf command examples: `0/1`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: generate
 
 <a id="pkg-test262harness-console"></a>
 ### Test262Harness.Console
@@ -1626,6 +1719,23 @@ Incomplete: 81
 - XMLDoc classification: `xml-ready`
 - Command documentation: `8/8`
 - Option documentation: `28/28`
+- Argument documentation: `0/0`
+- Leaf command examples: `6/6`
+- Overall: `PASS`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: None
+
+<a id="pkg-atc-kusto"></a>
+### atc-kusto
+
+- Version: `3.3.1`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `invalid-xml`
+- Command documentation: `7/7`
+- Option documentation: `30/30`
 - Argument documentation: `0/0`
 - Leaf command examples: `6/6`
 - Overall: `PASS`
@@ -2059,6 +2169,23 @@ Incomplete: 81
 - Missing argument descriptions: None
 - Missing leaf command examples: None
 
+<a id="pkg-dotnettips-spargine-dev-tool"></a>
+### dotNetTips.Spargine.Dev.Tool
+
+- Version: `2026.10.2.16`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `invalid-xml`
+- Command documentation: `2/2`
+- Option documentation: `12/12`
+- Argument documentation: `0/0`
+- Leaf command examples: `2/2`
+- Overall: `PASS`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: None
+
 <a id="pkg-dotnettokenkiller"></a>
 ### DotnetTokenKiller
 
@@ -2283,7 +2410,7 @@ Incomplete: 81
 <a id="pkg-lazydotnet"></a>
 ### lazydotnet
 
-- Version: `0.5.4`
+- Version: `0.6.0`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -2596,6 +2723,23 @@ Incomplete: 81
 - Command documentation: `0/0`
 - Option documentation: `1/1`
 - Argument documentation: `1/1`
+- Leaf command examples: `0/0`
+- Overall: `PASS`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: None
+
+<a id="pkg-slnx-mermaid"></a>
+### slnx-mermaid
+
+- Version: `17.3.4`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `invalid-xml`
+- Command documentation: `0/0`
+- Option documentation: `1/1`
+- Argument documentation: `0/0`
 - Leaf command examples: `0/0`
 - Overall: `PASS`
 - Missing command descriptions: None
