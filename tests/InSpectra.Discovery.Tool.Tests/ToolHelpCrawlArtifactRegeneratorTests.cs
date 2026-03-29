@@ -252,6 +252,200 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     }
 
     [Fact]
+    public void Regenerator_Prefers_Stored_Single_Stream_Help_Payload_Over_Invocation_Echo_Combination()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "spriggit.yaml.skyrim", "0.41.0-alpha.5");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "spriggit.yaml.skyrim",
+                ["version"] = "0.41.0-alpha.5",
+                ["command"] = "Spriggit.Yaml.Skyrim",
+                ["cliFramework"] = "CommandLineParser",
+                ["analysisMode"] = "help",
+                ["status"] = "partial",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["classification"] = "invalid-opencli-artifact",
+                    },
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["helpInvocation"] = "--help",
+                        ["payload"] =
+                            """
+                            Spriggit version 0.41.0
+                            --help
+                            Spriggit.Yaml.Skyrim 0.41.0
+                            2024
+
+                              serialize, convert-from-plugin    Converts a plugin to text.
+
+                              help                              Display more information on a specific command.
+                            """,
+                        ["result"] = new JsonObject
+                        {
+                            ["stdout"] =
+                                """
+                                Spriggit version 0.41.0
+                                --help
+                                """,
+                            ["stderr"] =
+                                """
+                                Spriggit.Yaml.Skyrim 0.41.0
+                                2024
+
+                                  serialize, convert-from-plugin    Converts a plugin to text.
+
+                                  help                              Display more information on a specific command.
+                                """,
+                            ["exitCode"] = 1,
+                            ["timedOut"] = false,
+                            ["status"] = "failed",
+                            ["durationMs"] = 1,
+                        },
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "convert-from-plugin",
+                        ["helpInvocation"] = "convert-from-plugin --help",
+                        ["payload"] =
+                            """
+                            Spriggit.Yaml.Skyrim 0.41.0
+
+                              -i, --InputPath    Required. Path to the plugin.
+                            """,
+                    },
+                },
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        Assert.Equal("Spriggit.Yaml.Skyrim", regenerated["info"]?["title"]?.GetValue<string>());
+        Assert.Contains(regenerated["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "convert-from-plugin", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Regenerator_DoesNot_Nest_Builtin_Auxiliary_Inventory_Echoes()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "spriggit.yaml.skyrim", "0.41.0-alpha.5");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "spriggit.yaml.skyrim",
+                ["version"] = "0.41.0-alpha.5",
+                ["command"] = "Spriggit.Yaml.Skyrim",
+                ["cliFramework"] = "CommandLineParser",
+                ["analysisMode"] = "help",
+                ["status"] = "partial",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["classification"] = "invalid-opencli-artifact",
+                    },
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            Spriggit.Yaml.Skyrim 0.41.0
+
+                              serialize, convert-from-plugin    Converts a plugin to text.
+
+                              help                              Display more information on a specific command.
+
+                              version                           Display version information.
+                            """,
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "convert-from-plugin",
+                        ["payload"] =
+                            """
+                            Spriggit.Yaml.Skyrim 0.41.0
+
+                              -i, --InputPath    Required. Path to the plugin.
+                            """,
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "help",
+                        ["payload"] =
+                            """
+                            Spriggit.Yaml.Skyrim 0.41.0
+
+                              serialize, convert-from-plugin    Converts a plugin to text.
+
+                              help                              Display more information on a specific command.
+
+                              version                           Display version information.
+                            """,
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "help convert-from-plugin",
+                        ["payload"] =
+                            """
+                            Spriggit.Yaml.Skyrim 0.41.0
+
+                              -i, --InputPath    Required. Path to the plugin.
+                            """,
+                    },
+                },
+            });
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        var help = Assert.Single(regenerated["commands"]!.AsArray().Where(command => string.Equals(command?["name"]?.GetValue<string>(), "help", StringComparison.Ordinal)));
+        Assert.Null(help!["commands"]);
+    }
+
+    [Fact]
     public void Regenerator_Rejects_Unparseable_Root_Capture_As_Invalid_OpenCli()
     {
         ToolRuntime.Initialize();

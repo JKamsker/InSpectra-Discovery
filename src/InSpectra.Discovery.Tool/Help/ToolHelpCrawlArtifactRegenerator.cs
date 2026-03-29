@@ -159,6 +159,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         ToolHelpDocument? bestDocument = null;
         string? bestPayload = null;
         var bestScore = -1;
+        var helpInvocation = capture["helpInvocation"]?.GetValue<string>();
 
         foreach (var payload in candidates)
         {
@@ -168,7 +169,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
                 ? document
                 : null;
             var score = compatibleDocument is not null
-                ? ScorePayloadCandidate(storedCommand, compatibleDocument)
+                ? ScorePayloadCandidate(storedCommand, compatibleDocument, helpInvocation, payload)
                 : 0;
             if (score <= bestScore)
             {
@@ -183,9 +184,9 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         return bestDocument is not null ? bestPayload : null;
     }
 
-    private static int ScorePayloadCandidate(string storedCommand, ToolHelpDocument document)
+    private static int ScorePayloadCandidate(string storedCommand, ToolHelpDocument document, string? helpInvocation, string payload)
     {
-        var score = ToolHelpDocumentInspector.Score(document);
+        var score = ToolHelpDocumentInspector.Score(document) - GetPayloadSelectionPenalty(payload, helpInvocation);
         if (string.IsNullOrWhiteSpace(storedCommand))
         {
             return score;
@@ -212,6 +213,30 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         }
 
         return score;
+    }
+
+    private static int GetPayloadSelectionPenalty(string payload, string? helpInvocation)
+    {
+        if (string.IsNullOrWhiteSpace(payload) || string.IsNullOrWhiteSpace(helpInvocation))
+        {
+            return 0;
+        }
+
+        var lines = payload
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .ToArray();
+        var edgeLines = lines
+            .Take(4)
+            .Concat(lines.TakeLast(4))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return edgeLines.Any(line => string.Equals(line, helpInvocation, StringComparison.OrdinalIgnoreCase))
+            ? 50
+            : 0;
     }
 
     private static IReadOnlyList<string> SelectPayloadCandidates(JsonObject capture)
@@ -267,6 +292,11 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         {
             var commandKey = queue.Dequeue();
             var current = documents[commandKey];
+            if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryInventoryEcho(commandKey, current))
+            {
+                continue;
+            }
+
             foreach (var child in current.Commands)
             {
                 var childKey = ToolHelpCommandPathSupport.ResolveChildKey(rootCommandName, commandKey, child.Key);

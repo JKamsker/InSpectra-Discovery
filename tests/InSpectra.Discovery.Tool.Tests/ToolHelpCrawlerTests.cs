@@ -31,6 +31,20 @@ public sealed class ToolHelpCrawlerTests
         var runtime = new FakeToolCommandRuntime(arguments =>
         {
             var key = string.Join(' ', arguments);
+            if (string.Equals(key, "convert-from-plugin --help", StringComparison.Ordinal)
+                || string.Equals(key, "help convert-from-plugin", StringComparison.Ordinal)
+                || string.Equals(key, "help convert-from-plugin --help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stderr:
+                    """
+                    Spriggit.Yaml.Skyrim 0.41.0
+
+                      -i, --InputPath    Required. Path to the plugin.
+                    """,
+                    exitCode: 1);
+            }
+
             return key switch
             {
                 "--help" => Result(
@@ -160,6 +174,141 @@ public sealed class ToolHelpCrawlerTests
         Assert.False(result.Documents.ContainsKey("serve"));
         Assert.True(result.CaptureSummaries["serve"].TerminalNonHelp);
         Assert.Equal("serve --help", result.CaptureSummaries["serve"].HelpInvocation);
+    }
+
+    [Fact]
+    public async Task CrawlAsync_Prefers_Single_Stream_Help_Payload_Over_Invocation_Echo_Combination()
+    {
+        var runtime = new FakeToolCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            if (string.Equals(key, "convert-from-plugin --help", StringComparison.Ordinal)
+                || string.Equals(key, "help convert-from-plugin", StringComparison.Ordinal)
+                || string.Equals(key, "help convert-from-plugin --help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stderr:
+                    """
+                    Spriggit.Yaml.Skyrim 0.41.0
+
+                      -i, --InputPath    Required. Path to the plugin.
+                    """,
+                    exitCode: 1);
+            }
+
+            return key switch
+            {
+                "--help" => Result(
+                    stdout:
+                    """
+                    Spriggit version 0.41.0
+                    --help
+                    """,
+                    stderr:
+                    """
+                    Spriggit.Yaml.Skyrim 0.41.0
+                    2024
+
+                      serialize, convert-from-plugin    Converts a plugin to text.
+
+                      help                              Display more information on a specific command.
+                    """,
+                    exitCode: 1),
+                "help --help" => Result(
+                    stdout:
+                    """
+                    Spriggit version 0.41.0
+                    help --help
+                    """,
+                    stderr:
+                    """
+                    Spriggit.Yaml.Skyrim 0.41.0
+                    2024
+
+                      serialize, convert-from-plugin    Converts a plugin to text.
+
+                      help                              Display more information on a specific command.
+                    """,
+                    exitCode: 1),
+                _ => throw new InvalidOperationException($"Unexpected invocation: '{key}'."),
+            };
+        });
+        var crawler = new ToolHelpCrawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "Spriggit.Yaml.Skyrim",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("Spriggit.Yaml.Skyrim", result.Documents[string.Empty].Title);
+        Assert.Contains(result.Documents[string.Empty].Commands, command => string.Equals(command.Key, "convert-from-plugin", StringComparison.Ordinal));
+        Assert.Equal("convert-from-plugin --help", result.CaptureSummaries["convert-from-plugin"].HelpInvocation);
+    }
+
+    [Fact]
+    public async Task CrawlAsync_DoesNot_Recurse_Into_Builtin_Auxiliary_Inventory_Echoes()
+    {
+        var runtime = new FakeToolCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            return key switch
+            {
+                "--help" => Result(
+                    stderr:
+                    """
+                    Spriggit.Yaml.Skyrim 0.41.0
+                    2024
+
+                      serialize, convert-from-plugin    Converts a plugin to text.
+
+                      help                              Display more information on a specific command.
+
+                      version                           Display version information.
+                    """,
+                    exitCode: 1),
+                "convert-from-plugin --help" => Result(
+                    stderr:
+                    """
+                    Spriggit.Yaml.Skyrim 0.41.0
+
+                      -i, --InputPath    Required. Path to the plugin.
+                    """,
+                    exitCode: 1),
+                "help --help" => Result(
+                    stderr:
+                    """
+                    Spriggit.Yaml.Skyrim 0.41.0
+                    2024
+
+                      serialize, convert-from-plugin    Converts a plugin to text.
+
+                      help                              Display more information on a specific command.
+
+                      version                           Display version information.
+                    """,
+                    exitCode: 1),
+                "version --help" => Result(
+                    stderr: "Spriggit.Yaml.Skyrim 0.41.0",
+                    exitCode: 1),
+                _ => throw new InvalidOperationException($"Unexpected invocation: '{key}'."),
+            };
+        });
+        var crawler = new ToolHelpCrawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "Spriggit.Yaml.Skyrim",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(["", "convert-from-plugin"], result.Documents.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.CaptureSummaries.Keys, key => string.Equals(key, "help", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.CaptureSummaries.Keys, key => string.Equals(key, "version", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.StartsWith("help ", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.StartsWith("version ", StringComparison.OrdinalIgnoreCase));
     }
 
     private static ToolCommandRuntime.ProcessResult Result(string? stdout = null, string? stderr = null, int exitCode = 0, bool timedOut = false)

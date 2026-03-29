@@ -9,6 +9,11 @@ internal sealed class ToolHelpCommandTreeBuilder
 
         foreach (var pair in helpDocuments)
         {
+            if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryInventoryEcho(pair.Key, pair.Value))
+            {
+                continue;
+            }
+
             foreach (var child in pair.Value.Commands)
             {
                 var childFullName = ToolHelpCommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);

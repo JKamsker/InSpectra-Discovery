@@ -52,6 +52,19 @@ internal static partial class ToolHelpDocumentInspector
             || normalized.Contains("/usr/share/dotnet/", StringComparison.OrdinalIgnoreCase);
     }
 
+    public static bool IsBuiltinAuxiliaryCommandPath(string? commandPath)
+    {
+        var leafSegment = ToolHelpCommandPathSupport.SplitSegments(commandPath).LastOrDefault();
+        return string.Equals(leafSegment, "help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(leafSegment, "version", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsBuiltinAuxiliaryInventoryEcho(string? commandPath, ToolHelpDocument document)
+        => IsBuiltinAuxiliaryCommandPath(commandPath)
+            && document.Commands.Count > 0
+            && document.Options.Count == 0
+            && document.Arguments.Count == 0;
+
     private static bool HasStructuredContent(ToolHelpDocument document)
         => document.UsageLines.Count > 0
             || document.Options.Count > 0

@@ -48,7 +48,8 @@ internal sealed class ToolHelpCrawler
             }
 
             documents[key] = capture.Document;
-            if (commandSegments.Length >= MaxCommandDepth)
+            if (commandSegments.Length >= MaxCommandDepth
+                || ToolHelpDocumentInspector.IsBuiltinAuxiliaryInventoryEcho(key, capture.Document))
             {
                 continue;
             }
@@ -58,6 +59,11 @@ internal sealed class ToolHelpCrawler
                 var resolvedChildKey = ToolHelpCommandPathSupport.ResolveChildKey(commandPath, key, child.Key);
                 var childSegments = ToolHelpCommandPathSupport.SplitSegments(resolvedChildKey);
                 var childKey = GetKey(childSegments);
+                if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryCommandPath(childKey))
+                {
+                    continue;
+                }
+
                 if (childSegments.Length <= MaxCommandDepth && seen.Add(childKey))
                 {
                     queue.Enqueue(childSegments);
@@ -117,6 +123,9 @@ internal sealed class ToolHelpCrawler
         ToolHelpDocument? bestDocument = null;
         var bestPayload = candidates.FirstOrDefault();
         var bestScore = -1;
+        var helpInvocation = invokedArguments.Count == 0
+            ? null
+            : string.Join(' ', invokedArguments);
 
         foreach (var payload in candidates)
         {
@@ -124,7 +133,9 @@ internal sealed class ToolHelpCrawler
             var compatibleDocument = document.HasContent && ToolHelpDocumentInspector.IsCompatible(commandSegments, document)
                 ? document
                 : null;
-            var score = compatibleDocument is not null ? ToolHelpDocumentInspector.Score(compatibleDocument) : 0;
+            var score = compatibleDocument is not null
+                ? ToolHelpDocumentInspector.Score(compatibleDocument) - GetPayloadSelectionPenalty(payload, helpInvocation)
+                : 0;
             if (score <= bestScore)
             {
                 continue;
@@ -135,9 +146,6 @@ internal sealed class ToolHelpCrawler
             bestPayload = payload;
         }
 
-        var helpInvocation = invokedArguments.Count == 0
-            ? null
-            : string.Join(' ', invokedArguments);
         var isTerminalNonHelp = bestDocument is null && candidates.Any(ToolHelpDocumentInspector.LooksLikeTerminalNonHelpPayload);
         return new ToolHelpCapture(helpInvocation, processResult, bestDocument, bestPayload, isTerminalNonHelp);
     }
@@ -225,6 +233,30 @@ internal sealed class ToolHelpCrawler
         }
 
         return capture.ProcessResult?.ExitCode is 0 ? 1 : 2;
+    }
+
+    private static int GetPayloadSelectionPenalty(string payload, string? helpInvocation)
+    {
+        if (string.IsNullOrWhiteSpace(payload) || string.IsNullOrWhiteSpace(helpInvocation))
+        {
+            return 0;
+        }
+
+        var lines = payload
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Replace('\r', '\n')
+            .Split('\n')
+            .Select(line => line.Trim())
+            .Where(line => line.Length > 0)
+            .ToArray();
+        var edgeLines = lines
+            .Take(4)
+            .Concat(lines.TakeLast(4))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return edgeLines.Any(line => string.Equals(line, helpInvocation, StringComparison.OrdinalIgnoreCase))
+            ? 50
+            : 0;
     }
 
     private static string GetKey(IReadOnlyList<string> commandSegments)
