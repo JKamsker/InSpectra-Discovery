@@ -592,7 +592,7 @@ internal static partial class OpenCliDocumentValidator
             ? text
             : null;
 
-    [GeneratedRegex(@"^(?:usage\b|version:|help:|unhandled exception\b|unexpected argument\b|invalid arguments?\b|now listening on\b|application started\b|hosting failed to start\b|starting\s+\w+\b|missing\s+\w+\b|\d{4}-\d{2}-\d{2}[T ]|\[(?:info|error|warn|information|debug|fatal)\]|(?:fail|error|info|warn|dbug|crit):\s)|\b(?:Unhandled exception|Unexpected argument|Invalid arguments|Now listening on|Application started|Hosting failed to start)\b|\bDefaulting to\b.*\brequires\b.+\bruntime\b|\bvia:\b.+(?:--|/)", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?:usage\b|version:|help:|unhandled exception\b|unexpected argument\b|invalid arguments?\b|now listening on\b|application started\b|hosting failed to start\b|starting\s+\w+\b|missing\s+\w+\b|\d{4}-\d{2}-\d{2}[T ]|\[(?:info|error|warn|information|debug|fatal)\]|(?:fail|error|info|warn|dbug|crit):\s)|\b(?:Unhandled exception|Unexpected argument|Invalid arguments|Now listening on|Application started|Hosting failed to start)\b|\bDefaulting to\b.*\brequires\b.+\bruntime\b|\bvia:\b.+(?:--|/)|\bcopyright\b|\(c\)\s+\w+|\ball rights reserved\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex TitleNoiseRegex();
 
     [GeneratedRegex(@"https?://|[A-Za-z]:\\|/tmp/|/usr/|\.dll\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]

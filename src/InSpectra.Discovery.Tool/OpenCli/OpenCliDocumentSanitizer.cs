@@ -70,6 +70,7 @@ internal static partial class OpenCliDocumentSanitizer
 
     public static JsonObject Sanitize(JsonObject document)
     {
+        SanitizeInfoTitle(document);
         SanitizeNode(document, arrayContext: null);
         return document;
     }
@@ -208,6 +209,79 @@ internal static partial class OpenCliDocumentSanitizer
             }
         }
     }
+
+    private static void SanitizeInfoTitle(JsonObject document)
+    {
+        if (document["info"] is not JsonObject info)
+        {
+            return;
+        }
+
+        var title = info["title"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return;
+        }
+
+        var cleaned = CleanTitle(title);
+        if (string.IsNullOrWhiteSpace(cleaned))
+        {
+            info.Remove("title");
+        }
+        else if (!string.Equals(cleaned, title, StringComparison.Ordinal))
+        {
+            info["title"] = cleaned;
+        }
+    }
+
+    private static string? CleanTitle(string title)
+    {
+        var trimmed = title.Trim();
+
+        // Strip leading copyright/version noise: "Copyright (c) 2024 ToolName" → "ToolName"
+        trimmed = CopyrightPrefixRegex().Replace(trimmed, string.Empty).Trim();
+
+        // Strip inline (c) attribution: "trx2junit (c) gfoidl" → "trx2junit gfoidl"
+        trimmed = InlineCopyrightRegex().Replace(trimmed, " ").Trim();
+
+        // Strip trailing version/SDK noise: "ToolName version 1.2.3 [dotnet SDK ...]" → "ToolName"
+        trimmed = TrailingVersionNoiseRegex().Replace(trimmed, string.Empty).Trim();
+
+        // Strip surrounding parens: "(version 1.0.0)" → ""
+        trimmed = trimmed.Trim('(', ')').Trim();
+
+        // If what remains is just a version number (possibly with +hash), discard it
+        if (BareVersionRegex().IsMatch(trimmed))
+        {
+            return null;
+        }
+
+        // Strip trailing " --" or " -" decorations
+        trimmed = TrailingDashRegex().Replace(trimmed, string.Empty).Trim();
+
+        // Collapse multiple spaces
+        trimmed = MultipleSpacesRegex().Replace(trimmed, " ").Trim();
+
+        return string.IsNullOrWhiteSpace(trimmed) ? null : trimmed;
+    }
+
+    [GeneratedRegex(@"^copyright\s+(?:\(c\)\s+)?(?:\d{4}\s+)?(?:\(c\)\s+)?", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex CopyrightPrefixRegex();
+
+    [GeneratedRegex(@"\s*\(c\)\s*", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex InlineCopyrightRegex();
+
+    [GeneratedRegex(@"\s+(?:version[:\s]*|v)\d+[\d.+\-a-z]*(?:\s+.*)?$|\s*\[dotnet\s+SDK\s+[^\]]+\]$|\s*for\s+\.NET\s+Core$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex TrailingVersionNoiseRegex();
+
+    [GeneratedRegex(@"^\d+\.\d+[\d.+\-a-zA-Z]*$", RegexOptions.Compiled)]
+    private static partial Regex BareVersionRegex();
+
+    [GeneratedRegex(@"\s+--?\s*$", RegexOptions.Compiled)]
+    private static partial Regex TrailingDashRegex();
+
+    [GeneratedRegex(@"\s{2,}", RegexOptions.Compiled)]
+    private static partial Regex MultipleSpacesRegex();
 
     [GeneratedRegex(@"/tmp/inspectra-[^\s""'\]}>)]+", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex SandboxPathRegex();
