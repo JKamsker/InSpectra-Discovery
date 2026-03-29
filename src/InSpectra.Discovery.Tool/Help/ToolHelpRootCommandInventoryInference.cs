@@ -162,6 +162,7 @@ internal static class ToolHelpRootCommandInventoryInference
         var trimmed = rawLine.Trim();
         return trimmed.Length > 0
             && char.IsLetter(trimmed[0])
+            && (!trimmed.Contains(' ', StringComparison.Ordinal) || trimmed.Contains("  ", StringComparison.Ordinal))
             && !trimmed.Contains('[', StringComparison.Ordinal)
             && !trimmed.Contains('<', StringComparison.Ordinal)
             && !trimmed.StartsWith("Copyright", StringComparison.OrdinalIgnoreCase);

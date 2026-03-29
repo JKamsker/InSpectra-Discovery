@@ -128,8 +128,7 @@ internal static partial class ToolHelpLegacyOptionTable
         }
 
         var trimmed = rawLine.TrimStart();
-        if (GetIndentation(rawLine) <= currentRowIndentation
-            || PositionalArgumentRowRegex().IsMatch(trimmed)
+        if (PositionalArgumentRowRegex().IsMatch(trimmed)
             || LooksLikeLooseOptionRow(rawLine))
         {
             return false;
@@ -629,8 +628,35 @@ internal static partial class ToolHelpLegacyOptionTable
     {
         var trimmed = rawLine.TrimStart();
         var optionMatch = OptionTokenRegex().Match(trimmed);
-        return (optionMatch.Success && optionMatch.Index == 0)
+        if (ToolHelpCommandPrototypeSupport.LooksLikeBareShortLongOptionRow(rawLine))
+        {
+            return true;
+        }
+
+        if (!optionMatch.Success || optionMatch.Index != 0)
+        {
+            return false;
+        }
+
+        var remainder = trimmed[optionMatch.Length..];
+        var trimmedRemainder = remainder.TrimStart();
+        return string.IsNullOrWhiteSpace(remainder)
+            || remainder.Contains("  ", StringComparison.Ordinal)
+            || trimmedRemainder.StartsWith("<", StringComparison.Ordinal)
+            || trimmedRemainder.StartsWith("[", StringComparison.Ordinal)
+            || StartsWithAdditionalOptionToken(trimmedRemainder)
             || ToolHelpCommandPrototypeSupport.LooksLikeBareShortLongOptionRow(rawLine);
+    }
+
+    private static bool StartsWithAdditionalOptionToken(string remainder)
+    {
+        if (!(remainder.StartsWith(",", StringComparison.Ordinal) || remainder.StartsWith("|", StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        var candidate = remainder[1..].TrimStart();
+        return candidate.StartsWith("-", StringComparison.Ordinal) || candidate.StartsWith("/", StringComparison.Ordinal);
     }
 
     private static int GetIndentation(string rawLine)
@@ -656,7 +682,7 @@ internal static partial class ToolHelpLegacyOptionTable
     [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_\.\-]*)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex CommandLineParserOptionRowRegex();
 
-    [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\S(?:.*?\S)?\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 
     [GeneratedRegex(@"^(?:#+\s*[A-Za-z][\p{L}\p{M}\s]*|[A-Za-z][\p{L}\p{M}\s]+:)\s*$", RegexOptions.Compiled)]

@@ -259,6 +259,104 @@ public sealed class ToolHelpOpenCliBuilderTests
     }
 
     [Fact]
+    public void Uses_Package_Metadata_Version_Over_Banner_Version()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options: [],
+                Commands: []),
+        };
+
+        var document = builder.Build("demo", "1.0.4", helpDocuments);
+
+        Assert.Equal("1.0.4", document["info"]!["version"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Infers_Required_Value_Arguments_Without_Adding_Them_To_Flag_Like_Descriptions()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "snapx",
+                Version: "10.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments:
+                [
+                    new ToolHelpItem("Model name", true, "The name of the model"),
+                ],
+                Options:
+                [
+                    new ToolHelpItem("--producers", false, "Required. List of producers to include."),
+                    new ToolHelpItem("--rid", false, "Required. Runtime identifier (RID), e.g win-x64."),
+                    new ToolHelpItem("--release", false, "Required. Force release lock specified in snapx.yml."),
+                    new ToolHelpItem("--from-version", false, "Remove all releases newer than this version."),
+                    new ToolHelpItem("--trace", false, "Enables task execution tracing."),
+                    new ToolHelpItem("--webpart", false, "Required. Creates a webpart configuration."),
+                    new ToolHelpItem("--print-config", false, "Print path to config file"),
+                    new ToolHelpItem("--package-file", false, "Generates UTF-8 text file with package metadata."),
+                    new ToolHelpItem("--version", false, "Display version information"),
+                    new ToolHelpItem("--rc|restore-concurrency", false, "(Default: 4) The number of concurrent restores."),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build("snapx", "10.0.0", helpDocuments);
+        var options = document["options"]!.AsArray();
+        var arguments = document["arguments"]!.AsArray();
+
+        var producers = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--producers", StringComparison.Ordinal)));
+        Assert.Equal("PRODUCERS", producers!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.True(producers["arguments"]![0]!["required"]!.GetValue<bool>());
+        Assert.Equal("List of producers to include.", producers["description"]!.GetValue<string>());
+
+        var rid = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--rid", StringComparison.Ordinal)));
+        Assert.Equal("RID", rid!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.True(rid["arguments"]![0]!["required"]!.GetValue<bool>());
+
+        var release = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--release", StringComparison.Ordinal)));
+        Assert.Null(release!["arguments"]);
+        Assert.Equal("Force release lock specified in snapx.yml.", release["description"]!.GetValue<string>());
+
+        var fromVersion = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--from-version", StringComparison.Ordinal)));
+        Assert.Equal("FROM_VERSION", fromVersion!["arguments"]![0]!["name"]!.GetValue<string>());
+
+        var trace = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--trace", StringComparison.Ordinal)));
+        Assert.Null(trace!["arguments"]);
+
+        var webpart = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--webpart", StringComparison.Ordinal)));
+        Assert.Null(webpart!["arguments"]);
+        Assert.Equal("Creates a webpart configuration.", webpart["description"]!.GetValue<string>());
+
+        var printConfig = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--print-config", StringComparison.Ordinal)));
+        Assert.Null(printConfig!["arguments"]);
+
+        var packageFile = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--package-file", StringComparison.Ordinal)));
+        Assert.Null(packageFile!["arguments"]);
+
+        var version = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--version", StringComparison.Ordinal)));
+        Assert.Null(version!["arguments"]);
+
+        var restoreConcurrency = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--restore-concurrency", StringComparison.Ordinal)));
+        Assert.Equal("--rc", restoreConcurrency!["aliases"]![0]!.GetValue<string>());
+        Assert.Equal("RESTORE_CONCURRENCY", restoreConcurrency["arguments"]![0]!["name"]!.GetValue<string>());
+
+        var modelName = Assert.Single(arguments);
+        Assert.Equal("MODEL_NAME", modelName!["name"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Emits_Arguments_For_Bare_Word_Option_Metavars()
     {
         var builder = new ToolHelpOpenCliBuilder();
@@ -305,5 +403,117 @@ public sealed class ToolHelpOpenCliBuilderTests
         var document = builder.Build("adfs", "1.0.1", helpDocuments);
 
         Assert.Equal("ADFS Authentication CLI tool", document["info"]!["description"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Infers_Value_Arguments_From_CommandLineParser_Descriptions()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "refresh",
+                Version: "1.3.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options:
+                [
+                    new ToolHelpItem("-p, --Project", false, "Project to be refactored"),
+                    new ToolHelpItem("-m, --Migration", false, "Required. Path to migration file"),
+                    new ToolHelpItem("-h, --host", false, "(Default: localhost) Address/host to listen at."),
+                    new ToolHelpItem("--help", false, "Display this help screen."),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build("refresh", "1.3.0", helpDocuments);
+        var options = document["options"]!.AsArray();
+
+        var project = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--Project", StringComparison.Ordinal)));
+        Assert.Equal("PROJECT", project!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.False(project["arguments"]![0]!["required"]!.GetValue<bool>());
+
+        var migration = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--Migration", StringComparison.Ordinal)));
+        Assert.Equal("MIGRATION", migration!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.True(migration["arguments"]![0]!["required"]!.GetValue<bool>());
+        Assert.Equal("Path to migration file", migration["description"]!.GetValue<string>());
+
+        var host = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--host", StringComparison.Ordinal)));
+        Assert.Equal("HOST", host!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.False(host["arguments"]![0]!["required"]!.GetValue<bool>());
+
+        var help = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--help", StringComparison.Ordinal)));
+        Assert.Null(help!["arguments"]);
+    }
+
+    [Fact]
+    public void Does_Not_Infer_Value_Arguments_For_Flag_Descriptions_That_Mention_Nouns()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options:
+                [
+                    new ToolHelpItem("-a, --add", false, "Add default using namespaces"),
+                    new ToolHelpItem("-r, --recursive", false, "(Default: false) Recursively process specified directory."),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build("demo", "1.0.0", helpDocuments);
+        var options = document["options"]!.AsArray();
+
+        var add = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--add", StringComparison.Ordinal)));
+        Assert.Null(add!["arguments"]);
+
+        var recursive = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--recursive", StringComparison.Ordinal)));
+        Assert.Null(recursive!["arguments"]);
+    }
+
+    [Fact]
+    public void Preserves_Command_Descriptions_From_Root_Inventory_When_Subcommand_Help_Lacks_Them()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "feval",
+                Version: "1.7.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options: [],
+                Commands:
+                [
+                    new ToolHelpItem("config", false, "Config feval command line tool"),
+                ]),
+            ["config"] = new(
+                Title: "feval",
+                Version: "1.7.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options:
+                [
+                    new ToolHelpItem("-l, --list", false, "List all configurations"),
+                ],
+                Commands: []),
+        };
+
+        var document = builder.Build("feval", "1.7.0", helpDocuments);
+        var config = Assert.Single(document["commands"]!.AsArray());
+
+        Assert.Equal("Config feval command line tool", config!["description"]!.GetValue<string>());
     }
 }

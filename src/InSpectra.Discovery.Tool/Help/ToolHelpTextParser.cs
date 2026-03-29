@@ -223,7 +223,7 @@ internal sealed partial class ToolHelpTextParser
 
             var currentIndentation = GetIndentation(rawLine);
             var canStartNewItem = TryParseItemStart(rawLine, kind, out var parsedKey, out var parsedRequired, out var parsedDescription)
-                && !(key is not null && currentIndentation > indentation);
+                && !(key is not null && currentIndentation > indentation && kind != ItemKind.Option);
             if (canStartNewItem)
             {
                 FlushItem(items, kind, key, isRequired, description);
@@ -254,16 +254,29 @@ internal sealed partial class ToolHelpTextParser
         var arguments = new List<string>();
         var options = new List<string>();
         List<string>? target = arguments;
+        var currentOptionIndentation = -1;
 
         foreach (var rawLine in lines)
         {
+            var currentIndentation = GetIndentation(rawLine);
             if (TryParseItemStart(rawLine, ItemKind.Option, out _, out _, out _))
+            {
+                target = options;
+                currentOptionIndentation = currentIndentation;
+            }
+            else if (target == options
+                && rawLine.Length > 0
+                && char.IsWhiteSpace(rawLine, 0)
+                && currentOptionIndentation >= 0
+                && currentIndentation > currentOptionIndentation
+                && !TryParsePositionalArgumentRow(rawLine.TrimStart(), out _, out _, out _))
             {
                 target = options;
             }
             else if (TryParseItemStart(rawLine, ItemKind.Argument, out _, out _, out _))
             {
                 target = arguments;
+                currentOptionIndentation = -1;
             }
 
             target?.Add(rawLine);
@@ -389,14 +402,13 @@ internal sealed partial class ToolHelpTextParser
         description = match.Groups["description"].Success
             ? match.Groups["description"].Value.Trim()
             : null;
-        if (!string.IsNullOrWhiteSpace(description)
-            && description.StartsWith("Required.", StringComparison.OrdinalIgnoreCase))
+        if (StartsWithRequiredPrefix(description))
         {
             isRequired = true;
-            description = description["Required.".Length..].TrimStart();
+            description = TrimLeadingRequiredPrefix(description);
         }
 
-        return LooksLikeArgumentKey(key);
+        return key.Length > 0;
     }
 
     private static IReadOnlyList<ToolHelpItem> InferCommands(
@@ -539,7 +551,9 @@ internal sealed partial class ToolHelpTextParser
         var trimmed = line.Trim();
         return string.IsNullOrWhiteSpace(trimmed)
             ? false
-            : IsFrameworkNoiseLine(trimmed)
+            : LooksLikeDecorativeBannerLine(trimmed)
+                || LooksLikeMarketingTagline(trimmed)
+                || IsFrameworkNoiseLine(trimmed)
                 || IsStructuredLogLine(trimmed)
                 || LooksLikeSetupPreambleLine(trimmed)
                 || LooksLikeInventoryHeaderLine(trimmed)
@@ -629,6 +643,45 @@ internal sealed partial class ToolHelpTextParser
         => key.Length > 0
             && !key.Contains(' ', StringComparison.Ordinal)
             && key.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' or '.');
+
+    private static bool StartsWithRequiredPrefix(string? description)
+        => !string.IsNullOrWhiteSpace(description)
+            && (
+                description.TrimStart().StartsWith("Required.", StringComparison.OrdinalIgnoreCase)
+                || description.TrimStart().StartsWith("Required ", StringComparison.OrdinalIgnoreCase)
+                || description.TrimStart().StartsWith("(REQUIRED)", StringComparison.OrdinalIgnoreCase)
+                || description.TrimStart().StartsWith("[REQUIRED]", StringComparison.OrdinalIgnoreCase));
+
+    private static string? TrimLeadingRequiredPrefix(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return description;
+        }
+
+        var normalized = description.TrimStart();
+        if (normalized.StartsWith("Required.", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized["Required.".Length..].TrimStart();
+        }
+
+        if (normalized.StartsWith("Required ", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized["Required ".Length..].TrimStart();
+        }
+
+        if (normalized.StartsWith("(REQUIRED)", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized["(REQUIRED)".Length..].TrimStart();
+        }
+
+        if (normalized.StartsWith("[REQUIRED]", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized["[REQUIRED]".Length..].TrimStart();
+        }
+
+        return description;
+    }
 
     private static bool LooksLikeCommandSegment(string segment)
         => segment.Length > 0
@@ -761,6 +814,17 @@ internal sealed partial class ToolHelpTextParser
         => DotnetToolListHeaderRegex().IsMatch(line)
             || TemplateInstallHeaderRegex().IsMatch(line);
 
+    private static bool LooksLikeDecorativeBannerLine(string line)
+        => line.Length > 0
+            && line.Any(ch => !char.IsWhiteSpace(ch))
+            && !line.Any(char.IsLetterOrDigit);
+
+    private static bool LooksLikeMarketingTagline(string line)
+        => line.StartsWith("Made with ", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("Contact:", StringComparison.OrdinalIgnoreCase)
+            || (line.StartsWith("for ", StringComparison.OrdinalIgnoreCase)
+                && line.EndsWith("!", StringComparison.Ordinal));
+
     private static bool LooksLikeMarkdownTableLine(string line)
         => line.StartsWith("|", StringComparison.Ordinal)
             && line.EndsWith("|", StringComparison.Ordinal)
@@ -782,7 +846,7 @@ internal sealed partial class ToolHelpTextParser
     [GeneratedRegex(@"^(?<prefix>\* )?(?<key>\S.*?)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex ItemRegex();
 
-    [GeneratedRegex(@"^(?<key>[A-Za-z][A-Za-z0-9_.-]*)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^(?<key>\S(?:.*?\S)?)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))", RegexOptions.Compiled)]

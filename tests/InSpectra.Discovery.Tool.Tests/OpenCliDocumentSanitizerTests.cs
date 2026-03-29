@@ -173,4 +173,40 @@ public sealed class OpenCliDocumentSanitizerTests
         Assert.Equal("--version", version!["name"]?.GetValue<string>());
         Assert.Equal("Display version information.", version["description"]?.GetValue<string>());
     }
+
+    [Fact]
+    public void Sanitize_Prefers_Richer_Compatible_Option_Description_When_Merging()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--config",
+                    ["description"] = "JSON file containing XAML Styler settings",
+                    ["aliases"] = new JsonArray("-c"),
+                },
+                new JsonObject
+                {
+                    ["name"] = "--config",
+                    ["description"] = "JSON file containing XAML Styler settings\nconfiguration.",
+                    ["aliases"] = new JsonArray("-c"),
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var config = Assert.Single(document["options"]!.AsArray());
+        Assert.Equal(
+            "JSON file containing XAML Styler settings\nconfiguration.",
+            config!["description"]?.GetValue<string>());
+    }
 }

@@ -145,6 +145,41 @@ public sealed class ToolHelpTextParserTests
     }
 
     [Fact]
+    public void Falls_Back_To_Indented_Command_List_Without_Treating_Banner_Taglines_As_Commands()
+    {
+        var parser = new ToolHelpTextParser();
+
+        var document = parser.Parse(
+            """
+            ███████ ██████ ███████
+
+            	for SharePoint Online!
+
+
+            	Made with <3 from ProActive - Contact: ama@proactive.dk
+
+
+            ProActive.SharePoint.Build.Console 0.1.0
+            Copyright (C) 2026 ProActive.SharePoint.Build.Console
+
+              init       Generates a the necessare product files that can create an SPFx
+                         cmponent.
+
+              pack       Creates an spfx file from folders in disc.
+
+              help       Display more information on a specific command.
+
+              version    Display version information.
+            """);
+
+        Assert.Equal("ProActive.SharePoint.Build.Console", document.Title);
+        Assert.Equal("0.1.0", document.Version);
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "init", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "pack", StringComparison.Ordinal));
+        Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "for SharePoint Online!", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Infers_Options_From_Preamble_Without_Options_Header()
     {
         var parser = new ToolHelpTextParser();

@@ -219,7 +219,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
 
         var markdownOpenCli = ParseJsonObject(Path.Combine(statusVersionRoot, "opencli.json"));
         Assert.Equal("mdsnippets", markdownOpenCli["info"]?["title"]?.GetValue<string>());
-        Assert.Equal("28.0.1+69fd87ea2028232016b5688e001b494233fa0f12", markdownOpenCli["info"]?["version"]?.GetValue<string>());
+        Assert.Equal("28.0.1", markdownOpenCli["info"]?["version"]?.GetValue<string>());
 
         var docfxOpenCli = ParseJsonObject(Path.Combine(helpVersionRoot, "opencli.json"));
         Assert.Equal("Docfx2xml", docfxOpenCli["info"]?["title"]?.GetValue<string>());

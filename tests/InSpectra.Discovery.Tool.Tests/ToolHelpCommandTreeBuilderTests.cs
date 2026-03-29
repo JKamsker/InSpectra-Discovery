@@ -103,4 +103,43 @@ public sealed class ToolHelpCommandTreeBuilderTests
         var batch = Assert.Single(nodes.Where(node => string.Equals(node.DisplayName, "batch", StringComparison.Ordinal)));
         Assert.Empty(batch.Children);
     }
+
+    [Fact]
+    public void Build_Preserves_Command_Descriptions_From_Root_Inventory_When_Subcommand_Help_Lacks_Them()
+    {
+        var builder = new ToolHelpCommandTreeBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "feval",
+                Version: "1.7.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options: [],
+                Commands:
+                [
+                    new ToolHelpItem("run", false, "Running in standalone mode or connect a remote service"),
+                    new ToolHelpItem("config", false, "Config feval command line tool"),
+                ]),
+            ["config"] = new(
+                Title: "feval",
+                Version: "1.7.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options: [],
+                Commands: []),
+        };
+
+        var nodes = builder.Build("feval", helpDocuments);
+
+        var run = Assert.Single(nodes.Where(node => string.Equals(node.DisplayName, "run", StringComparison.Ordinal)));
+        Assert.Equal("Running in standalone mode or connect a remote service", run.Description);
+
+        var config = Assert.Single(nodes.Where(node => string.Equals(node.DisplayName, "config", StringComparison.Ordinal)));
+        Assert.Equal("Config feval command line tool", config.Description);
+    }
 }

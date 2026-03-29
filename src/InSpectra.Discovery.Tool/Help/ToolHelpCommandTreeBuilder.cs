@@ -3,6 +3,7 @@ internal sealed class ToolHelpCommandTreeBuilder
     public IReadOnlyList<ToolHelpCommandNode> Build(string commandName, IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
     {
         var knownCommands = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var inferredDescriptions = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var edges = new Dictionary<string, List<ToolHelpCommandNode>>(StringComparer.OrdinalIgnoreCase);
         var edgeKeys = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
 
@@ -12,6 +13,7 @@ internal sealed class ToolHelpCommandTreeBuilder
             {
                 var childFullName = ToolHelpCommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);
                 AddCommandAndPrefixes(knownCommands, childFullName);
+                RememberDescription(inferredDescriptions, childFullName, child.Description);
             }
         }
 
@@ -27,12 +29,30 @@ internal sealed class ToolHelpCommandTreeBuilder
                 ? knownCommand
                 : knownCommand[(parentName.Length + 1)..];
             var description = helpDocuments.TryGetValue(knownCommand, out var helpDocument)
+                && !string.IsNullOrWhiteSpace(helpDocument.CommandDescription)
                 ? helpDocument.CommandDescription
-                : null;
+                : inferredDescriptions.GetValueOrDefault(knownCommand);
             AddEdge(edges, edgeKeys, parentName, new ToolHelpCommandNode(knownCommand, displayName, description));
         }
 
         return BuildNodes(string.Empty, edges);
+    }
+
+    private static void RememberDescription(
+        IDictionary<string, string> descriptions,
+        string commandName,
+        string? description)
+    {
+        if (string.IsNullOrWhiteSpace(commandName) || string.IsNullOrWhiteSpace(description))
+        {
+            return;
+        }
+
+        if (!descriptions.TryGetValue(commandName, out var existingDescription)
+            || description.Length > existingDescription.Length)
+        {
+            descriptions[commandName] = description.Trim();
+        }
     }
 
     private static void AddEdge(

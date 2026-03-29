@@ -388,6 +388,7 @@ internal static class OpenCliDocumentSanitizer
         if (!string.IsNullOrWhiteSpace(description) && !IsInformationalOptionDescription(description))
         {
             score += 2;
+            score += Math.Min(6, description.Length / 24);
         }
 
         return score;

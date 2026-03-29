@@ -120,8 +120,21 @@ internal static partial class ToolHelpTitleInference
     private static bool IsIgnorableLeadingLine(string line)
         => string.Equals(line, "HELP:", StringComparison.OrdinalIgnoreCase)
             || LooksLikeStatusTitle(line)
+            || LooksLikeDecorativeBannerLine(line)
+            || LooksLikeMarketingTagline(line)
             || StandaloneHelpHeadingRegex().IsMatch(line)
             || TransientStatusLineRegex().IsMatch(line);
+
+    private static bool LooksLikeDecorativeBannerLine(string line)
+        => line.Length > 0
+            && line.Any(ch => !char.IsWhiteSpace(ch))
+            && !line.Any(char.IsLetterOrDigit);
+
+    private static bool LooksLikeMarketingTagline(string line)
+        => line.StartsWith("Made with ", StringComparison.OrdinalIgnoreCase)
+            || line.Contains("Contact:", StringComparison.OrdinalIgnoreCase)
+            || (line.StartsWith("for ", StringComparison.OrdinalIgnoreCase)
+                && line.EndsWith("!", StringComparison.Ordinal));
 
     private static bool LooksLikeTransientStatusLine(string title, string version)
         => TransientStatusTitleRegex().IsMatch(title)

@@ -19,6 +19,111 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "TO",
         "USE",
     };
+    private static readonly HashSet<string> InformationalOptionDescriptions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Display this help screen.",
+        "Display version information.",
+        "Show help information.",
+        "Show help and usage information",
+    };
+    private static readonly HashSet<string> ValueLikeOptionNameTokens = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "access",
+        "address",
+        "api",
+        "alias",
+        "assembly",
+        "baseline",
+        "certificate",
+        "cert",
+        "channel",
+        "code",
+        "codes",
+        "column",
+        "columns",
+        "component",
+        "config",
+        "configuration",
+        "conn",
+        "connection",
+        "count",
+        "database",
+        "dir",
+        "directory",
+        "dll",
+        "email",
+        "env",
+        "environment",
+        "etw",
+        "expiry",
+        "file",
+        "files",
+        "filter",
+        "format",
+        "guid",
+        "host",
+        "id",
+        "ids",
+        "index",
+        "indexes",
+        "input",
+        "justification",
+        "key",
+        "kind",
+        "language",
+        "level",
+        "license",
+        "log",
+        "migration",
+        "model",
+        "modifier",
+        "namespace",
+        "name",
+        "notes",
+        "output",
+        "package",
+        "parser",
+        "password",
+        "path",
+        "plugin",
+        "policy",
+        "port",
+        "post",
+        "producer",
+        "producers",
+        "project",
+        "regex",
+        "repository",
+        "result",
+        "rule",
+        "save",
+        "schema",
+        "search",
+        "service",
+        "server",
+        "solution",
+        "source",
+        "status",
+        "subscription",
+        "template",
+        "thread",
+        "threads",
+        "thumbprint",
+        "timeout",
+        "token",
+        "topic",
+        "tool",
+        "trace",
+        "uri",
+        "url",
+        "value",
+        "version",
+        "xml",
+        "xsl",
+        "yaml",
+        "yml",
+        "zip",
+    };
 
     private readonly ToolHelpCommandTreeBuilder _commandTreeBuilder = new();
 
@@ -96,6 +201,16 @@ internal sealed partial class ToolHelpOpenCliBuilder
                 continue;
             }
 
+            var inferredArgumentRequired = StartsWithRequiredPrefix(item.Description);
+            var hasExplicitArgument = signature.ArgumentName is not null;
+            var argumentName = signature.ArgumentName
+                ?? InferOptionArgumentNameFromDescription(signature.PrimaryName, item.Description);
+            var argumentRequired = argumentName is not null
+                && (hasExplicitArgument ? signature.ArgumentRequired || inferredArgumentRequired : inferredArgumentRequired);
+            var description = StartsWithRequiredPrefix(item.Description)
+                ? TrimLeadingRequiredPrefix(item.Description)
+                : item.Description;
+
             var node = new JsonObject
             {
                 ["name"] = signature.PrimaryName,
@@ -103,22 +218,22 @@ internal sealed partial class ToolHelpOpenCliBuilder
                 ["hidden"] = false,
             };
 
-            AddIfPresent(node, "description", item.Description);
+            AddIfPresent(node, "description", description);
 
             if (signature.Aliases.Count > 0)
             {
                 node["aliases"] = new JsonArray(signature.Aliases.Select(alias => JsonValue.Create(alias)).ToArray());
             }
 
-            if (signature.ArgumentName is not null)
+            if (argumentName is not null)
             {
                 node["arguments"] = new JsonArray
                 {
                     new JsonObject
                     {
-                        ["name"] = signature.ArgumentName.ToUpperInvariant(),
-                        ["required"] = signature.ArgumentRequired,
-                        ["arity"] = BuildArity(signature.ArgumentRequired ? 1 : 0),
+                        ["name"] = argumentName.ToUpperInvariant(),
+                        ["required"] = argumentRequired,
+                        ["arity"] = BuildArity(argumentRequired ? 1 : 0),
                     },
                 };
             }
@@ -177,7 +292,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
         var info = new JsonObject
         {
             ["title"] = rootHelp?.Title ?? commandName,
-            ["version"] = rootHelp?.Version ?? packageVersion,
+            ["version"] = string.IsNullOrWhiteSpace(packageVersion) ? rootHelp?.Version : packageVersion,
         };
 
         AddIfPresent(info, "description", rootHelp?.CommandDescription ?? rootHelp?.ApplicationDescription);
@@ -269,15 +384,20 @@ internal sealed partial class ToolHelpOpenCliBuilder
             ? ExtractBareOptionPlaceholder(key)
             : null;
 
-        foreach (var segment in key.Split(new[] { '|', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        foreach (var segment in key.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
-            var token = OptionTokenRegex().Match(segment).Value;
-            if (string.IsNullOrWhiteSpace(token))
+            string? previousToken = null;
+            foreach (var pipeSegment in segment.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                continue;
-            }
+                var token = TryParseOptionToken(pipeSegment, previousToken);
+                if (string.IsNullOrWhiteSpace(token))
+                {
+                    continue;
+                }
 
-            aliases.Add(token);
+                aliases.Add(token);
+                previousToken = token;
+            }
         }
 
         var primary = aliases
@@ -341,6 +461,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
         {
             normalizedName = commonStem;
             isSequence = true;
+        }
+        else if (rawTokens.Length is > 1 and <= 3
+            && rawTokens.All(token => !ArgumentNoiseWords.Contains(token)))
+        {
+            normalizedName = string.Join('_', rawTokens);
         }
         else
         {
@@ -428,6 +553,189 @@ internal sealed partial class ToolHelpOpenCliBuilder
         return NormalizeArgumentName(token);
     }
 
+    private static string? InferOptionArgumentNameFromDescription(string? primaryOption, string? description)
+    {
+        if (string.IsNullOrWhiteSpace(primaryOption) || string.IsNullOrWhiteSpace(description))
+        {
+            return null;
+        }
+
+        var normalizedDescription = NormalizeDescriptionForInference(description);
+        if (string.IsNullOrWhiteSpace(normalizedDescription))
+        {
+            return null;
+        }
+
+        var trimmedDescription = TrimLeadingRequiredPrefix(normalizedDescription) ?? normalizedDescription;
+        if (string.IsNullOrWhiteSpace(trimmedDescription)
+            || IsInformationalOptionDescription(trimmedDescription)
+            || LooksLikeFlagDescription(trimmedDescription))
+        {
+            return null;
+        }
+
+        if (StartsWithRequiredPrefix(normalizedDescription)
+            || HasNonBooleanDefault(trimmedDescription)
+            || ContainsStrongValueDescriptionHint(trimmedDescription)
+            || HasValueLikeOptionName(primaryOption))
+        {
+            return InferArgumentNameFromOption(primaryOption);
+        }
+
+        return null;
+    }
+
+    private static string NormalizeDescriptionForInference(string description)
+        => string.Join(
+            " ",
+            description
+                .Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace('\r', '\n')
+                .Split('\n')
+                .Select(line => line.Trim())
+                .Where(line => line.Length > 0))
+            .Trim();
+
+    private static bool StartsWithRequiredPrefix(string? description)
+        => !string.IsNullOrWhiteSpace(description)
+            && (
+                description.TrimStart().StartsWith("Required.", StringComparison.OrdinalIgnoreCase)
+                || description.TrimStart().StartsWith("Required ", StringComparison.OrdinalIgnoreCase)
+                || description.TrimStart().StartsWith("(REQUIRED)", StringComparison.OrdinalIgnoreCase)
+                || description.TrimStart().StartsWith("[REQUIRED]", StringComparison.OrdinalIgnoreCase));
+
+    private static string? TrimLeadingRequiredPrefix(string? description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return description;
+        }
+
+        var normalized = description.TrimStart();
+        if (normalized.StartsWith("Required.", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized["Required.".Length..].TrimStart();
+        }
+
+        if (normalized.StartsWith("Required ", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized["Required ".Length..].TrimStart();
+        }
+
+        if (normalized.StartsWith("(REQUIRED)", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized["(REQUIRED)".Length..].TrimStart();
+        }
+
+        if (normalized.StartsWith("[REQUIRED]", StringComparison.OrdinalIgnoreCase))
+        {
+            return normalized["[REQUIRED]".Length..].TrimStart();
+        }
+
+        return description;
+    }
+
+    private static bool IsInformationalOptionDescription(string description)
+        => InformationalOptionDescriptions.Contains(description)
+            || description.StartsWith("Display version information", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Display the program version", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Display this help", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Show version information", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Show help", StringComparison.OrdinalIgnoreCase);
+
+    private static bool LooksLikeFlagDescription(string description)
+        => description.StartsWith("Build ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Builds ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Create ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Creates ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Disable ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Display ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Enable ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Enables ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Force ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Generate ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Generates ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Print ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Show ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Skip ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Skips ", StringComparison.OrdinalIgnoreCase);
+
+    private static bool HasNonBooleanDefault(string description)
+    {
+        var marker = "(Default:";
+        var startIndex = description.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (startIndex < 0)
+        {
+            return false;
+        }
+
+        var valueStart = startIndex + marker.Length;
+        var endIndex = description.IndexOf(')', valueStart);
+        if (endIndex <= valueStart)
+        {
+            return false;
+        }
+
+        var defaultValue = description[valueStart..endIndex].Trim();
+        return defaultValue.Length > 0
+            && !string.Equals(defaultValue, "false", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(defaultValue, "true", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ContainsStrongValueDescriptionHint(string description)
+        => description.Contains("path to", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("file path", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("file to", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("expressed as", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("valid values", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("must be one of", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("enclosed in double quotes", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("semicolon-delimited", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("corresponding local file path", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("to which", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("persisted to", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("posted.", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("A ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("An ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("The ", StringComparison.OrdinalIgnoreCase);
+
+    private static bool HasValueLikeOptionName(string primaryOption)
+        => GetOptionNameTokens(primaryOption)
+            .Any(token => ValueLikeOptionNameTokens.Contains(token));
+
+    private static IReadOnlyList<string> GetOptionNameTokens(string primaryOption)
+    {
+        var trimmed = primaryOption.TrimStart('-', '/');
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return [];
+        }
+
+        var separator = trimmed.IndexOfAny(['=', ':']);
+        if (separator >= 0)
+        {
+            trimmed = trimmed[..separator];
+        }
+
+        return trimmed
+            .Split(['-', '_', '.'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .SelectMany(SplitCamelCaseTokens)
+            .Where(token => token.Length > 0)
+            .Select(token => token.ToLowerInvariant())
+            .ToArray();
+    }
+
+    private static IEnumerable<string> SplitCamelCaseTokens(string token)
+    {
+        foreach (Match match in CamelCaseTokenRegex().Matches(token))
+        {
+            if (match.Length > 0)
+            {
+                yield return match.Value;
+            }
+        }
+    }
+
     private static string? ExtractBareOptionPlaceholder(string key)
     {
         var matches = OptionTokenRegex().Matches(key);
@@ -447,6 +755,35 @@ internal sealed partial class ToolHelpOpenCliBuilder
             && !trailing.StartsWith("[", StringComparison.Ordinal)
             && !trailing.StartsWith("-", StringComparison.Ordinal)
             && !trailing.StartsWith("/", StringComparison.Ordinal);
+
+    private static string? TryParseOptionToken(string segment, string? previousToken)
+    {
+        var trimmed = segment.Trim();
+        if (trimmed.Length == 0)
+        {
+            return null;
+        }
+
+        var match = OptionTokenRegex().Match(trimmed);
+        if (match.Success && match.Index == 0)
+        {
+            return match.Value;
+        }
+
+        if (!PipeDelimitedOptionAliasSegmentRegex().IsMatch(trimmed))
+        {
+            return null;
+        }
+
+        if (previousToken?.StartsWith("/", StringComparison.Ordinal) == true)
+        {
+            return "/" + trimmed.TrimStart('-', '/');
+        }
+
+        return trimmed.Length == 1
+            ? "-" + trimmed.TrimStart('-', '/')
+            : "--" + trimmed.TrimStart('-', '/');
+    }
 
     private static bool LooksLikeOptionPlaceholder(string value)
         => value.StartsWith("-", StringComparison.Ordinal)
@@ -491,6 +828,12 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
     [GeneratedRegex(@"\d+$", RegexOptions.Compiled)]
     private static partial Regex TrailingDigitsRegex();
+
+    [GeneratedRegex(@"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|\d+", RegexOptions.Compiled)]
+    private static partial Regex CamelCaseTokenRegex();
+
+    [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9_\.\?\-]*$", RegexOptions.Compiled)]
+    private static partial Regex PipeDelimitedOptionAliasSegmentRegex();
 
     private sealed record OptionSignature(
         string? PrimaryName,
