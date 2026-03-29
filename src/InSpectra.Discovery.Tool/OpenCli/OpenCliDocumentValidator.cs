@@ -65,6 +65,19 @@ internal static partial class OpenCliDocumentValidator
             return false;
         }
 
+        var totalCommandCount = CountTotalCommands(document);
+        if (totalCommandCount > 500)
+        {
+            reason = $"OpenCLI artifact has an implausible command count ({totalCommandCount}).";
+            return false;
+        }
+
+        if (ContainsBoxDrawingCommandNames(document))
+        {
+            reason = "OpenCLI artifact contains box-drawing characters in command names (table art parsed as commands).";
+            return false;
+        }
+
         return true;
     }
 
@@ -445,6 +458,44 @@ internal static partial class OpenCliDocumentValidator
             || trimmed.Contains("\nat ", StringComparison.Ordinal)
             || trimmed.Contains("/tmp/inspectra-help-", StringComparison.OrdinalIgnoreCase)
             || trimmed.Contains("/usr/share/dotnet/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static int CountTotalCommands(JsonObject node)
+    {
+        var count = 0;
+        if (node["commands"] is JsonArray commands)
+        {
+            count += commands.Count;
+            foreach (var command in commands.OfType<JsonObject>())
+            {
+                count += CountTotalCommands(command);
+                if (count > 500)
+                {
+                    return count;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    private static bool ContainsBoxDrawingCommandNames(JsonObject node)
+    {
+        if (node["commands"] is not JsonArray commands)
+        {
+            return false;
+        }
+
+        foreach (var command in commands.OfType<JsonObject>())
+        {
+            var name = GetString(command["name"]);
+            if (name is not null && name.Any(ch => ch is '│' or '┌' or '┐' or '└' or '┘' or '├' or '┤' or '┬' or '┴' or '┼' or '─' or '═' or '║'))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool ContainsErrorText(JsonObject document)

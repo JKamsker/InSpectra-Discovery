@@ -247,6 +247,14 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
                     ["version"] = "1.2.3",
                 },
                 ["commands"] = new JsonArray(),
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "--help",
+                        ["description"] = "Show help",
+                    },
+                },
             });
 
         var regenerator = new NativeOpenCliArtifactRegenerator();

@@ -20,6 +20,26 @@ internal sealed class NativeOpenCliArtifactRegenerator
         {
             try
             {
+                var fileSize = new FileInfo(candidate.OpenCliPath).Length;
+                if (fileSize > 2 * 1024 * 1024)
+                {
+                    var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
+                        root,
+                        candidate.MetadataPath,
+                        candidate.OpenCliPath,
+                        $"OpenCLI artifact is implausibly large ({fileSize / 1024 / 1024} MB).",
+                        xmldocPath: candidate.XmlDocPath);
+                    var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
+                    if (!rejectedMetadataChanged && !rejectedStateChanged)
+                    {
+                        unchangedCount++;
+                        continue;
+                    }
+
+                    rewritten.Add(candidate.DisplayName);
+                    continue;
+                }
+
                 var existingNode = TryLoadJsonNode(candidate.OpenCliPath);
                 if (existingNode is not JsonObject existing)
                 {
@@ -44,6 +64,25 @@ internal sealed class NativeOpenCliArtifactRegenerator
                     ?? throw new InvalidOperationException($"OpenCLI artifact '{candidate.OpenCliPath}' could not be cloned.");
                 OpenCliDocumentSanitizer.EnsureArtifactSource(sanitized, "tool-output");
                 OpenCliDocumentSanitizer.Sanitize(sanitized);
+
+                if (!OpenCliDocumentValidator.TryValidateDocument(sanitized, out var validationError))
+                {
+                    var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
+                        root,
+                        candidate.MetadataPath,
+                        candidate.OpenCliPath,
+                        validationError ?? "Native OpenCLI artifact is not publishable.",
+                        xmldocPath: candidate.XmlDocPath);
+                    var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
+                    if (!rejectedMetadataChanged && !rejectedStateChanged)
+                    {
+                        unchangedCount++;
+                        continue;
+                    }
+
+                    rewritten.Add(candidate.DisplayName);
+                    continue;
+                }
 
                 var openCliChanged = !JsonNode.DeepEquals(existing, sanitized);
                 if (openCliChanged)
@@ -128,7 +167,10 @@ internal sealed class NativeOpenCliArtifactRegenerator
             return null;
         }
 
-        var openCli = TryLoadJsonObject(openCliPath);
+        var openCliFileSize = new FileInfo(openCliPath).Length;
+        var openCli = openCliFileSize <= 2 * 1024 * 1024
+            ? TryLoadJsonObject(openCliPath)
+            : null;
         var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
             ?? artifacts?["opencliSource"]?.GetValue<string>()
             ?? openCliStep?["artifactSource"]?.GetValue<string>();
