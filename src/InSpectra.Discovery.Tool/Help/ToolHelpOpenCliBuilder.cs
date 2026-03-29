@@ -629,7 +629,8 @@ internal sealed partial class ToolHelpOpenCliBuilder
             ? ExtractBareOptionPlaceholder(key)
             : null;
 
-        foreach (var segment in key.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        var keyForAliasParsing = StripBracketedPlaceholders(key);
+        foreach (var segment in keyForAliasParsing.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             string? previousToken = null;
             foreach (var pipeSegment in segment.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
@@ -1525,6 +1526,12 @@ internal sealed partial class ToolHelpOpenCliBuilder
         return trailing.Length == 0;
     }
 
+    private static string StripBracketedPlaceholders(string key)
+    {
+        var result = BracketedPlaceholderRegex().Replace(key, string.Empty);
+        return result;
+    }
+
     private static string? ExtractBareOptionPlaceholder(string key)
     {
         var matches = OptionTokenRegex().Matches(key);
@@ -1635,6 +1642,9 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
     [GeneratedRegex(@"\.[A-Za-z0-9]{1,8}$", RegexOptions.Compiled)]
     private static partial Regex FileLikeUsageTokenRegex();
+
+    [GeneratedRegex(@"<[^>]*>|\[[^\]]*\]", RegexOptions.Compiled)]
+    private static partial Regex BracketedPlaceholderRegex();
 
     [GeneratedRegex(@"[^A-Za-z0-9_\-]", RegexOptions.Compiled)]
     private static partial Regex InvalidArgumentTokenRegex();
