@@ -6,6 +6,7 @@ internal static class OpenCliArtifactSourceSupport
             "tool-output" => "json-ready",
             "crawled-from-help" => "help-crawl",
             "crawled-from-clifx-help" => "clifx-crawl",
+            "static-analysis" => "static-crawl",
             "synthesized-from-xmldoc" => "xmldoc-synthesized",
             _ => null,
         };
@@ -16,6 +17,7 @@ internal static class OpenCliArtifactSourceSupport
             "native" => "tool-output",
             "help" => "crawled-from-help",
             "clifx" => "crawled-from-clifx-help",
+            "static" => "static-analysis",
             "xmldoc" => "synthesized-from-xmldoc",
             _ => null,
         };
@@ -26,6 +28,7 @@ internal static class OpenCliArtifactSourceSupport
             "tool-output" => "native",
             "crawled-from-help" => "help",
             "crawled-from-clifx-help" => "clifx",
+            "static-analysis" => "static",
             "synthesized-from-xmldoc" => "xmldoc",
             _ => null,
         };
@@ -37,6 +40,7 @@ internal static class OpenCliArtifactSourceSupport
             "json-ready-with-nonzero-exit" => "native",
             "help-crawl" => "help",
             "clifx-crawl" => "clifx",
+            "static-crawl" => "static",
             "xmldoc-synthesized" => "xmldoc",
             _ => null,
         };

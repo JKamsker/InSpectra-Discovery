@@ -513,7 +513,7 @@ internal sealed class PromotionApplyCommandService
         JsonObject item,
         JsonObject result)
         => FirstNonEmpty(
-            InferCliFxModeFromCrawl(crawlArtifact),
+            InferCrawlBackedModeFromCrawl(crawlArtifact),
             InferAnalysisModeFromOpenCli(openCliArtifact),
             OpenCliArtifactSourceSupport.InferAnalysisMode(result["artifacts"]?["opencliSource"]?.GetValue<string>()),
             crawlArtifact is not null ? PreferCrawlBackedMode(result["analysisMode"]?.GetValue<string>()) : null,
@@ -535,14 +535,26 @@ internal sealed class PromotionApplyCommandService
                 source?["classification"]?.GetValue<string>()))
             .FirstOrDefault(mode => !string.IsNullOrWhiteSpace(mode));
 
-    private static string? InferCliFxModeFromCrawl(JsonObject? crawlArtifact)
-        => crawlArtifact is null
-            ? null
-            : crawlArtifact["staticCommands"] is JsonArray ? "clifx" : null;
+    private static string? InferCrawlBackedModeFromCrawl(JsonObject? crawlArtifact)
+    {
+        if (crawlArtifact is null || crawlArtifact["staticCommands"] is not JsonArray)
+        {
+            return null;
+        }
+
+        var coverageMode = crawlArtifact["coverage"]?["coverageMode"]?.GetValue<string>();
+        if (coverageMode is not null && (coverageMode.Contains("static", StringComparison.OrdinalIgnoreCase)))
+        {
+            return "static";
+        }
+
+        return "clifx";
+    }
 
     private static string? PreferCrawlBackedMode(string? analysisMode)
         => string.Equals(analysisMode, "help", StringComparison.OrdinalIgnoreCase)
             || string.Equals(analysisMode, "clifx", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(analysisMode, "static", StringComparison.OrdinalIgnoreCase)
                 ? analysisMode
                 : null;
 

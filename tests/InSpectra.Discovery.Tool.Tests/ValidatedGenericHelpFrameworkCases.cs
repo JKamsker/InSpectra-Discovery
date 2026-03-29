@@ -7,7 +7,9 @@ internal static class ValidatedGenericHelpFrameworkCases
         var plan = LoadPlan();
         var data = new TheoryData<ToolHelpAnalysisServiceLiveTests.LiveToolCase>();
 
-        foreach (var item in plan.Items.Where(item => string.Equals(item.AnalysisMode, "help", StringComparison.OrdinalIgnoreCase)))
+        foreach (var item in plan.Items.Where(item =>
+            string.Equals(item.AnalysisMode, "help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(item.AnalysisMode, "static", StringComparison.OrdinalIgnoreCase)))
         {
             var framework = item.CliFramework
                 ?? throw new InvalidOperationException($"Plan item '{item.PackageId} {item.Version}' is missing cliFramework.");

@@ -94,7 +94,8 @@ public sealed class HelpBatchAnalysisCommandServiceTests
 
         var service = new HelpBatchAnalysisCommandService(
             runner,
-            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticBatchRunner());
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -179,7 +180,8 @@ public sealed class HelpBatchAnalysisCommandServiceTests
 
         var service = new HelpBatchAnalysisCommandService(
             runner,
-            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticBatchRunner());
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -280,7 +282,8 @@ public sealed class HelpBatchAnalysisCommandServiceTests
 
         var service = new HelpBatchAnalysisCommandService(
             runner,
-            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticBatchRunner());
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -378,7 +381,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(helpRunner, cliFxRunner);
+        var service = new HelpBatchAnalysisCommandService(helpRunner, cliFxRunner, new NoOpStaticBatchRunner());
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -474,7 +477,8 @@ public sealed class HelpBatchAnalysisCommandServiceTests
 
         var service = new HelpBatchAnalysisCommandService(
             runner,
-            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticBatchRunner());
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -554,7 +558,8 @@ public sealed class HelpBatchAnalysisCommandServiceTests
 
         var service = new HelpBatchAnalysisCommandService(
             runner,
-            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticBatchRunner());
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -641,7 +646,8 @@ public sealed class HelpBatchAnalysisCommandServiceTests
 
         var service = new HelpBatchAnalysisCommandService(
             runner,
-            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticBatchRunner());
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -712,6 +718,12 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             Invocations.Add(new FakeInvocation(outputRoot, batchId, source, timeouts, item.PackageId));
             return Task.FromResult(_handler(item, outputRoot, batchId, source, timeouts));
         }
+    }
+
+    private sealed class NoOpStaticBatchRunner : IStaticBatchAnalysisRunner
+    {
+        public Task<int> RunAsync(HelpBatchItem item, string outputRoot, string batchId, string source, HelpBatchTimeouts timeouts, CancellationToken cancellationToken)
+            => throw new InvalidOperationException("Static runner should not run.");
     }
 
     private sealed class TemporaryDirectory : IDisposable

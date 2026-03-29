@@ -4,16 +4,18 @@ internal sealed class HelpBatchAnalysisCommandService
 {
     private readonly IHelpBatchAnalysisRunner _helpRunner;
     private readonly ICliFxBatchAnalysisRunner _cliFxRunner;
+    private readonly IStaticBatchAnalysisRunner _staticRunner;
 
     public HelpBatchAnalysisCommandService()
-        : this(new ToolHelpBatchAnalysisRunner(), new CliFxBatchAnalysisRunner())
+        : this(new ToolHelpBatchAnalysisRunner(), new CliFxBatchAnalysisRunner(), new StaticBatchAnalysisRunner())
     {
     }
 
-    internal HelpBatchAnalysisCommandService(IHelpBatchAnalysisRunner helpRunner, ICliFxBatchAnalysisRunner cliFxRunner)
+    internal HelpBatchAnalysisCommandService(IHelpBatchAnalysisRunner helpRunner, ICliFxBatchAnalysisRunner cliFxRunner, IStaticBatchAnalysisRunner staticRunner)
     {
         _helpRunner = helpRunner;
         _cliFxRunner = cliFxRunner;
+        _staticRunner = staticRunner;
     }
 
     public async Task<int> RunAsync(
@@ -60,7 +62,8 @@ internal sealed class HelpBatchAnalysisCommandService
         foreach (var item in plan.Items)
         {
             if (!string.Equals(item.AnalysisMode, "help", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(item.AnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase))
+                && !string.Equals(item.AnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(item.AnalysisMode, "static", StringComparison.OrdinalIgnoreCase))
             {
                 skippedItems.Add(new JsonObject
                 {
@@ -149,7 +152,9 @@ internal sealed class HelpBatchAnalysisCommandService
         var itemOutputRoot = Path.Combine(downloadRoot, artifactName);
         var exitCode = string.Equals(item.AnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase)
             ? await _cliFxRunner.RunAsync(item, itemOutputRoot, batchId, source, timeouts, cancellationToken)
-            : await _helpRunner.RunAsync(item, itemOutputRoot, batchId, source, timeouts, cancellationToken);
+            : string.Equals(item.AnalysisMode, "static", StringComparison.OrdinalIgnoreCase)
+                ? await _staticRunner.RunAsync(item, itemOutputRoot, batchId, source, timeouts, cancellationToken)
+                : await _helpRunner.RunAsync(item, itemOutputRoot, batchId, source, timeouts, cancellationToken);
         var resultPath = Path.Combine(itemOutputRoot, "result.json");
         var result = File.Exists(resultPath)
             ? JsonNode.Parse(await File.ReadAllTextAsync(resultPath, cancellationToken))?.AsObject()
@@ -332,6 +337,43 @@ internal sealed class ToolHelpBatchAnalysisRunner : IHelpBatchAnalysisRunner
 internal sealed class CliFxBatchAnalysisRunner : ICliFxBatchAnalysisRunner
 {
     private readonly CliFxAnalysisService _service = new();
+
+    public Task<int> RunAsync(
+        HelpBatchItem item,
+        string outputRoot,
+        string batchId,
+        string source,
+        HelpBatchTimeouts timeouts,
+        CancellationToken cancellationToken)
+        => _service.RunQuietAsync(
+            item.PackageId,
+            item.Version,
+            item.CommandName,
+            item.CliFramework,
+            outputRoot,
+            batchId,
+            item.Attempt,
+            source,
+            timeouts.InstallTimeoutSeconds,
+            timeouts.AnalysisTimeoutSeconds,
+            timeouts.CommandTimeoutSeconds,
+            cancellationToken);
+}
+
+internal interface IStaticBatchAnalysisRunner
+{
+    Task<int> RunAsync(
+        HelpBatchItem item,
+        string outputRoot,
+        string batchId,
+        string source,
+        HelpBatchTimeouts timeouts,
+        CancellationToken cancellationToken);
+}
+
+internal sealed class StaticBatchAnalysisRunner : IStaticBatchAnalysisRunner
+{
+    private readonly StaticAnalysisService _service = new();
 
     public Task<int> RunAsync(
         HelpBatchItem item,

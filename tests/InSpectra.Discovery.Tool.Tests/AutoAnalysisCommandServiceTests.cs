@@ -23,7 +23,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 "https://nuget.test/catalog/sample.tool.1.2.3.json")),
             new FakeNativeRunner((path, _, _, _, _, _, _, _) => WriteResult(path, "success")),
             new FakeHelpRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("Help fallback should not run.")),
-            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticRunner());
 
         var exitCode = await service.RunAsync(
             "Sample.Tool",
@@ -68,12 +69,13 @@ public sealed class AutoAnalysisCommandServiceTests
                 "https://nuget.test/broken.tool.0.1.0.nupkg",
                 "https://nuget.test/catalog/broken.tool.0.1.0.json")),
             new FakeNativeRunner((path, _, _, _, _, _, _, _) => WriteResult(path, "retryable-failure", "unsupported-command")),
-            new FakeHelpRunner((path, _, commandName, _, _, _, framework, _, _, _) =>
+            new FakeHelpRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("Help runner should not run.")),
+            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new FakeStaticRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
             {
                 capturedCommandName = commandName;
-                WriteResult(path, "success", cliFramework: framework);
-            }),
-            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+                WriteResult(path, "success", cliFramework: cliFramework);
+            }));
 
         var exitCode = await service.RunAsync(
             "Broken.Tool",
@@ -93,7 +95,7 @@ public sealed class AutoAnalysisCommandServiceTests
 
         var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
         Assert.Equal("success", result["disposition"]?.GetValue<string>());
-        Assert.Equal("help", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("static", result["analysisMode"]?.GetValue<string>());
         Assert.Equal("System.CommandLine", result["cliFramework"]?.GetValue<string>());
         Assert.Equal("native", result["fallback"]?["from"]?.GetValue<string>());
         Assert.Equal("unsupported-command", result["fallback"]?["classification"]?.GetValue<string>());
@@ -126,7 +128,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 capturedCommandName = commandName;
                 Assert.Equal("System.CommandLine + CliFx", cliFramework);
                 WriteResult(path, "success", cliFramework: "CliFx");
-            }));
+            }),
+            new NoOpStaticRunner());
 
         var exitCode = await service.RunAsync(
             "Mixed.Tool",
@@ -178,7 +181,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 capturedCommandName = commandName;
                 WriteResult(path, "success", cliFramework: framework);
             }),
-            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticRunner());
 
         var exitCode = await service.RunAsync(
             "Cake.Tool",
@@ -225,7 +229,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 "https://nuget.test/catalog/cake.tool.6.1.0.json")),
             new FakeNativeRunner((path, _, _, _, _, _, _, _) => WriteResult(path, "success", includeOpenCliArtifact: false, includeXmlDocArtifact: true)),
             new FakeHelpRunner((path, _, _, _, _, _, _, _, _, _) => WriteResult(path, "terminal-failure", "help-crawl-failed", includeOpenCliArtifact: false)),
-            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")));
+            new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
+            new NoOpStaticRunner());
 
         var exitCode = await service.RunAsync(
             "Cake.Tool",
@@ -277,7 +282,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 capturedCommandName = commandName;
                 WriteResult(path, "success", cliFramework: "CliFx");
                 Assert.Equal("CliFx + System.CommandLine", cliFramework);
-            }));
+            }),
+            new NoOpStaticRunner());
 
         var exitCode = await service.RunAsync(
             "CliFx.Tool",
@@ -363,6 +369,21 @@ public sealed class AutoAnalysisCommandServiceTests
     }
 
     private sealed class FakeCliFxRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoAnalysisCliFxRunner
+    {
+        public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+        {
+            handler(outputRoot, packageId, commandName, version, batchId, attempt, cliFramework, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, source);
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class NoOpStaticRunner : IAutoAnalysisStaticRunner
+    {
+        public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+            => throw new InvalidOperationException("Static runner should not run.");
+    }
+
+    private sealed class FakeStaticRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoAnalysisStaticRunner
     {
         public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
         {

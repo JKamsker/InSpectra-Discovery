@@ -43,7 +43,9 @@ internal sealed class ToolAnalysisDescriptorResolver : IToolAnalysisDescriptorRe
             ? ("native", "confirmed-spectre-console-cli")
             : CliFrameworkSupport.HasCliFx(cliFramework)
                 ? ("clifx", "confirmed-clifx")
-                : ("help", "generic-help-crawl");
+                : CliFrameworkSupport.HasStaticAnalysisSupport(cliFramework)
+                    ? ("static", "confirmed-static-analysis-framework")
+                    : ("help", "generic-help-crawl");
 
     private static bool HasConfirmedSpectreCli(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection)
     {

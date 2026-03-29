@@ -48,19 +48,38 @@ internal interface IAutoAnalysisCliFxRunner
         CancellationToken cancellationToken);
 }
 
+internal interface IAutoAnalysisStaticRunner
+{
+    Task RunAsync(
+        string packageId,
+        string version,
+        string? commandName,
+        string? cliFramework,
+        string outputRoot,
+        string batchId,
+        int attempt,
+        string source,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        CancellationToken cancellationToken);
+}
+
 internal sealed class AutoAnalysisCommandService
 {
     private readonly IToolAnalysisDescriptorResolver _descriptorResolver;
     private readonly IAutoAnalysisNativeRunner _nativeRunner;
     private readonly IAutoAnalysisHelpRunner _helpRunner;
     private readonly IAutoAnalysisCliFxRunner _cliFxRunner;
+    private readonly IAutoAnalysisStaticRunner _staticRunner;
 
     public AutoAnalysisCommandService()
         : this(
             new ToolAnalysisDescriptorResolver(),
             new AutoAnalysisNativeRunnerAdapter(),
             new AutoAnalysisHelpRunnerAdapter(),
-            new AutoAnalysisCliFxRunnerAdapter())
+            new AutoAnalysisCliFxRunnerAdapter(),
+            new AutoAnalysisStaticRunnerAdapter())
     {
     }
 
@@ -68,12 +87,14 @@ internal sealed class AutoAnalysisCommandService
         IToolAnalysisDescriptorResolver descriptorResolver,
         IAutoAnalysisNativeRunner nativeRunner,
         IAutoAnalysisHelpRunner helpRunner,
-        IAutoAnalysisCliFxRunner cliFxRunner)
+        IAutoAnalysisCliFxRunner cliFxRunner,
+        IAutoAnalysisStaticRunner staticRunner)
     {
         _descriptorResolver = descriptorResolver;
         _nativeRunner = nativeRunner;
         _helpRunner = helpRunner;
         _cliFxRunner = cliFxRunner;
+        _staticRunner = staticRunner;
     }
 
     public Task<int> RunAsync(
@@ -158,11 +179,13 @@ internal sealed class AutoAnalysisCommandService
         }
 
         var shouldUseCliFx = string.Equals(descriptor.PreferredAnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase);
+        var shouldUseStatic = string.Equals(descriptor.PreferredAnalysisMode, "static", StringComparison.OrdinalIgnoreCase);
         var shouldUseHelp = string.Equals(descriptor.PreferredAnalysisMode, "help", StringComparison.OrdinalIgnoreCase);
-        if (!shouldUseCliFx && !shouldUseHelp)
+        if (!shouldUseCliFx && !shouldUseStatic && !shouldUseHelp)
         {
             shouldUseCliFx = CliFrameworkSupport.HasCliFx(descriptor.CliFramework);
-            shouldUseHelp = !shouldUseCliFx;
+            shouldUseStatic = !shouldUseCliFx && CliFrameworkSupport.HasStaticAnalysisSupport(descriptor.CliFramework);
+            shouldUseHelp = !shouldUseCliFx && !shouldUseStatic;
         }
 
         if (shouldUseCliFx)
@@ -184,6 +207,27 @@ internal sealed class AutoAnalysisCommandService
             ApplyDescriptor(cliFxResult, descriptor, "clifx", nativeResult);
             RepositoryPathResolver.WriteJsonFile(resultPath, cliFxResult);
             return await WriteResultAsync(packageId, version, resultPath, cliFxResult, json, suppressOutput, cancellationToken);
+        }
+
+        if (shouldUseStatic)
+        {
+            await _staticRunner.RunAsync(
+                packageId,
+                version,
+                descriptor.CommandName,
+                descriptor.CliFramework,
+                outputDirectory,
+                batchId,
+                attempt,
+                source,
+                installTimeoutSeconds,
+                analysisTimeoutSeconds,
+                commandTimeoutSeconds,
+                cancellationToken);
+            var staticResult = LoadResult(resultPath) ?? CreateFailureResult(packageId, version, batchId, attempt, source, "The selected analyzer did not write result.json.");
+            ApplyDescriptor(staticResult, descriptor, "static", nativeResult);
+            RepositoryPathResolver.WriteJsonFile(resultPath, staticResult);
+            return await WriteResultAsync(packageId, version, resultPath, staticResult, json, suppressOutput, cancellationToken);
         }
 
         if (!shouldUseHelp)
@@ -350,6 +394,14 @@ internal sealed class AutoAnalysisCommandService
     private sealed class AutoAnalysisCliFxRunnerAdapter : IAutoAnalysisCliFxRunner
     {
         private readonly CliFxAnalysisService _service = new();
+
+        public async Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+            => await _service.RunQuietAsync(packageId, version, commandName, cliFramework, outputRoot, batchId, attempt, source, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, cancellationToken);
+    }
+
+    private sealed class AutoAnalysisStaticRunnerAdapter : IAutoAnalysisStaticRunner
+    {
+        private readonly StaticAnalysisService _service = new();
 
         public async Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
             => await _service.RunQuietAsync(packageId, version, commandName, cliFramework, outputRoot, batchId, attempt, source, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, cancellationToken);

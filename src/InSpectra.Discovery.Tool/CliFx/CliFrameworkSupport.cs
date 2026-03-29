@@ -5,6 +5,30 @@ internal static class CliFrameworkSupport
             && cliFramework.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Any(part => string.Equals(part, "CliFx", StringComparison.OrdinalIgnoreCase));
 
+    private static readonly HashSet<string> StaticAnalysisFrameworks = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CommandLineParser",
+        "System.CommandLine",
+        "McMaster.Extensions.CommandLineUtils",
+        "Microsoft.Extensions.CommandLineUtils",
+        "Argu",
+        "Cocona",
+        "DocoptNet",
+        "ConsoleAppFramework",
+        "CommandDotNet",
+        "PowerArgs",
+        "Oakton",
+        "ManyConsole",
+        "Mono.Options / NDesk.Options",
+        "Mono.Options",
+        "NDesk.Options",
+    };
+
+    public static bool HasStaticAnalysisSupport(string? cliFramework)
+        => !string.IsNullOrWhiteSpace(cliFramework)
+            && cliFramework.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Any(StaticAnalysisFrameworks.Contains);
+
     public static bool ShouldReplace(string? existingCliFramework, string? candidateCliFramework)
     {
         if (string.IsNullOrWhiteSpace(candidateCliFramework))

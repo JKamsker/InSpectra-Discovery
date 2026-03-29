@@ -33,7 +33,8 @@ internal static class HelpBatchArtifactSupport
 
     public static bool RequiresCrawlArtifact(string? analysisMode)
         => string.Equals(analysisMode, "help", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(analysisMode, "clifx", StringComparison.OrdinalIgnoreCase);
+            || string.Equals(analysisMode, "clifx", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(analysisMode, "static", StringComparison.OrdinalIgnoreCase);
 
     public static string BuildPackageVersionKey(string packageId, string version)
         => $"{packageId}|{version}";
