@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-29 19:25:58+00:00
+Generated: 2026-03-29 19:43:21+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 145
+Packages in scope: 146
 
-Fully documented: 68
+Fully documented: 69
 
 Incomplete: 77
 
@@ -59,7 +59,7 @@ Incomplete: 77
 | [MrKWatkins.OakAsm.Tool](#pkg-mrkwatkins-oakasm-tool) | 0.8.2 | ok | xml-ready | 0/2 | 0/1 | 2/3 | 0/2 | FAIL |
 | [MrKWatkins.OakIO.Tool](#pkg-mrkwatkins-oakio-tool) | 1.0.4 | ok | xml-ready | 2/2 | 0/0 | 3/3 | 0/2 | FAIL |
 | [MrKWatkins.RemoveJetBrainsAnnotations](#pkg-mrkwatkins-removejetbrainsannotations) | 1.1.0 | ok | xml-ready | 0/0 | 0/0 | 0/1 | 0/0 | FAIL |
-| [MrKWatkins.Sesharp.Tool](#pkg-mrkwatkins-sesharp-tool) | 1.6.0 | ok | xml-ready | 0/0 | 0/3 | 0/1 | 0/0 | FAIL |
+| [MrKWatkins.Sesharp.Tool](#pkg-mrkwatkins-sesharp-tool) | 1.8.0 | ok | xml-ready | 0/0 | 0/3 | 0/1 | 0/0 | FAIL |
 | [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.4 | ok | xml-ready | 65/65 | 656/696 | 2/32 | 0/53 | FAIL |
 | [Nivobi.GitBuddy](#pkg-nivobi-gitbuddy) | 1.3.1 | ok | xml-ready | 15/15 | 12/15 | 7/8 | 0/15 | FAIL |
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.31 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
@@ -100,6 +100,7 @@ Incomplete: 77
 | [atc-kusto](#pkg-atc-kusto) | 3.3.1 | ok | invalid-xml | 7/7 | 30/30 | 0/0 | 6/6 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [Betalgo.Blueflow.Chopper](#pkg-betalgo-blueflow-chopper) | 1.0.5 | ok | xml-ready | 0/0 | 5/5 | 0/0 | 0/0 | PASS |
+| [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.1.0 | ok | xml-ready | 2/2 | 12/12 | 2/2 | 2/2 | PASS |
 | [Blobify](#pkg-blobify) | 2026.2.11.541 | ok | xml-ready | 1/1 | 2/2 | 3/3 | 1/1 | PASS |
 | [bnl-swagger](#pkg-bnl-swagger) | 1.0.0 | ok | xml-ready | 0/0 | 1/1 | 1/1 | 0/0 | PASS |
 | [BRI](#pkg-bri) | 2026.2.11.700 | ok | xml-ready | 1/1 | 1/1 | 2/2 | 1/1 | PASS |
@@ -898,7 +899,7 @@ Incomplete: 77
 <a id="pkg-mrkwatkins-sesharp-tool"></a>
 ### MrKWatkins.Sesharp.Tool
 
-- Version: `1.6.0`
+- Version: `1.8.0`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -1586,6 +1587,23 @@ Incomplete: 77
 - Option documentation: `5/5`
 - Argument documentation: `0/0`
 - Leaf command examples: `0/0`
+- Overall: `PASS`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: None
+
+<a id="pkg-blazorlocalization-extractor"></a>
+### BlazorLocalization.Extractor
+
+- Version: `10.1.0`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `2/2`
+- Option documentation: `12/12`
+- Argument documentation: `2/2`
+- Leaf command examples: `2/2`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
