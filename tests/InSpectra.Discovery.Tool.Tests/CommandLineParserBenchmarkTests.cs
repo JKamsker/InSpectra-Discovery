@@ -147,7 +147,7 @@ public sealed class CommandLineParserBenchmarkTests
     }
 
     [Fact]
-    public void Regenerator_Deduplicates_CommandLineParser_BuiltIn_Version_Switch_Collisions()
+    public void Regenerator_Rejects_CommandLineParser_BuiltIn_Version_Switch_Collisions()
     {
         ToolRuntime.Initialize();
 
@@ -180,17 +180,11 @@ public sealed class CommandLineParserBenchmarkTests
 
         Assert.Equal(1, result.CandidateCount);
         Assert.Equal(1, result.RewrittenCount);
-
-        var openCli = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
-        var versionOptions = openCli["options"]!.AsArray()
-            .Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--version", StringComparison.Ordinal))
-            .ToArray();
-        var versionOption = Assert.Single(versionOptions);
-        Assert.Contains(versionOption!["aliases"]!.AsArray(), alias => string.Equals(alias?.GetValue<string>(), "-v", StringComparison.Ordinal));
-        Assert.Contains("mark all project files", versionOption["description"]?.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(Path.Combine(versionRoot, "opencli.json")));
 
         var metadata = ParseJsonObject(Path.Combine(versionRoot, "metadata.json"));
-        Assert.Equal("ok", metadata["status"]?.GetValue<string>());
+        Assert.Equal("partial", metadata["status"]?.GetValue<string>());
+        Assert.Equal("invalid-opencli-artifact", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
     [Fact]

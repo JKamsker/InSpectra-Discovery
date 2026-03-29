@@ -147,6 +147,99 @@ public sealed class OpenCliDocumentSanitizerTests
     }
 
     [Fact]
+    public void Sanitize_Does_Not_Merge_Informational_Option_With_Value_Taking_Duplicate()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Package version to publish.",
+                    ["arguments"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "VERSION",
+                            ["required"] = true,
+                            ["arity"] = new JsonObject
+                            {
+                                ["minimum"] = 1,
+                                ["maximum"] = 1,
+                            },
+                        },
+                    },
+                },
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Display version information.",
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var options = document["options"]!.AsArray();
+        Assert.Equal(2, options.Count);
+        Assert.Contains(options, option => option?["arguments"] is JsonArray);
+        Assert.Contains(options, option => string.Equals(option?["description"]?.GetValue<string>(), "Display version information.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Sanitize_Merges_Informational_Option_With_Synthetic_Self_Argument_Duplicate()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["arguments"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "VERSION",
+                            ["required"] = false,
+                            ["arity"] = new JsonObject
+                            {
+                                ["minimum"] = 0,
+                                ["maximum"] = 1,
+                            },
+                        },
+                    },
+                },
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Display version information.",
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var version = Assert.Single(document["options"]!.AsArray());
+        Assert.Equal("--version", version!["name"]?.GetValue<string>());
+        Assert.Equal("Display version information.", version["description"]?.GetValue<string>());
+        Assert.Null(version["arguments"]);
+    }
+
+    [Fact]
     public void Sanitize_Trims_Trailing_Noise_From_Single_Informational_Option()
     {
         var document = new JsonObject

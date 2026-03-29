@@ -501,6 +501,58 @@ public sealed class ToolHelpOpenCliBuilderTests
     }
 
     [Fact]
+    public void Does_Not_Emit_Command_Inventory_Echo_As_Builtin_Help_Arguments()
+    {
+        var builder = new ToolHelpOpenCliBuilder();
+        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options: [],
+                Commands:
+                [
+                    new ToolHelpItem("pack", false, "Creates a new package."),
+                    new ToolHelpItem("help", false, "Display more information on a specific command."),
+                ]),
+            ["help"] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: "Display more information on a specific command.",
+                UsageLines: [],
+                Arguments:
+                [
+                    new ToolHelpItem("pack", false, "Creates a new package."),
+                    new ToolHelpItem("help", false, "Display more information on a specific command."),
+                    new ToolHelpItem("version", false, "Display version information."),
+                ],
+                Options:
+                [
+                    new ToolHelpItem(
+                        "--help",
+                        false,
+                        "Display this help screen.\npack (pos. 0) Creates a new package.\nversion (pos. 1) Display version information."),
+                ],
+                Commands:
+                [
+                    new ToolHelpItem("pack", false, "Creates a new package."),
+                    new ToolHelpItem("help", false, "Display more information on a specific command."),
+                    new ToolHelpItem("version", false, "Display version information."),
+                ]),
+        };
+
+        var document = builder.Build("demo", "1.0.0", helpDocuments);
+        var help = Assert.Single(document["commands"]!.AsArray().Where(command => string.Equals(command?["name"]?.GetValue<string>(), "help", StringComparison.Ordinal)));
+
+        Assert.Null(help!["arguments"]);
+    }
+
+    [Fact]
     public void Preserves_Command_Descriptions_From_Root_Inventory_When_Subcommand_Help_Lacks_Them()
     {
         var builder = new ToolHelpOpenCliBuilder();

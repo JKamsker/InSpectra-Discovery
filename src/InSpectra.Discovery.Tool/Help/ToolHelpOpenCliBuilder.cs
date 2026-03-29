@@ -251,11 +251,24 @@ internal sealed partial class ToolHelpOpenCliBuilder
             return null;
         }
 
-        var arguments = helpDocument.Arguments.Count > 0
-            ? helpDocument.Arguments
+        var explicitArguments = helpDocument.Arguments;
+        if (IsBuiltinAuxiliaryCommand(commandPath)
+            && (LooksLikeCommandInventoryEchoArguments(explicitArguments, helpDocument.Commands)
+                || LooksLikeAuxiliaryInventoryEchoArguments(explicitArguments, helpDocument.UsageLines)))
+        {
+            explicitArguments = [];
+        }
+
+        var arguments = explicitArguments.Count > 0
+            ? explicitArguments
             : ExtractUsageArguments(commandName, commandPath, helpDocument.UsageLines, helpDocument.Commands.Count > 0);
         if (arguments.Count == 0)
         {
+            if (IsBuiltinAuxiliaryCommand(commandPath))
+            {
+                return null;
+            }
+
             arguments = ToolHelpOptionDescriptionArgumentInference.Infer(helpDocument.Options);
         }
 
@@ -372,6 +385,99 @@ internal sealed partial class ToolHelpOpenCliBuilder
     private static bool IsDispatcherPlaceholder(string value)
         => string.Equals(value, "command", StringComparison.OrdinalIgnoreCase)
             || string.Equals(value, "subcommand", StringComparison.OrdinalIgnoreCase);
+
+    private static bool LooksLikeCommandInventoryEchoArguments(
+        IReadOnlyList<ToolHelpItem> arguments,
+        IReadOnlyList<ToolHelpItem> commands)
+    {
+        if (arguments.Count < 2 || commands.Count == 0)
+        {
+            return false;
+        }
+
+        var commandDescriptions = commands
+            .Select(command => (Key: NormalizeCommandInventoryKey(command.Key), Description: NormalizeInlineText(command.Description)))
+            .Where(entry => !string.IsNullOrWhiteSpace(entry.Key) && !string.IsNullOrWhiteSpace(entry.Description))
+            .GroupBy(entry => entry.Key, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First().Description, StringComparer.OrdinalIgnoreCase);
+        if (commandDescriptions.Count == 0)
+        {
+            return false;
+        }
+
+        return arguments.All(argument =>
+        {
+            var normalizedKey = NormalizeCommandInventoryKey(argument.Key);
+            return !argument.IsRequired
+                && commandDescriptions.TryGetValue(normalizedKey, out var commandDescription)
+                && string.Equals(NormalizeInlineText(argument.Description), commandDescription, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    private static bool LooksLikeAuxiliaryInventoryEchoArguments(
+        IReadOnlyList<ToolHelpItem> arguments,
+        IReadOnlyList<string> usageLines)
+    {
+        if (arguments.Count < 2 || usageLines.Count > 0)
+        {
+            return false;
+        }
+
+        return arguments.All(argument =>
+            !argument.IsRequired
+            && !string.IsNullOrWhiteSpace(argument.Description)
+            && !string.IsNullOrWhiteSpace(NormalizeCommandInventoryKey(argument.Key)));
+    }
+
+    private static bool IsBuiltinAuxiliaryCommand(string commandPath)
+    {
+        if (string.IsNullOrWhiteSpace(commandPath))
+        {
+            return false;
+        }
+
+        var leafSegment = ToolHelpCommandPathSupport.SplitSegments(commandPath).LastOrDefault();
+        return string.Equals(leafSegment, "help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(leafSegment, "version", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeInlineText(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : string.Join(
+                ' ',
+                value.Split([' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+
+    private static string NormalizeCommandInventoryKey(string key)
+    {
+        var normalizedKey = key.Trim();
+        var rawSegments = normalizedKey.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var segments = new List<string>();
+        for (var index = 0; index < rawSegments.Length; index++)
+        {
+            var aliases = new List<string> { rawSegments[index].TrimEnd(',', ':') };
+            while (rawSegments[index].EndsWith(",", StringComparison.Ordinal) && index + 1 < rawSegments.Length)
+            {
+                index++;
+                aliases.Add(rawSegments[index].TrimEnd(',', ':'));
+            }
+
+            segments.Add(aliases
+                .Where(alias => alias.Length > 0)
+                .OrderByDescending(alias => alias.Length)
+                .FirstOrDefault() ?? string.Empty);
+        }
+
+        var normalized = segments
+            .TakeWhile(segment => !segment.StartsWith("<", StringComparison.Ordinal)
+                && !segment.StartsWith("[", StringComparison.Ordinal)
+                && !segment.StartsWith("(", StringComparison.Ordinal)
+                && !segment.StartsWith("-", StringComparison.Ordinal)
+                && !segment.StartsWith("/", StringComparison.Ordinal))
+            .Where(segment => segment.Length > 0)
+            .ToArray();
+        return normalized.Length == 0 ? string.Empty : string.Join(' ', normalized);
+    }
 
     private static OptionSignature ParseOptionSignature(string key)
     {

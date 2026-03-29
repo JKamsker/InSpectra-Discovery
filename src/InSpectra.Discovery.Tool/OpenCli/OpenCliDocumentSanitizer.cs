@@ -259,6 +259,17 @@ internal static class OpenCliDocumentSanitizer
         var rightDescription = NormalizeDescription(right["description"]?.GetValue<string>());
         var leftInformational = IsInformationalOptionDescription(leftDescription);
         var rightInformational = IsInformationalOptionDescription(rightDescription);
+        if (TryResolveInformationalSelfArgumentDuplicate(left, right, out resolved))
+        {
+            return true;
+        }
+
+        if ((leftInformational ^ rightInformational)
+            && (HasArguments(left) || HasArguments(right)))
+        {
+            return false;
+        }
+
         if (!AreCompatibleDescriptions(leftDescription, rightDescription, leftInformational, rightInformational))
         {
             return false;
@@ -428,6 +439,91 @@ internal static class OpenCliDocumentSanitizer
             && !name.StartsWith("--", StringComparison.Ordinal)
             && option["aliases"] is not JsonArray;
     }
+
+    private static bool HasArguments(JsonObject option)
+        => option["arguments"] is JsonArray arguments && arguments.Count > 0;
+
+    private static bool TryResolveInformationalSelfArgumentDuplicate(
+        JsonObject left,
+        JsonObject right,
+        out JsonObject resolved)
+    {
+        resolved = left;
+        if (TryResolveInformationalSelfArgumentDuplicateCore(left, right, out var informationalPreferred))
+        {
+            resolved = informationalPreferred;
+            return true;
+        }
+
+        if (TryResolveInformationalSelfArgumentDuplicateCore(right, left, out informationalPreferred))
+        {
+            resolved = informationalPreferred;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryResolveInformationalSelfArgumentDuplicateCore(
+        JsonObject informationalCandidate,
+        JsonObject selfArgumentCandidate,
+        out JsonObject resolved)
+    {
+        resolved = informationalCandidate;
+        var description = NormalizeDescription(informationalCandidate["description"]?.GetValue<string>());
+        if (!IsInformationalOptionDescription(description)
+            || HasArguments(informationalCandidate)
+            || !LooksLikeSyntheticSelfArgumentOption(selfArgumentCandidate))
+        {
+            return false;
+        }
+
+        resolved = MergeOptions(informationalCandidate, selfArgumentCandidate);
+        resolved.Remove("arguments");
+        return true;
+    }
+
+    private static bool LooksLikeSyntheticSelfArgumentOption(JsonObject option)
+    {
+        if (option["arguments"] is not JsonArray arguments || arguments.Count != 1)
+        {
+            return false;
+        }
+
+        var normalizedDescription = NormalizeDescription(option["description"]?.GetValue<string>());
+        if (!string.IsNullOrWhiteSpace(normalizedDescription)
+            && !IsInformationalOptionDescription(normalizedDescription))
+        {
+            return false;
+        }
+
+        var argument = arguments[0] as JsonObject;
+        var argumentName = argument?["name"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(argumentName))
+        {
+            return false;
+        }
+
+        if (argument?["required"]?.GetValue<bool>() == true)
+        {
+            return false;
+        }
+
+        return string.Equals(
+            argumentName,
+            DeriveSyntheticArgumentName(option["name"]?.GetValue<string>()),
+            StringComparison.Ordinal);
+    }
+
+    private static string DeriveSyntheticArgumentName(string? optionName)
+        => string.IsNullOrWhiteSpace(optionName)
+            ? string.Empty
+            : string.Concat(
+                    optionName
+                        .Trim()
+                        .TrimStart('-', '/')
+                        .Select(ch => char.IsLetterOrDigit(ch) ? char.ToUpperInvariant(ch) : '_'))
+                .Trim('_');
 
     private static string NormalizeDescription(string? description)
     {
