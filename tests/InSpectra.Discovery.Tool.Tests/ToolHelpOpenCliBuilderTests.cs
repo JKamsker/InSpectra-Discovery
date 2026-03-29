@@ -306,6 +306,11 @@ public sealed class ToolHelpOpenCliBuilderTests
                     new ToolHelpItem("--webpart", false, "Required. Creates a webpart configuration."),
                     new ToolHelpItem("--print-config", false, "Print path to config file"),
                     new ToolHelpItem("--package-file", false, "Generates UTF-8 text file with package metadata."),
+                    new ToolHelpItem("--resolvedir", false, "Additional assembly resolve directories."),
+                    new ToolHelpItem("--keyfile", false, "Sign rewritten assembly with this key file."),
+                    new ToolHelpItem("--exclude", false, "Comma separated change types to exclude."),
+                    new ToolHelpItem("--assembly", false, "Required."),
+                    new ToolHelpItem("--target-directory", false, null),
                     new ToolHelpItem("--version", false, "Display version information"),
                     new ToolHelpItem("--rc|restore-concurrency", false, "(Default: 4) The number of concurrent restores."),
                 ],
@@ -344,6 +349,22 @@ public sealed class ToolHelpOpenCliBuilderTests
 
         var packageFile = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--package-file", StringComparison.Ordinal)));
         Assert.Null(packageFile!["arguments"]);
+
+        var resolveDir = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--resolvedir", StringComparison.Ordinal)));
+        Assert.Equal("RESOLVEDIR", resolveDir!["arguments"]![0]!["name"]!.GetValue<string>());
+
+        var keyFile = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--keyfile", StringComparison.Ordinal)));
+        Assert.Equal("KEYFILE", keyFile!["arguments"]![0]!["name"]!.GetValue<string>());
+
+        var exclude = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--exclude", StringComparison.Ordinal)));
+        Assert.Equal("EXCLUDE", exclude!["arguments"]![0]!["name"]!.GetValue<string>());
+
+        var assembly = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--assembly", StringComparison.Ordinal)));
+        Assert.Equal("ASSEMBLY", assembly!["arguments"]![0]!["name"]!.GetValue<string>());
+        Assert.True(assembly["arguments"]![0]!["required"]!.GetValue<bool>());
+
+        var targetDirectory = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--target-directory", StringComparison.Ordinal)));
+        Assert.Equal("TARGET_DIRECTORY", targetDirectory!["arguments"]![0]!["name"]!.GetValue<string>());
 
         var version = Assert.Single(options.Where(option => string.Equals(option?["name"]?.GetValue<string>(), "--version", StringComparison.Ordinal)));
         Assert.Null(version!["arguments"]);

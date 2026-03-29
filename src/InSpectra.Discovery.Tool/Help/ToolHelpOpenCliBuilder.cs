@@ -555,20 +555,35 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
     private static string? InferOptionArgumentNameFromDescription(string? primaryOption, string? description)
     {
-        if (string.IsNullOrWhiteSpace(primaryOption) || string.IsNullOrWhiteSpace(description))
+        if (string.IsNullOrWhiteSpace(primaryOption))
         {
             return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return HasValueLikeOptionName(primaryOption)
+                ? InferArgumentNameFromOption(primaryOption)
+                : null;
         }
 
         var normalizedDescription = NormalizeDescriptionForInference(description);
         if (string.IsNullOrWhiteSpace(normalizedDescription))
         {
-            return null;
+            return HasValueLikeOptionName(primaryOption)
+                ? InferArgumentNameFromOption(primaryOption)
+                : null;
         }
 
         var trimmedDescription = TrimLeadingRequiredPrefix(normalizedDescription) ?? normalizedDescription;
-        if (string.IsNullOrWhiteSpace(trimmedDescription)
-            || IsInformationalOptionDescription(trimmedDescription)
+        if (string.IsNullOrWhiteSpace(trimmedDescription))
+        {
+            return StartsWithRequiredPrefix(normalizedDescription) && HasValueLikeOptionName(primaryOption)
+                ? InferArgumentNameFromOption(primaryOption)
+                : null;
+        }
+
+        if (IsInformationalOptionDescription(trimmedDescription)
             || LooksLikeFlagDescription(trimmedDescription))
         {
             return null;
@@ -684,6 +699,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
     private static bool ContainsStrongValueDescriptionHint(string description)
         => description.Contains("path to", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("comma separated", StringComparison.OrdinalIgnoreCase)
             || description.Contains("file path", StringComparison.OrdinalIgnoreCase)
             || description.Contains("file to", StringComparison.OrdinalIgnoreCase)
             || description.Contains("expressed as", StringComparison.OrdinalIgnoreCase)
@@ -701,7 +717,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
     private static bool HasValueLikeOptionName(string primaryOption)
         => GetOptionNameTokens(primaryOption)
-            .Any(token => ValueLikeOptionNameTokens.Contains(token));
+            .Any(IsValueLikeOptionToken);
 
     private static IReadOnlyList<string> GetOptionNameTokens(string primaryOption)
     {
@@ -735,6 +751,12 @@ internal sealed partial class ToolHelpOpenCliBuilder
             }
         }
     }
+
+    private static bool IsValueLikeOptionToken(string token)
+        => ValueLikeOptionNameTokens.Contains(token)
+            || ValueLikeOptionNameTokens.Any(suffix =>
+                token.Length > suffix.Length
+                && token.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
 
     private static string? ExtractBareOptionPlaceholder(string key)
     {
