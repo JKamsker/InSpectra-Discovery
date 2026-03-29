@@ -204,7 +204,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
             var inferredArgumentRequired = StartsWithRequiredPrefix(item.Description);
             var hasExplicitArgument = signature.ArgumentName is not null;
             var argumentName = signature.ArgumentName
-                ?? InferOptionArgumentNameFromDescription(signature.PrimaryName, item.Description);
+                ?? InferOptionArgumentNameFromDescription(signature, item.Description);
             var argumentRequired = argumentName is not null
                 && (hasExplicitArgument ? signature.ArgumentRequired || inferredArgumentRequired : inferredArgumentRequired);
             var description = StartsWithRequiredPrefix(item.Description)
@@ -659,8 +659,9 @@ internal sealed partial class ToolHelpOpenCliBuilder
         return NormalizeArgumentName(token);
     }
 
-    private static string? InferOptionArgumentNameFromDescription(string? primaryOption, string? description)
+    private static string? InferOptionArgumentNameFromDescription(OptionSignature signature, string? description)
     {
+        var primaryOption = signature.PrimaryName;
         if (string.IsNullOrWhiteSpace(primaryOption))
         {
             return null;
@@ -682,6 +683,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
         }
 
         var trimmedDescription = TrimLeadingRequiredPrefix(normalizedDescription) ?? normalizedDescription;
+        var descriptionWithoutDefault = TrimLeadingDefaultClause(trimmedDescription);
+        var defaultValue = GetDefaultValue(trimmedDescription);
+        var descriptionForSignals = string.IsNullOrWhiteSpace(descriptionWithoutDefault)
+            ? trimmedDescription
+            : descriptionWithoutDefault;
         if (string.IsNullOrWhiteSpace(trimmedDescription))
         {
             return StartsWithRequiredPrefix(normalizedDescription) && HasValueLikeOptionName(primaryOption)
@@ -689,15 +695,22 @@ internal sealed partial class ToolHelpOpenCliBuilder
                 : null;
         }
 
+        if (IsBooleanDefaultValue(defaultValue)
+            && LooksLikeFlagDescription(descriptionForSignals))
+        {
+            return null;
+        }
+
         if (IsInformationalOptionDescription(trimmedDescription)
-            || LooksLikeFlagDescription(trimmedDescription))
+            || LooksLikeFlagDescription(descriptionForSignals))
         {
             return null;
         }
 
         if (StartsWithRequiredPrefix(normalizedDescription)
             || HasNonBooleanDefault(trimmedDescription)
-            || ContainsStrongValueDescriptionHint(trimmedDescription)
+            || ContainsInlineOptionExample(signature, normalizedDescription)
+            || ContainsStrongValueDescriptionHint(descriptionForSignals)
             || HasValueLikeOptionName(primaryOption))
         {
             return InferArgumentNameFromOption(primaryOption);
@@ -773,41 +786,41 @@ internal sealed partial class ToolHelpOpenCliBuilder
             || description.StartsWith("Display ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Enable ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Enables ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Exit ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Force ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Generate ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Generates ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Print ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Show ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Skip ", StringComparison.OrdinalIgnoreCase)
-            || description.StartsWith("Skips ", StringComparison.OrdinalIgnoreCase);
+            || description.StartsWith("Skips ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Suppress ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Toggle ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Verbose ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Whether ", StringComparison.OrdinalIgnoreCase);
 
     private static bool HasNonBooleanDefault(string description)
     {
-        var marker = "(Default:";
-        var startIndex = description.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
-        if (startIndex < 0)
-        {
-            return false;
-        }
-
-        var valueStart = startIndex + marker.Length;
-        var endIndex = description.IndexOf(')', valueStart);
-        if (endIndex <= valueStart)
-        {
-            return false;
-        }
-
-        var defaultValue = description[valueStart..endIndex].Trim();
-        return defaultValue.Length > 0
-            && !string.Equals(defaultValue, "false", StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(defaultValue, "true", StringComparison.OrdinalIgnoreCase);
+        var defaultValue = GetDefaultValue(description);
+        return !string.IsNullOrWhiteSpace(defaultValue)
+            && !IsBooleanDefaultValue(defaultValue);
     }
 
     private static bool ContainsStrongValueDescriptionHint(string description)
         => description.Contains("path to", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("path where", StringComparison.OrdinalIgnoreCase)
             || description.Contains("comma separated", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("connection string", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("custom defined name", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("directory that", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("for script in format", StringComparison.OrdinalIgnoreCase)
             || description.Contains("file path", StringComparison.OrdinalIgnoreCase)
             || description.Contains("file to", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("format '", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("format \"", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("input script", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("namespace of", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("owner/repo", StringComparison.OrdinalIgnoreCase)
             || description.Contains("expressed as", StringComparison.OrdinalIgnoreCase)
             || description.Contains("valid values", StringComparison.OrdinalIgnoreCase)
             || description.Contains("must be one of", StringComparison.OrdinalIgnoreCase)
@@ -817,9 +830,117 @@ internal sealed partial class ToolHelpOpenCliBuilder
             || description.Contains("to which", StringComparison.OrdinalIgnoreCase)
             || description.Contains("persisted to", StringComparison.OrdinalIgnoreCase)
             || description.Contains("posted.", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("will be written", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("A ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("An ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Custom ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Directory ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Input ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Namespace ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Set ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Specify ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("The ", StringComparison.OrdinalIgnoreCase);
+
+    private static bool ContainsInlineOptionExample(OptionSignature signature, string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return false;
+        }
+
+        var normalized = NormalizeDescriptionForInference(description);
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            return false;
+        }
+
+        foreach (var optionToken in EnumerateOptionTokens(signature))
+        {
+            var searchIndex = 0;
+            while (searchIndex < normalized.Length)
+            {
+                var matchIndex = normalized.IndexOf(optionToken, searchIndex, StringComparison.OrdinalIgnoreCase);
+                if (matchIndex < 0)
+                {
+                    break;
+                }
+
+                var valueStart = matchIndex + optionToken.Length;
+                if (valueStart < normalized.Length
+                    && char.IsWhiteSpace(normalized, valueStart))
+                {
+                    while (valueStart < normalized.Length && char.IsWhiteSpace(normalized, valueStart))
+                    {
+                        valueStart++;
+                    }
+
+                    if (valueStart < normalized.Length)
+                    {
+                        var next = normalized[valueStart];
+                        if (!char.IsWhiteSpace(next)
+                            && next is not '-' and not '/' and not '.' and not ',' and not ';' and not ')')
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                searchIndex = matchIndex + optionToken.Length;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> EnumerateOptionTokens(OptionSignature signature)
+    {
+        if (!string.IsNullOrWhiteSpace(signature.PrimaryName))
+        {
+            yield return signature.PrimaryName;
+        }
+
+        foreach (var alias in signature.Aliases.Where(alias => !string.IsNullOrWhiteSpace(alias)))
+        {
+            yield return alias;
+        }
+    }
+
+    private static string? GetDefaultValue(string description)
+    {
+        var marker = "(Default:";
+        var startIndex = description.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+        if (startIndex < 0)
+        {
+            return null;
+        }
+
+        var valueStart = startIndex + marker.Length;
+        var endIndex = description.IndexOf(')', valueStart);
+        if (endIndex <= valueStart)
+        {
+            return null;
+        }
+
+        return description[valueStart..endIndex].Trim();
+    }
+
+    private static string TrimLeadingDefaultClause(string description)
+    {
+        var normalized = description.TrimStart();
+        if (!normalized.StartsWith("(Default:", StringComparison.OrdinalIgnoreCase))
+        {
+            return description;
+        }
+
+        var endIndex = normalized.IndexOf(')');
+        return endIndex < 0
+            ? string.Empty
+            : normalized[(endIndex + 1)..].TrimStart();
+    }
+
+    private static bool IsBooleanDefaultValue(string? defaultValue)
+        => string.Equals(defaultValue, "false", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(defaultValue, "true", StringComparison.OrdinalIgnoreCase);
 
     private static bool HasValueLikeOptionName(string primaryOption)
         => GetOptionNameTokens(primaryOption)

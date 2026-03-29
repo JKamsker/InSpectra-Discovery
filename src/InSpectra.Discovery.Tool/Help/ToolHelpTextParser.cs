@@ -691,8 +691,43 @@ internal sealed partial class ToolHelpTextParser
 
     private static bool LooksLikeOptionSignature(string key)
     {
-        var match = OptionTokenRegex().Match(key);
-        return match.Success && match.Index == 0;
+        var remaining = key.Trim();
+        var sawToken = false;
+
+        while (remaining.Length > 0)
+        {
+            var match = OptionTokenRegex().Match(remaining);
+            if (!match.Success || match.Index != 0)
+            {
+                return false;
+            }
+
+            sawToken = true;
+            remaining = remaining[match.Length..].TrimStart();
+            if (remaining.Length == 0)
+            {
+                return true;
+            }
+
+            if (remaining.StartsWith(",", StringComparison.Ordinal) || remaining.StartsWith("|", StringComparison.Ordinal))
+            {
+                remaining = remaining[1..].TrimStart();
+                continue;
+            }
+
+            if (remaining.StartsWith("<", StringComparison.Ordinal)
+                || remaining.StartsWith("[", StringComparison.Ordinal)
+                || remaining.StartsWith("=", StringComparison.Ordinal)
+                || remaining.StartsWith(":", StringComparison.Ordinal)
+                || IsBareOptionPlaceholder(remaining))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        return sawToken;
     }
 
     private static bool TryExtractLeadingAliasFromDescription(string? description, out string alias, out string? normalizedDescription)
