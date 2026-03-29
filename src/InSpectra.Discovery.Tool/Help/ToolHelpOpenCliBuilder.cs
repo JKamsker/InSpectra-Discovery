@@ -341,14 +341,44 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
     private static JsonObject BuildInfo(string commandName, string packageVersion, ToolHelpDocument? rootHelp)
     {
+        var parsedTitle = rootHelp?.Title;
+        var parsedDescription = rootHelp?.CommandDescription ?? rootHelp?.ApplicationDescription;
+
+        var title = parsedTitle ?? commandName;
+        var description = parsedDescription;
+
+        if (!string.IsNullOrWhiteSpace(parsedTitle)
+            && LooksLikeDescriptionNotTitle(parsedTitle, commandName)
+            && string.IsNullOrWhiteSpace(parsedDescription))
+        {
+            title = commandName;
+            description = parsedTitle;
+        }
+
         var info = new JsonObject
         {
-            ["title"] = rootHelp?.Title ?? commandName,
+            ["title"] = title,
             ["version"] = string.IsNullOrWhiteSpace(packageVersion) ? rootHelp?.Version : packageVersion,
         };
 
-        AddIfPresent(info, "description", rootHelp?.CommandDescription ?? rootHelp?.ApplicationDescription);
+        AddIfPresent(info, "description", description);
         return info;
+    }
+
+    private static bool LooksLikeDescriptionNotTitle(string title, string commandName)
+    {
+        var words = title.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length < 3)
+        {
+            return false;
+        }
+
+        if (title.IndexOf(commandName, StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            return false;
+        }
+
+        return DescriptionLikeTitleRegex().IsMatch(title);
     }
 
     private static void AddIfPresent(JsonObject target, string propertyName, JsonNode? value)
@@ -1642,6 +1672,9 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
     [GeneratedRegex(@"\.[A-Za-z0-9]{1,8}$", RegexOptions.Compiled)]
     private static partial Regex FileLikeUsageTokenRegex();
+
+    [GeneratedRegex(@"^(?:Handle|Manage|Deploy|Generate|Create|Build|Run|Pack|Detect|Scaffold|Determine|Upload|Download|Install|Automagic|Convert|Transform|Publish|Update|Open|Execute|Launch|Parse|Analyze|Check|Validate|Scan|Watch|Monitor|Collect|Extract|Import|Export|Apply|Process|Send|Resolve|Configure|Migrate|Synchronize|Sync|Format|Serve|Clean|Remove|Delete|Compile|Inspect|Aggregate|Map|Push|Copy|Start|Stop|Test|Verify)\w*\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex DescriptionLikeTitleRegex();
 
     [GeneratedRegex(@"<[^>]*>|\[[^\]]*\]", RegexOptions.Compiled)]
     private static partial Regex BracketedPlaceholderRegex();

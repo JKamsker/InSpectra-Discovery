@@ -112,6 +112,83 @@ public sealed class SystemCommandLineFirstPassBenchmarkTests
         Assert.Contains("-v", verbose["aliases"]!.AsArray().Select(a => a!.GetValue<string>()));
     }
 
+    [Fact]
+    public void Regenerator_Uses_Command_Name_When_Title_Is_Description()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "sample.scl-desc-title", "1.0.0");
+        WriteMetadata(versionRoot, "sample.scl-desc-title", "1.0.0", "aspirate");
+        WriteCrawl(versionRoot, null,
+            """
+            Handle deployments of a .NET Aspire AppHost
+
+            Description:
+
+            Usage:
+              aspirate [command] [options]
+
+            Options:
+              --version       Show version information
+              -?, -h, --help  Show help and usage information
+
+            Commands:
+              apply     Apply the generated manifest to the cluster.
+              build     Build containers for the project.
+            """);
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var openCli = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+
+        // Title should be the command name, not the description sentence
+        Assert.Equal("aspirate", openCli["info"]!["title"]!.GetValue<string>());
+
+        // The description sentence should move to info.description
+        Assert.Equal("Handle deployments of a .NET Aspire AppHost",
+            openCli["info"]!["description"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Regenerator_Keeps_Product_Name_Title()
+    {
+        ToolRuntime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "sample.scl-product-title", "1.0.0");
+        WriteMetadata(versionRoot, "sample.scl-product-title", "1.0.0", "dotnet-lambda");
+        WriteCrawl(versionRoot, null,
+            """
+            Amazon Lambda Tools for .NET Core applications (6.0.5)
+
+              --help     Display this help screen.
+              --version  Display version information.
+            """);
+
+        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var openCli = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+
+        // "Amazon Lambda Tools" is a product name, not a description — keep it (version is part of title)
+        var title = openCli["info"]!["title"]!.GetValue<string>();
+        Assert.StartsWith("Amazon Lambda Tools", title);
+    }
+
     private static JsonObject? FindOption(JsonArray options, string name)
         => options
             .OfType<JsonObject>()
