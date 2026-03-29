@@ -19,6 +19,12 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "TO",
         "USE",
     };
+    private static readonly HashSet<string> GenericArgumentNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "ARG",
+        "ARGS",
+        "VALUE",
+    };
     private static readonly HashSet<string> InformationalOptionDescriptions = new(StringComparer.OrdinalIgnoreCase)
     {
         "Display this help screen.",
@@ -34,6 +40,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "alias",
         "assembly",
         "baseline",
+        "branch",
         "certificate",
         "cert",
         "channel",
@@ -56,16 +63,21 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "environment",
         "etw",
         "expiry",
+        "exclude",
         "file",
         "files",
         "filter",
+        "folder",
         "format",
+        "factory",
+        "feature",
         "guid",
         "host",
         "id",
         "ids",
         "index",
         "indexes",
+        "include",
         "input",
         "justification",
         "key",
@@ -77,11 +89,13 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "migration",
         "model",
         "modifier",
+        "method",
         "namespace",
         "name",
         "notes",
         "output",
         "package",
+        "param",
         "parser",
         "password",
         "path",
@@ -92,9 +106,13 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "producer",
         "producers",
         "project",
+        "property",
+        "prefix",
         "regex",
+        "repo",
         "repository",
         "result",
+        "runtime",
         "rule",
         "save",
         "schema",
@@ -106,6 +124,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "status",
         "subscription",
         "template",
+        "threshold",
         "thread",
         "threads",
         "thumbprint",
@@ -203,10 +222,13 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
             var inferredArgumentRequired = StartsWithRequiredPrefix(item.Description);
             var hasExplicitArgument = signature.ArgumentName is not null;
+            var hasNonBooleanDefault = HasNonBooleanDefault(item.Description ?? string.Empty);
             var argumentName = signature.ArgumentName
                 ?? InferOptionArgumentNameFromDescription(signature, item.Description);
             var argumentRequired = argumentName is not null
-                && (hasExplicitArgument ? signature.ArgumentRequired || inferredArgumentRequired : inferredArgumentRequired);
+                && (hasExplicitArgument
+                    ? !hasNonBooleanDefault && (signature.ArgumentRequired || inferredArgumentRequired)
+                    : inferredArgumentRequired);
             var description = StartsWithRequiredPrefix(item.Description)
                 ? TrimLeadingRequiredPrefix(item.Description)
                 : item.Description;
@@ -259,9 +281,8 @@ internal sealed partial class ToolHelpOpenCliBuilder
             explicitArguments = [];
         }
 
-        var arguments = explicitArguments.Count > 0
-            ? explicitArguments
-            : ExtractUsageArguments(commandName, commandPath, helpDocument.UsageLines, helpDocument.Commands.Count > 0);
+        var usageArguments = ExtractUsageArguments(commandName, commandPath, helpDocument.UsageLines, helpDocument.Commands.Count > 0);
+        var arguments = SelectArguments(explicitArguments, usageArguments);
         if (arguments.Count == 0)
         {
             if (IsBuiltinAuxiliaryCommand(commandPath))
@@ -339,6 +360,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
         foreach (var line in usageLines)
         {
+            var lineArguments = new List<ToolHelpItem>();
             foreach (Match match in UsageArgumentRegex().Matches(line))
             {
                 var value = match.Groups["name"].Value.Trim();
@@ -367,19 +389,103 @@ internal sealed partial class ToolHelpOpenCliBuilder
                     continue;
                 }
 
-                if (!seen.Add(value))
+                var quantifier = GetUsageArgumentQuantifier(line, match);
+                var isSequence = value.Contains("...", StringComparison.Ordinal) || quantifier is '*' or '+';
+                var isRequired = !match.Value.StartsWith("[", StringComparison.Ordinal) && quantifier is not '*' and not '?';
+                var normalizedKey = NormalizeUsageArgumentKey(value, isSequence);
+                if (!seen.Add(normalizedKey))
                 {
                     continue;
                 }
 
-                arguments.Add(new ToolHelpItem(
-                    Key: value,
-                    IsRequired: !match.Value.StartsWith("[", StringComparison.Ordinal),
-                    Description: null));
+                var argument = new ToolHelpItem(
+                    Key: normalizedKey,
+                    IsRequired: isRequired,
+                    Description: null);
+                lineArguments.Add(argument);
+                arguments.Add(argument);
             }
+
+            if (lineArguments.Count > 0)
+            {
+                continue;
+            }
+
+            var bareArgument = ExtractBareUsageArgument(commandName, commandPath, line, hasChildCommands);
+            if (bareArgument is null || !seen.Add(bareArgument.Key))
+            {
+                continue;
+            }
+
+            arguments.Add(bareArgument);
         }
 
         return arguments;
+    }
+
+    private static IReadOnlyList<ToolHelpItem> SelectArguments(
+        IReadOnlyList<ToolHelpItem> explicitArguments,
+        IReadOnlyList<ToolHelpItem> usageArguments)
+    {
+        if (explicitArguments.Count == 0)
+        {
+            return usageArguments;
+        }
+
+        if (usageArguments.Count == 0)
+        {
+            return explicitArguments.All(IsLowSignalExplicitArgument)
+                ? []
+                : explicitArguments;
+        }
+
+        if (explicitArguments.Count != usageArguments.Count)
+        {
+            return explicitArguments.All(IsLowSignalExplicitArgument)
+                ? usageArguments
+                : explicitArguments;
+        }
+
+        var merged = new List<ToolHelpItem>(explicitArguments.Count);
+        var changed = false;
+        for (var index = 0; index < explicitArguments.Count; index++)
+        {
+            var explicitArgument = explicitArguments[index];
+            var usageArgument = usageArguments[index];
+            var mergedArgument = MergeArguments(explicitArgument, usageArgument);
+            merged.Add(mergedArgument);
+
+            changed |= !string.Equals(explicitArgument.Key, mergedArgument.Key, StringComparison.Ordinal)
+                || explicitArgument.IsRequired != mergedArgument.IsRequired
+                || !string.Equals(explicitArgument.Description, mergedArgument.Description, StringComparison.Ordinal);
+        }
+
+        return changed ? merged : explicitArguments;
+    }
+
+    private static ToolHelpItem MergeArguments(ToolHelpItem explicitArgument, ToolHelpItem usageArgument)
+    {
+        var chosenKey = explicitArgument.Key;
+        if (TryParseArgumentSignature(explicitArgument.Key, out var explicitSignature)
+            && TryParseArgumentSignature(usageArgument.Key, out var usageSignature))
+        {
+            var useUsageName = IsGenericArgumentName(explicitSignature.Name)
+                && !IsGenericArgumentName(usageSignature.Name)
+                && string.IsNullOrWhiteSpace(explicitArgument.Description);
+            if (useUsageName)
+            {
+                chosenKey = usageArgument.Key;
+            }
+            else if (!explicitSignature.IsSequence && usageSignature.IsSequence)
+            {
+                chosenKey = NormalizeUsageArgumentKey(explicitArgument.Key, isSequence: true);
+            }
+        }
+
+        return new ToolHelpItem(
+            chosenKey,
+            explicitArgument.IsRequired || usageArgument.IsRequired,
+            explicitArgument.Description ?? usageArgument.Description);
     }
 
     private static bool IsDispatcherPlaceholder(string value)
@@ -688,29 +794,35 @@ internal sealed partial class ToolHelpOpenCliBuilder
         var descriptionForSignals = string.IsNullOrWhiteSpace(descriptionWithoutDefault)
             ? trimmedDescription
             : descriptionWithoutDefault;
+        var hasRequiredPrefix = StartsWithRequiredPrefix(normalizedDescription);
+        var hasExplicitValueEvidence = HasNonBooleanDefault(trimmedDescription)
+            || ContainsInlineOptionExample(signature, normalizedDescription);
+        var hasDescriptiveValueEvidence = ContainsStrongValueDescriptionHint(descriptionForSignals);
         if (string.IsNullOrWhiteSpace(trimmedDescription))
         {
-            return StartsWithRequiredPrefix(normalizedDescription) && HasValueLikeOptionName(primaryOption)
+            return hasRequiredPrefix && HasValueLikeOptionName(primaryOption)
                 ? InferArgumentNameFromOption(primaryOption)
                 : null;
         }
 
-        if (IsBooleanDefaultValue(defaultValue)
-            && LooksLikeFlagDescription(descriptionForSignals))
+        if (IsBooleanDefaultValue(defaultValue) && !(hasExplicitValueEvidence || hasDescriptiveValueEvidence))
         {
             return null;
         }
 
-        if (IsInformationalOptionDescription(trimmedDescription)
-            || LooksLikeFlagDescription(descriptionForSignals))
+        if (IsInformationalOptionDescription(trimmedDescription))
         {
             return null;
         }
 
-        if (StartsWithRequiredPrefix(normalizedDescription)
-            || HasNonBooleanDefault(trimmedDescription)
-            || ContainsInlineOptionExample(signature, normalizedDescription)
-            || ContainsStrongValueDescriptionHint(descriptionForSignals)
+        if (LooksLikeFlagDescription(descriptionForSignals) && !hasExplicitValueEvidence)
+        {
+            return null;
+        }
+
+        if (hasRequiredPrefix
+            || hasExplicitValueEvidence
+            || hasDescriptiveValueEvidence
             || HasValueLikeOptionName(primaryOption))
         {
             return InferArgumentNameFromOption(primaryOption);
@@ -813,15 +925,23 @@ internal sealed partial class ToolHelpOpenCliBuilder
             || description.Contains("connection string", StringComparison.OrdinalIgnoreCase)
             || description.Contains("custom defined name", StringComparison.OrdinalIgnoreCase)
             || description.Contains("directory that", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("glob patterns", StringComparison.OrdinalIgnoreCase)
             || description.Contains("for script in format", StringComparison.OrdinalIgnoreCase)
             || description.Contains("file path", StringComparison.OrdinalIgnoreCase)
             || description.Contains("file to", StringComparison.OrdinalIgnoreCase)
             || description.Contains("format '", StringComparison.OrdinalIgnoreCase)
             || description.Contains("format \"", StringComparison.OrdinalIgnoreCase)
             || description.Contains("input script", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("indent size", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("max attribute characters", StringComparison.OrdinalIgnoreCase)
             || description.Contains("namespace of", StringComparison.OrdinalIgnoreCase)
             || description.Contains("owner/repo", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("project files", StringComparison.OrdinalIgnoreCase)
             || description.Contains("expressed as", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("root directory", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("source folder", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("source repository", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("threshold", StringComparison.OrdinalIgnoreCase)
             || description.Contains("valid values", StringComparison.OrdinalIgnoreCase)
             || description.Contains("must be one of", StringComparison.OrdinalIgnoreCase)
             || description.Contains("enclosed in double quotes", StringComparison.OrdinalIgnoreCase)
@@ -833,13 +953,17 @@ internal sealed partial class ToolHelpOpenCliBuilder
             || description.Contains("will be written", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("A ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("An ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Additional ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Custom ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Directory ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Extra ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Input ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Namespace ", StringComparison.OrdinalIgnoreCase)
-            || description.StartsWith("Set ", StringComparison.OrdinalIgnoreCase)
-            || description.StartsWith("Specify ", StringComparison.OrdinalIgnoreCase)
-            || description.StartsWith("The ", StringComparison.OrdinalIgnoreCase);
+            || description.StartsWith("Provide ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Set a ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Set an ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Set the ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Specify ", StringComparison.OrdinalIgnoreCase);
 
     private static bool ContainsInlineOptionExample(OptionSignature signature, string description)
     {
@@ -980,10 +1104,164 @@ internal sealed partial class ToolHelpOpenCliBuilder
     }
 
     private static bool IsValueLikeOptionToken(string token)
-        => ValueLikeOptionNameTokens.Contains(token)
-            || ValueLikeOptionNameTokens.Any(suffix =>
-                token.Length > suffix.Length
-                && token.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+    {
+        if (ValueLikeOptionNameTokens.Contains(token))
+        {
+            return true;
+        }
+
+        if (TrySingularizeToken(token, out var singular) && ValueLikeOptionNameTokens.Contains(singular))
+        {
+            return true;
+        }
+
+        return ValueLikeOptionNameTokens.Any(suffix =>
+            token.Length > suffix.Length
+            && token.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool TrySingularizeToken(string token, out string singular)
+    {
+        singular = string.Empty;
+        if (token.Length <= 2)
+        {
+            return false;
+        }
+
+        if (token.EndsWith("ies", StringComparison.OrdinalIgnoreCase))
+        {
+            singular = token[..^3] + "y";
+            return true;
+        }
+
+        if (!token.EndsWith("s", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        singular = token[..^1];
+        return singular.Length > 0;
+    }
+
+    private static bool IsLowSignalExplicitArgument(ToolHelpItem argument)
+        => TryParseArgumentSignature(argument.Key, out var signature)
+            && IsGenericArgumentName(signature.Name)
+            && string.IsNullOrWhiteSpace(argument.Description);
+
+    private static bool IsGenericArgumentName(string name)
+        => GenericArgumentNames.Contains(name);
+
+    private static string NormalizeUsageArgumentKey(string rawValue, bool isSequence)
+    {
+        var trimmed = rawValue.Trim();
+        if (trimmed.EndsWith("...", StringComparison.Ordinal))
+        {
+            return trimmed;
+        }
+
+        return isSequence ? $"{trimmed}..." : trimmed;
+    }
+
+    private static char? GetUsageArgumentQuantifier(string line, Match match)
+    {
+        var directQuantifier = TryReadUsageQuantifier(line, match.Index + match.Length);
+        if (directQuantifier is not null)
+        {
+            return directQuantifier;
+        }
+
+        var groupStart = line.LastIndexOf('(', match.Index);
+        if (groupStart < 0)
+        {
+            return null;
+        }
+
+        var groupEnd = line.IndexOf(')', match.Index + match.Length);
+        if (groupEnd < 0 || groupStart >= match.Index || groupEnd < match.Index + match.Length)
+        {
+            return null;
+        }
+
+        return TryReadUsageQuantifier(line, groupEnd + 1);
+    }
+
+    private static char? TryReadUsageQuantifier(string line, int startIndex)
+    {
+        var index = startIndex;
+        while (index < line.Length && char.IsWhiteSpace(line[index]))
+        {
+            index++;
+        }
+
+        if (index >= line.Length)
+        {
+            return null;
+        }
+
+        return line[index] is '*' or '+' or '?'
+            ? line[index]
+            : null;
+    }
+
+    private static ToolHelpItem? ExtractBareUsageArgument(string commandName, string commandPath, string line, bool hasChildCommands)
+    {
+        var remainder = StripUsageInvocationPrefix(commandName, commandPath, line);
+        if (string.IsNullOrWhiteSpace(remainder))
+        {
+            return null;
+        }
+
+        remainder = BareOptionClauseRegex().Replace(remainder, " ").Trim();
+        if (string.IsNullOrWhiteSpace(remainder))
+        {
+            return null;
+        }
+
+        var match = SingleBareUsageArgumentRegex().Match(remainder);
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var value = match.Groups["name"].Value.Trim();
+        if (value.Length == 0
+            || LooksLikeOptionPlaceholder(value)
+            || IsDispatcherPlaceholder(value)
+            || string.Equals(value, "options", StringComparison.OrdinalIgnoreCase)
+            || hasChildCommands)
+        {
+            return null;
+        }
+
+        var normalizedValue = NormalizeBareUsageArgumentValue(value);
+        var isSequence = match.Groups["ellipsis"].Success || match.Groups["quantifier"].Value is "*" or "+";
+        var isRequired = !match.Groups["optional"].Success && match.Groups["quantifier"].Value is not "*" and not "?";
+        return new ToolHelpItem(
+            NormalizeUsageArgumentKey(normalizedValue, isSequence),
+            isRequired,
+            null);
+    }
+
+    private static string StripUsageInvocationPrefix(string commandName, string commandPath, string line)
+    {
+        var invocation = string.IsNullOrWhiteSpace(commandPath)
+            ? commandName
+            : $"{commandName} {commandPath}";
+        return line.StartsWith(invocation, StringComparison.OrdinalIgnoreCase)
+            ? line[invocation.Length..].Trim()
+            : line.Trim();
+    }
+
+    private static string NormalizeBareUsageArgumentValue(string value)
+    {
+        var trimmed = value.Trim('[', ']').Trim();
+        if (trimmed.Contains('/') || trimmed.Contains('\\') || FileLikeUsageTokenRegex().IsMatch(trimmed))
+        {
+            return "FILE";
+        }
+
+        return trimmed;
+    }
 
     private static string? ExtractBareOptionPlaceholder(string key)
     {
@@ -1071,6 +1349,15 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
     [GeneratedRegex(@"(?<all>\[?<(?<name>[^>]+)>\]?)", RegexOptions.Compiled)]
     private static partial Regex UsageArgumentRegex();
+
+    [GeneratedRegex(@"\[(?=[^\]]*(?:-|/))[^\]]+\]", RegexOptions.Compiled)]
+    private static partial Regex BareOptionClauseRegex();
+
+    [GeneratedRegex(@"^(?<optional>\[)?(?<name>[A-Za-z0-9][A-Za-z0-9._/\-\\:]*?)(?<ellipsis>\.\.\.)?(?(optional)\])(?<quantifier>[+*?])?$", RegexOptions.Compiled)]
+    private static partial Regex SingleBareUsageArgumentRegex();
+
+    [GeneratedRegex(@"\.[A-Za-z0-9]{1,8}$", RegexOptions.Compiled)]
+    private static partial Regex FileLikeUsageTokenRegex();
 
     [GeneratedRegex(@"[^A-Za-z0-9_\-]", RegexOptions.Compiled)]
     private static partial Regex InvalidArgumentTokenRegex();
