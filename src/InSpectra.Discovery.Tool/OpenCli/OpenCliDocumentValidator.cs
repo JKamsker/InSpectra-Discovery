@@ -442,7 +442,9 @@ internal static partial class OpenCliDocumentValidator
             || trimmed.Contains('\n', StringComparison.Ordinal)
             || trimmed.Contains(". ", StringComparison.Ordinal)
             || TitleNoiseRegex().IsMatch(trimmed)
-            || PathOrUrlRegex().IsMatch(trimmed);
+            || PathOrUrlRegex().IsMatch(trimmed)
+            || ErrorLikeTitleRegex().IsMatch(trimmed)
+            || ContainsBoxDrawingOrBlockChars(trimmed);
     }
 
     private static bool LooksLikeNonPublishableDescription(string? description)
@@ -456,8 +458,9 @@ internal static partial class OpenCliDocumentValidator
         return DescriptionNoiseRegex().IsMatch(trimmed)
             || trimmed.Contains("\n   at ", StringComparison.Ordinal)
             || trimmed.Contains("\nat ", StringComparison.Ordinal)
-            || trimmed.Contains("/tmp/inspectra-help-", StringComparison.OrdinalIgnoreCase)
-            || trimmed.Contains("/usr/share/dotnet/", StringComparison.OrdinalIgnoreCase);
+            || trimmed.Contains("/tmp/inspectra-", StringComparison.OrdinalIgnoreCase)
+            || trimmed.Contains("/usr/share/dotnet/", StringComparison.OrdinalIgnoreCase)
+            || ContainsBoxDrawingOrBlockChars(trimmed);
     }
 
     private static int CountTotalCommands(JsonObject node)
@@ -480,8 +483,11 @@ internal static partial class OpenCliDocumentValidator
     }
 
     private static bool ContainsBoxDrawingCommandNames(JsonObject node)
+        => ContainsBoxDrawingCommandNamesRecursive(node, depth: 0);
+
+    private static bool ContainsBoxDrawingCommandNamesRecursive(JsonObject node, int depth)
     {
-        if (node["commands"] is not JsonArray commands)
+        if (depth > 8 || node["commands"] is not JsonArray commands)
         {
             return false;
         }
@@ -489,10 +495,47 @@ internal static partial class OpenCliDocumentValidator
         foreach (var command in commands.OfType<JsonObject>())
         {
             var name = GetString(command["name"]);
-            if (name is not null && name.Any(ch => ch is '│' or '┌' or '┐' or '└' or '┘' or '├' or '┤' or '┬' or '┴' or '┼' or '─' or '═' or '║'))
+            if (name is not null && (ContainsBoxDrawingOrBlockChars(name) || LooksLikeGarbageCommandName(name)))
             {
                 return true;
             }
+
+            if (ContainsBoxDrawingCommandNamesRecursive(command, depth + 1))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsBoxDrawingOrBlockChars(string text)
+        => text.Any(ch => ch is '│' or '┌' or '┐' or '└' or '┘' or '├' or '┤' or '┬' or '┴' or '┼' or '─'
+            or '═' or '║' or '╔' or '╗' or '╚' or '╝' or '╠' or '╣' or '╦' or '╩' or '╬'
+            or '█' or '▀' or '▄' or '▌' or '▐' or '░' or '▒' or '▓'
+            or '■' or '╒' or '╓' or '╕' or '╖' or '╘' or '╙' or '╛' or '╜' or '╞' or '╟' or '╡' or '╢' or '╤' or '╥' or '╧' or '╨' or '╪' or '╫');
+
+    private static bool LooksLikeGarbageCommandName(string name)
+    {
+        var trimmed = name.Trim();
+        if (trimmed.Length == 0)
+        {
+            return false;
+        }
+
+        if (trimmed is "|" or "||")
+        {
+            return true;
+        }
+
+        if (trimmed.StartsWith("| ", StringComparison.Ordinal) && trimmed.Contains(':', StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (GarbageCommandNameRegex().IsMatch(trimmed))
+        {
+            return true;
         }
 
         return false;
@@ -502,8 +545,12 @@ internal static partial class OpenCliDocumentValidator
     {
         var texts = new List<string>();
         CollectTextFields(document, texts, depth: 0);
-        return texts.Any(LooksLikeErrorText);
+        return texts.Any(LooksLikeErrorText)
+            || texts.Any(ContainsSandboxPathLeak);
     }
+
+    private static bool ContainsSandboxPathLeak(string text)
+        => text.Contains("/tmp/inspectra-", StringComparison.OrdinalIgnoreCase);
 
     private static void CollectTextFields(JsonObject node, List<string> texts, int depth)
     {
@@ -556,4 +603,10 @@ internal static partial class OpenCliDocumentValidator
 
     [GeneratedRegex(@"Unhandled exception\b|Hosting failed to start\b|Now listening on:|Application started\.|Microsoft\.Hosting\.Lifetime|System\.[A-Za-z]+Exception\b|Traceback \(most recent call last\):|Press any key to exit|Cannot read keys when either application does not have a console|You must install or update \.NET|A fatal error was encountered|It was not possible to find any compatible framework version|required to execute the application was not found|\bMCP\b.*\btransport\b|\btransport\b.*\bMCP\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex DescriptionNoiseRegex();
+
+    [GeneratedRegex(@"^(?:Error|Warning)\b|^There was an error\b|\bfatal error\b|\berror creating\b|\berror while\b|\bPlease try the command\b|\blibhostpolicy\.so\b|\bAttempt to copy\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex ErrorLikeTitleRegex();
+
+    [GeneratedRegex(@"^[|/\\]{1,2}$|\.cs:line\s+\d+|^at\s+\S+\.\S+\(", RegexOptions.Compiled)]
+    private static partial Regex GarbageCommandNameRegex();
 }

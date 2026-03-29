@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
-internal static class OpenCliDocumentSanitizer
+internal static partial class OpenCliDocumentSanitizer
 {
     private static readonly char[] DescriptionKeywordSeparators =
     [
@@ -123,6 +124,8 @@ internal static class OpenCliDocumentSanitizer
                 }
             }
 
+            ScrubSandboxPaths(obj);
+
             if (string.Equals(arrayContext, "options", StringComparison.Ordinal))
             {
                 NormalizeOptionObject(obj);
@@ -184,6 +187,30 @@ internal static class OpenCliDocumentSanitizer
             return false;
         }
     }
+
+    private static void ScrubSandboxPaths(JsonObject obj)
+    {
+        foreach (var property in obj.ToArray())
+        {
+            if (property.Value is JsonValue value
+                && value.TryGetValue<string>(out var text)
+                && text.Contains("/tmp/inspectra-", StringComparison.OrdinalIgnoreCase))
+            {
+                var scrubbed = SandboxPathRegex().Replace(text, "<path>");
+                if (string.IsNullOrWhiteSpace(scrubbed) || string.Equals(scrubbed, "<path>", StringComparison.Ordinal))
+                {
+                    obj.Remove(property.Key);
+                }
+                else
+                {
+                    obj[property.Key] = scrubbed;
+                }
+            }
+        }
+    }
+
+    [GeneratedRegex(@"/tmp/inspectra-[^\s""'\]}>)]+", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex SandboxPathRegex();
 
     private static void NormalizeOptionObject(JsonObject option)
     {
