@@ -848,10 +848,12 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
         if (LooksLikeFlagDescription(descriptionForSignals))
         {
+            var descriptiveOverride = hasDescriptiveValueEvidence
+                && AllowsDescriptiveValueEvidenceToOverrideFlag(descriptionForSignals);
             var onlyDefaultBacksThis = hasNonBooleanDefault
                 && !hasInlineOptionExample
                 && !hasDescriptiveValueEvidence;
-            if (onlyDefaultBacksThis || !hasExplicitValueEvidence)
+            if (onlyDefaultBacksThis || (!hasExplicitValueEvidence && !descriptiveOverride))
             {
                 return null;
             }
@@ -1099,6 +1101,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
         => description.Contains("something like", StringComparison.OrdinalIgnoreCase)
             || description.Contains("specified .net runtime (", StringComparison.OrdinalIgnoreCase)
             || description.Contains("specified .net runtime ", StringComparison.OrdinalIgnoreCase);
+
+    private static bool AllowsDescriptiveValueEvidenceToOverrideFlag(string description)
+        => description.Contains("fully qualified names", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("separate by", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("separated by", StringComparison.OrdinalIgnoreCase);
 
     private static bool ContainsInlineOptionExample(OptionSignature signature, string description)
     {

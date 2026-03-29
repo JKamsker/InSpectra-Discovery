@@ -43,7 +43,7 @@ internal static partial class ToolHelpTitleInference
             var version = match.Groups["version"].Value.Trim();
             if (LooksLikeTitleVersionLine(trimmed, title, version))
             {
-                return (title, version, index + 1);
+                return (NormalizeTitle(title), version, index + 1);
             }
         }
 
@@ -139,6 +139,20 @@ internal static partial class ToolHelpTitleInference
     private static bool LooksLikeTransientStatusLine(string title, string version)
         => TransientStatusTitleRegex().IsMatch(title)
             && DurationLikeVersionRegex().IsMatch(version);
+
+    private static string NormalizeTitle(string title)
+    {
+        if (title.EndsWith(" - Version", StringComparison.OrdinalIgnoreCase))
+        {
+            var normalized = title[..^" - Version".Length].TrimEnd();
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                return normalized;
+            }
+        }
+
+        return title;
+    }
 
     [GeneratedRegex(@"^(?<title>.+?)\s+(?<version>v?\d[\w\.\-\+]*)$", RegexOptions.Compiled)]
     private static partial Regex TitleLineRegex();
