@@ -1,7 +1,7 @@
 param(
   [string]$Ref = 'HEAD',
   [string]$SourcePath = 'src',
-  [string]$VersionPrefix = '0.0.0-ci'
+  [string]$VersionPrefix = '0.1.0-ci'
 )
 
 Set-StrictMode -Version Latest
