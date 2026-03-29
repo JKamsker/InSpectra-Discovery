@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-29 19:43:21+00:00
+Generated: 2026-03-29 20:21:29+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 146
+Packages in scope: 145
 
 Fully documented: 69
 
-Incomplete: 77
+Incomplete: 76
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -36,7 +36,6 @@ Incomplete: 77
 | [CodexD.Cli](#pkg-codexd-cli) | 0.0.1 | ok | xml-ready | 8/8 | 57/61 | 1/3 | 0/6 | FAIL |
 | [ContextWeaver](#pkg-contextweaver) | 1.0.12 | ok | xml-ready | 1/1 | 9/9 | 0/0 | 0/1 | FAIL |
 | [CsProj](#pkg-csproj) | 2.0.0 | ok | xml-ready | 12/12 | 29/29 | 10/10 | 9/10 | FAIL |
-| [cute](#pkg-cute) | 2.14.5 | ok | requires-interactive-authentication | 36/36 | 382/382 | 0/0 | 0/31 | FAIL |
 | [Cyival.Build.Cli](#pkg-cyival-build-cli) | 0.2.2 | ok | xml-ready | 2/2 | 1/7 | 0/2 | 0/2 | FAIL |
 | [deicrypt](#pkg-deicrypt) | 2026.2.11.346 | ok | xml-ready | 2/2 | 0/2 | 4/4 | 2/2 | FAIL |
 | [Dev.Tools.Console](#pkg-dev-tools-console) | 0.0.5 | ok | xml-ready | 22/22 | 58/58 | 16/16 | 0/22 | FAIL |
@@ -504,23 +503,6 @@ Incomplete: 77
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: modify prune-links
-
-<a id="pkg-cute"></a>
-### cute
-
-- Version: `2.14.5`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `requires-interactive-authentication`
-- Command documentation: `36/36`
-- Option documentation: `382/382`
-- Argument documentation: `0/0`
-- Leaf command examples: `0/31`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: app generate, chat, content delete, content download, content edit, content generate, content generate-test, content join, content publish, content replace, content set-default, content sync-api, content translate, content unpublish, content upload, eval content-generator, eval content-translator, eval naming, info, login, logout, server scheduler, server webhooks, type clone, type delete, type diff, type export, type import, type rename, type scaffold, version
 
 <a id="pkg-cyival-build-cli"></a>
 ### Cyival.Build.Cli
