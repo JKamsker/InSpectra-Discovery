@@ -55,8 +55,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "configuration",
         "conn",
         "connection",
+        "comment",
+        "comments",
         "count",
         "database",
+        "directories",
         "dir",
         "directory",
         "dll",
@@ -109,6 +112,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "post",
         "producer",
         "producers",
+        "provider",
         "project",
         "property",
         "prefix",
@@ -120,6 +124,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "rule",
         "save",
         "schema",
+        "schemas",
         "search",
         "service",
         "server",
@@ -127,6 +132,10 @@ internal sealed partial class ToolHelpOpenCliBuilder
         "source",
         "status",
         "subscription",
+        "table",
+        "tables",
+        "target",
+        "targets",
         "template",
         "threshold",
         "thread",
@@ -362,6 +371,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
     {
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var arguments = new List<ToolHelpItem>();
+        string? previousNonEmptyLine = null;
 
         foreach (var line in usageLines)
         {
@@ -413,16 +423,25 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
             if (lineArguments.Count > 0)
             {
+                previousNonEmptyLine = line;
+                continue;
+            }
+
+            if (LooksLikeWrappedUsageValueContinuation(previousNonEmptyLine, line))
+            {
+                previousNonEmptyLine = line;
                 continue;
             }
 
             var bareArgument = ExtractBareUsageArgument(commandName, commandPath, line, hasChildCommands);
             if (bareArgument is null || !seen.Add(bareArgument.Key))
             {
+                previousNonEmptyLine = line;
                 continue;
             }
 
             arguments.Add(bareArgument);
+            previousNonEmptyLine = line;
         }
 
         return arguments;
@@ -797,12 +816,14 @@ internal sealed partial class ToolHelpOpenCliBuilder
         var descriptionWithoutDefault = TrimLeadingDefaultClause(trimmedDescription);
         var hasNonBooleanDefault = HasNonBooleanDefault(trimmedDescription);
         var defaultValue = GetDefaultValue(trimmedDescription);
-        var descriptionForSignals = string.IsNullOrWhiteSpace(descriptionWithoutDefault)
+        var descriptionForSignals = NormalizeDescriptionForSignals(string.IsNullOrWhiteSpace(descriptionWithoutDefault)
             ? trimmedDescription
-            : descriptionWithoutDefault;
+            : descriptionWithoutDefault);
         var hasRequiredPrefix = StartsWithRequiredPrefix(normalizedDescription);
         var hasInlineOptionExample = ContainsInlineOptionExample(signature, normalizedDescription);
-        var hasExplicitValueEvidence = hasNonBooleanDefault || hasInlineOptionExample;
+        var hasExplicitValueEvidence = hasNonBooleanDefault
+            || hasInlineOptionExample
+            || ContainsIllustrativeValueExample(descriptionForSignals);
         var hasDescriptiveValueEvidence = ContainsStrongValueDescriptionHint(descriptionForSignals);
         if (string.IsNullOrWhiteSpace(trimmedDescription))
         {
@@ -854,6 +875,28 @@ internal sealed partial class ToolHelpOpenCliBuilder
                 .Where(line => line.Length > 0))
             .Trim();
 
+    private static string NormalizeDescriptionForSignals(string description)
+    {
+        var normalized = description.TrimStart();
+        while (normalized.StartsWith("(", StringComparison.Ordinal))
+        {
+            var closingIndex = normalized.IndexOf(')');
+            if (closingIndex < 0)
+            {
+                break;
+            }
+
+            normalized = normalized[(closingIndex + 1)..].TrimStart();
+        }
+
+        if (normalized.StartsWith("Override:", StringComparison.OrdinalIgnoreCase))
+        {
+            normalized = normalized["Override:".Length..].TrimStart();
+        }
+
+        return normalized;
+    }
+
     private static bool StartsWithRequiredPrefix(string? description)
         => !string.IsNullOrWhiteSpace(description)
             && (
@@ -902,28 +945,42 @@ internal sealed partial class ToolHelpOpenCliBuilder
             || description.StartsWith("Show help", StringComparison.OrdinalIgnoreCase);
 
     private static bool LooksLikeFlagDescription(string description)
-        => description.StartsWith("Build ", StringComparison.OrdinalIgnoreCase)
-            || description.StartsWith("Builds ", StringComparison.OrdinalIgnoreCase)
+        => description.StartsWith("Actually ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Allow ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Append ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Check ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Continue ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Convert ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Create ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Creates ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Delete ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Determine ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Disable ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Display ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Don't ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Enable ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Enables ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Escape ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Exit ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Flatten ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Force ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Gather ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Generate ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Generates ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Hashes ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Include ", StringComparison.OrdinalIgnoreCase)
             || (description.StartsWith("List ", StringComparison.OrdinalIgnoreCase)
                 && !description.StartsWith("List of ", StringComparison.OrdinalIgnoreCase))
-            || description.StartsWith("Output ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Minify ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Overwrite ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Pack ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Packs ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Preserve ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Pretty ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Print ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Report ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Run ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Save ", StringComparison.OrdinalIgnoreCase)
-            || description.StartsWith("Search ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Show ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Skip ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Skips ", StringComparison.OrdinalIgnoreCase)
@@ -941,7 +998,21 @@ internal sealed partial class ToolHelpOpenCliBuilder
     }
 
     private static bool ContainsStrongValueDescriptionHint(string description)
-        => description.Contains("path to", StringComparison.OrdinalIgnoreCase)
+        => description.Contains("build configuration", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("comma-separated", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("comma-separated list", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("file extension", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("file extensions", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("folder names", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("input path", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("output path", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("output file location", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("input file location", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("output file name", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("specified .net runtime", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("text to put", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("url extension", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("path to", StringComparison.OrdinalIgnoreCase)
             || description.Contains("path where", StringComparison.OrdinalIgnoreCase)
             || description.Contains("comma separated", StringComparison.OrdinalIgnoreCase)
             || description.Contains("connection string", StringComparison.OrdinalIgnoreCase)
@@ -979,6 +1050,8 @@ internal sealed partial class ToolHelpOpenCliBuilder
             || description.Contains("to which", StringComparison.OrdinalIgnoreCase)
             || description.Contains("persisted to", StringComparison.OrdinalIgnoreCase)
             || description.Contains("posted.", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("replace string", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("start folder", StringComparison.OrdinalIgnoreCase)
             || description.Contains("will be written", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("A ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("An ", StringComparison.OrdinalIgnoreCase)
@@ -1002,6 +1075,13 @@ internal sealed partial class ToolHelpOpenCliBuilder
             || description.StartsWith("Specify ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("The number of ", StringComparison.OrdinalIgnoreCase)
             || description.StartsWith("Type of ", StringComparison.OrdinalIgnoreCase);
+
+    private static bool ContainsIllustrativeValueExample(string description)
+        => description.Contains("for example", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("e.g.", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("something like", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("specified .net runtime (", StringComparison.OrdinalIgnoreCase)
+            || description.Contains("specified .net runtime ", StringComparison.OrdinalIgnoreCase);
 
     private static bool ContainsInlineOptionExample(OptionSignature signature, string description)
     {
@@ -1263,6 +1343,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
 
         var value = match.Groups["name"].Value.Trim();
         if (value.Length == 0
+            || value.All(char.IsDigit)
             || LooksLikeOptionPlaceholder(value)
             || IsDispatcherPlaceholder(value)
             || string.Equals(value, "options", StringComparison.OrdinalIgnoreCase)
@@ -1299,6 +1380,30 @@ internal sealed partial class ToolHelpOpenCliBuilder
         }
 
         return trimmed;
+    }
+
+    private static bool LooksLikeWrappedUsageValueContinuation(string? previousLine, string currentLine)
+    {
+        if (string.IsNullOrWhiteSpace(previousLine))
+        {
+            return false;
+        }
+
+        var trimmedCurrent = currentLine.Trim();
+        if (trimmedCurrent.Length == 0 || !SingleBareUsageArgumentRegex().Match(trimmedCurrent).Success)
+        {
+            return false;
+        }
+
+        var previousTrimmed = previousLine.TrimEnd();
+        var matches = OptionTokenRegex().Matches(previousTrimmed);
+        if (matches.Count == 0)
+        {
+            return false;
+        }
+
+        var trailing = previousTrimmed[(matches[^1].Index + matches[^1].Length)..].Trim();
+        return trailing.Length == 0;
     }
 
     private static string? ExtractBareOptionPlaceholder(string key)

@@ -323,6 +323,11 @@ internal sealed partial class ToolHelpTextParser
             return false;
         }
 
+        if (kind == ItemKind.Option)
+        {
+            key = NormalizeInlineOptionPlaceholders(key);
+        }
+
         if (kind == ItemKind.Option && !LooksLikeOptionSignature(key))
         {
             return false;
@@ -510,6 +515,7 @@ internal sealed partial class ToolHelpTextParser
 
     private static string NormalizeOptionSignatureKey(string key)
     {
+        key = NormalizeInlineOptionPlaceholders(key);
         var matches = OptionTokenRegex().Matches(key);
         if (matches.Count == 0)
         {
@@ -539,6 +545,11 @@ internal sealed partial class ToolHelpTextParser
 
         return $"{key[..(matches[^1].Index + matches[^1].Length)].Trim()} <{trailing.ToUpperInvariant()}>";
     }
+
+    private static string NormalizeInlineOptionPlaceholders(string key)
+        => InterleavedOptionPlaceholderRegex().Replace(
+            key,
+            match => $"{match.Groups["option"].Value} <{match.Groups["placeholder"].Value.ToUpperInvariant()}>");
 
     private static bool HasContentSections(IReadOnlyDictionary<string, List<string>> sections)
         => sections.Any(pair => pair.Value.Count > 0 || string.Equals(pair.Key, "commands", StringComparison.OrdinalIgnoreCase));
@@ -889,6 +900,9 @@ internal sealed partial class ToolHelpTextParser
 
     [GeneratedRegex(@"^(?<group>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*)(?:\s*(?:\||,)\s*(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))*)", RegexOptions.Compiled)]
     private static partial Regex LeadingOptionAliasGroupRegex();
+
+    [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))\s+(?<placeholder>[A-Za-z][A-Za-z0-9_\.\-]*)(?=\s*(?:[,|]\s*(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*)|$))", RegexOptions.Compiled)]
+    private static partial Regex InterleavedOptionPlaceholderRegex();
 
     [GeneratedRegex(@"^CommandLine\.[A-Za-z]+Error$", RegexOptions.Compiled)]
     private static partial Regex CommandLineErrorTokenRegex();
