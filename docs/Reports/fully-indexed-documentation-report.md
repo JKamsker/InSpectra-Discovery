@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-29 15:50:06+00:00
+Generated: 2026-03-29 19:25:58+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 146
+Packages in scope: 145
 
 Fully documented: 68
 
-Incomplete: 78
+Incomplete: 77
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -83,7 +83,6 @@ Incomplete: 78
 | [Spaceship.Console](#pkg-spaceship-console) | 1.0.1 | ok | xml-ready | 34/34 | 196/196 | 24/24 | 0/29 | FAIL |
 | [sqlct](#pkg-sqlct) | 0.1.0 | ok | xml-ready | 5/5 | 0/18 | 0/0 | 0/5 | FAIL |
 | [StewardEF](#pkg-stewardef) | 0.5.0-preview.3 | ok | xml-ready | 2/2 | 1/5 | 0/2 | 2/2 | FAIL |
-| [Storage.Console](#pkg-storage-console) | 1.0.1 | ok | xml-ready | 1/1 | 2/2 | 2/2 | 0/1 | FAIL |
 | [SwedishTestSsn](#pkg-swedishtestssn) | 1.1.0 | ok | xml-ready | 1/1 | 2/6 | 2/2 | 1/1 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.1 | ok | xml-ready | 6/8 | 24/24 | 9/9 | 0/6 | FAIL |
@@ -1303,23 +1302,6 @@ Incomplete: 78
 - Missing option descriptions: convert-to-sql --migration, convert-to-sql --project, squash --target, squash --year
 - Missing argument descriptions: convert-to-sql <MigrationsDirectory>, squash <MigrationsDirectory>
 - Missing leaf command examples: None
-
-<a id="pkg-storage-console"></a>
-### Storage.Console
-
-- Version: `1.0.1`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `1/1`
-- Option documentation: `2/2`
-- Argument documentation: `2/2`
-- Leaf command examples: `0/1`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: upload
 
 <a id="pkg-swedishtestssn"></a>
 ### SwedishTestSsn
