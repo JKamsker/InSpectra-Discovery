@@ -75,14 +75,18 @@ internal static partial class OpenCliDocumentSanitizer
         return document;
     }
 
-    public static void ApplyNuGetTitleFallback(JsonObject document, string? nugetTitle, string? nugetDescription)
+    public static void ApplyNuGetMetadata(JsonObject document, string? nugetTitle, string? nugetDescription)
     {
         if (document["info"] is not JsonObject info)
         {
             return;
         }
 
-        if (info["title"] is null && !string.IsNullOrWhiteSpace(nugetTitle))
+        var inspectra = document["x-inspectra"] as JsonObject;
+        var cliTitle = info["title"]?.GetValue<string>();
+        var cliDescription = info["description"]?.GetValue<string>();
+
+        if (!string.IsNullOrWhiteSpace(nugetTitle))
         {
             var cleaned = CleanTitle(nugetTitle);
             if (!string.IsNullOrWhiteSpace(cleaned))
@@ -91,9 +95,24 @@ internal static partial class OpenCliDocumentSanitizer
             }
         }
 
-        if (info["description"] is null && !string.IsNullOrWhiteSpace(nugetDescription))
+        if (!string.IsNullOrWhiteSpace(nugetDescription))
         {
             info["description"] = nugetDescription.Trim();
+        }
+
+        if (inspectra is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(cliTitle)
+                && !string.Equals(cliTitle, info["title"]?.GetValue<string>(), StringComparison.Ordinal))
+            {
+                inspectra["cliParsedTitle"] = cliTitle;
+            }
+
+            if (!string.IsNullOrWhiteSpace(cliDescription)
+                && !string.Equals(cliDescription, info["description"]?.GetValue<string>(), StringComparison.Ordinal))
+            {
+                inspectra["cliParsedDescription"] = cliDescription;
+            }
         }
     }
 

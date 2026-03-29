@@ -332,7 +332,7 @@ internal sealed class StaticAnalysisService
             openCliDocument["x-inspectra"]!.AsObject()["cliFramework"] = result["cliFramework"]!.GetValue<string>();
         }
 
-        OpenCliDocumentSanitizer.ApplyNuGetTitleFallback(
+        OpenCliDocumentSanitizer.ApplyNuGetMetadata(
             openCliDocument,
             result["nugetTitle"]?.GetValue<string>(),
             result["nugetDescription"]?.GetValue<string>());

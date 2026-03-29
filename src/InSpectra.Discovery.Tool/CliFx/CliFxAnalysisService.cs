@@ -294,7 +294,7 @@ internal sealed class CliFxAnalysisService
             openCliDocument["x-inspectra"]!.AsObject()["cliFramework"] = result["cliFramework"]!.GetValue<string>();
         }
 
-        OpenCliDocumentSanitizer.ApplyNuGetTitleFallback(
+        OpenCliDocumentSanitizer.ApplyNuGetMetadata(
             openCliDocument,
             result["nugetTitle"]?.GetValue<string>(),
             result["nugetDescription"]?.GetValue<string>());

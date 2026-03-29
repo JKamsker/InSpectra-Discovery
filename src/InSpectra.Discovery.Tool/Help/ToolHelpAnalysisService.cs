@@ -256,7 +256,7 @@ internal sealed class ToolHelpAnalysisService
             openCliDocument["x-inspectra"]!["cliFramework"] = result["cliFramework"]!.GetValue<string>();
         }
 
-        OpenCliDocumentSanitizer.ApplyNuGetTitleFallback(
+        OpenCliDocumentSanitizer.ApplyNuGetMetadata(
             openCliDocument,
             result["nugetTitle"]?.GetValue<string>(),
             result["nugetDescription"]?.GetValue<string>());
