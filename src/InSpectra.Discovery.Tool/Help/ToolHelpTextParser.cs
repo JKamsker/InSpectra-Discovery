@@ -109,6 +109,14 @@ internal sealed partial class ToolHelpTextParser
                 continue;
             }
 
+            if (currentSection is not null
+                && !string.Equals(currentSection, IgnoredSectionName, StringComparison.Ordinal)
+                && ToolHelpSectionHeaderSupport.LooksLikeUnrecognizedMarkdownSectionHeader(line, SectionAliases, IgnoredSectionHeaders))
+            {
+                currentSection = IgnoredSectionName;
+                continue;
+            }
+
             if (currentSection is null)
             {
                 if (!ShouldIgnorePreambleLine(line))

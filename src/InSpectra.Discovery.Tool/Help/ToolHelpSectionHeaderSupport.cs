@@ -72,6 +72,29 @@ internal static partial class ToolHelpSectionHeaderSupport
         return ignoredHeaders.Contains(match.Groups["header"].Value.Trim());
     }
 
+    public static bool LooksLikeUnrecognizedMarkdownSectionHeader(
+        string line,
+        IReadOnlyDictionary<string, string> sectionAliases,
+        IReadOnlySet<string> ignoredHeaders)
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return false;
+        }
+
+        var match = MarkdownSectionHeaderRegex().Match(trimmed);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var alias = match.Groups["header"].Value.Trim();
+        return !sectionAliases.ContainsKey(alias)
+            && !TryResolveSectionAlias(alias, out _)
+            && !ignoredHeaders.Contains(alias);
+    }
+
     private static bool TryResolveSectionAlias(string alias, out string sectionName)
     {
         if (alias.EndsWith("OPTIONS", StringComparison.OrdinalIgnoreCase)

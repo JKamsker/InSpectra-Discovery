@@ -437,14 +437,14 @@ internal sealed partial class ToolHelpOpenCliBuilder
                 continue;
             }
 
-            var bareArgument = ExtractBareUsageArgument(commandName, commandPath, line, hasChildCommands);
-            if (bareArgument is null || !seen.Add(bareArgument.Key))
+            if (!LooksLikeExampleLabel(previousNonEmptyLine))
             {
-                previousNonEmptyLine = line;
-                continue;
+                var bareArgument = ExtractBareUsageArgument(commandName, commandPath, line, hasChildCommands);
+                if (bareArgument is not null && seen.Add(bareArgument.Key))
+                {
+                    arguments.Add(bareArgument);
+                }
             }
-
-            arguments.Add(bareArgument);
             previousNonEmptyLine = line;
         }
 
@@ -519,6 +519,11 @@ internal sealed partial class ToolHelpOpenCliBuilder
     private static bool IsDispatcherPlaceholder(string value)
         => string.Equals(value, "command", StringComparison.OrdinalIgnoreCase)
             || string.Equals(value, "subcommand", StringComparison.OrdinalIgnoreCase);
+
+    private static bool LooksLikeExampleLabel(string? line)
+        => !string.IsNullOrWhiteSpace(line)
+            && line.TrimEnd().EndsWith(":", StringComparison.Ordinal)
+            && !line.TrimStart().StartsWith("-", StringComparison.Ordinal);
 
     private static bool LooksLikeCommandInventoryEchoArguments(
         IReadOnlyList<ToolHelpItem> arguments,
@@ -1457,6 +1462,7 @@ internal sealed partial class ToolHelpOpenCliBuilder
         var value = match.Groups["name"].Value.Trim();
         if (value.Length == 0
             || value.All(char.IsDigit)
+            || value.EndsWith(":", StringComparison.Ordinal)
             || LooksLikeOptionPlaceholder(value)
             || IsDispatcherPlaceholder(value)
             || string.Equals(value, "options", StringComparison.OrdinalIgnoreCase)
@@ -1580,6 +1586,21 @@ internal sealed partial class ToolHelpOpenCliBuilder
         while (index >= 0 && char.IsWhiteSpace(line[index]))
         {
             index--;
+        }
+
+        if (index < 0)
+        {
+            return false;
+        }
+
+        // Skip past quotes that may wrap the placeholder value
+        if (index >= 0 && line[index] is '"' or '\'')
+        {
+            index--;
+            while (index >= 0 && char.IsWhiteSpace(line[index]))
+            {
+                index--;
+            }
         }
 
         if (index < 0)
