@@ -43,6 +43,7 @@ internal static class OpenCliDocumentSanitizer
     {
         "Display this help screen.",
         "Display version information.",
+        "Show version information.",
         "Show help information.",
         "Show help and usage information",
     };
@@ -262,6 +263,13 @@ internal static class OpenCliDocumentSanitizer
         if (TryResolveInformationalSelfArgumentDuplicate(left, right, out resolved))
         {
             return true;
+        }
+
+        if (leftInformational
+            && rightInformational
+            && !HaveEquivalentInformationalTokenSets(leftTokens, rightTokens))
+        {
+            return false;
         }
 
         if ((leftInformational ^ rightInformational)
@@ -537,6 +545,11 @@ internal static class OpenCliDocumentSanitizer
 
     private static bool IsInformationalOptionDescription(string description)
         => InformationalOptionDescriptions.Contains(description);
+
+    private static bool HaveEquivalentInformationalTokenSets(
+        IReadOnlySet<string> leftTokens,
+        IReadOnlySet<string> rightTokens)
+        => leftTokens.SetEquals(rightTokens);
 
     private static bool TryGetInformationalDescriptionPrefix(string description, out string normalizedDescription)
     {

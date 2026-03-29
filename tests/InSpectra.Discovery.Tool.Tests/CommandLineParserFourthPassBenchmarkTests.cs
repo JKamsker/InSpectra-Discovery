@@ -37,13 +37,11 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
 
         Assert.Equal(1, result.CandidateCount);
         Assert.Equal(1, result.RewrittenCount);
+        Assert.False(File.Exists(Path.Combine(versionRoot, "opencli.json")));
 
-        var openCli = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
-        Assert.DoesNotContain(openCli["options"]?.AsArray() ?? new JsonArray(), option => string.Equals(option?["name"]?.GetValue<string>(), "--keypair", StringComparison.Ordinal));
-        Assert.Contains(openCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "keypair", StringComparison.Ordinal));
-        Assert.Contains(openCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "template", StringComparison.Ordinal));
-        Assert.Contains(openCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "sign", StringComparison.Ordinal));
-        Assert.Contains(openCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "validate", StringComparison.Ordinal));
+        var metadata = ParseJsonObject(Path.Combine(versionRoot, "metadata.json"));
+        Assert.Equal("partial", metadata["status"]?.GetValue<string>());
+        Assert.Equal("invalid-opencli-artifact", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
     [Fact]
@@ -221,10 +219,11 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
         Assert.Equal("mdsnippets", markdownOpenCli["info"]?["title"]?.GetValue<string>());
         Assert.Equal("28.0.1", markdownOpenCli["info"]?["version"]?.GetValue<string>());
 
-        var docfxOpenCli = ParseJsonObject(Path.Combine(helpVersionRoot, "opencli.json"));
-        Assert.Equal("Docfx2xml", docfxOpenCli["info"]?["title"]?.GetValue<string>());
-        Assert.Contains(docfxOpenCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "init", StringComparison.Ordinal));
-        Assert.Contains(docfxOpenCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "run_j", StringComparison.Ordinal));
+        Assert.False(File.Exists(Path.Combine(helpVersionRoot, "opencli.json")));
+
+        var docfxMetadata = ParseJsonObject(Path.Combine(helpVersionRoot, "metadata.json"));
+        Assert.Equal("partial", docfxMetadata["status"]?.GetValue<string>());
+        Assert.Equal("invalid-opencli-artifact", docfxMetadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
     private static void WriteMetadata(string versionRoot, string packageId, string version, string command, bool rejectedHelpArtifact)

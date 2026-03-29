@@ -978,11 +978,11 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
 
         Assert.Equal(1, result.CandidateCount);
         Assert.Equal(1, result.RewrittenCount);
+        Assert.False(File.Exists(Path.Combine(versionRoot, "opencli.json")));
 
-        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
-        var command = Assert.IsType<JsonObject>(Assert.Single(regenerated["commands"]!.AsArray()));
-        Assert.Equal("deploy", command["name"]?.GetValue<string>());
-        Assert.Null(command["options"]);
+        var metadata = ParseJsonObject(Path.Combine(versionRoot, "metadata.json"));
+        Assert.Equal("partial", metadata["status"]?.GetValue<string>());
+        Assert.Equal("invalid-opencli-artifact", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
     private static JsonObject ParseJsonObject(string path)

@@ -125,11 +125,11 @@ public sealed class CommandLineParserThirdPassBenchmarkTests
 
         Assert.Equal(1, result.CandidateCount);
         Assert.Equal(1, result.RewrittenCount);
+        Assert.False(File.Exists(Path.Combine(versionRoot, "opencli.json")));
 
-        var openCli = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
-        Assert.Contains(openCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "run-pipeline", StringComparison.Ordinal));
-        Assert.Contains(openCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "run-manual-job", StringComparison.Ordinal));
-        Assert.DoesNotContain(openCli["commands"]!.AsArray(), command => string.Equals(command?["name"]?.GetValue<string>(), "help", StringComparison.Ordinal) && command?["description"] is null);
+        var metadata = ParseJsonObject(Path.Combine(versionRoot, "metadata.json"));
+        Assert.Equal("partial", metadata["status"]?.GetValue<string>());
+        Assert.Equal("invalid-opencli-artifact", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
     [Fact]
