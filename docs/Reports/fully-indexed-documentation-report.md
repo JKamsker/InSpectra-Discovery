@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-29 13:52:33+00:00
+Generated: 2026-03-29 15:23:01+00:00
 
 Scope: latest package entries with status ok, whose native OpenCLI artifact is json-ready, and whose OpenCLI was not synthesized-from-xmldoc.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 161
+Packages in scope: 146
 
-Fully documented: 75
+Fully documented: 68
 
-Incomplete: 86
+Incomplete: 78
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -48,19 +48,13 @@ Incomplete: 86
 | [dotnet-gcm](#pkg-dotnet-gcm) | 2.7.0 | ok | xml-ready | 3/3 | 11/11 | 3/3 | 0/3 | FAIL |
 | [dotnet-release-note](#pkg-dotnet-release-note) | 0.0.5 | ok | xml-ready | 6/6 | 26/26 | 1/1 | 5/6 | FAIL |
 | [EasyBuild.ShipIt](#pkg-easybuild-shipit) | 2.0.0 | ok | xml-ready | 2/3 | 18/18 | 0/0 | 0/3 | FAIL |
-| [EasyDotnet](#pkg-easydotnet) | 3.0.11 | ok | xml-ready | 9/9 | 20/20 | 4/4 | 0/7 | FAIL |
 | [ErikLieben.FA.ES.CLI](#pkg-eriklieben-fa-es-cli) | 2.0.0-preview.10 | ok | xml-ready | 3/3 | 6/8 | 2/4 | 3/3 | FAIL |
 | [GitIgnore.Cli](#pkg-gitignore-cli) | 0.1.1 | ok | xml-ready | 3/3 | 0/3 | 0/2 | 0/3 | FAIL |
 | [Gitor.Cli](#pkg-gitor-cli) | 1.0.3 | ok | xml-ready | 5/5 | 6/6 | 3/3 | 0/5 | FAIL |
 | [Heyreach.Console](#pkg-heyreach-console) | 1.0.0 | ok | xml-ready | 38/38 | 163/163 | 15/15 | 0/29 | FAIL |
-| [Ivy.Console](#pkg-ivy-console) | 1.2.27 | ok | xml-ready | 31/33 | 75/85 | 6/6 | 0/24 | FAIL |
-| [JJConsulting.Deploy](#pkg-jjconsulting-deploy) | 3.0.6 | ok | xml-ready | 5/5 | 4/4 | 5/5 | 0/5 | FAIL |
-| [JJConsulting.Deploy.Console](#pkg-jjconsulting-deploy-console) | 3.0.2 | ok | xml-ready | 19/19 | 8/8 | 1/1 | 0/15 | FAIL |
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.12 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
 | [kosh](#pkg-kosh) | 0.4.1 | ok | xml-ready | 4/4 | 2/2 | 0/0 | 0/4 | FAIL |
 | [MChris.DotnetCheck](#pkg-mchris-dotnetcheck) | 1.0.11 | ok | xml-ready | 10/10 | 18/18 | 1/1 | 3/8 | FAIL |
-| [Metalama.Tool](#pkg-metalama-tool) | 2026.1.6-preview | ok | xml-ready | 29/29 | 56/56 | 5/5 | 0/25 | FAIL |
-| [MetaMorph.Cli](#pkg-metamorph-cli) | 1.0.11 | ok | xml-ready | 0/11 | 10/10 | 12/12 | 0/11 | FAIL |
 | [Momentum.Extensions.EventMarkdownGenerator](#pkg-momentum-extensions-eventmarkdowngenerator) | 0.0.9 | ok | xml-ready | 2/2 | 10/10 | 0/0 | 0/2 | FAIL |
 | [MrKWatkins.OakAsm.Tool](#pkg-mrkwatkins-oakasm-tool) | 0.8.2 | ok | xml-ready | 0/2 | 0/1 | 2/3 | 0/2 | FAIL |
 | [MrKWatkins.OakIO.Tool](#pkg-mrkwatkins-oakio-tool) | 1.0.4 | ok | xml-ready | 2/2 | 0/0 | 3/3 | 0/2 | FAIL |
@@ -82,7 +76,6 @@ Incomplete: 86
 | [SA-OpenSearchTool](#pkg-sa-opensearchtool) | 2026.1.3.7 | ok | xml-ready | 18/18 | 51/51 | 5/5 | 0/15 | FAIL |
 | [ScatGirl.Cli](#pkg-scatgirl-cli) | 0.1.33 | ok | xml-ready | 4/4 | 12/13 | 6/6 | 3/4 | FAIL |
 | [ScatMan.Cli](#pkg-scatman-cli) | 0.1.52 | ok | xml-ready | 8/8 | 22/23 | 15/15 | 7/8 | FAIL |
-| [SceneGate.Hinox.Utils](#pkg-scenegate-hinox-utils) | 1.0.0 | ok | invalid-xml | 5/5 | 16/16 | 1/1 | 0/3 | FAIL |
 | [ShadcnBlazor.Cli](#pkg-shadcnblazor-cli) | 0.0.5 | ok | xml-ready | 6/6 | 9/9 | 2/2 | 0/5 | FAIL |
 | [Shirubasoft.Aspire.E2E.Cli](#pkg-shirubasoft-aspire-e2e-cli) | 2.0.4 | ok | xml-ready | 22/22 | 16/16 | 16/20 | 0/21 | FAIL |
 | [SJP.AvroTool](#pkg-sjp-avrotool) | 0.1.1 | ok | xml-ready | 3/3 | 6/6 | 4/4 | 0/3 | FAIL |
@@ -90,10 +83,9 @@ Incomplete: 86
 | [Spaceship.Console](#pkg-spaceship-console) | 1.0.1 | ok | xml-ready | 34/34 | 196/196 | 24/24 | 0/29 | FAIL |
 | [sqlct](#pkg-sqlct) | 0.1.0 | ok | xml-ready | 5/5 | 0/18 | 0/0 | 0/5 | FAIL |
 | [StewardEF](#pkg-stewardef) | 0.5.0-preview.3 | ok | xml-ready | 2/2 | 1/5 | 0/2 | 2/2 | FAIL |
-| [Substratum.Tools](#pkg-substratum-tools) | 2.6.0 | ok | xml-ready | 0/12 | 24/24 | 1/1 | 0/9 | FAIL |
+| [Storage.Console](#pkg-storage-console) | 1.0.1 | ok | xml-ready | 1/1 | 2/2 | 2/2 | 0/1 | FAIL |
 | [SwedishTestSsn](#pkg-swedishtestssn) | 1.1.0 | ok | xml-ready | 1/1 | 2/6 | 2/2 | 1/1 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
-| [Test262Harness.Console](#pkg-test262harness-console) | 1.0.4 | ok | xml-ready | 1/1 | 4/7 | 0/0 | 0/1 | FAIL |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.1 | ok | xml-ready | 6/8 | 24/24 | 9/9 | 0/6 | FAIL |
 | [Tolitech.Lino](#pkg-tolitech-lino) | 1.3.4 | ok | xml-ready | 83/84 | 110/110 | 1/1 | 0/56 | FAIL |
 | [udic](#pkg-udic) | 1.1.0 | ok | xml-ready | 6/7 | 0/12 | 0/7 | 5/6 | FAIL |
@@ -102,7 +94,6 @@ Incomplete: 86
 | [w3ti.OpenBase.CLI](#pkg-w3ti-openbase-cli) | 10.0.19 | ok | xml-ready | 5/5 | 3/3 | 0/0 | 2/5 | FAIL |
 | [w3ti.OpenBaseNET.CLI](#pkg-w3ti-openbasenet-cli) | 10.0.4 | ok | xml-ready | 5/5 | 3/3 | 0/0 | 2/5 | FAIL |
 | [w3ti.OpenBaseNETSqlServer.Cli](#pkg-w3ti-openbasenetsqlserver-cli) | 10.0.2 | ok | xml-ready | 5/5 | 3/3 | 0/0 | 2/5 | FAIL |
-| [ApiLens](#pkg-apilens) | 1.0.8 | ok | xml-ready | 12/12 | 77/77 | 8/8 | 12/12 | PASS |
 | [ApiPosture](#pkg-apiposture) | 1.0.21 | ok | xml-ready | 1/1 | 34/34 | 2/2 | 1/1 | PASS |
 | [ARI](#pkg-ari) | 2026.2.11.743 | ok | xml-ready | 1/1 | 12/12 | 2/2 | 1/1 | PASS |
 | [atc-azure-digitaltwin](#pkg-atc-azure-digitaltwin) | 3.0.0 | ok | xml-ready | 47/47 | 142/142 | 0/0 | 33/33 | PASS |
@@ -123,7 +114,6 @@ Incomplete: 86
 | [dev-password](#pkg-dev-password) | 1.1.4 | ok | xml-ready | 2/2 | 7/7 | 0/0 | 2/2 | PASS |
 | [dev-pomo](#pkg-dev-pomo) | 1.1.4 | ok | xml-ready | 2/2 | 2/2 | 0/0 | 2/2 | PASS |
 | [DeviceRunners.Cli](#pkg-devicerunners-cli) | 0.1.0-preview.6 | ok | xml-ready | 24/24 | 82/82 | 0/0 | 19/19 | PASS |
-| [DiceCli](#pkg-dicecli) | 5.1.3 | ok | xml-ready | 9/9 | 8/8 | 1/1 | 8/8 | PASS |
 | [DotBump](#pkg-dotbump) | 0.2.1 | ok | xml-ready | 2/2 | 11/11 | 0/0 | 2/2 | PASS |
 | [dotnet-check-updates](#pkg-dotnet-check-updates) | 0.5.0 | ok | xml-ready | 0/0 | 19/19 | 0/0 | 0/0 | PASS |
 | [dotnet-example](#pkg-dotnet-example) | 5.0.0 | ok | xml-ready | 0/0 | 5/5 | 1/1 | 0/0 | PASS |
@@ -132,7 +122,6 @@ Incomplete: 86
 | [dotnet-openapi-generator](#pkg-dotnet-openapi-generator) | 10.0.0-preview.17 | ok | xml-ready | 0/0 | 22/22 | 2/2 | 0/0 | PASS |
 | [dotnet-overview](#pkg-dotnet-overview) | 4.2.0 | ok | xml-ready | 0/0 | 4/4 | 1/1 | 0/0 | PASS |
 | [dotnet-soddi](#pkg-dotnet-soddi) | 0.4.0 | ok | xml-ready | 4/4 | 18/18 | 4/4 | 4/4 | PASS |
-| [DotNetNuke.BulkInstall](#pkg-dotnetnuke-bulkinstall) | 10.2.4-bulk-install-packaging.1+335 | ok | xml-ready | 0/0 | 8/8 | 0/0 | 0/0 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
 | [DotnetTokenKiller](#pkg-dotnettokenkiller) | 0.4.0 | ok | xml-ready | 21/21 | 36/36 | 8/8 | 18/18 | PASS |
 | [DPI](#pkg-dpi) | 2026.2.11.364 | ok | xml-ready | 3/3 | 7/7 | 1/1 | 2/2 | PASS |
@@ -143,11 +132,9 @@ Incomplete: 86
 | [gsg](#pkg-gsg) | 0.0.24 | ok | xml-ready | 3/3 | 28/28 | 0/0 | 3/3 | PASS |
 | [HttpGenerator](#pkg-httpgenerator) | 1.1.0-preview.18 | ok | xml-ready | 0/0 | 15/15 | 1/1 | 0/0 | PASS |
 | [JDownloader-RemoteCli](#pkg-jdownloader-remotecli) | 0.1.9 | ok | xml-ready | 145/145 | 1305/1305 | 8/8 | 112/112 | PASS |
-| [JellyfinCli](#pkg-jellyfincli) | 0.1.19 | ok | xml-ready | 193/193 | 2012/2012 | 111/111 | 153/153 | PASS |
 | [jinspect](#pkg-jinspect) | 0.2.2 | ok | xml-ready | 0/0 | 5/5 | 1/1 | 0/0 | PASS |
 | [json-minify](#pkg-json-minify) | 1.1.4 | ok | xml-ready | 2/2 | 3/3 | 3/3 | 2/2 | PASS |
 | [JTest.Cli](#pkg-jtest-cli) | 1.0.3 | ok | xml-ready | 5/5 | 18/18 | 6/6 | 5/5 | PASS |
-| [lazydotnet](#pkg-lazydotnet) | 0.6.0 | ok | xml-ready | 0/0 | 3/3 | 1/1 | 0/0 | PASS |
 | [Locale.CLI](#pkg-locale-cli) | 0.0.11 | ok | xml-ready | 7/7 | 42/42 | 9/9 | 7/7 | PASS |
 | [Make](#pkg-make) | 0.11.0 | ok | xml-ready | 0/0 | 1/1 | 1/1 | 0/0 | PASS |
 | [MartinCostello.WaitForNuGetPackage](#pkg-martincostello-waitfornugetpackage) | 1.2.3 | ok | xml-ready | 0/0 | 5/5 | 1/1 | 0/0 | PASS |
@@ -156,7 +143,6 @@ Incomplete: 86
 | [Ninjadog](#pkg-ninjadog) | 1.3.0 | ok | xml-ready | 5/5 | 8/8 | 1/1 | 5/5 | PASS |
 | [NuGone](#pkg-nugone) | 2.1.1 | ok | xml-ready | 1/1 | 6/6 | 0/0 | 1/1 | PASS |
 | [nukit](#pkg-nukit) | 0.2.3 | ok | xml-ready | 0/0 | 6/6 | 1/1 | 0/0 | PASS |
-| [PackageGuard](#pkg-packageguard) | 2.1.1 | ok | xml-ready | 0/0 | 14/14 | 1/1 | 0/0 | PASS |
 | [PackCheck](#pkg-packcheck) | 3.1.4 | ok | xml-ready | 2/2 | 33/33 | 1/1 | 2/2 | PASS |
 | [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.0 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
 | [Releasator](#pkg-releasator) | 0.2.1 | ok | xml-ready | 0/0 | 4/4 | 1/1 | 0/0 | PASS |
@@ -166,7 +152,6 @@ Incomplete: 86
 | [Serilog.Sinks.File.Encrypt.Cli](#pkg-serilog-sinks-file-encrypt-cli) | 3.0.0 | ok | xml-ready | 2/2 | 8/8 | 1/1 | 2/2 | PASS |
 | [SharkyParser](#pkg-sharkyparser) | 2.0.0 | ok | xml-ready | 2/2 | 5/5 | 2/2 | 2/2 | PASS |
 | [Silverfly.TreeVisualizer](#pkg-silverfly-treevisualizer) | 1.7.0 | ok | xml-ready | 0/0 | 1/1 | 1/1 | 0/0 | PASS |
-| [slnx-mermaid](#pkg-slnx-mermaid) | 17.3.4 | ok | invalid-xml | 0/0 | 1/1 | 0/0 | 0/0 | PASS |
 | [soddi](#pkg-soddi) | 0.5.1 | ok | xml-ready | 4/4 | 18/18 | 4/4 | 4/4 | PASS |
 | [SteamFetch](#pkg-steamfetch) | 0.0.4 | ok | xml-ready | 3/3 | 3/3 | 6/6 | 3/3 | PASS |
 | [SwaggerDiff.Tool](#pkg-swaggerdiff-tool) | 1.5.2 | ok | xml-ready | 2/2 | 10/10 | 0/0 | 2/2 | PASS |
@@ -724,23 +709,6 @@ Incomplete: 86
 - Missing argument descriptions: None
 - Missing leaf command examples: conventions, github, version
 
-<a id="pkg-easydotnet"></a>
-### EasyDotnet
-
-- Version: `3.0.11`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `9/9`
-- Option documentation: `20/20`
-- Argument documentation: `4/4`
-- Leaf command examples: `0/7`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: compat build, compat run, compat run-iis, compat test, generate-rpc-docs, projx-language-server, roslyn start
-
 <a id="pkg-eriklieben-fa-es-cli"></a>
 ### ErikLieben.FA.ES.CLI
 
@@ -809,57 +777,6 @@ Incomplete: 86
 - Missing argument descriptions: None
 - Missing leaf command examples: auth check, campaigns add-leads, campaigns get, campaigns list, campaigns pause, campaigns resume, campaigns stop-lead, conversations list, conversations send, leads get, leads lists, leads update-status, lists add-lead, lists companies, lists create, lists get, lists leads, lists list, lists remove-lead, senders get, senders list, senders network, stats get, tags create, webhooks create, webhooks delete, webhooks get, webhooks list, webhooks update
 
-<a id="pkg-ivy-console"></a>
-### Ivy.Console
-
-- Version: `1.2.27`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `31/33`
-- Option documentation: `75/85`
-- Argument documentation: `6/6`
-- Leaf command examples: `0/24`
-- Overall: `FAIL`
-- Missing command descriptions: app remove, code
-- Missing option descriptions: app create --connection, app create --group, app create --icon, auth add --provider, connect db add --connection-string, connect db add --name, connect db add --provider, connect db add --schema, connect remove --connection-name, connect remove --force
-- Missing argument descriptions: None
-- Missing leaf command examples: app create, app remove, auth add, code feedback, connect add, connect db add, connect list, connect openapi add, connect remove, connect soap add, deploy, docs list, init, login, logout, open, question, remove-branding, run, samples, update, upgrade, version, widget init
-
-<a id="pkg-jjconsulting-deploy"></a>
-### JJConsulting.Deploy
-
-- Version: `3.0.6`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `5/5`
-- Option documentation: `4/4`
-- Argument documentation: `5/5`
-- Leaf command examples: `0/5`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: install, list, restart, token, uninstall
-
-<a id="pkg-jjconsulting-deploy-console"></a>
-### JJConsulting.Deploy.Console
-
-- Version: `3.0.2`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `19/19`
-- Option documentation: `8/8`
-- Argument documentation: `1/1`
-- Leaf command examples: `0/15`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: jjboleto, jjcielo, jjdanfe, jjdeploy-webserver restart, jjdeploy-webserver uninstall, jjic, jjinfinity, jjis restart, jjis uninstall, jjiwc, jjmasterdata restart, jjmasterdata uninstall, jjpowerbi restart, jjpowerbi uninstall, token
-
 <a id="pkg-karls-gitflow-tool"></a>
 ### Karls.Gitflow.Tool
 
@@ -910,40 +827,6 @@ Incomplete: 86
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: config init, server restart, server start, server status, server stop
-
-<a id="pkg-metalama-tool"></a>
-### Metalama.Tool
-
-- Version: `2026.1.6-preview`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `29/29`
-- Option documentation: `56/56`
-- Argument documentation: `5/5`
-- Leaf command examples: `0/25`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: cleanup, config edit, config list, config print, config reset, config validate, divorce, docs, kill, license community, license free, license list, license register, license try, license unregister, news disable, news enable, news notify, telemetry disable, telemetry enable, telemetry reset-device-id, telemetry status, telemetry upload, ui, version
-
-<a id="pkg-metamorph-cli"></a>
-### MetaMorph.Cli
-
-- Version: `1.0.11`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `0/11`
-- Option documentation: `10/10`
-- Argument documentation: `12/12`
-- Leaf command examples: `0/11`
-- Overall: `FAIL`
-- Missing command descriptions: copy_metadata, downscale_video, downscale_videos, list_dates, list_metadata, rename_file, rename_files, set_date, set_dates, set_dates_and_rename_files, set_date_and_rename_file
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: copy_metadata, downscale_video, downscale_videos, list_dates, list_metadata, rename_file, rename_files, set_date, set_dates, set_dates_and_rename_files, set_date_and_rename_file
 
 <a id="pkg-momentum-extensions-eventmarkdowngenerator"></a>
 ### Momentum.Extensions.EventMarkdownGenerator
@@ -1302,23 +1185,6 @@ Incomplete: 86
 - Missing argument descriptions: None
 - Missing leaf command examples: meta
 
-<a id="pkg-scenegate-hinox-utils"></a>
-### SceneGate.Hinox.Utils
-
-- Version: `1.0.0`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `invalid-xml`
-- Command documentation: `5/5`
-- Option documentation: `16/16`
-- Argument documentation: `1/1`
-- Leaf command examples: `0/3`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: audio vab export, audio vab import, audio vab test
-
 <a id="pkg-shadcnblazor-cli"></a>
 ### ShadcnBlazor.Cli
 
@@ -1438,22 +1304,22 @@ Incomplete: 86
 - Missing argument descriptions: convert-to-sql <MigrationsDirectory>, squash <MigrationsDirectory>
 - Missing leaf command examples: None
 
-<a id="pkg-substratum-tools"></a>
-### Substratum.Tools
+<a id="pkg-storage-console"></a>
+### Storage.Console
 
-- Version: `2.6.0`
+- Version: `1.0.1`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
-- Command documentation: `0/12`
-- Option documentation: `24/24`
-- Argument documentation: `1/1`
-- Leaf command examples: `0/9`
+- Command documentation: `1/1`
+- Option documentation: `2/2`
+- Argument documentation: `2/2`
+- Leaf command examples: `0/1`
 - Overall: `FAIL`
-- Missing command descriptions: database, database sql, database update, migrate, migrations, migrations add, new, new endpoint, new entity, new event, new job, new webapp
+- Missing command descriptions: None
 - Missing option descriptions: None
 - Missing argument descriptions: None
-- Missing leaf command examples: database sql, database update, migrate, migrations add, new endpoint, new entity, new event, new job, new webapp
+- Missing leaf command examples: upload
 
 <a id="pkg-swedishtestssn"></a>
 ### SwedishTestSsn
@@ -1486,23 +1352,6 @@ Incomplete: 86
 - Overall: `FAIL`
 - Missing command descriptions: None
 - Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: generate
-
-<a id="pkg-test262harness-console"></a>
-### Test262Harness.Console
-
-- Version: `1.0.4`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `1/1`
-- Option documentation: `4/7`
-- Argument documentation: `0/0`
-- Leaf command examples: `0/1`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: generate --excluded-files-source, generate --namespace, generate --testFramework
 - Missing argument descriptions: None
 - Missing leaf command examples: generate
 
@@ -1641,23 +1490,6 @@ Incomplete: 86
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: help, update, version
-
-<a id="pkg-apilens"></a>
-### ApiLens
-
-- Version: `1.0.8`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `12/12`
-- Option documentation: `77/77`
-- Argument documentation: `8/8`
-- Leaf command examples: `12/12`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
 
 <a id="pkg-apiposture"></a>
 ### ApiPosture
@@ -1999,23 +1831,6 @@ Incomplete: 86
 - Missing argument descriptions: None
 - Missing leaf command examples: None
 
-<a id="pkg-dicecli"></a>
-### DiceCli
-
-- Version: `5.1.3`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `9/9`
-- Option documentation: `8/8`
-- Argument documentation: `1/1`
-- Leaf command examples: `8/8`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
 <a id="pkg-dotbump"></a>
 ### DotBump
 
@@ -2146,23 +1961,6 @@ Incomplete: 86
 - Option documentation: `18/18`
 - Argument documentation: `4/4`
 - Leaf command examples: `4/4`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-dotnetnuke-bulkinstall"></a>
-### DotNetNuke.BulkInstall
-
-- Version: `10.2.4-bulk-install-packaging.1+335`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `0/0`
-- Option documentation: `8/8`
-- Argument documentation: `0/0`
-- Leaf command examples: `0/0`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
@@ -2339,23 +2137,6 @@ Incomplete: 86
 - Missing argument descriptions: None
 - Missing leaf command examples: None
 
-<a id="pkg-jellyfincli"></a>
-### JellyfinCli
-
-- Version: `0.1.19`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `193/193`
-- Option documentation: `2012/2012`
-- Argument documentation: `111/111`
-- Leaf command examples: `153/153`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
 <a id="pkg-jinspect"></a>
 ### jinspect
 
@@ -2401,23 +2182,6 @@ Incomplete: 86
 - Option documentation: `18/18`
 - Argument documentation: `6/6`
 - Leaf command examples: `5/5`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-lazydotnet"></a>
-### lazydotnet
-
-- Version: `0.6.0`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `0/0`
-- Option documentation: `3/3`
-- Argument documentation: `1/1`
-- Leaf command examples: `0/0`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
@@ -2552,23 +2316,6 @@ Incomplete: 86
 - XMLDoc classification: `xml-ready`
 - Command documentation: `0/0`
 - Option documentation: `6/6`
-- Argument documentation: `1/1`
-- Leaf command examples: `0/0`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-packageguard"></a>
-### PackageGuard
-
-- Version: `2.1.1`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `0/0`
-- Option documentation: `14/14`
 - Argument documentation: `1/1`
 - Leaf command examples: `0/0`
 - Overall: `PASS`
@@ -2723,23 +2470,6 @@ Incomplete: 86
 - Command documentation: `0/0`
 - Option documentation: `1/1`
 - Argument documentation: `1/1`
-- Leaf command examples: `0/0`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-slnx-mermaid"></a>
-### slnx-mermaid
-
-- Version: `17.3.4`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `invalid-xml`
-- Command documentation: `0/0`
-- Option documentation: `1/1`
-- Argument documentation: `0/0`
 - Leaf command examples: `0/0`
 - Overall: `PASS`
 - Missing command descriptions: None
