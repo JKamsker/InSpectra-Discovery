@@ -101,6 +101,8 @@ internal sealed record CatalogEntry(
 
 internal sealed record CatalogLeaf(
     string Id,
+    string? Title,
+    string? Description,
     string? ProjectUrl,
     CatalogRepository? Repository,
     IReadOnlyList<CatalogPackageEntry>? PackageEntries,

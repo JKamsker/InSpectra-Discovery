@@ -147,6 +147,8 @@ internal sealed class StaticAnalysisService
             result["catalogEntryUrl"] = registrationLeaf.CatalogEntryUrl;
             result["packageContentUrl"] = registrationLeaf.PackageContent;
             result["publishedAt"] = registrationLeaf.Published?.ToUniversalTime().ToString("O");
+            result["nugetTitle"] = catalogLeaf.Title;
+            result["nugetDescription"] = catalogLeaf.Description;
 
             var packageInspection = await new PackageArchiveInspector(scope.Client).InspectAsync(registrationLeaf.PackageContent, cancellationToken);
             var resolvedCommandName = string.IsNullOrWhiteSpace(commandName) ? packageInspection.ToolCommandNames.FirstOrDefault() : commandName;
@@ -329,6 +331,11 @@ internal sealed class StaticAnalysisService
         {
             openCliDocument["x-inspectra"]!.AsObject()["cliFramework"] = result["cliFramework"]!.GetValue<string>();
         }
+
+        OpenCliDocumentSanitizer.ApplyNuGetTitleFallback(
+            openCliDocument,
+            result["nugetTitle"]?.GetValue<string>(),
+            result["nugetDescription"]?.GetValue<string>());
 
         if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
         {

@@ -83,6 +83,8 @@ internal sealed record CatalogEntrySpec(
 
 internal sealed record CatalogLeafSpec(
     [property: JsonPropertyName("@id")] string? Id,
+    [property: JsonPropertyName("title")] string? Title,
+    [property: JsonPropertyName("description")] string? Description,
     [property: JsonPropertyName("projectUrl")] string? ProjectUrl,
     [property: JsonPropertyName("repository")]
     [property: JsonConverter(typeof(NuGetRepositoryJsonConverter))]

@@ -9,6 +9,8 @@ public sealed class DotnetToolPackageTypeTests
         using var document = JsonDocument.Parse("""{ "name": "DotnetTool", "version": "0.0" }""");
         var leaf = new CatalogLeaf(
             Id: "https://nuget.test/catalog/example.json",
+            Title: null,
+            Description: null,
             ProjectUrl: null,
             Repository: null,
             PackageEntries: null,
@@ -26,6 +28,8 @@ public sealed class DotnetToolPackageTypeTests
         using var document = JsonDocument.Parse("""[{ "name": "Dependency" }, { "name": "DotnetTool" }]""");
         var leaf = new CatalogLeaf(
             Id: "https://nuget.test/catalog/example.json",
+            Title: null,
+            Description: null,
             ProjectUrl: null,
             Repository: null,
             PackageEntries: null,

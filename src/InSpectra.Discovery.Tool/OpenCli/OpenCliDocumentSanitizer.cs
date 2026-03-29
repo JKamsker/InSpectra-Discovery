@@ -75,6 +75,28 @@ internal static partial class OpenCliDocumentSanitizer
         return document;
     }
 
+    public static void ApplyNuGetTitleFallback(JsonObject document, string? nugetTitle, string? nugetDescription)
+    {
+        if (document["info"] is not JsonObject info)
+        {
+            return;
+        }
+
+        if (info["title"] is null && !string.IsNullOrWhiteSpace(nugetTitle))
+        {
+            var cleaned = CleanTitle(nugetTitle);
+            if (!string.IsNullOrWhiteSpace(cleaned))
+            {
+                info["title"] = cleaned;
+            }
+        }
+
+        if (info["description"] is null && !string.IsNullOrWhiteSpace(nugetDescription))
+        {
+            info["description"] = nugetDescription.Trim();
+        }
+    }
+
     public static JsonObject EnsureArtifactSource(JsonObject document, string artifactSource)
     {
         if (string.IsNullOrWhiteSpace(artifactSource))

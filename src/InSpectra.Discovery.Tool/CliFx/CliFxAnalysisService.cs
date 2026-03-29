@@ -116,6 +116,8 @@ internal sealed class CliFxAnalysisService
             result["catalogEntryUrl"] = registrationLeaf.CatalogEntryUrl;
             result["packageContentUrl"] = registrationLeaf.PackageContent;
             result["publishedAt"] = registrationLeaf.Published?.ToUniversalTime().ToString("O");
+            result["nugetTitle"] = catalogLeaf.Title;
+            result["nugetDescription"] = catalogLeaf.Description;
 
             var packageInspection = await new PackageArchiveInspector(scope.Client).InspectAsync(registrationLeaf.PackageContent, cancellationToken);
             var resolvedCommandName = string.IsNullOrWhiteSpace(commandName) ? packageInspection.ToolCommandNames.FirstOrDefault() : commandName;
@@ -291,6 +293,11 @@ internal sealed class CliFxAnalysisService
         {
             openCliDocument["x-inspectra"]!.AsObject()["cliFramework"] = result["cliFramework"]!.GetValue<string>();
         }
+
+        OpenCliDocumentSanitizer.ApplyNuGetTitleFallback(
+            openCliDocument,
+            result["nugetTitle"]?.GetValue<string>(),
+            result["nugetDescription"]?.GetValue<string>());
 
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";

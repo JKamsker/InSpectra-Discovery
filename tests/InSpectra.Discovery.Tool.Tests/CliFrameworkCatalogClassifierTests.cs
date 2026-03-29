@@ -8,8 +8,10 @@ public sealed class CliFrameworkCatalogClassifierTests
     {
         var catalogLeaf = new CatalogLeaf(
             "https://nuget.test/catalog/sample.tool.1.0.0.json",
-            null,
-            null,
+            Title: null,
+            Description: null,
+            ProjectUrl: null,
+            Repository: null,
             [new CatalogPackageEntry("tools/net10.0/any/CliFx.dll", "CliFx.dll")],
             [new CatalogDependencyGroup([new CatalogDependency("System.CommandLine")])],
             PackageTypes: null);
@@ -24,8 +26,10 @@ public sealed class CliFrameworkCatalogClassifierTests
     {
         var catalogLeaf = new CatalogLeaf(
             "https://nuget.test/catalog/sample.tool.1.0.0.json",
-            null,
-            null,
+            Title: null,
+            Description: null,
+            ProjectUrl: null,
+            Repository: null,
             [new CatalogPackageEntry("tools/net10.0/any/Mono.Options.dll", "Mono.Options.dll")],
             DependencyGroups: null,
             PackageTypes: null);

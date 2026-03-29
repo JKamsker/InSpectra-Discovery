@@ -22,7 +22,9 @@ internal sealed class ToolAnalysisDescriptorResolver : IToolAnalysisDescriptorRe
             reason,
             $"https://www.nuget.org/packages/{packageId}/{version}",
             leaf.PackageContent,
-            leaf.CatalogEntryUrl);
+            leaf.CatalogEntryUrl,
+            PackageTitle: catalogLeaf.Title,
+            PackageDescription: catalogLeaf.Description);
     }
 
     private static string? DetectCliFramework(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection)

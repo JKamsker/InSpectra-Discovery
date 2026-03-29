@@ -7,4 +7,6 @@ internal sealed record ToolAnalysisDescriptor(
     string SelectionReason,
     string PackageUrl,
     string? PackageContentUrl,
-    string? CatalogEntryUrl);
+    string? CatalogEntryUrl,
+    string? PackageTitle = null,
+    string? PackageDescription = null);

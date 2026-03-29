@@ -80,6 +80,8 @@ internal sealed class ToolHelpAnalysisService
             result["packageUrl"] = $"https://www.nuget.org/packages/{packageId}/{version}";
             result["projectUrl"] = catalogLeaf.ProjectUrl;
             result["sourceRepositoryUrl"] = PackageVersionResolver.NormalizeRepositoryUrl(catalogLeaf.Repository?.Url);
+            result["nugetTitle"] = catalogLeaf.Title;
+            result["nugetDescription"] = catalogLeaf.Description;
             result["registrationLeafUrl"] = registrationLeaf.Id;
             result["catalogEntryUrl"] = registrationLeaf.CatalogEntryUrl;
             result["packageContentUrl"] = registrationLeaf.PackageContent;
@@ -253,6 +255,11 @@ internal sealed class ToolHelpAnalysisService
         {
             openCliDocument["x-inspectra"]!["cliFramework"] = result["cliFramework"]!.GetValue<string>();
         }
+
+        OpenCliDocumentSanitizer.ApplyNuGetTitleFallback(
+            openCliDocument,
+            result["nugetTitle"]?.GetValue<string>(),
+            result["nugetDescription"]?.GetValue<string>());
 
         if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
         {

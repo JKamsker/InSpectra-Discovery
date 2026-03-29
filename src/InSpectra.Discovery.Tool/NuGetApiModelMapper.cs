@@ -40,6 +40,8 @@ internal static class NuGetApiModelMapper
     public static CatalogLeaf ToModel(CatalogLeafSpec spec)
         => new(
             Id: spec.Id ?? string.Empty,
+            Title: spec.Title,
+            Description: spec.Description,
             ProjectUrl: spec.ProjectUrl,
             Repository: ToModel(spec.Repository),
             PackageEntries: OptionalList(spec.PackageEntries, ToModel),
