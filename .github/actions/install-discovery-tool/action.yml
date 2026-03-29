@@ -1,5 +1,5 @@
 name: Install InSpectra.Discovery.Tool
-description: Install the published discovery CLI from GitHub Packages.
+description: Install the latest published discovery CLI from GitHub Packages.
 
 inputs:
   github-token:
@@ -12,66 +12,23 @@ inputs:
     description: Owner whose GitHub Packages feed hosts the tool package.
     required: true
   tool-version:
-    description: Explicit package version to install. When omitted, resolve from git history.
+    description: Explicit package version to install. When omitted, install the latest pre-release.
     required: false
     default: ''
-  tool-ref:
-    description: Git ref used to resolve the package version when tool-version is omitted.
-    required: false
-    default: HEAD
-  tool-branch:
-    description: Optional branch to fetch if tool-ref is not present locally.
-    required: false
-    default: ''
-  source-path:
-    description: Repository path used for version resolution.
-    required: false
-    default: src
 
 outputs:
   tool_version:
     description: Installed package version.
-    value: ${{ steps.resolve.outputs.tool_version }}
+    value: ${{ steps.install.outputs.tool_version }}
 
 runs:
   using: composite
   steps:
-    - name: Resolve discovery tool version
-      id: resolve
+    - name: Install discovery tool
+      id: install
       shell: pwsh
       run: |
         $toolVersion = '${{ inputs.tool-version }}'
-        if (-not [string]::IsNullOrWhiteSpace($toolVersion)) {
-          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
-          exit 0
-        }
-
-        $toolRef = '${{ inputs.tool-ref }}'
-        if ([string]::IsNullOrWhiteSpace($toolRef)) {
-          $toolRef = 'HEAD'
-        }
-
-        $toolBranch = '${{ inputs.tool-branch }}'
-        git rev-parse --verify --quiet "$toolRef^{commit}" *> $null
-        if ($LASTEXITCODE -ne 0 -and -not [string]::IsNullOrWhiteSpace($toolBranch)) {
-          git fetch origin $toolBranch
-          git rev-parse --verify --quiet "$toolRef^{commit}" *> $null
-        }
-
-        if ($LASTEXITCODE -ne 0) {
-          throw "Git ref '$toolRef' is not available locally for discovery tool version resolution."
-        }
-
-        $toolVersion = & "$PWD/eng/Get-DiscoveryToolVersion.ps1" `
-          -Ref $toolRef `
-          -SourcePath '${{ inputs.source-path }}'
-
-        "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
-
-    - name: Install discovery tool
-      shell: pwsh
-      run: |
-        $toolVersion = '${{ steps.resolve.outputs.tool_version }}'
         $toolPath = Join-Path $env:RUNNER_TEMP 'inspectra-discovery'
         $configPath = Join-Path $env:RUNNER_TEMP 'inspectra-discovery.nuget.config'
         $packageSource = 'https://nuget.pkg.github.com/${{ inputs.github-owner }}/index.json'
@@ -97,32 +54,27 @@ runs:
           '</configuration>'
         ) -join [Environment]::NewLine | Set-Content -Path $configPath -Encoding UTF8NoBOM
 
-        $maxAttempts = 20
-        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-          try {
-            dotnet tool install InSpectra.Discovery.Tool `
-              --version $toolVersion `
-              --tool-path $toolPath `
-              --configfile $configPath
-
-            if ($LASTEXITCODE -eq 0) {
-              $toolPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-              Write-Host "Installed InSpectra.Discovery.Tool $toolVersion."
-              exit 0
-            }
-          }
-          catch {
-            if ($attempt -eq $maxAttempts) {
-              throw
-            }
-          }
-
-          Write-Host "Discovery tool version $toolVersion is not available yet. Retry $attempt of $maxAttempts."
-          if (Test-Path $toolPath) {
-            Remove-Item $toolPath -Recurse -Force
-          }
-
-          Start-Sleep -Seconds 15
+        $versionArgs = @()
+        if (-not [string]::IsNullOrWhiteSpace($toolVersion)) {
+          $versionArgs = @('--version', $toolVersion)
+        }
+        else {
+          $versionArgs = @('--prerelease')
         }
 
-        throw "Failed to install InSpectra.Discovery.Tool $toolVersion after $maxAttempts attempts."
+        dotnet tool install InSpectra.Discovery.Tool `
+          @versionArgs `
+          --tool-path $toolPath `
+          --configfile $configPath
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to install InSpectra.Discovery.Tool."
+        }
+
+        $toolPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+        $installed = dotnet tool list --tool-path $toolPath |
+          Select-String 'inspectra.discovery.tool' |
+          ForEach-Object { ($_ -split '\s+')[1] }
+        "tool_version=$installed" >> $env:GITHUB_OUTPUT
+        Write-Host "Installed InSpectra.Discovery.Tool $installed."
