@@ -1,6 +1,7 @@
 using InSpectra.Discovery.Tool.Analysis.Auto;
 using InSpectra.Discovery.Tool.Analysis.CliFx;
 using InSpectra.Discovery.Tool.Analysis.Help;
+using InSpectra.Discovery.Tool.Analysis.Hook;
 using InSpectra.Discovery.Tool.Analysis.Static;
 using InSpectra.Discovery.Tool.Analysis.Untrusted;
 using Spectre.Console.Cli;
@@ -60,6 +61,7 @@ try
             analysis.AddCommand<RunCliFxCommand>("run-clifx").WithDescription("Install a CliFx-based tool and synthesize OpenCLI from recursive help crawl.");
             analysis.AddCommand<RunStaticCommand>("run-static").WithDescription("Install a tool and synthesize OpenCLI from dnlib static analysis and help crawl.");
             analysis.AddCommand<RunUntrustedCommand>("run-untrusted").WithDescription("Install a package in an isolated sandbox and capture OpenCLI/XMLDoc outputs.");
+            analysis.AddCommand<RunHookCommand>("run-hook").WithDescription("Install a System.CommandLine tool and capture its command tree via startup hook interception.");
         });
 
         config.AddBranch("docs", docs =>

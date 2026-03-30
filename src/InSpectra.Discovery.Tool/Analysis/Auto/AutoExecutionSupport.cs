@@ -40,6 +40,7 @@ internal static class AutoExecutionSupport
         IAutoHelpRunner helpRunner,
         IAutoCliFxRunner cliFxRunner,
         IAutoStaticRunner staticRunner,
+        IAutoHookRunner hookRunner,
         string packageId,
         string version,
         ToolDescriptor descriptor,
@@ -55,6 +56,21 @@ internal static class AutoExecutionSupport
         CancellationToken cancellationToken)
         => selectedMode switch
         {
+            "hook" => RunHookAsync(
+                hookRunner,
+                packageId,
+                version,
+                descriptor,
+                outputDirectory,
+                batchId,
+                attempt,
+                source,
+                installTimeoutSeconds,
+                analysisTimeoutSeconds,
+                commandTimeoutSeconds,
+                resultPath,
+                nativeResult,
+                cancellationToken),
             "clifx" => RunCliFxAsync(
                 cliFxRunner,
                 packageId,
@@ -186,6 +202,49 @@ internal static class AutoExecutionSupport
             resultPath,
             nativeResult,
             selectedMode: "static",
+            cancellationToken);
+
+    private static Task<JsonObject> RunHookAsync(
+        IAutoHookRunner hookRunner,
+        string packageId,
+        string version,
+        ToolDescriptor descriptor,
+        string outputDirectory,
+        string batchId,
+        int attempt,
+        string source,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        string resultPath,
+        JsonObject? nativeResult,
+        CancellationToken cancellationToken)
+        => AutoSelectedAnalyzerSupport.RunAsync(
+            async token =>
+            {
+                await hookRunner.RunAsync(
+                    packageId,
+                    version,
+                    descriptor.CommandName,
+                    descriptor.CliFramework,
+                    outputDirectory,
+                    batchId,
+                    attempt,
+                    source,
+                    installTimeoutSeconds,
+                    analysisTimeoutSeconds,
+                    commandTimeoutSeconds,
+                    token);
+            },
+            packageId,
+            version,
+            descriptor,
+            batchId,
+            attempt,
+            source,
+            resultPath,
+            nativeResult,
+            selectedMode: "hook",
             cancellationToken);
 
     private static Task<JsonObject> RunHelpAsync(

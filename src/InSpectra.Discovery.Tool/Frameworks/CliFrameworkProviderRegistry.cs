@@ -31,6 +31,10 @@ internal static class CliFrameworkProviderRegistry
     public static bool HasStaticAnalysisSupport(string? cliFramework)
         => ResolveStaticAnalysisAdapter(cliFramework) is not null;
 
+    public static bool HasHookAnalysisSupport(string? cliFramework)
+        => ResolveProviders(cliFramework).Any(static provider =>
+            string.Equals(provider.Name, "System.CommandLine", StringComparison.OrdinalIgnoreCase));
+
     public static StaticAnalysisFrameworkAdapter? ResolveStaticAnalysisAdapter(string? cliFramework)
     {
         foreach (var provider in ResolveProviders(cliFramework))

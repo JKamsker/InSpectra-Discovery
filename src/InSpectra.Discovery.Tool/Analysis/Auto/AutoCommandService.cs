@@ -7,6 +7,7 @@ internal sealed class AutoCommandService
     private readonly IAutoHelpRunner _helpRunner;
     private readonly IAutoCliFxRunner _cliFxRunner;
     private readonly IAutoStaticRunner _staticRunner;
+    private readonly IAutoHookRunner _hookRunner;
 
     public AutoCommandService()
         : this(
@@ -14,7 +15,8 @@ internal sealed class AutoCommandService
             new AutoNativeRunnerAdapter(),
             new AutoHelpRunnerAdapter(),
             new AutoCliFxRunnerAdapter(),
-            new AutoStaticRunnerAdapter())
+            new AutoStaticRunnerAdapter(),
+            new AutoHookRunnerAdapter())
     {
     }
 
@@ -23,13 +25,15 @@ internal sealed class AutoCommandService
         IAutoNativeRunner nativeRunner,
         IAutoHelpRunner helpRunner,
         IAutoCliFxRunner cliFxRunner,
-        IAutoStaticRunner staticRunner)
+        IAutoStaticRunner staticRunner,
+        IAutoHookRunner hookRunner)
     {
         _descriptorResolver = descriptorResolver;
         _nativeRunner = nativeRunner;
         _helpRunner = helpRunner;
         _cliFxRunner = cliFxRunner;
         _staticRunner = staticRunner;
+        _hookRunner = hookRunner;
     }
 
     public Task<int> RunAsync(
@@ -115,6 +119,7 @@ internal sealed class AutoCommandService
             _helpRunner,
             _cliFxRunner,
             _staticRunner,
+            _hookRunner,
             packageId,
             version,
             descriptor,

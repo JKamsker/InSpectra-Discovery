@@ -2,6 +2,7 @@ namespace InSpectra.Discovery.Tool.Analysis.Auto;
 
 using InSpectra.Discovery.Tool.Analysis.CliFx;
 using InSpectra.Discovery.Tool.Analysis.Help;
+using InSpectra.Discovery.Tool.Analysis.Hook;
 using InSpectra.Discovery.Tool.Analysis.Static;
 using InSpectra.Discovery.Tool.Analysis.Untrusted;
 
@@ -97,6 +98,31 @@ internal sealed class AutoCliFxRunnerAdapter : IAutoCliFxRunner
 internal sealed class AutoStaticRunnerAdapter : IAutoStaticRunner
 {
     private readonly StaticService _service = new();
+
+    public async Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+        => await _service.RunQuietAsync(packageId, version, commandName, cliFramework, outputRoot, batchId, attempt, source, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, cancellationToken);
+}
+
+internal interface IAutoHookRunner
+{
+    Task RunAsync(
+        string packageId,
+        string version,
+        string? commandName,
+        string? cliFramework,
+        string outputRoot,
+        string batchId,
+        int attempt,
+        string source,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        CancellationToken cancellationToken);
+}
+
+internal sealed class AutoHookRunnerAdapter : IAutoHookRunner
+{
+    private readonly HookService _service = new();
 
     public async Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
         => await _service.RunQuietAsync(packageId, version, commandName, cliFramework, outputRoot, batchId, attempt, source, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, cancellationToken);
