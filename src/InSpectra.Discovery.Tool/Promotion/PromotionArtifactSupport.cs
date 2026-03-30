@@ -21,22 +21,8 @@ internal static class PromotionArtifactSupport
 
     public static bool TryLoadJsonObject(string path, out JsonObject? document)
     {
-        document = null;
-        if (!File.Exists(path))
-        {
-            return false;
-        }
-
-        try
-        {
-            document = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
-            return document is not null;
-        }
-        catch
-        {
-            document = null;
-            return false;
-        }
+        document = JsonNodeFileLoader.TryLoadJsonObject(path);
+        return document is not null;
     }
 
     public static bool SyncOptionalArtifact(string? artifactDirectory, string? artifactName, string destinationPath)
