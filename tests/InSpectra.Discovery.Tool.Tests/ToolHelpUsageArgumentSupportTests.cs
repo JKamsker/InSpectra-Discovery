@@ -29,6 +29,20 @@ public sealed class ToolHelpUsageArgumentSupportTests
     }
 
     [Fact]
+    public void ExtractUsageArguments_Preserves_Group_Quantifier_As_Sequence()
+    {
+        var arguments = ToolHelpUsageArgumentSupport.ExtractUsageArguments(
+            commandName: "tool",
+            commandPath: "",
+            usageLines: ["tool (<file>)+ [--verbose]"],
+            hasChildCommands: false);
+
+        var argument = Assert.Single(arguments);
+        Assert.Equal("file...", argument.Key);
+        Assert.True(argument.IsRequired);
+    }
+
+    [Fact]
     public void SelectArguments_Prefers_Usage_When_Low_Signal_Explicit_Arguments_Do_Not_Match_Usage_Count()
     {
         var explicitArguments = new[]
