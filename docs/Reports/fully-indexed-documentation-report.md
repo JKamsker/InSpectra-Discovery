@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-30 13:06:50+00:00
+Generated: 2026-03-30 19:05:12+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -16,7 +16,7 @@ Incomplete: 7
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [BellaBaxter.Cli](#pkg-bellabaxter-cli) | 0.1.1-preview.29 | ok | xml-ready | 71/71 | 51/174 | 13/30 | 32/59 | FAIL |
+| [BellaBaxter.Cli](#pkg-bellabaxter-cli) | 0.1.1-preview.36 | ok | xml-ready | 71/71 | 51/174 | 13/30 | 32/59 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
 | [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.45 | ok | xml-ready | 8/8 | 88/88 | 4/4 | 0/5 | FAIL |
 | [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.5 | ok | xml-ready | 253/253 | 2195/2348 | 58/163 | 0/211 | FAIL |
@@ -30,7 +30,7 @@ Incomplete: 7
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
-| [DotnetTokenKiller](#pkg-dotnettokenkiller) | 0.4.0 | ok | xml-ready | 21/21 | 36/36 | 8/8 | 18/18 | PASS |
+| [DotnetTokenKiller](#pkg-dotnettokenkiller) | 0.5.0 | ok | xml-ready | 21/21 | 36/36 | 8/8 | 18/18 | PASS |
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
 
 ## Package Details
@@ -38,7 +38,7 @@ Incomplete: 7
 <a id="pkg-bellabaxter-cli"></a>
 ### BellaBaxter.Cli
 
-- Version: `0.1.1-preview.29`
+- Version: `0.1.1-preview.36`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -276,7 +276,7 @@ Incomplete: 7
 <a id="pkg-dotnettokenkiller"></a>
 ### DotnetTokenKiller
 
-- Version: `0.4.0`
+- Version: `0.5.0`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
