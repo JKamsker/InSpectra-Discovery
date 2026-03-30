@@ -4,13 +4,13 @@ using System.Text.Json.Nodes;
 
 internal sealed class CliFxInstalledToolAnalysisSupport
 {
-    private readonly CliFxToolRuntime _runtime;
+    private readonly CliFxRuntime _runtime;
     private readonly CliFxMetadataInspector _metadataInspector;
     private readonly CliFxOpenCliBuilder _openCliBuilder;
     private readonly CliFxCoverageClassifier _coverageClassifier;
 
     public CliFxInstalledToolAnalysisSupport(
-        CliFxToolRuntime runtime,
+        CliFxRuntime runtime,
         CliFxMetadataInspector metadataInspector,
         CliFxOpenCliBuilder openCliBuilder,
         CliFxCoverageClassifier coverageClassifier)
@@ -32,7 +32,7 @@ internal sealed class CliFxInstalledToolAnalysisSupport
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        var installedTool = await ToolCommandInstallationSupport.InstallToolAsync(
+        var installedTool = await CommandInstallationSupport.InstallToolAsync(
             _runtime,
             result,
             packageId,
@@ -56,7 +56,7 @@ internal sealed class CliFxInstalledToolAnalysisSupport
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         result["coverage"] = coverageJson;
-        ToolCommandInstallationSupport.WriteCrawlArtifact(
+        CommandInstallationSupport.WriteCrawlArtifact(
             outputDirectory,
             result,
             CrawlArtifactBuilder.Build(

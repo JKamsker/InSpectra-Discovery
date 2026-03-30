@@ -4,9 +4,9 @@ using System.Text.Json.Nodes;
 internal sealed class CliFxHelpCrawler
 {
     private readonly CliFxHelpTextParser _parser = new();
-    private readonly CliFxToolRuntime _runtime;
+    private readonly CliFxRuntime _runtime;
 
-    public CliFxHelpCrawler(CliFxToolRuntime runtime)
+    public CliFxHelpCrawler(CliFxRuntime runtime)
     {
         _runtime = runtime;
     }
@@ -100,10 +100,10 @@ internal sealed class CliFxHelpCrawler
         return fallbackCapture ?? new CliFxHelpCapture(null, null, null);
     }
 
-    private static string? SelectBestPayload(CliFxToolRuntime.ProcessResult processResult)
+    private static string? SelectBestPayload(CliFxRuntime.ProcessResult processResult)
     {
-        var stdout = CliFxToolRuntime.NormalizeConsoleText(processResult.Stdout);
-        var stderr = CliFxToolRuntime.NormalizeConsoleText(processResult.Stderr);
+        var stdout = CliFxRuntime.NormalizeConsoleText(processResult.Stdout);
+        var stderr = CliFxRuntime.NormalizeConsoleText(processResult.Stderr);
 
         if (LooksLikeHelp(stdout))
         {
@@ -144,7 +144,7 @@ internal sealed class CliFxHelpCrawler
             : current;
     }
 
-    private static int Score(CliFxToolRuntime.ProcessResult result)
+    private static int Score(CliFxRuntime.ProcessResult result)
     {
         if (result.TimedOut)
         {
@@ -156,8 +156,8 @@ internal sealed class CliFxHelpCrawler
             return 2;
         }
 
-        return string.IsNullOrWhiteSpace(CliFxToolRuntime.NormalizeConsoleText(result.Stdout))
-            && string.IsNullOrWhiteSpace(CliFxToolRuntime.NormalizeConsoleText(result.Stderr))
+        return string.IsNullOrWhiteSpace(CliFxRuntime.NormalizeConsoleText(result.Stdout))
+            && string.IsNullOrWhiteSpace(CliFxRuntime.NormalizeConsoleText(result.Stderr))
             ? 0
             : 1;
     }
@@ -169,7 +169,7 @@ internal sealed class CliFxHelpCrawler
 
     private sealed record CliFxHelpCapture(
         string? HelpSwitch,
-        CliFxToolRuntime.ProcessResult? ProcessResult,
+        CliFxRuntime.ProcessResult? ProcessResult,
         CliFxHelpDocument? Document)
     {
         public JsonObject ToJsonObject(IReadOnlyList<string> commandSegments)
@@ -197,8 +197,8 @@ internal sealed class CliFxHelpCrawler
                 Parsed: Document is not null && (Document.UsageLines.Count > 0 || Document.Options.Count > 0 || Document.Commands.Count > 0),
                 TimedOut: ProcessResult?.TimedOut ?? false,
                 ExitCode: ProcessResult?.ExitCode,
-                Stdout: CliFxToolRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
-                Stderr: CliFxToolRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
+                Stdout: CliFxRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
+                Stderr: CliFxRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
         }
     }
 }

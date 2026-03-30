@@ -96,7 +96,7 @@ internal sealed class PromotionCommandService
 
         RepositoryPathResolver.WriteTextFile(bodyOutputPath, builder.ToString());
         var result = new { bodyOutputPath = Path.GetFullPath(bodyOutputPath) };
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             result,
             [

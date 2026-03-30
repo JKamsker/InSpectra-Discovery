@@ -9,7 +9,7 @@ internal sealed class ToolDescriptorResolver : IToolDescriptorResolver
 {
     public async Task<ToolDescriptor> ResolveAsync(string packageId, string version, CancellationToken cancellationToken)
     {
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         var (leaf, catalogLeaf) = await PackageVersionResolver.ResolveAsync(scope.Client, packageId, version, cancellationToken);
         var packageInspection = await new PackageArchiveInspector(scope.Client).InspectAsync(leaf.PackageContent, cancellationToken);
         var cliFramework = DetectCliFramework(catalogLeaf, packageInspection);

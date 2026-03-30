@@ -9,7 +9,7 @@ internal sealed class CliFxService
         DefaultCliFramework: "CliFx",
         InitializeCoverage: true);
 
-    private readonly CliFxToolRuntime _runtime = new();
+    private readonly CliFxRuntime _runtime = new();
     private readonly CliFxInstalledToolAnalysisSupport _installedToolAnalyzer;
 
     public CliFxService()
@@ -92,7 +92,7 @@ internal sealed class CliFxService
         string? commandName,
         CancellationToken cancellationToken)
     {
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         return await NonSpectreBootstrapSupport.PopulateResultAsync(
             result,
             scope.Client,

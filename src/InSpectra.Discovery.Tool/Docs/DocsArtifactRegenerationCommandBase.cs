@@ -36,7 +36,7 @@ internal abstract class DocsArtifactRegenerationCommandBase : AsyncCommand<DocsA
         var repositoryRoot = settings.RepoRoot ?? RepositoryPathResolver.ResolveRepositoryRoot();
         var rebuildIndexes = !settings.SkipIndexRebuild;
         var result = Regenerate(repositoryRoot, settings.Scope, rebuildIndexes);
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
 
         return await output.WriteSuccessAsync(
             new

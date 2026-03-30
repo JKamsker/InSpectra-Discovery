@@ -14,7 +14,7 @@ internal static class CommandOutputSupport
         string? fallbackFrom = null)
     {
         var resultSummary = LoadResultSummary(resultPath, analysisMode);
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return output.WriteSuccessAsync(
             new AnalysisCommandResult(
                 packageId,

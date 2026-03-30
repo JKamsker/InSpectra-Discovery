@@ -1,6 +1,8 @@
-internal static class ToolCommandSandboxEnvironmentSupport
+namespace InSpectra.Discovery.Tool.Infrastructure;
+
+internal static class CommandSandboxEnvironmentSupport
 {
-    public static ToolCommandRuntime.SandboxEnvironment CreateSandboxEnvironment(string tempRoot)
+    public static CommandRuntime.SandboxEnvironment CreateSandboxEnvironment(string tempRoot)
     {
         var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -35,7 +37,7 @@ internal static class ToolCommandSandboxEnvironmentSupport
         values["APPDATA"] = values["XDG_CONFIG_HOME"];
         values["LOCALAPPDATA"] = values["XDG_DATA_HOME"];
 
-        return new ToolCommandRuntime.SandboxEnvironment(
+        return new CommandRuntime.SandboxEnvironment(
             Values: values,
             Directories:
             [

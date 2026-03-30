@@ -62,7 +62,7 @@ internal sealed class QueueCommandService
 
         RepositoryPathResolver.WriteJsonFile(outputPath, plan);
 
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return output.WriteSuccessAsync(
             plan,
             [
@@ -104,7 +104,7 @@ internal sealed class QueueCommandService
         var selectedItems = new List<UntrustedBatchPlanItem>();
         var skippedItems = new List<object>();
 
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         foreach (var itemNode in selectedSlice)
         {
             if (itemNode is not JsonObject item)
@@ -196,7 +196,7 @@ internal sealed class QueueCommandService
 
         RepositoryPathResolver.WriteJsonFile(outputPath, plan);
 
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             plan,
             [

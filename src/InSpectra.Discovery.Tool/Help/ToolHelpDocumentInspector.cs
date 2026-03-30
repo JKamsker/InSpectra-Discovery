@@ -39,7 +39,7 @@ internal static partial class ToolHelpDocumentInspector
 
     public static bool LooksLikeTerminalNonHelpPayload(string? payload)
     {
-        var normalized = ToolCommandRuntime.NormalizeConsoleText(payload);
+        var normalized = CommandRuntime.NormalizeConsoleText(payload);
         if (string.IsNullOrWhiteSpace(normalized))
         {
             return false;

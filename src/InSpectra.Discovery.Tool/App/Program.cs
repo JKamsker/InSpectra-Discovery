@@ -6,8 +6,8 @@ using InSpectra.Discovery.Tool.Analysis.Untrusted;
 using Spectre.Console.Cli;
 using System.Reflection;
 
-ToolRuntime.Initialize();
-var output = ToolRuntime.CreateOutput();
+Runtime.Initialize();
+var output = Runtime.CreateOutput();
 var jsonRequested = args.Any(arg => string.Equals(arg, "--json", StringComparison.OrdinalIgnoreCase));
 
 try
@@ -87,13 +87,13 @@ try
 }
 catch (OperationCanceledException)
 {
-    return await output.WriteErrorAsync("canceled", "Operation canceled.", 10, jsonRequested, ToolRuntime.CancellationToken);
+    return await output.WriteErrorAsync("canceled", "Operation canceled.", 10, jsonRequested, Runtime.CancellationToken);
 }
 catch (FileNotFoundException ex)
 {
-    return await output.WriteErrorAsync("not-found", ex.Message, 5, jsonRequested, ToolRuntime.CancellationToken);
+    return await output.WriteErrorAsync("not-found", ex.Message, 5, jsonRequested, Runtime.CancellationToken);
 }
 catch (Exception ex)
 {
-    return await output.WriteErrorAsync("error", ex.Message, 1, jsonRequested, ToolRuntime.CancellationToken, ex);
+    return await output.WriteErrorAsync("error", ex.Message, 1, jsonRequested, Runtime.CancellationToken, ex);
 }

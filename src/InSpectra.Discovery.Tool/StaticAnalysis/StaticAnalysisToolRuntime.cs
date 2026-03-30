@@ -1,3 +1,3 @@
-internal sealed class StaticAnalysisToolRuntime : ToolCommandRuntime
+internal sealed class StaticAnalysisRuntime : CommandRuntime
 {
 }

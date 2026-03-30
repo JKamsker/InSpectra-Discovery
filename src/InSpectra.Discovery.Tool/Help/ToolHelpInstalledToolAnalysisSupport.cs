@@ -4,10 +4,10 @@ using System.Text.Json.Nodes;
 
 internal sealed class ToolHelpInstalledToolAnalysisSupport
 {
-    private readonly ToolCommandRuntime _runtime;
+    private readonly CommandRuntime _runtime;
     private readonly ToolHelpOpenCliBuilder _openCliBuilder;
 
-    public ToolHelpInstalledToolAnalysisSupport(ToolCommandRuntime runtime, ToolHelpOpenCliBuilder openCliBuilder)
+    public ToolHelpInstalledToolAnalysisSupport(CommandRuntime runtime, ToolHelpOpenCliBuilder openCliBuilder)
     {
         _runtime = runtime;
         _openCliBuilder = openCliBuilder;
@@ -24,7 +24,7 @@ internal sealed class ToolHelpInstalledToolAnalysisSupport
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        var installedTool = await ToolCommandInstallationSupport.InstallToolAsync(
+        var installedTool = await CommandInstallationSupport.InstallToolAsync(
             _runtime,
             result,
             packageId,
@@ -44,7 +44,7 @@ internal sealed class ToolHelpInstalledToolAnalysisSupport
         crawlStopwatch.Stop();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
-        ToolCommandInstallationSupport.WriteCrawlArtifact(outputDirectory, result, CrawlArtifactBuilder.Build(crawl.Documents.Count, crawl.Captures));
+        CommandInstallationSupport.WriteCrawlArtifact(outputDirectory, result, CrawlArtifactBuilder.Build(crawl.Documents.Count, crawl.Captures));
         if (crawl.Documents.Count == 0)
         {
             NonSpectreResultSupport.ApplyTerminalFailure(

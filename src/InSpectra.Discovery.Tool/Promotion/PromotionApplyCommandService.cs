@@ -131,7 +131,7 @@ internal sealed class PromotionApplyCommandService
             RepositoryPathResolver.WriteJsonFile(summaryOutputPath, summary);
         }
 
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             new
             {

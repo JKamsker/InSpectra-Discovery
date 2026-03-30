@@ -107,7 +107,7 @@ internal sealed class HelpBatchCommandService
             ["skipped"] = skippedItems,
         });
 
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         if (failures.Count > 0)
         {
             return await output.WriteErrorAsync(

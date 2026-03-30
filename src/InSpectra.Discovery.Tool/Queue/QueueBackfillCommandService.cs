@@ -20,7 +20,7 @@ internal sealed class QueueBackfillCommandService
         var skipped = new List<object>();
         var indexedVersionCount = 0;
 
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         foreach (var packageNode in packages)
         {
             if (packageNode is not JsonObject package)
@@ -107,7 +107,7 @@ internal sealed class QueueBackfillCommandService
 
         RepositoryPathResolver.WriteJsonFile(outputPath, queue);
 
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             queue,
             [
@@ -134,7 +134,7 @@ internal sealed class QueueBackfillCommandService
         var computation = await builder.RunAsync(root, currentSnapshotPath, take, cancellationToken);
         RepositoryPathResolver.WriteJsonFile(outputPath, computation.Queue);
 
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             new
             {
@@ -166,7 +166,7 @@ internal sealed class QueueBackfillCommandService
         var computation = await builder.RunAsync(root, currentSnapshotPath, take, cancellationToken);
         RepositoryPathResolver.WriteJsonFile(outputPath, computation.Queue);
 
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             new
             {

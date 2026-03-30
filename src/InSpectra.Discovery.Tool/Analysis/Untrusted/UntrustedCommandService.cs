@@ -85,7 +85,7 @@ internal sealed class UntrustedCommandService
                 Directory.CreateDirectory(directory);
             }
 
-            using var scope = ToolRuntime.CreateNuGetApiClientScope();
+            using var scope = Runtime.CreateNuGetApiClientScope();
             var (registrationLeaf, catalogLeaf) = await PackageVersionResolver.ResolveAsync(scope.Client, packageId, version, cancellationToken);
 
             result["registrationLeafUrl"] = registrationLeaf.Id;

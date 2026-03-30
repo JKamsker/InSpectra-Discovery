@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Infrastructure;
+
 using Spectre.Console.Cli;
 
 internal abstract class GlobalSettings : CommandSettings

@@ -1,10 +1,12 @@
+namespace InSpectra.Discovery.Tool.Infrastructure;
+
 using InSpectra.Discovery.Tool.Analysis;
 using System.Text.Json.Nodes;
 
-internal static class ToolCommandInstallationSupport
+internal static class CommandInstallationSupport
 {
     public static async Task<InstalledToolContext?> InstallToolAsync(
-        ToolCommandRuntime runtime,
+        CommandRuntime runtime,
         JsonObject result,
         string packageId,
         string version,
@@ -35,8 +37,8 @@ internal static class ToolCommandInstallationSupport
                 result,
                 phase: "install",
                 classification: installResult.TimedOut ? "install-timeout" : "install-failed",
-                ToolCommandRuntime.NormalizeConsoleText(installResult.Stdout)
-                ?? ToolCommandRuntime.NormalizeConsoleText(installResult.Stderr)
+                CommandRuntime.NormalizeConsoleText(installResult.Stdout)
+                ?? CommandRuntime.NormalizeConsoleText(installResult.Stderr)
                 ?? "Tool installation failed.");
             return null;
         }

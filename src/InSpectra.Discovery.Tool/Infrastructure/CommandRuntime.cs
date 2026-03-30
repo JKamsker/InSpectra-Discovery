@@ -1,11 +1,13 @@
+namespace InSpectra.Discovery.Tool.Infrastructure;
+
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Nodes;
 
-internal class ToolCommandRuntime
+internal class CommandRuntime
 {
     public SandboxEnvironment CreateSandboxEnvironment(string tempRoot)
-        => ToolCommandSandboxEnvironmentSupport.CreateSandboxEnvironment(tempRoot);
+        => CommandSandboxEnvironmentSupport.CreateSandboxEnvironment(tempRoot);
 
     public virtual Task<ProcessResult> InvokeProcessCaptureAsync(
         string filePath,
@@ -15,7 +17,7 @@ internal class ToolCommandRuntime
         int timeoutSeconds,
         string? sandboxRoot,
         CancellationToken cancellationToken)
-        => ToolCommandProcessSupport.InvokeProcessCaptureAsync(
+        => CommandProcessSupport.InvokeProcessCaptureAsync(
             CreateProcess(filePath, workingDirectory, argumentList, environment),
             timeoutSeconds,
             sandboxRoot,
@@ -23,13 +25,13 @@ internal class ToolCommandRuntime
             TerminateSandboxProcesses);
 
     public void TerminateSandboxProcesses(string? sandboxRoot)
-        => ToolCommandProcessSupport.TerminateSandboxProcesses(sandboxRoot);
+        => CommandProcessSupport.TerminateSandboxProcesses(sandboxRoot);
 
     public string? ResolveInstalledCommandPath(string installDirectory, string commandName)
-        => ToolCommandProcessSupport.ResolveInstalledCommandPath(installDirectory, commandName);
+        => CommandProcessSupport.ResolveInstalledCommandPath(installDirectory, commandName);
 
     public static string? NormalizeConsoleText(string? value)
-        => ToolCommandProcessSupport.NormalizeConsoleText(value);
+        => CommandProcessSupport.NormalizeConsoleText(value);
 
     private static Process CreateProcess(
         string filePath,

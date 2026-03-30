@@ -7,7 +7,7 @@ internal sealed class ToolHelpService
         TempRootPrefix: "inspectra-help",
         TimeoutLabel: "Help analysis");
 
-    private readonly ToolCommandRuntime _runtime = new();
+    private readonly CommandRuntime _runtime = new();
     private readonly ToolHelpInstalledToolAnalysisSupport _installedToolAnalyzer;
 
     public ToolHelpService()
@@ -86,7 +86,7 @@ internal sealed class ToolHelpService
         string? commandName,
         CancellationToken cancellationToken)
     {
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         return await NonSpectreBootstrapSupport.PopulateResultAsync(
             result,
             scope.Client,

@@ -34,7 +34,7 @@ internal static class CliFxCrawlReplaySupport
 
     private static string? ExtractPayload(JsonObject capture)
     {
-        var payload = ToolCommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>());
+        var payload = CommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>());
         return !string.IsNullOrWhiteSpace(payload)
             ? payload
             : SelectBestPayload(capture["result"] as JsonObject);
@@ -47,8 +47,8 @@ internal static class CliFxCrawlReplaySupport
             return null;
         }
 
-        var stdout = ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>());
-        var stderr = ToolCommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
+        var stdout = CommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>());
+        var stderr = CommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
 
         if (LooksLikeHelp(stdout))
         {

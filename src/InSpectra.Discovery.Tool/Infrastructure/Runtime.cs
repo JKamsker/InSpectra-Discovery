@@ -1,6 +1,8 @@
+namespace InSpectra.Discovery.Tool.Infrastructure;
+
 using System.Net;
 
-internal static class ToolRuntime
+internal static class Runtime
 {
     private static readonly CancellationTokenSource CancellationSource = new();
     private static int _initialized;

@@ -4,9 +4,9 @@ internal sealed class ToolHelpCrawler
 {
     private const int MaxCommandDepth = 8;
     private readonly ToolHelpTextParser _parser = new();
-    private readonly ToolCommandRuntime _runtime;
+    private readonly CommandRuntime _runtime;
 
-    public ToolHelpCrawler(ToolCommandRuntime runtime)
+    public ToolHelpCrawler(CommandRuntime runtime)
     {
         _runtime = runtime;
     }
@@ -117,7 +117,7 @@ internal sealed class ToolHelpCrawler
     private ToolHelpCapture BuildCapture(
         IReadOnlyList<string> commandSegments,
         IReadOnlyList<string> invokedArguments,
-        ToolCommandRuntime.ProcessResult processResult)
+        CommandRuntime.ProcessResult processResult)
     {
         var helpInvocation = invokedArguments.Count == 0
             ? null
@@ -160,7 +160,7 @@ internal sealed class ToolHelpCrawler
 
     private sealed record ToolHelpCapture(
         string? HelpInvocation,
-        ToolCommandRuntime.ProcessResult? ProcessResult,
+        CommandRuntime.ProcessResult? ProcessResult,
         ToolHelpDocument? Document,
         string? ParsedPayload,
         bool IsTerminalNonHelp)
@@ -189,8 +189,8 @@ internal sealed class ToolHelpCrawler
                 TerminalNonHelp: IsTerminalNonHelp,
                 TimedOut: ProcessResult?.TimedOut ?? false,
                 ExitCode: ProcessResult?.ExitCode,
-                Stdout: ToolCommandRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
-                Stderr: ToolCommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
+                Stdout: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
+                Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
         }
     }
 

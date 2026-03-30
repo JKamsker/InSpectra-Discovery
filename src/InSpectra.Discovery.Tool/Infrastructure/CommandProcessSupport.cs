@@ -1,13 +1,15 @@
+namespace InSpectra.Discovery.Tool.Infrastructure;
+
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 
-internal static partial class ToolCommandProcessSupport
+internal static partial class CommandProcessSupport
 {
     private static readonly TimeSpan ExitGracePeriod = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan OutputDrainGracePeriod = TimeSpan.FromSeconds(1);
 
-    public static async Task<ToolCommandRuntime.ProcessResult> InvokeProcessCaptureAsync(
+    public static async Task<CommandRuntime.ProcessResult> InvokeProcessCaptureAsync(
         Process process,
         int timeoutSeconds,
         string? sandboxRoot,
@@ -50,7 +52,7 @@ internal static partial class ToolCommandProcessSupport
             }
 
             stopwatch.Stop();
-            return new ToolCommandRuntime.ProcessResult(
+            return new CommandRuntime.ProcessResult(
                 Status: timedOut ? "timed-out" : ownedProcess.ExitCode == 0 ? "ok" : "failed",
                 TimedOut: timedOut,
                 ExitCode: timedOut ? null : ownedProcess.ExitCode,

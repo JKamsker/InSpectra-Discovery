@@ -50,7 +50,7 @@ internal sealed class StaticAnalysisCrawlOpenCliSupport
 
     private static string? ExtractPayload(JsonObject capture)
     {
-        var payload = ToolCommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>());
+        var payload = CommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>());
         if (!string.IsNullOrWhiteSpace(payload))
         {
             return payload;
@@ -62,8 +62,8 @@ internal sealed class StaticAnalysisCrawlOpenCliSupport
             return null;
         }
 
-        return ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>())
-            ?? ToolCommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
+        return CommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>())
+            ?? CommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
     }
 
     private static string ResolveFramework(string? cliFramework)

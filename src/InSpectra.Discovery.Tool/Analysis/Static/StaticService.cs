@@ -9,7 +9,7 @@ internal sealed class StaticService
         DefaultCliFramework: "CommandLineParser",
         InitializeCoverage: true);
 
-    private readonly StaticAnalysisToolRuntime _runtime = new();
+    private readonly StaticAnalysisRuntime _runtime = new();
     private readonly StaticInstalledToolAnalysisSupport _installedToolAnalyzer;
 
     public StaticService()
@@ -92,7 +92,7 @@ internal sealed class StaticService
         string? commandName,
         CancellationToken cancellationToken)
     {
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         return await NonSpectreBootstrapSupport.PopulateResultAsync(
             result,
             scope.Client,

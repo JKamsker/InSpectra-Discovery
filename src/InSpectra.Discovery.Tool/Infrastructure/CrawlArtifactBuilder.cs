@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Infrastructure;
+
 using System.Text.Json.Nodes;
 
 internal static class CrawlArtifactBuilder

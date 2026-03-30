@@ -4,8 +4,8 @@ internal sealed class CatalogCommandService
 {
     public async Task<int> RunBuildAsync(BootstrapOptions options, CancellationToken cancellationToken)
     {
-        var output = ToolRuntime.CreateOutput();
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        var output = Runtime.CreateOutput();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         var bootstrapper = new CurrentDotnetToolIndexBootstrapper(scope.Client);
         var snapshot = await bootstrapper.RunAsync(
             options,
@@ -36,8 +36,8 @@ internal sealed class CatalogCommandService
 
     public async Task<int> RunDeltaDiscoverAsync(IndexDeltaOptions options, CancellationToken cancellationToken)
     {
-        var output = ToolRuntime.CreateOutput();
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        var output = Runtime.CreateOutput();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         var discoverer = new DotnetToolCatalogDeltaDiscoverer(scope.Client);
         var computation = await discoverer.RunAsync(
             options,
@@ -80,8 +80,8 @@ internal sealed class CatalogCommandService
 
     public async Task<int> RunDeltaQueueSpectreCliAsync(IndexDeltaSpectreConsoleCliOptions options, CancellationToken cancellationToken)
     {
-        var output = ToolRuntime.CreateOutput();
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        var output = Runtime.CreateOutput();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         var builder = new SpectreConsoleCliDeltaQueueBuilder(scope.Client);
         var computation = await builder.RunAsync(
             options,
@@ -118,7 +118,7 @@ internal sealed class CatalogCommandService
 
     public async Task<int> RunDeltaQueueAllToolsAsync(IndexDeltaAllToolsOptions options, CancellationToken cancellationToken)
     {
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         var builder = new DotnetToolDeltaQueueBuilder();
         var computation = await builder.RunAsync(
             options,
@@ -154,8 +154,8 @@ internal sealed class CatalogCommandService
 
     public async Task<int> RunFilterAsync(SpectreConsoleFilterOptions options, CancellationToken cancellationToken)
     {
-        var output = ToolRuntime.CreateOutput();
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        var output = Runtime.CreateOutput();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         var filter = new SpectreConsoleCatalogFilter(scope.Client);
         var snapshot = await filter.RunAsync(
             options,
@@ -188,8 +188,8 @@ internal sealed class CatalogCommandService
 
     public async Task<int> RunCliFxFilterAsync(CliFxFilterOptions options, CancellationToken cancellationToken)
     {
-        var output = ToolRuntime.CreateOutput();
-        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        var output = Runtime.CreateOutput();
+        using var scope = Runtime.CreateNuGetApiClientScope();
         var filter = new CliFxCatalogFilter(scope.Client);
         var snapshot = await filter.RunAsync(
             options,

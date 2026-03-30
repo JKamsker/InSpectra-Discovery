@@ -1,3 +1,3 @@
-internal sealed class CliFxToolRuntime : ToolCommandRuntime
+internal sealed class CliFxRuntime : CommandRuntime
 {
 }

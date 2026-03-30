@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 internal static class NonSpectreExecutionSupport
 {
     public static Task<int> RunQuietAsync(
-        ToolCommandRuntime runtime,
+        CommandRuntime runtime,
         NonSpectreAnalysisExecutionDefinition definition,
         Func<JsonObject, string, string, string?, CancellationToken, Task<NonSpectreAnalysisBootstrapResult>> bootstrapAsync,
         Func<NonSpectreInstalledToolAnalysisRequest, CancellationToken, Task> analyzeAsync,
@@ -43,7 +43,7 @@ internal static class NonSpectreExecutionSupport
             cancellationToken);
 
     public static Task<int> RunAsync(
-        ToolCommandRuntime runtime,
+        CommandRuntime runtime,
         NonSpectreAnalysisExecutionDefinition definition,
         Func<JsonObject, string, string, string?, CancellationToken, Task<NonSpectreAnalysisBootstrapResult>> bootstrapAsync,
         Func<NonSpectreInstalledToolAnalysisRequest, CancellationToken, Task> analyzeAsync,
@@ -81,7 +81,7 @@ internal static class NonSpectreExecutionSupport
             cancellationToken);
 
     private static async Task<int> RunCoreAsync(
-        ToolCommandRuntime runtime,
+        CommandRuntime runtime,
         NonSpectreAnalysisExecutionDefinition definition,
         Func<JsonObject, string, string, string?, CancellationToken, Task<NonSpectreAnalysisBootstrapResult>> bootstrapAsync,
         Func<NonSpectreInstalledToolAnalysisRequest, CancellationToken, Task> analyzeAsync,
@@ -232,7 +232,7 @@ internal static class NonSpectreExecutionSupport
     private static string? ResolveCliFramework(string? cliFramework, string? defaultCliFramework)
         => !string.IsNullOrWhiteSpace(cliFramework) ? cliFramework : defaultCliFramework;
 
-    private static void CleanupTempRoot(ToolCommandRuntime runtime, string tempRoot)
+    private static void CleanupTempRoot(CommandRuntime runtime, string tempRoot)
     {
         runtime.TerminateSandboxProcesses(tempRoot);
         if (!Directory.Exists(tempRoot))

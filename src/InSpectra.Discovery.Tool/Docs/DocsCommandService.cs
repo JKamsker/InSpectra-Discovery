@@ -8,7 +8,7 @@ internal sealed class DocsCommandService
     {
         var root = RepositoryPathResolver.ResolveRepositoryRoot(repositoryRoot);
         var result = RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex);
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
 
         return await output.WriteSuccessAsync(
             new
@@ -43,7 +43,7 @@ internal sealed class DocsCommandService
         var browserIndex = DocsBrowserIndexSupport.BuildBrowserIndex(allIndex, outputFile, cancellationToken);
 
         RepositoryPathResolver.WriteJsonFile(outputFile, browserIndex);
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             browserIndex,
             [
@@ -77,7 +77,7 @@ internal sealed class DocsCommandService
             outputPath = reportFile,
         };
 
-        var output = ToolRuntime.CreateOutput();
+        var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             result,
             [

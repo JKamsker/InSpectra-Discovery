@@ -39,7 +39,7 @@ internal static class ToolHelpCapturePayloadSupport
         ToolHelpTextParser parser,
         IReadOnlyList<string> commandSegments,
         IReadOnlyList<string> invokedArguments,
-        ToolCommandRuntime.ProcessResult processResult)
+        CommandRuntime.ProcessResult processResult)
     {
         var helpInvocation = invokedArguments.Count == 0
             ? null
@@ -131,20 +131,20 @@ internal static class ToolHelpCapturePayloadSupport
             : 0;
     }
 
-    private static IReadOnlyList<string> EnumeratePayloadCandidates(ToolCommandRuntime.ProcessResult processResult)
+    private static IReadOnlyList<string> EnumeratePayloadCandidates(CommandRuntime.ProcessResult processResult)
         => EnumeratePayloadCandidates(
             storedPayload: null,
-            stdout: ToolCommandRuntime.NormalizeConsoleText(processResult.Stdout),
-            stderr: ToolCommandRuntime.NormalizeConsoleText(processResult.Stderr));
+            stdout: CommandRuntime.NormalizeConsoleText(processResult.Stdout),
+            stderr: CommandRuntime.NormalizeConsoleText(processResult.Stderr));
 
     private static IReadOnlyList<string> EnumeratePayloadCandidates(JsonObject capture)
         => EnumeratePayloadCandidates(
-            storedPayload: ToolCommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>()),
+            storedPayload: CommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>()),
             stdout: capture["result"] is JsonObject processResult
-                ? ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>())
+                ? CommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>())
                 : null,
             stderr: capture["result"] is JsonObject processResultValue
-                ? ToolCommandRuntime.NormalizeConsoleText(processResultValue["stderr"]?.GetValue<string>())
+                ? CommandRuntime.NormalizeConsoleText(processResultValue["stderr"]?.GetValue<string>())
                 : null);
 
     private static IReadOnlyList<string> EnumeratePayloadCandidates(string? storedPayload, string? stdout, string? stderr)

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Infrastructure;
+
 internal static class PackageVersionResolver
 {
     public static async Task<(RegistrationLeafDocument Leaf, CatalogLeaf CatalogLeaf)> ResolveAsync(

@@ -4,13 +4,13 @@ using System.Text.Json.Nodes;
 
 internal sealed class StaticInstalledToolAnalysisSupport
 {
-    private readonly StaticAnalysisToolRuntime _runtime;
+    private readonly StaticAnalysisRuntime _runtime;
     private readonly StaticAnalysisAssemblyInspectionSupport _assemblyInspectionSupport;
     private readonly StaticAnalysisOpenCliBuilder _openCliBuilder;
     private readonly StaticAnalysisCoverageClassifier _coverageClassifier;
 
     public StaticInstalledToolAnalysisSupport(
-        StaticAnalysisToolRuntime runtime,
+        StaticAnalysisRuntime runtime,
         StaticAnalysisAssemblyInspectionSupport assemblyInspectionSupport,
         StaticAnalysisOpenCliBuilder openCliBuilder,
         StaticAnalysisCoverageClassifier coverageClassifier)
@@ -33,7 +33,7 @@ internal sealed class StaticInstalledToolAnalysisSupport
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        var installedTool = await ToolCommandInstallationSupport.InstallToolAsync(
+        var installedTool = await CommandInstallationSupport.InstallToolAsync(
             _runtime,
             result,
             packageId,
@@ -64,7 +64,7 @@ internal sealed class StaticInstalledToolAnalysisSupport
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         result["coverage"] = coverageJson;
-        ToolCommandInstallationSupport.WriteCrawlArtifact(
+        CommandInstallationSupport.WriteCrawlArtifact(
             outputDirectory,
             result,
             CrawlArtifactBuilder.Build(
