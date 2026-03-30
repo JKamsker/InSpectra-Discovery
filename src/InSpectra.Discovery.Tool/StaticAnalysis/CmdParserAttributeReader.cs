@@ -117,10 +117,10 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
         var metaValue = GetNamedArgumentString(attribute, "MetaValue");
         var isHidden = GetNamedArgumentBool(attribute, "Hidden");
         var propertyType = property.PropertySig?.RetType;
-        var clrType = GetClrTypeName(propertyType);
-        var isBoolLike = IsBoolType(propertyType);
-        var isSequence = IsSequenceType(propertyType);
-        var acceptedValues = GetAcceptedValues(propertyType, module);
+        var clrType = StaticAnalysisTypeSupport.GetClrTypeName(propertyType);
+        var isBoolLike = StaticAnalysisTypeSupport.IsBoolType(propertyType);
+        var isSequence = StaticAnalysisTypeSupport.IsSequenceType(propertyType);
+        var acceptedValues = StaticAnalysisTypeSupport.GetAcceptedValues(propertyType);
 
         return new StaticOptionDefinition(
             LongName: longName,
@@ -144,9 +144,9 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
         var metaName = GetNamedArgumentString(attribute, "MetaName");
         var defaultValue = GetNamedArgumentValueAsString(attribute, "Default");
         var propertyType = property.PropertySig?.RetType;
-        var clrType = GetClrTypeName(propertyType);
-        var isSequence = IsSequenceType(propertyType);
-        var acceptedValues = GetAcceptedValues(propertyType, module);
+        var clrType = StaticAnalysisTypeSupport.GetClrTypeName(propertyType);
+        var isSequence = StaticAnalysisTypeSupport.IsSequenceType(propertyType);
+        var acceptedValues = StaticAnalysisTypeSupport.GetAcceptedValues(propertyType);
 
         return new StaticValueDefinition(
             Index: index,
@@ -304,99 +304,6 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
         }
 
         return null;
-    }
-
-    private static IReadOnlyList<string> GetAcceptedValues(TypeSig? typeSig, ModuleDefMD module)
-    {
-        var resolvedType = UnwrapNullable(typeSig)?.ToTypeDefOrRef()?.ResolveTypeDef();
-        if (resolvedType is null || !resolvedType.IsEnum)
-        {
-            return [];
-        }
-
-        return resolvedType.Fields
-            .Where(field => !field.IsSpecialName && field.IsStatic)
-            .Select(field => field.Name.String)
-            .ToArray();
-    }
-
-    private static string? GetClrTypeName(TypeSig? typeSig)
-    {
-        if (typeSig is null)
-        {
-            return null;
-        }
-
-        if (typeSig is SZArraySig arraySig)
-        {
-            return $"{GetClrTypeName(arraySig.Next)}[]";
-        }
-
-        if (typeSig is GenericInstSig genericInstSig)
-        {
-            var genericName = genericInstSig.GenericType?.FullName?.Split('`')[0];
-            if (string.Equals(genericName, "System.Nullable", StringComparison.Ordinal)
-                && genericInstSig.GenericArguments.Count == 1)
-            {
-                return $"System.Nullable<{GetClrTypeName(genericInstSig.GenericArguments[0])}>";
-            }
-
-            var args = string.Join(", ", genericInstSig.GenericArguments.Select(GetClrTypeName));
-            return $"{genericName}<{args}>";
-        }
-
-        return typeSig.FullName;
-    }
-
-    private static bool IsBoolType(TypeSig? typeSig)
-    {
-        var unwrapped = UnwrapNullable(typeSig);
-        return string.Equals(unwrapped?.FullName, "System.Boolean", StringComparison.Ordinal);
-    }
-
-    private static bool IsSequenceType(TypeSig? typeSig)
-    {
-        if (typeSig is SZArraySig)
-        {
-            return true;
-        }
-
-        if (string.Equals(typeSig?.FullName, "System.String", StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        if (typeSig is GenericInstSig genericInstSig)
-        {
-            var genericName = genericInstSig.GenericType?.FullName?.Split('`')[0];
-            if (string.Equals(genericName, "System.Nullable", StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            return genericName is "System.Collections.Generic.IEnumerable"
-                or "System.Collections.Generic.IList"
-                or "System.Collections.Generic.ICollection"
-                or "System.Collections.Generic.IReadOnlyList"
-                or "System.Collections.Generic.IReadOnlyCollection"
-                or "System.Collections.Generic.List"
-                or "System.Collections.Generic.HashSet"
-                or "System.Collections.Generic.ISet";
-        }
-
-        return false;
-    }
-
-    private static TypeSig? UnwrapNullable(TypeSig? typeSig)
-    {
-        if (typeSig is GenericInstSig genericInstSig
-            && string.Equals(genericInstSig.GenericType?.FullName?.Split('`')[0], "System.Nullable", StringComparison.Ordinal)
-            && genericInstSig.GenericArguments.Count == 1)
-        {
-            return genericInstSig.GenericArguments[0];
-        }
-
-        return typeSig;
     }
 
     private static int Score(StaticCommandDefinition definition)
