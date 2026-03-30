@@ -2,6 +2,8 @@ using System.Text.Json.Nodes;
 
 internal sealed class StaticAnalysisOpenCliBuilder
 {
+    private readonly OpenCliCommandTreeBuilder _commandTreeBuilder = new();
+
     public JsonObject Build(
         string commandName,
         string packageVersion,
@@ -26,7 +28,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
             ["x-inspectra"] = BuildExtensionMetadata(framework, staticCommands, helpDocuments),
         };
 
-        var commandNodes = BuildCommandNodes(staticCommands, helpDocuments);
+        var commandNodes = BuildCommandNodes(commandName, staticCommands, helpDocuments);
         if (commandNodes.Count > 0)
         {
             document["commands"] = commandNodes;
@@ -69,70 +71,76 @@ internal sealed class StaticAnalysisOpenCliBuilder
         };
     }
 
-    private static JsonArray BuildCommandNodes(
+    private JsonArray BuildCommandNodes(
+        string commandName,
         IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
         IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
     {
-        var commandNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var key in staticCommands.Keys.Where(k => !string.IsNullOrEmpty(k)))
+        var nodes = _commandTreeBuilder.Build(BuildCommandDescriptors(commandName, staticCommands, helpDocuments));
+        return new JsonArray(nodes.Select(node => BuildCommandNode(node, staticCommands, helpDocuments)).ToArray());
+    }
+
+    private static IEnumerable<OpenCliCommandDescriptor> BuildCommandDescriptors(
+        string commandName,
+        IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
+        IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
+    {
+        foreach (var pair in staticCommands.Where(pair => !string.IsNullOrWhiteSpace(pair.Key)))
         {
-            commandNames.Add(key);
+            yield return new OpenCliCommandDescriptor(pair.Key, pair.Value.Description);
         }
 
-        foreach (var key in helpDocuments.Keys.Where(k => !string.IsNullOrEmpty(k)))
+        foreach (var pair in helpDocuments)
         {
-            commandNames.Add(key);
-        }
-
-        if (helpDocuments.TryGetValue(string.Empty, out var rootHelp))
-        {
-            foreach (var command in rootHelp.Commands)
+            if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryInventoryEcho(pair.Key, pair.Value))
             {
-                if (!string.IsNullOrWhiteSpace(command.Key)
-                    && !string.Equals(command.Key, "help", StringComparison.OrdinalIgnoreCase)
-                    && !string.Equals(command.Key, "version", StringComparison.OrdinalIgnoreCase))
+                continue;
+            }
+
+            foreach (var child in pair.Value.Commands)
+            {
+                var childFullName = ToolHelpCommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);
+                if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryCommandPath(childFullName))
                 {
-                    commandNames.Add(command.Key);
+                    continue;
                 }
+
+                yield return new OpenCliCommandDescriptor(childFullName, child.Description);
             }
         }
 
-        var nodes = new JsonArray();
-        foreach (var name in commandNames.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+        foreach (var pair in helpDocuments.Where(pair => !string.IsNullOrWhiteSpace(pair.Key)))
         {
-            staticCommands.TryGetValue(name, out var staticCommand);
-            helpDocuments.TryGetValue(name, out var helpDocument);
-
-            var rootHelpCommand = rootHelp?.Commands.FirstOrDefault(c =>
-                string.Equals(c.Key, name, StringComparison.OrdinalIgnoreCase));
-
-            nodes.Add(BuildCommandNode(
-                name,
-                staticCommand,
-                helpDocument,
-                helpDocument?.CommandDescription ?? staticCommand?.Description ?? rootHelpCommand?.Description));
+            yield return new OpenCliCommandDescriptor(pair.Key, pair.Value.CommandDescription);
         }
-
-        return nodes;
     }
 
     private static JsonObject BuildCommandNode(
-        string name,
-        StaticCommandDefinition? staticCommand,
-        ToolHelpDocument? helpDocument,
-        string? description)
+        OpenCliCommandTreeNode commandNode,
+        IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
+        IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
     {
+        staticCommands.TryGetValue(commandNode.FullName, out var staticCommand);
+        helpDocuments.TryGetValue(commandNode.FullName, out var helpDocument);
+
         var node = new JsonObject
         {
-            ["name"] = name,
+            ["name"] = commandNode.DisplayName,
             ["hidden"] = staticCommand?.IsHidden ?? false,
         };
-        AddIfPresent(node, "description", description);
+        AddIfPresent(node, "description", helpDocument?.CommandDescription ?? staticCommand?.Description ?? commandNode.Description);
 
         var options = BuildOptions(staticCommand, helpDocument);
         AddIfPresent(node, "options", options);
         var arguments = BuildArguments(staticCommand, helpDocument);
         AddIfPresent(node, "arguments", arguments);
+
+        if (commandNode.Children.Count > 0)
+        {
+            node["commands"] = new JsonArray(commandNode.Children
+                .Select(child => BuildCommandNode(child, staticCommands, helpDocuments))
+                .ToArray());
+        }
 
         return node;
     }

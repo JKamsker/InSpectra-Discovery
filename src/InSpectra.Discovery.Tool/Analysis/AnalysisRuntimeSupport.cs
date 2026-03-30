@@ -14,9 +14,12 @@ internal static class AnalysisRuntimeSupport
         {
             ["HOME"] = Path.Combine(tempRoot, "home"),
             ["DOTNET_CLI_HOME"] = Path.Combine(tempRoot, "dotnet-home"),
+            ["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"] = "0",
             ["DOTNET_SKIP_FIRST_TIME_EXPERIENCE"] = "1",
             ["DOTNET_NOLOGO"] = "1",
             ["DOTNET_CLI_TELEMETRY_OPTOUT"] = "1",
+            ["DOTNET_CLI_WORKLOAD_UPDATE_NOTIFY_DISABLE"] = "1",
+            ["DOTNET_GENERATE_ASPNET_CERTIFICATE"] = "0",
             ["DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTION"] = "0",
             ["NUGET_PACKAGES"] = Path.Combine(tempRoot, "nuget-packages"),
             ["NUGET_HTTP_CACHE_PATH"] = Path.Combine(tempRoot, "nuget-http-cache"),
