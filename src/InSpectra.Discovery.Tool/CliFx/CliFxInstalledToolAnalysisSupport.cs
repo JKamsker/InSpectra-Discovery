@@ -1,3 +1,4 @@
+using InSpectra.Discovery.Tool.Analysis;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 
@@ -64,7 +65,7 @@ internal sealed class CliFxInstalledToolAnalysisSupport
                 CliFxCrawlArtifactSupport.BuildMetadata(staticCommands, coverageJson)));
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+            NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "crawl",
                 classification: "clifx-crawl-empty",
@@ -85,7 +86,7 @@ internal sealed class CliFxInstalledToolAnalysisSupport
 
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "clifx-crawl", artifactSource: "crawled-from-clifx-help");
+        NonSpectreResultSupport.ApplySuccess(result, classification: "clifx-crawl", artifactSource: "crawled-from-clifx-help");
     }
 
     private static Dictionary<string, CliFxCommandDefinition> NormalizeCommandLookup(IReadOnlyDictionary<string, CliFxCommandDefinition> commands)

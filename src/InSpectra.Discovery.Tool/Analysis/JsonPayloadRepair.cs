@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Analysis;
+
 using System.Text;
 
 internal static class JsonPayloadRepair

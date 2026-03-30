@@ -1,3 +1,4 @@
+using InSpectra.Discovery.Tool.Analysis;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 
@@ -46,7 +47,7 @@ internal sealed class ToolHelpInstalledToolAnalysisSupport
         ToolCommandInstallationSupport.WriteCrawlArtifact(outputDirectory, result, CrawlArtifactBuilder.Build(crawl.Documents.Count, crawl.Captures));
         if (crawl.Documents.Count == 0)
         {
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+            NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "crawl",
                 classification: "help-crawl-empty",
@@ -67,7 +68,7 @@ internal sealed class ToolHelpInstalledToolAnalysisSupport
 
         if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
         {
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+            NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "opencli",
                 classification: "invalid-opencli-artifact",
@@ -77,6 +78,6 @@ internal sealed class ToolHelpInstalledToolAnalysisSupport
 
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "help-crawl", artifactSource: "crawled-from-help");
+        NonSpectreResultSupport.ApplySuccess(result, classification: "help-crawl", artifactSource: "crawled-from-help");
     }
 }

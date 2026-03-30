@@ -1,3 +1,4 @@
+using InSpectra.Discovery.Tool.Analysis;
 using System.Text.Json.Nodes;
 
 internal static class ToolCommandInstallationSupport
@@ -30,7 +31,7 @@ internal static class ToolCommandInstallationSupport
 
         if (installResult.TimedOut || installResult.ExitCode != 0)
         {
-            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+            NonSpectreResultSupport.ApplyRetryableFailure(
                 result,
                 phase: "install",
                 classification: installResult.TimedOut ? "install-timeout" : "install-failed",
@@ -43,7 +44,7 @@ internal static class ToolCommandInstallationSupport
         var commandPath = runtime.ResolveInstalledCommandPath(installDirectory, commandName);
         if (commandPath is null)
         {
-            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+            NonSpectreResultSupport.ApplyRetryableFailure(
                 result,
                 phase: "install",
                 classification: "installed-command-missing",

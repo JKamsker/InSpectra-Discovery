@@ -1,16 +1,17 @@
 using System.IO.Compression;
 using System.Text.Json.Nodes;
+using InSpectra.Discovery.Tool.Analysis;
 
 internal sealed class QueueCommandService
 {
-    private readonly IToolAnalysisDescriptorResolver _descriptorResolver;
+    private readonly IToolDescriptorResolver _descriptorResolver;
 
     public QueueCommandService()
-        : this(new ToolAnalysisDescriptorResolver())
+        : this(new ToolDescriptorResolver())
     {
     }
 
-    internal QueueCommandService(IToolAnalysisDescriptorResolver descriptorResolver)
+    internal QueueCommandService(IToolDescriptorResolver descriptorResolver)
     {
         _descriptorResolver = descriptorResolver;
     }
@@ -148,7 +149,7 @@ internal sealed class QueueCommandService
             }
 
             var runnerSelection = await RunnerSelectionResolver.ResolveForPlanItemAsync(item, skipRunnerInspection, scope.Client, cancellationToken);
-            ToolAnalysisDescriptor? analysisDescriptor = null;
+            ToolDescriptor? analysisDescriptor = null;
             string? analysisDescriptorError = null;
             try
             {

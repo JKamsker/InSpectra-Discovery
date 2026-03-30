@@ -1,14 +1,15 @@
+using InSpectra.Discovery.Tool.Analysis;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 
-internal sealed class StaticAnalysisInstalledToolAnalysisSupport
+internal sealed class StaticInstalledToolAnalysisSupport
 {
     private readonly StaticAnalysisToolRuntime _runtime;
     private readonly StaticAnalysisAssemblyInspectionSupport _assemblyInspectionSupport;
     private readonly StaticAnalysisOpenCliBuilder _openCliBuilder;
     private readonly StaticAnalysisCoverageClassifier _coverageClassifier;
 
-    public StaticAnalysisInstalledToolAnalysisSupport(
+    public StaticInstalledToolAnalysisSupport(
         StaticAnalysisToolRuntime runtime,
         StaticAnalysisAssemblyInspectionSupport assemblyInspectionSupport,
         StaticAnalysisOpenCliBuilder openCliBuilder,
@@ -73,7 +74,7 @@ internal sealed class StaticAnalysisInstalledToolAnalysisSupport
 
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+            NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "crawl",
                 classification: "static-crawl-empty",
@@ -95,7 +96,7 @@ internal sealed class StaticAnalysisInstalledToolAnalysisSupport
 
         if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
         {
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+            NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "opencli",
                 classification: "invalid-opencli-artifact",
@@ -105,7 +106,7 @@ internal sealed class StaticAnalysisInstalledToolAnalysisSupport
 
         RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
         result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "static-crawl", artifactSource: "static-analysis");
+        NonSpectreResultSupport.ApplySuccess(result, classification: "static-crawl", artifactSource: "static-analysis");
     }
 
     private static bool ApplyInspectionFailure(JsonObject result, StaticAnalysisAssemblyInspectionResult inspection)
@@ -114,7 +115,7 @@ internal sealed class StaticAnalysisInstalledToolAnalysisSupport
         {
             result["inspectionOutcome"] = inspection.InspectionOutcome;
             result["cliFramework"] = null;
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+            NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "static-analysis",
                 classification: "custom-parser",
@@ -125,7 +126,7 @@ internal sealed class StaticAnalysisInstalledToolAnalysisSupport
         if (inspection.InspectionOutcome is "no-attributes")
         {
             result["inspectionOutcome"] = inspection.InspectionOutcome;
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+            NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "static-analysis",
                 classification: "custom-parser-no-attributes",
