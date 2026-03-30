@@ -41,7 +41,17 @@ internal static class RepositoryPackageIndexBuilder
                 packageGroup.Select(record => record.Metadata!).ToList(),
                 currentSnapshotLookup,
                 existingSummary);
-            SyncLatestDirectory(repositoryRoot, latestRecord.VersionDirectory, Path.Combine(packagesRoot, lowerId, "latest"));
+            var latestDir = Path.Combine(packagesRoot, lowerId, "latest");
+            SyncLatestDirectory(repositoryRoot, latestRecord.VersionDirectory, latestDir);
+            if (summary["latestPaths"] is JsonObject latestPaths)
+            {
+                if (!File.Exists(Path.Combine(latestDir, "opencli.json")))
+                    latestPaths["opencliPath"] = null;
+                if (!File.Exists(Path.Combine(latestDir, "crawl.json")))
+                    latestPaths["crawlPath"] = null;
+                if (!File.Exists(Path.Combine(latestDir, "xmldoc.xml")))
+                    latestPaths["xmldocPath"] = null;
+            }
             RepositoryPathResolver.WriteJsonFile(summaryPath, summary);
             unsortedPackageSummaries.Add(summary);
         }
@@ -232,6 +242,11 @@ internal static class RepositoryPackageIndexBuilder
         var packages = new JsonArray();
         foreach (var package in allIndex["packages"]?.AsArray().OfType<JsonObject>() ?? [])
         {
+            if (string.IsNullOrWhiteSpace(package["latestPaths"]?["opencliPath"]?.GetValue<string>()))
+            {
+                continue;
+            }
+
             var latestVersionRecord = package["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault();
             var packageId = package["packageId"]?.GetValue<string>() ?? string.Empty;
             var latestVersion = package["latestVersion"]?.GetValue<string>() ?? string.Empty;
