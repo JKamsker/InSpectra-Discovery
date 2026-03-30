@@ -296,7 +296,31 @@ internal sealed class StaticAnalysisService
 
         var crawlStopwatch = Stopwatch.StartNew();
 
-        var staticCommands = InspectAssemblies(installDirectory, cliFramework);
+        var inspection = InspectAssemblies(installDirectory, cliFramework);
+        var staticCommands = inspection.Commands;
+
+        if (inspection.InspectionOutcome is "framework-not-found" or "no-reader")
+        {
+            result["inspectionOutcome"] = inspection.InspectionOutcome;
+            result["cliFramework"] = null;
+            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "static-analysis",
+                classification: "custom-parser",
+                $"Claimed framework '{inspection.ClaimedFramework}' was not found in any assembly. Tool likely uses a custom argument parser.");
+            return;
+        }
+
+        if (inspection.InspectionOutcome is "no-attributes")
+        {
+            result["inspectionOutcome"] = inspection.InspectionOutcome;
+            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "static-analysis",
+                classification: "custom-parser-no-attributes",
+                $"Framework '{inspection.ClaimedFramework}' assembly found in {inspection.ScannedModuleCount} module(s) but no recognizable attributes detected. Tool may use fluent API or non-standard configuration.");
+            return;
+        }
 
         var crawler = new ToolHelpCrawler(_runtime);
         var crawl = await crawler.CrawlAsync(commandPath, tempRoot, environment.Values, commandTimeoutSeconds, cancellationToken);
@@ -352,24 +376,35 @@ internal sealed class StaticAnalysisService
         NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "static-crawl", artifactSource: "static-analysis");
     }
 
-    private Dictionary<string, StaticCommandDefinition> InspectAssemblies(string installDirectory, string cliFramework)
+    private AssemblyInspectionResult InspectAssemblies(string installDirectory, string cliFramework)
     {
         var assemblyName = ResolveAssemblyName(cliFramework);
         if (assemblyName is null)
         {
-            return new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase);
+            return AssemblyInspectionResult.NoReader(cliFramework);
         }
 
         var modules = _assemblyScanner.ScanForFramework(installDirectory, assemblyName);
+        if (modules.Count == 0)
+        {
+            return AssemblyInspectionResult.FrameworkNotFound(cliFramework);
+        }
+
         try
         {
             var reader = ResolveAttributeReader(cliFramework);
             if (reader is null)
             {
-                return new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase);
+                return AssemblyInspectionResult.NoReader(cliFramework);
             }
 
-            return new Dictionary<string, StaticCommandDefinition>(reader.Read(modules), StringComparer.OrdinalIgnoreCase);
+            var commands = new Dictionary<string, StaticCommandDefinition>(reader.Read(modules), StringComparer.OrdinalIgnoreCase);
+            if (commands.Count == 0)
+            {
+                return AssemblyInspectionResult.NoAttributes(cliFramework, modules.Count);
+            }
+
+            return AssemblyInspectionResult.Ok(cliFramework, modules.Count, commands);
         }
         finally
         {
@@ -378,6 +413,25 @@ internal sealed class StaticAnalysisService
                 module.Dispose();
             }
         }
+    }
+
+    private sealed record AssemblyInspectionResult(
+        string InspectionOutcome,
+        string? ClaimedFramework,
+        int ScannedModuleCount,
+        Dictionary<string, StaticCommandDefinition> Commands)
+    {
+        public static AssemblyInspectionResult Ok(string framework, int moduleCount, Dictionary<string, StaticCommandDefinition> commands)
+            => new("ok", framework, moduleCount, commands);
+
+        public static AssemblyInspectionResult FrameworkNotFound(string claimedFramework)
+            => new("framework-not-found", claimedFramework, 0, new(StringComparer.OrdinalIgnoreCase));
+
+        public static AssemblyInspectionResult NoAttributes(string framework, int moduleCount)
+            => new("no-attributes", framework, moduleCount, new(StringComparer.OrdinalIgnoreCase));
+
+        public static AssemblyInspectionResult NoReader(string framework)
+            => new("no-reader", framework, 0, new(StringComparer.OrdinalIgnoreCase));
     }
 
     private static IStaticAttributeReader? ResolveAttributeReader(string cliFramework)
