@@ -10,6 +10,7 @@ internal static class RepositoryPackageIndexBuilder
         Directory.CreateDirectory(packagesRoot);
 
         var versionRecordLookup = LoadVersionRecordLookup(packagesRoot);
+        var versionRecordCount = versionRecordLookup.Sum(entry => entry.Value.Count);
         var currentSnapshotLookup = RepositoryPackageSummaryBuilder.LoadCurrentPackageSnapshotLookup(repositoryRoot);
         var packageSummaries = BuildPackageSummaries(repositoryRoot, packagesRoot, versionRecordLookup, currentSnapshotLookup);
 
@@ -31,7 +32,7 @@ internal static class RepositoryPackageIndexBuilder
                     now));
         }
 
-        return new RepositoryPackageIndexBuildResult(packageSummaries.Count, allIndexPath, browserIndexPath);
+        return new RepositoryPackageIndexBuildResult(packageSummaries.Count, versionRecordCount, allIndexPath, browserIndexPath);
     }
 
     public static string? ToIsoTimestamp(JsonNode? value)
@@ -135,4 +136,4 @@ internal static class RepositoryPackageIndexBuilder
     }
 }
 
-internal sealed record RepositoryPackageIndexBuildResult(int PackageCount, string AllIndexPath, string? BrowserIndexPath);
+internal sealed record RepositoryPackageIndexBuildResult(int PackageCount, int VersionRecordCount, string AllIndexPath, string? BrowserIndexPath);

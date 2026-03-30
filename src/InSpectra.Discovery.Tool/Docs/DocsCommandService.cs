@@ -14,11 +14,13 @@ internal sealed class DocsCommandService
             new
             {
                 packageCount = result.PackageCount,
+                versionRecordCount = result.VersionRecordCount,
                 allIndexPath = result.AllIndexPath,
                 browserIndexPath = result.BrowserIndexPath,
             },
             [
                 new SummaryRow("Packages", result.PackageCount.ToString()),
+                new SummaryRow("Version records", result.VersionRecordCount.ToString()),
                 new SummaryRow("All index", result.AllIndexPath),
                 new SummaryRow("Browser index", result.BrowserIndexPath ?? "skipped"),
             ],
