@@ -243,10 +243,10 @@ internal static partial class ToolHelpItemParser
         description = match.Groups["description"].Success
             ? match.Groups["description"].Value.Trim()
             : null;
-        if (StartsWithRequiredPrefix(description))
+        if (ToolHelpRequiredDescriptionSupport.StartsWithRequiredPrefix(description))
         {
             isRequired = true;
-            description = TrimLeadingRequiredPrefix(description);
+            description = ToolHelpRequiredDescriptionSupport.TrimLeadingRequiredPrefix(description);
         }
 
         return key.Length > 0;
@@ -284,45 +284,6 @@ internal static partial class ToolHelpItemParser
         => key.Length > 0
             && !key.Contains(' ', StringComparison.Ordinal)
             && key.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' or '.');
-
-    private static bool StartsWithRequiredPrefix(string? description)
-        => !string.IsNullOrWhiteSpace(description)
-            && (
-                description.TrimStart().StartsWith("Required.", StringComparison.OrdinalIgnoreCase)
-                || description.TrimStart().StartsWith("Required ", StringComparison.OrdinalIgnoreCase)
-                || description.TrimStart().StartsWith("(REQUIRED)", StringComparison.OrdinalIgnoreCase)
-                || description.TrimStart().StartsWith("[REQUIRED]", StringComparison.OrdinalIgnoreCase));
-
-    private static string? TrimLeadingRequiredPrefix(string? description)
-    {
-        if (string.IsNullOrWhiteSpace(description))
-        {
-            return description;
-        }
-
-        var normalized = description.TrimStart();
-        if (normalized.StartsWith("Required.", StringComparison.OrdinalIgnoreCase))
-        {
-            return normalized["Required.".Length..].TrimStart();
-        }
-
-        if (normalized.StartsWith("Required ", StringComparison.OrdinalIgnoreCase))
-        {
-            return normalized["Required ".Length..].TrimStart();
-        }
-
-        if (normalized.StartsWith("(REQUIRED)", StringComparison.OrdinalIgnoreCase))
-        {
-            return normalized["(REQUIRED)".Length..].TrimStart();
-        }
-
-        if (normalized.StartsWith("[REQUIRED]", StringComparison.OrdinalIgnoreCase))
-        {
-            return normalized["[REQUIRED]".Length..].TrimStart();
-        }
-
-        return description;
-    }
 
     [GeneratedRegex(@"^(?<prefix>\* )?(?<key>\S.*?)(?:\s{2,}(?<description>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex ItemRegex();
