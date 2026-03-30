@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-30 01:36:41+00:00
+Generated: 2026-03-30 04:12:07+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -18,7 +18,7 @@ Incomplete: 7
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [BellaBaxter.Cli](#pkg-bellabaxter-cli) | 0.1.1-preview.29 | ok | xml-ready | 71/71 | 51/174 | 13/30 | 32/59 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
-| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.44 | ok | xml-ready | 8/8 | 88/88 | 4/4 | 0/5 | FAIL |
+| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.45 | ok | xml-ready | 8/8 | 88/88 | 4/4 | 0/5 | FAIL |
 | [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.5 | ok | xml-ready | 253/253 | 2195/2348 | 58/163 | 0/211 | FAIL |
 | [PhoenixCode.Lens](#pkg-phoenixcode-lens) | 1.4.2 | ok | requires-configuration | 7/7 | 18/18 | 0/0 | 0/7 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
@@ -72,7 +72,7 @@ Incomplete: 7
 <a id="pkg-inspectra-gen"></a>
 ### InSpectra.Gen
 
-- Version: `0.0.44`
+- Version: `0.0.45`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
