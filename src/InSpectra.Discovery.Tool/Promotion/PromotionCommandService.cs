@@ -11,13 +11,13 @@ internal sealed class PromotionCommandService
         bool json,
         CancellationToken cancellationToken)
     {
-        var summary = JsonNode.Parse(await File.ReadAllTextAsync(summaryPath, cancellationToken))?.AsObject()
+        var summary = await JsonNodeFileLoader.TryLoadJsonObjectAsync(summaryPath, cancellationToken)
             ?? throw new InvalidOperationException($"Summary file '{summaryPath}' is empty.");
         var commentLookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         if (!string.IsNullOrWhiteSpace(commentIndexPath) && File.Exists(commentIndexPath))
         {
-            var comments = JsonNode.Parse(await File.ReadAllTextAsync(commentIndexPath, cancellationToken))?.AsArray() ?? [];
+            var comments = await JsonNodeFileLoader.TryLoadJsonArrayAsync(commentIndexPath, cancellationToken) ?? [];
             foreach (var entryNode in comments)
             {
                 if (entryNode is not JsonObject entry)

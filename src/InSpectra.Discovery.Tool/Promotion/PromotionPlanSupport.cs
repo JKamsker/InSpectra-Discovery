@@ -18,7 +18,7 @@ internal static class PromotionPlanSupport
 
         foreach (var expectedPath in expectedPaths)
         {
-            var plan = JsonNode.Parse(await File.ReadAllTextAsync(expectedPath, cancellationToken))?.AsObject()
+            var plan = await JsonNodeFileLoader.TryLoadJsonObjectAsync(expectedPath, cancellationToken)
                 ?? throw new InvalidOperationException($"Plan '{expectedPath}' is empty.");
             targetBranch ??= plan["targetBranch"]?.GetValue<string>();
             batchId ??= plan["batchId"]?.GetValue<string>();

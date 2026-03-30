@@ -4,7 +4,7 @@ internal sealed record HelpBatchPlan(string? BatchId, IReadOnlyList<HelpBatchIte
 {
     public static HelpBatchPlan Load(string path)
     {
-        var document = JsonNode.Parse(File.ReadAllText(path))?.AsObject()
+        var document = JsonNodeFileLoader.TryLoadJsonObject(path)
             ?? throw new InvalidOperationException($"Plan '{path}' is empty.");
         var itemsNode = document["items"]?.AsArray()
             ?? throw new InvalidOperationException($"Plan '{path}' is missing an 'items' array.");
