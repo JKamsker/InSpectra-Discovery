@@ -11,14 +11,36 @@ internal class StartupHook
         if (string.IsNullOrEmpty(capturePath))
             return;
 
-        // Resolve hook dependencies (0Harmony.dll) from the hook's own directory.
-        var hookDir = Path.GetDirectoryName(typeof(StartupHook).Assembly.Location)!;
-        AssemblyLoadContext.Default.Resolving += (context, name) =>
+        try
         {
-            var candidate = Path.Combine(hookDir, name.Name + ".dll");
-            return File.Exists(candidate) ? context.LoadFromAssemblyPath(candidate) : null;
-        };
+            // Resolve hook dependencies (0Harmony.dll) from the hook's own directory.
+            var hookDir = Path.GetDirectoryName(typeof(StartupHook).Assembly.Location)!;
+            AssemblyLoadContext.Default.Resolving += (context, name) =>
+            {
+                var candidate = Path.Combine(hookDir, name.Name + ".dll");
+                return File.Exists(candidate) ? context.LoadFromAssemblyPath(candidate) : null;
+            };
 
-        AssemblyLoadInterceptor.Start(capturePath);
+            AssemblyLoadInterceptor.Start(capturePath);
+        }
+        catch (Exception ex)
+        {
+            WriteError(capturePath, "initialize-failed", ex.ToString());
+        }
     }
+
+    private static void WriteError(string path, string status, string error)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+            File.WriteAllText(path,
+                $"{{\"captureVersion\":1,\"status\":\"{status}\",\"error\":\"{EscapeJson(error)}\"}}");
+        }
+        catch { }
+    }
+
+    private static string EscapeJson(string s)
+        => s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n");
 }

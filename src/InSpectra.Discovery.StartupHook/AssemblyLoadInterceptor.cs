@@ -9,7 +9,7 @@ internal static class AssemblyLoadInterceptor
     {
         _capturePath = capturePath;
 
-        // Check assemblies already loaded (unlikely but defensive).
+        // Check assemblies already loaded.
         foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
             if (TryPatch(assembly))

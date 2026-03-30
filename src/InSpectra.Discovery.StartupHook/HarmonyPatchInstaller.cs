@@ -5,6 +5,11 @@ internal static class HarmonyPatchInstaller
 {
     internal static Assembly? SystemCommandLineAssembly;
     internal static string? CapturePath;
+    private static volatile bool _captured;
+    private static string? _patchTargetName;
+    private static readonly List<string> _patchLog = [];
+
+    public static string GetPatchLog() => string.Join("\n", _patchLog);
 
     public static void Install(Assembly sclAssembly, string capturePath)
     {
@@ -12,177 +17,253 @@ internal static class HarmonyPatchInstaller
         CapturePath = capturePath;
 
         var harmony = new Harmony("com.inspectra.discovery.startuphook");
-        var patchMethod = new HarmonyMethod(typeof(HarmonyPatchInstaller), nameof(InvocationPrefix));
 
-        var patched = TryPatch(harmony, sclAssembly, patchMethod);
+        // Patch as MANY methods as possible — some tools bypass InvokeAsync (e.g., --help
+        // is handled by middleware before Invoke reaches our patch). By patching both
+        // Parse and Invoke methods, we catch all code paths.
+        var postfix = new HarmonyMethod(typeof(HarmonyPatchInstaller), nameof(ParsePostfix));
+        var prefix = new HarmonyMethod(typeof(HarmonyPatchInstaller), nameof(InvokePrefix));
+        var patchCount = 0;
 
-        if (!patched)
+        // Parse methods — postfix captures the ParseResult return value.
+        patchCount += TryPatchAll(harmony, sclAssembly, "Parse", postfix: postfix);
+
+        // Invoke methods — prefix captures before execution starts.
+        patchCount += TryPatchAll(harmony, sclAssembly, "Invoke", prefix: prefix);
+        patchCount += TryPatchAll(harmony, sclAssembly, "InvokeAsync", prefix: prefix);
+
+        // Fallback: patch RootCommand constructors to capture the instance.
+        // When Harmony patches on public API methods don't fire (e.g., R2R precompiled tools
+        // or tools that use internal API paths), we capture the RootCommand via its constructor
+        // and serialize it on ProcessExit.
+        var rootCommandType = sclAssembly.GetType("System.CommandLine.RootCommand");
+        if (rootCommandType is not null)
         {
-            // Dump diagnostic info about available types and methods.
-            var diag = new System.Text.StringBuilder();
-            diag.AppendLine($"Assembly: {sclAssembly.FullName}");
-            foreach (var type in sclAssembly.GetExportedTypes().OrderBy(t => t.FullName))
+            var ctorPostfix = new HarmonyMethod(typeof(HarmonyPatchInstaller), nameof(RootCommandCtorPostfix));
+            foreach (var ctor in rootCommandType.GetConstructors())
             {
-                var invokeMethods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
-                    .Where(m => m.Name.Contains("Invoke") || m.Name.Contains("Parse"))
-                    .Select(m => $"  {(m.IsStatic ? "static " : "")}{m.ReturnType.Name} {m.Name}({string.Join(", ", m.GetParameters().Select(p => p.ParameterType.Name))})")
-                    .ToList();
-                if (invokeMethods.Count > 0)
+                try
                 {
-                    diag.AppendLine($"\n{type.FullName}:");
-                    foreach (var m in invokeMethods)
-                        diag.AppendLine(m);
+                    harmony.Patch(ctor, postfix: ctorPostfix);
+                    _patchLog.Add($"OK: RootCommand.ctor({string.Join(", ", ctor.GetParameters().Select(p => p.ParameterType.Name))})");
+                    patchCount++;
+                }
+                catch (Exception ex)
+                {
+                    _patchLog.Add($"FAIL: RootCommand.ctor: {ex.Message}");
                 }
             }
-            if (_lastPatchError is not null)
-                diag.AppendLine($"\nLast patch error: {_lastPatchError}");
+        }
+
+        // Register ProcessExit to capture from stored RootCommand if nothing else worked.
+        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
+
+        if (patchCount == 0)
+        {
+            var diag = new System.Text.StringBuilder();
+            diag.AppendLine($"Assembly: {sclAssembly.FullName}");
+            diag.AppendLine($"Patch log: {string.Join("; ", _patchLog)}");
             CaptureFileWriter.WriteError(capturePath, "no-patchable-method", diag.ToString());
         }
     }
 
-    private static bool TryPatch(Harmony harmony, Assembly assembly, HarmonyMethod prefix)
+    private static int TryPatchAll(Harmony harmony, Assembly assembly, string methodName,
+        HarmonyMethod? prefix = null, HarmonyMethod? postfix = null)
     {
-        // Strategy: try to patch invocation entry points across all known S.CL API versions.
-        // Each candidate is (TypeName, MethodName, SearchStatic).
+        var count = 0;
 
-        (string TypeName, string MethodName, bool Static)[] candidates =
-        [
-            // v2.0.5+ (stable): ParseResult.InvokeAsync / .Invoke (instance)
-            ("System.CommandLine.ParseResult", "InvokeAsync", false),
-            ("System.CommandLine.ParseResult", "Invoke", false),
-
-            // v2.0.0-beta: ParseResultExtensions (static)
-            ("System.CommandLine.Parsing.ParseResultExtensions", "InvokeAsync", true),
-            ("System.CommandLine.Parsing.ParseResultExtensions", "Invoke", true),
-
-            // v2.0.0-beta: ParserExtensions (static)
-            ("System.CommandLine.Parsing.ParserExtensions", "InvokeAsync", true),
-            ("System.CommandLine.Parsing.ParserExtensions", "Invoke", true),
-
-            // v2.0.0-beta: CommandExtensions (static)
-            ("System.CommandLine.CommandExtensions", "InvokeAsync", true),
-            ("System.CommandLine.CommandExtensions", "Invoke", true),
-            ("System.CommandLine.Invocation.CommandExtensions", "InvokeAsync", true),
-            ("System.CommandLine.Invocation.CommandExtensions", "Invoke", true),
-
-            // v2.0.0-beta: CommandLineConfiguration (instance)
-            ("System.CommandLine.CommandLineConfiguration", "InvokeAsync", false),
-            ("System.CommandLine.CommandLineConfiguration", "Invoke", false),
-
-            // v2.0.0-beta: Parser instance methods
-            ("System.CommandLine.Parsing.Parser", "InvokeAsync", false),
-            ("System.CommandLine.Parsing.Parser", "Invoke", false),
-
-            // v2.0.5+: HelpAction.Invoke (instance)
-            ("System.CommandLine.Help.HelpAction", "Invoke", false),
-        ];
-
-        foreach (var (typeName, methodName, isStatic) in candidates)
+        // Search ALL exported types for methods with this name.
+        foreach (var type in assembly.GetExportedTypes())
         {
-            var type = assembly.GetType(typeName);
-            if (type is null) continue;
-
-            var flags = BindingFlags.Public | (isStatic ? BindingFlags.Static : BindingFlags.Instance);
-            // Try each matching overload individually to avoid ambiguity.
-            var methods = type.GetMethods(flags).Where(m => m.Name == methodName).ToArray();
+            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Where(m => m.Name == methodName)
+                // Skip property getters like get_ParseResult, delegate Invoke, etc.
+                .Where(m => !m.IsSpecialName)
+                // Only patch methods that deal with command-line types (not delegates, etc.)
+                .Where(m => IsCommandLineRelated(m))
+                .ToArray();
 
             foreach (var method in methods)
             {
                 try
                 {
-                    harmony.Patch(method, prefix);
-                    _patchTargetName = $"{typeName}.{methodName}";
-                    return true;
+                    harmony.Patch(method, prefix: prefix, postfix: postfix);
+                    _patchLog.Add($"OK: {type.Name}.{method.Name}");
+                    count++;
                 }
                 catch (Exception ex)
                 {
-                    _lastPatchError = $"{typeName}.{methodName}({string.Join(", ", method.GetParameters().Select(p => p.ParameterType.Name))}): {ex.Message}";
+                    _patchLog.Add($"FAIL: {type.Name}.{method.Name}: {ex.Message}");
                 }
             }
         }
 
-        return false;
+        return count;
     }
 
-    private static string? _patchTargetName;
-    private static string? _lastPatchError;
-
-    /// <summary>
-    /// Harmony prefix — fires before InvokeAsync/Invoke.
-    /// Returns false to skip the original method.
-    /// </summary>
-    /// <summary>
-    /// Prefix for static extension methods — first arg (__0) is the Command/Parser object.
-    /// </summary>
-    public static bool StaticInvocationPrefix(object __0)
+    private static bool IsCommandLineRelated(MethodInfo method)
     {
-        return InvocationPrefix(__0, null);
+        // Filter out delegate Invoke methods, property accessors, etc.
+        var declaringType = method.DeclaringType;
+        if (declaringType is null) return false;
+
+        // Skip if the declaring type is a delegate
+        if (typeof(Delegate).IsAssignableFrom(declaringType)) return false;
+
+        // For Parse: must return something (ParseResult)
+        if (method.Name == "Parse" && method.ReturnType == typeof(void)) return false;
+
+        // For Invoke: must have at least one parameter that looks like a command-line type
+        // (or be on a type that IS a command-line type)
+        var typeFullName = declaringType.FullName ?? "";
+        return typeFullName.StartsWith("System.CommandLine", StringComparison.Ordinal);
     }
 
-    public static bool InvocationPrefix(object? __instance, MethodBase? __originalMethod)
+    private static object? _capturedRootCommand;
+
+    /// <summary>
+    /// Postfix on RootCommand constructor — captures the instance when created.
+    /// </summary>
+    public static void RootCommandCtorPostfix(object __instance)
     {
+        _capturedRootCommand = __instance;
+    }
+
+    /// <summary>
+    /// ProcessExit handler — if no earlier patch fired, serialize from captured RootCommand.
+    /// </summary>
+    private static void OnProcessExit(object? sender, EventArgs e)
+    {
+        if (_captured || CapturePath is null || SystemCommandLineAssembly is null) return;
+
+        var root = _capturedRootCommand ?? FindRootCommandFromLoadedTypes();
+        if (root is not null)
+        {
+            CaptureFromObject(root, "ProcessExit-fallback", exitAfter: false);
+        }
+    }
+
+    /// <summary>
+    /// Postfix on Parse methods — fires AFTER Parse returns.
+    /// The __result is the ParseResult, from which we extract the Command tree.
+    /// </summary>
+    public static void ParsePostfix(object? __instance, object? __result)
+    {
+        if (_captured || __result is null) return;
+        CaptureFromObject(__result, "Parse-postfix");
+    }
+
+    /// <summary>
+    /// Prefix on Invoke/InvokeAsync — fires BEFORE invocation.
+    /// </summary>
+    public static bool InvokePrefix(object? __instance)
+    {
+        if (_captured) return true;
+        CaptureFromObject(__instance, "Invoke-prefix");
+        return false; // Skip original method
+    }
+
+    private static void CaptureFromObject(object? target, string source, bool exitAfter = true)
+    {
+        if (_captured || target is null || SystemCommandLineAssembly is null || CapturePath is null)
+            return;
+        _captured = true;
+
         try
         {
-            object? target = __instance;
-
-            // For static methods, __instance is null. Try to find a Command-like parameter
-            // in the method's arguments by scanning loaded types.
-            if (target is null)
-            {
-                target = FindRootCommandFromLoadedTypes();
-            }
-
-            if (target is null)
-            {
-                CaptureFileWriter.WriteError(CapturePath!, "null-instance",
-                    $"Patched method received null instance. Method: {__originalMethod?.DeclaringType?.FullName}.{__originalMethod?.Name}");
-                Environment.Exit(0);
-                return false;
-            }
-
-            // Find the root Command from whatever object we intercepted.
             var rootCommand = ResolveRootCommand(target);
             if (rootCommand is not null)
             {
-                var tree = CommandTreeWalker.Walk(rootCommand, SystemCommandLineAssembly!);
-                var version = SystemCommandLineAssembly!.GetName().Version?.ToString();
-                CaptureFileWriter.Write(CapturePath!, new CaptureResult
+                var tree = CommandTreeWalker.Walk(rootCommand, SystemCommandLineAssembly);
+                CaptureFileWriter.Write(CapturePath, new CaptureResult
                 {
                     Status = "ok",
-                    SystemCommandLineVersion = version,
-                    PatchTarget = _patchTargetName ?? target.GetType().FullName,
+                    SystemCommandLineVersion = SystemCommandLineAssembly.GetName().Version?.ToString(),
+                    PatchTarget = $"{source} ({string.Join(", ", _patchLog.Where(l => l.StartsWith("OK")))})",
                     Root = tree,
                 });
             }
             else
             {
-                CaptureFileWriter.WriteError(CapturePath!, "no-root-command",
-                    $"Could not resolve root command from {target.GetType().FullName}");
+                _captured = false; // Allow retry from a different hook
+                return;
             }
         }
         catch (Exception ex)
         {
-            CaptureFileWriter.WriteError(CapturePath!, "capture-failed", ex.ToString());
+            CaptureFileWriter.WriteError(CapturePath, "capture-failed", ex.ToString());
         }
 
-        Environment.Exit(0);
-        return false;
+        if (exitAfter)
+            Environment.Exit(0);
     }
 
-    /// <summary>
-    /// Harmony prefix for static extension methods where the first arg is the Command/ParseResult.
-    /// </summary>
-    public static bool StaticInvocationPrefix(object? __0, MethodBase __originalMethod)
-        => InvocationPrefix(__0, __originalMethod);
+    private static object? ResolveRootCommand(object instance)
+    {
+        // Direct Command check
+        if (IsCommandType(instance.GetType()))
+            return NavigateToRoot(instance);
 
-    /// <summary>
-    /// Last resort: scan loaded assemblies for static fields of type RootCommand or Command.
-    /// This handles tools where the root command is stored in a static field.
-    /// </summary>
+        // ParseResult → RootCommandResult.Command or CommandResult.Command
+        var rootCmd = TryNavigateProperty(instance, "RootCommandResult", "Command")
+                   ?? TryNavigateProperty(instance, "CommandResult", "Command");
+        if (rootCmd is not null) return NavigateToRoot(rootCmd);
+
+        // Direct RootCommand property
+        rootCmd = GetPropertyValue(instance, "RootCommand");
+        if (rootCmd is not null && IsCommandType(rootCmd.GetType()))
+            return rootCmd;
+
+        // Parser → Configuration.RootCommand
+        var config = GetPropertyValue(instance, "Configuration");
+        if (config is not null)
+        {
+            rootCmd = GetPropertyValue(config, "RootCommand");
+            if (rootCmd is not null && IsCommandType(rootCmd.GetType()))
+                return rootCmd;
+        }
+
+        // Last resort: scan static fields
+        return FindRootCommandFromLoadedTypes();
+    }
+
+    private static object? TryNavigateProperty(object instance, string first, string second)
+    {
+        try
+        {
+            var intermediate = GetPropertyValue(instance, first);
+            if (intermediate is null) return null;
+            var result = GetPropertyValue(intermediate, second);
+            return result is not null && IsCommandType(result.GetType()) ? result : null;
+        }
+        catch { return null; }
+    }
+
+    private static object? GetPropertyValue(object obj, string name)
+    {
+        try
+        {
+            return obj.GetType().GetProperty(name, BindingFlags.Public | BindingFlags.Instance)?.GetValue(obj);
+        }
+        catch { return null; }
+    }
+
+    private static object NavigateToRoot(object command)
+    {
+        var current = command;
+        for (var i = 0; i < 100; i++)
+        {
+            var parent = GetPropertyValue(current, "Parent");
+            if (parent is null || !IsCommandType(parent.GetType()))
+                break;
+            current = parent;
+        }
+        return current;
+    }
+
     private static object? FindRootCommandFromLoadedTypes()
     {
         if (SystemCommandLineAssembly is null) return null;
-
         var rootCommandType = SystemCommandLineAssembly.GetType("System.CommandLine.RootCommand");
         var commandType = SystemCommandLineAssembly.GetType("System.CommandLine.Command");
         if (rootCommandType is null && commandType is null) return null;
@@ -193,122 +274,30 @@ internal static class HarmonyPatchInstaller
             try
             {
                 foreach (var type in assembly.GetTypes())
-                {
                     foreach (var field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
                     {
                         try
                         {
-                            if ((rootCommandType is not null && rootCommandType.IsAssignableFrom(field.FieldType))
-                                || (commandType is not null && commandType.IsAssignableFrom(field.FieldType)))
+                            if ((rootCommandType?.IsAssignableFrom(field.FieldType) ?? false)
+                                || (commandType?.IsAssignableFrom(field.FieldType) ?? false))
                             {
                                 var value = field.GetValue(null);
-                                if (value is not null)
-                                    return value;
+                                if (value is not null) return value;
                             }
                         }
                         catch { }
                     }
-                }
             }
             catch { }
         }
-
         return null;
-    }
-
-    private static object? ResolveRootCommand(object instance)
-    {
-        var type = instance.GetType();
-
-        // If the instance IS a Command (or RootCommand), use it directly.
-        if (IsCommandType(type))
-            return NavigateToRoot(instance);
-
-        // Try multiple navigation strategies, each guarded against failures.
-        // ParseResult → .RootCommandResult.Command or .CommandResult.Command
-        try
-        {
-            var rootCmdResult = GetPropertyValue(instance, "RootCommandResult");
-            if (rootCmdResult is not null)
-            {
-                var cmd = GetPropertyValue(rootCmdResult, "Command");
-                if (cmd is not null && IsCommandType(cmd.GetType()))
-                    return NavigateToRoot(cmd);
-            }
-        }
-        catch { /* Property may not exist in this S.CL version */ }
-
-        try
-        {
-            var cmdResult = GetPropertyValue(instance, "CommandResult");
-            if (cmdResult is not null)
-            {
-                var cmd = GetPropertyValue(cmdResult, "Command");
-                if (cmd is not null && IsCommandType(cmd.GetType()))
-                    return NavigateToRoot(cmd);
-            }
-        }
-        catch { /* Property may not exist in this S.CL version */ }
-
-        // CommandLineConfiguration / RootCommand property
-        try
-        {
-            var rootCmd = GetPropertyValue(instance, "RootCommand");
-            if (rootCmd is not null && IsCommandType(rootCmd.GetType()))
-                return rootCmd;
-        }
-        catch { }
-
-        // Parser → .Configuration.RootCommand
-        var config = GetPropertyValue(instance, "Configuration");
-        if (config is not null)
-        {
-            var rootCmd = GetPropertyValue(config, "RootCommand");
-            if (rootCmd is not null && IsCommandType(rootCmd.GetType()))
-                return rootCmd;
-        }
-
-        return null;
-    }
-
-    private static object? GetPropertyValue(object obj, string name)
-    {
-        try
-        {
-            return obj.GetType().GetProperty(name, BindingFlags.Public | BindingFlags.Instance)?.GetValue(obj);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static object NavigateToRoot(object command)
-    {
-        // Walk up via Parent property to find the top-level command.
-        var current = command;
-        while (true)
-        {
-            var parentProp = current.GetType().GetProperty("Parent",
-                BindingFlags.Public | BindingFlags.Instance);
-            if (parentProp is null)
-                break;
-
-            var parent = parentProp.GetValue(current);
-            if (parent is null || !IsCommandType(parent.GetType()))
-                break;
-
-            current = parent;
-        }
-        return current;
     }
 
     private static bool IsCommandType(Type type)
     {
         for (var t = type; t is not null; t = t.BaseType)
         {
-            var fullName = t.FullName;
-            if (fullName is "System.CommandLine.Command" or "System.CommandLine.RootCommand")
+            if (t.FullName is "System.CommandLine.Command" or "System.CommandLine.RootCommand")
                 return true;
         }
         return false;
