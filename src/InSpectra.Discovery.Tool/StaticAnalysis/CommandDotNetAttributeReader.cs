@@ -21,7 +21,7 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
                     continue;
                 }
 
-                var commandAttr = FindAttribute(typeDef.CustomAttributes, CommandAttributeName);
+                var commandAttr = StaticAnalysisAttributeSupport.FindAttribute(typeDef.CustomAttributes, CommandAttributeName);
                 if (commandAttr is null && !HasDecoratedMembers(typeDef))
                 {
                     continue;
@@ -36,8 +36,7 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
 
     private static void ReadClassCommands(TypeDef typeDef, CustomAttribute? commandAttr, Dictionary<string, StaticCommandDefinition> commands)
     {
-        var className = commandAttr is not null ? GetNamedArgumentString(commandAttr, "Name") : null;
-        var classDescription = commandAttr is not null ? GetNamedArgumentString(commandAttr, "Description") : null;
+        var classDescription = StaticAnalysisAttributeSupport.GetNamedArgumentString(commandAttr, "Description");
 
         foreach (var method in typeDef.Methods)
         {
@@ -46,10 +45,10 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
                 continue;
             }
 
-            var methodCommandAttr = FindAttribute(method.CustomAttributes, CommandAttributeName);
-            var isDefault = FindAttribute(method.CustomAttributes, DefaultCommandAttributeName) is not null;
-            var methodName = methodCommandAttr is not null ? GetNamedArgumentString(methodCommandAttr, "Name") : null;
-            var methodDescription = methodCommandAttr is not null ? GetNamedArgumentString(methodCommandAttr, "Description") : null;
+            var methodCommandAttr = StaticAnalysisAttributeSupport.FindAttribute(method.CustomAttributes, CommandAttributeName);
+            var isDefault = StaticAnalysisAttributeSupport.FindAttribute(method.CustomAttributes, DefaultCommandAttributeName) is not null;
+            var methodName = StaticAnalysisAttributeSupport.GetNamedArgumentString(methodCommandAttr, "Name");
+            var methodDescription = StaticAnalysisAttributeSupport.GetNamedArgumentString(methodCommandAttr, "Description");
 
             var key = methodName ?? (isDefault ? string.Empty : method.Name?.String?.ToLowerInvariant() ?? string.Empty);
             var (options, operands) = ReadMethodParameters(method);
@@ -64,15 +63,12 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
                 Values: operands.OrderBy(v => v.Index).ToArray(),
                 Options: allOptions.OrderByDescending(o => o.IsRequired).ThenBy(o => o.LongName).ToArray());
 
-            if (!commands.TryGetValue(key, out var existing) || Score(definition) > Score(existing))
-            {
-                commands[key] = definition;
-            }
+            StaticCommandDefinitionSupport.UpsertBest(commands, key, definition);
         }
 
         foreach (var property in typeDef.Properties)
         {
-            if (FindAttribute(property.CustomAttributes, SubcommandAttributeName) is null)
+            if (StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, SubcommandAttributeName) is null)
             {
                 continue;
             }
@@ -80,7 +76,7 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
             var subType = property.PropertySig?.RetType?.ToTypeDefOrRef()?.ResolveTypeDef();
             if (subType is not null)
             {
-                var subAttr = FindAttribute(subType.CustomAttributes, CommandAttributeName);
+                var subAttr = StaticAnalysisAttributeSupport.FindAttribute(subType.CustomAttributes, CommandAttributeName);
                 ReadClassCommands(subType, subAttr, commands);
             }
         }
@@ -89,17 +85,17 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
     private static List<StaticOptionDefinition> ReadPropertyOptions(TypeDef typeDef)
     {
         var options = new List<StaticOptionDefinition>();
-        foreach (var property in GetPropertiesFromHierarchy(typeDef))
+        foreach (var property in StaticAnalysisHierarchySupport.GetPropertiesFromHierarchy(typeDef))
         {
-            var optionAttr = FindAttribute(property.CustomAttributes, OptionAttributeName);
+            var optionAttr = StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, OptionAttributeName);
             if (optionAttr is null)
             {
                 continue;
             }
 
-            var longName = GetNamedArgumentString(optionAttr, "LongName") ?? property.Name?.String?.ToLowerInvariant();
-            var shortNameStr = GetNamedArgumentString(optionAttr, "ShortName");
-            var description = GetNamedArgumentString(optionAttr, "Description");
+            var longName = StaticAnalysisAttributeSupport.GetNamedArgumentString(optionAttr, "LongName") ?? property.Name?.String?.ToLowerInvariant();
+            var shortNameStr = StaticAnalysisAttributeSupport.GetNamedArgumentString(optionAttr, "ShortName");
+            var description = StaticAnalysisAttributeSupport.GetNamedArgumentString(optionAttr, "Description");
             var propertyType = property.PropertySig?.RetType;
 
             options.Add(new StaticOptionDefinition(
@@ -137,12 +133,12 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
                 continue;
             }
 
-            var optionAttr = FindAttribute(param.ParamDef.CustomAttributes, OptionAttributeName);
+            var optionAttr = StaticAnalysisAttributeSupport.FindAttribute(param.ParamDef.CustomAttributes, OptionAttributeName);
             if (optionAttr is not null)
             {
-                var longName = GetNamedArgumentString(optionAttr, "LongName") ?? param.Name;
-                var shortNameStr = GetNamedArgumentString(optionAttr, "ShortName");
-                var description = GetNamedArgumentString(optionAttr, "Description");
+                var longName = StaticAnalysisAttributeSupport.GetNamedArgumentString(optionAttr, "LongName") ?? param.Name;
+                var shortNameStr = StaticAnalysisAttributeSupport.GetNamedArgumentString(optionAttr, "ShortName");
+                var description = StaticAnalysisAttributeSupport.GetNamedArgumentString(optionAttr, "Description");
 
                 options.Add(new StaticOptionDefinition(
                     LongName: longName,
@@ -159,9 +155,9 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
                 continue;
             }
 
-            var operandAttr = FindAttribute(param.ParamDef.CustomAttributes, OperandAttributeName);
-            var opName = operandAttr is not null ? GetNamedArgumentString(operandAttr, "Name") : param.Name;
-            var opDesc = operandAttr is not null ? GetNamedArgumentString(operandAttr, "Description") : null;
+            var operandAttr = StaticAnalysisAttributeSupport.FindAttribute(param.ParamDef.CustomAttributes, OperandAttributeName);
+            var opName = StaticAnalysisAttributeSupport.GetNamedArgumentString(operandAttr, "Name") ?? param.Name;
+            var opDesc = StaticAnalysisAttributeSupport.GetNamedArgumentString(operandAttr, "Description");
 
             operands.Add(new StaticValueDefinition(
                 Index: operandIndex++,
@@ -180,13 +176,13 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
     private static bool HasDecoratedMembers(TypeDef typeDef)
     {
         foreach (var property in typeDef.Properties)
-            if (FindAttribute(property.CustomAttributes, OptionAttributeName) is not null
-                || FindAttribute(property.CustomAttributes, OperandAttributeName) is not null
-                || FindAttribute(property.CustomAttributes, SubcommandAttributeName) is not null)
+            if (StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, OptionAttributeName) is not null
+                || StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, OperandAttributeName) is not null
+                || StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, SubcommandAttributeName) is not null)
                 return true;
         foreach (var method in typeDef.Methods)
-            if (FindAttribute(method.CustomAttributes, CommandAttributeName) is not null
-                || FindAttribute(method.CustomAttributes, DefaultCommandAttributeName) is not null)
+            if (StaticAnalysisAttributeSupport.FindAttribute(method.CustomAttributes, CommandAttributeName) is not null
+                || StaticAnalysisAttributeSupport.FindAttribute(method.CustomAttributes, DefaultCommandAttributeName) is not null)
                 return true;
         return false;
     }
@@ -194,38 +190,4 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
     private static bool IsCancellationToken(TypeSig? typeSig)
         => string.Equals(typeSig?.FullName, "System.Threading.CancellationToken", StringComparison.Ordinal);
 
-    private static IEnumerable<PropertyDef> GetPropertiesFromHierarchy(TypeDef typeDef)
-    {
-        var chain = new Stack<TypeDef>();
-        for (var current = typeDef; current is not null; current = ResolveBaseType(current))
-            chain.Push(current);
-        while (chain.Count > 0)
-            foreach (var p in chain.Pop().Properties)
-                yield return p;
-    }
-
-    private static TypeDef? ResolveBaseType(TypeDef typeDef)
-    {
-        var b = typeDef.BaseType;
-        return b is null || string.Equals(b.FullName, "System.Object", StringComparison.Ordinal) ? null : b.ResolveTypeDef();
-    }
-
-    private static CustomAttribute? FindAttribute(CustomAttributeCollection attributes, string fullName)
-    {
-        foreach (var attr in attributes)
-            if (string.Equals(attr.AttributeType?.FullName, fullName, StringComparison.Ordinal))
-                return attr;
-        return null;
-    }
-
-    private static string? GetNamedArgumentString(CustomAttribute attr, string name)
-    {
-        foreach (var a in attr.NamedArguments)
-            if (string.Equals(a.Name?.String, name, StringComparison.Ordinal))
-                return a.Value is UTF8String u ? u.String : a.Value as string;
-        return null;
-    }
-
-    private static int Score(StaticCommandDefinition d)
-        => d.Values.Count + d.Options.Count + (d.Description is null ? 0 : 1);
 }

@@ -42,10 +42,7 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
                 }
 
                 var key = definition.Name ?? string.Empty;
-                if (!commands.TryGetValue(key, out var existing) || Score(definition) > Score(existing))
-                {
-                    commands[key] = definition;
-                }
+                StaticCommandDefinitionSupport.UpsertBest(commands, key, definition);
             }
         }
 
@@ -213,7 +210,4 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
 
         return sb.ToString();
     }
-
-    private static int Score(StaticCommandDefinition d)
-        => d.Values.Count + d.Options.Count + (d.Description is null ? 0 : 1);
 }

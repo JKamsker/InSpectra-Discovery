@@ -10,7 +10,7 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
     {
         var commands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase);
         var hasAnyVerb = false;
-        var verblessTypes = new List<(TypeDef Type, ModuleDefMD Module)>();
+        var verblessTypes = new List<TypeDef>();
 
         foreach (var scannedModule in modules)
         {
@@ -21,47 +21,39 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
                     continue;
                 }
 
-                var verbAttribute = FindAttribute(typeDef.CustomAttributes, VerbAttributeName);
+                var verbAttribute = StaticAnalysisAttributeSupport.FindAttribute(typeDef.CustomAttributes, VerbAttributeName);
                 if (verbAttribute is not null)
                 {
                     hasAnyVerb = true;
-                    var definition = ReadVerbDefinition(typeDef, verbAttribute, scannedModule.Module);
-                    var key = definition.Name ?? string.Empty;
-                    if (!commands.TryGetValue(key, out var existing) || Score(definition) > Score(existing))
-                    {
-                        commands[key] = definition;
-                    }
+                    var definition = ReadVerbDefinition(typeDef, verbAttribute);
+                    StaticCommandDefinitionSupport.UpsertBest(commands, definition);
                 }
                 else if (HasOptionOrValueProperties(typeDef))
                 {
-                    verblessTypes.Add((typeDef, scannedModule.Module));
+                    verblessTypes.Add(typeDef);
                 }
             }
         }
 
         if (!hasAnyVerb)
         {
-            foreach (var (typeDef, module) in verblessTypes)
+            foreach (var typeDef in verblessTypes)
             {
-                var definition = ReadVerblessDefinition(typeDef, module);
-                var key = string.Empty;
-                if (!commands.TryGetValue(key, out var existing) || Score(definition) > Score(existing))
-                {
-                    commands[key] = definition;
-                }
+                var definition = ReadVerblessDefinition(typeDef);
+                StaticCommandDefinitionSupport.UpsertBest(commands, string.Empty, definition);
             }
         }
 
         return commands;
     }
 
-    private static StaticCommandDefinition ReadVerbDefinition(TypeDef typeDef, CustomAttribute verbAttribute, ModuleDefMD module)
+    private static StaticCommandDefinition ReadVerbDefinition(TypeDef typeDef, CustomAttribute verbAttribute)
     {
-        var name = GetConstructorArgumentString(verbAttribute, 0);
-        var description = GetNamedArgumentString(verbAttribute, "HelpText");
-        var isDefault = GetNamedArgumentBool(verbAttribute, "IsDefault");
-        var isHidden = GetNamedArgumentBool(verbAttribute, "Hidden");
-        var (options, values) = ReadPropertiesFromTypeHierarchy(typeDef, module);
+        var name = StaticAnalysisAttributeSupport.GetConstructorArgumentString(verbAttribute, 0);
+        var description = StaticAnalysisAttributeSupport.GetNamedArgumentString(verbAttribute, "HelpText");
+        var isDefault = StaticAnalysisAttributeSupport.GetNamedArgumentBool(verbAttribute, "IsDefault");
+        var isHidden = StaticAnalysisAttributeSupport.GetNamedArgumentBool(verbAttribute, "Hidden");
+        var (options, values) = ReadPropertiesFromTypeHierarchy(typeDef);
 
         return new StaticCommandDefinition(
             Name: name,
@@ -72,9 +64,9 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
             Options: options.OrderByDescending(o => o.IsRequired).ThenBy(o => o.LongName).ThenBy(o => o.ShortName).ToArray());
     }
 
-    private static StaticCommandDefinition ReadVerblessDefinition(TypeDef typeDef, ModuleDefMD module)
+    private static StaticCommandDefinition ReadVerblessDefinition(TypeDef typeDef)
     {
-        var (options, values) = ReadPropertiesFromTypeHierarchy(typeDef, module);
+        var (options, values) = ReadPropertiesFromTypeHierarchy(typeDef);
         return new StaticCommandDefinition(
             Name: null,
             Description: null,
@@ -84,38 +76,38 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
             Options: options.OrderByDescending(o => o.IsRequired).ThenBy(o => o.LongName).ThenBy(o => o.ShortName).ToArray());
     }
 
-    private static (List<StaticOptionDefinition> Options, List<StaticValueDefinition> Values) ReadPropertiesFromTypeHierarchy(TypeDef typeDef, ModuleDefMD module)
+    private static (List<StaticOptionDefinition> Options, List<StaticValueDefinition> Values) ReadPropertiesFromTypeHierarchy(TypeDef typeDef)
     {
         var options = new List<StaticOptionDefinition>();
         var values = new List<StaticValueDefinition>();
 
-        foreach (var property in GetPropertiesFromTypeHierarchy(typeDef))
+        foreach (var property in StaticAnalysisHierarchySupport.GetPropertiesFromHierarchy(typeDef))
         {
-            var optionAttribute = FindAttribute(property.CustomAttributes, OptionAttributeName);
+            var optionAttribute = StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, OptionAttributeName);
             if (optionAttribute is not null)
             {
-                options.Add(ReadOptionDefinition(property, optionAttribute, module));
+                options.Add(ReadOptionDefinition(property, optionAttribute));
                 continue;
             }
 
-            var valueAttribute = FindAttribute(property.CustomAttributes, ValueAttributeName);
+            var valueAttribute = StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, ValueAttributeName);
             if (valueAttribute is not null)
             {
-                values.Add(ReadValueDefinition(property, valueAttribute, module));
+                values.Add(ReadValueDefinition(property, valueAttribute));
             }
         }
 
         return (options, values);
     }
 
-    private static StaticOptionDefinition ReadOptionDefinition(PropertyDef property, CustomAttribute attribute, ModuleDefMD module)
+    private static StaticOptionDefinition ReadOptionDefinition(PropertyDef property, CustomAttribute attribute)
     {
         var (longName, shortName) = ParseOptionConstructorArgs(attribute);
-        var isRequired = GetNamedArgumentBool(attribute, "Required");
-        var description = GetNamedArgumentString(attribute, "HelpText");
-        var defaultValue = GetNamedArgumentValueAsString(attribute, "Default");
-        var metaValue = GetNamedArgumentString(attribute, "MetaValue");
-        var isHidden = GetNamedArgumentBool(attribute, "Hidden");
+        var isRequired = StaticAnalysisAttributeSupport.GetNamedArgumentBool(attribute, "Required");
+        var description = StaticAnalysisAttributeSupport.GetNamedArgumentString(attribute, "HelpText");
+        var defaultValue = StaticAnalysisAttributeSupport.GetNamedArgumentValueAsString(attribute, "Default");
+        var metaValue = StaticAnalysisAttributeSupport.GetNamedArgumentString(attribute, "MetaValue");
+        var isHidden = StaticAnalysisAttributeSupport.GetNamedArgumentBool(attribute, "Hidden");
         var propertyType = property.PropertySig?.RetType;
         var clrType = StaticAnalysisTypeSupport.GetClrTypeName(propertyType);
         var isBoolLike = StaticAnalysisTypeSupport.IsBoolType(propertyType);
@@ -136,13 +128,13 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
             PropertyName: property.Name?.String);
     }
 
-    private static StaticValueDefinition ReadValueDefinition(PropertyDef property, CustomAttribute attribute, ModuleDefMD module)
+    private static StaticValueDefinition ReadValueDefinition(PropertyDef property, CustomAttribute attribute)
     {
-        var index = GetConstructorArgumentInt(attribute, 0);
-        var isRequired = GetNamedArgumentBool(attribute, "Required");
-        var description = GetNamedArgumentString(attribute, "HelpText");
-        var metaName = GetNamedArgumentString(attribute, "MetaName");
-        var defaultValue = GetNamedArgumentValueAsString(attribute, "Default");
+        var index = StaticAnalysisAttributeSupport.GetConstructorArgumentInt(attribute, 0);
+        var isRequired = StaticAnalysisAttributeSupport.GetNamedArgumentBool(attribute, "Required");
+        var description = StaticAnalysisAttributeSupport.GetNamedArgumentString(attribute, "HelpText");
+        var metaName = StaticAnalysisAttributeSupport.GetNamedArgumentString(attribute, "MetaName");
+        var defaultValue = StaticAnalysisAttributeSupport.GetNamedArgumentValueAsString(attribute, "Default");
         var propertyType = property.PropertySig?.RetType;
         var clrType = StaticAnalysisTypeSupport.GetClrTypeName(propertyType);
         var isSequence = StaticAnalysisTypeSupport.IsSequenceType(propertyType);
@@ -183,43 +175,14 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
     {
         foreach (var property in typeDef.Properties)
         {
-            if (FindAttribute(property.CustomAttributes, OptionAttributeName) is not null
-                || FindAttribute(property.CustomAttributes, ValueAttributeName) is not null)
+            if (StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, OptionAttributeName) is not null
+                || StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, ValueAttributeName) is not null)
             {
                 return true;
             }
         }
 
         return false;
-    }
-
-    private static IEnumerable<PropertyDef> GetPropertiesFromTypeHierarchy(TypeDef typeDef)
-    {
-        var chain = new Stack<TypeDef>();
-        for (var current = typeDef; current is not null; current = ResolveBaseType(current))
-        {
-            chain.Push(current);
-        }
-
-        while (chain.Count > 0)
-        {
-            foreach (var property in chain.Pop().Properties)
-            {
-                yield return property;
-            }
-        }
-    }
-
-    private static TypeDef? ResolveBaseType(TypeDef typeDef)
-    {
-        var baseTypeRef = typeDef.BaseType;
-        if (baseTypeRef is null
-            || string.Equals(baseTypeRef.FullName, "System.Object", StringComparison.Ordinal))
-        {
-            return null;
-        }
-
-        return baseTypeRef.ResolveTypeDef();
     }
 
     private static IEnumerable<TypeDef> GetAllTypes(ModuleDefMD module)
@@ -230,82 +193,4 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
         }
     }
 
-    private static CustomAttribute? FindAttribute(CustomAttributeCollection attributes, string fullName)
-    {
-        foreach (var attribute in attributes)
-        {
-            if (string.Equals(attribute.AttributeType?.FullName, fullName, StringComparison.Ordinal))
-            {
-                return attribute;
-            }
-        }
-
-        return null;
-    }
-
-    private static string? GetConstructorArgumentString(CustomAttribute attribute, int index)
-    {
-        if (index >= attribute.ConstructorArguments.Count)
-        {
-            return null;
-        }
-
-        return attribute.ConstructorArguments[index].Value is UTF8String utf8String
-            ? utf8String.String
-            : attribute.ConstructorArguments[index].Value as string;
-    }
-
-    private static int GetConstructorArgumentInt(CustomAttribute attribute, int index)
-    {
-        if (index >= attribute.ConstructorArguments.Count)
-        {
-            return 0;
-        }
-
-        return attribute.ConstructorArguments[index].Value is int intValue ? intValue : 0;
-    }
-
-    private static string? GetNamedArgumentString(CustomAttribute attribute, string name)
-    {
-        foreach (var namedArg in attribute.NamedArguments)
-        {
-            if (string.Equals(namedArg.Name?.String, name, StringComparison.Ordinal))
-            {
-                return namedArg.Value is UTF8String utf8String
-                    ? utf8String.String
-                    : namedArg.Value as string;
-            }
-        }
-
-        return null;
-    }
-
-    private static bool GetNamedArgumentBool(CustomAttribute attribute, string name)
-    {
-        foreach (var namedArg in attribute.NamedArguments)
-        {
-            if (string.Equals(namedArg.Name?.String, name, StringComparison.Ordinal))
-            {
-                return namedArg.Value is bool boolValue && boolValue;
-            }
-        }
-
-        return false;
-    }
-
-    private static string? GetNamedArgumentValueAsString(CustomAttribute attribute, string name)
-    {
-        foreach (var namedArg in attribute.NamedArguments)
-        {
-            if (string.Equals(namedArg.Name?.String, name, StringComparison.Ordinal))
-            {
-                return namedArg.Value?.ToString();
-            }
-        }
-
-        return null;
-    }
-
-    private static int Score(StaticCommandDefinition definition)
-        => definition.Values.Count + definition.Options.Count + (definition.Description is null ? 0 : 1);
 }
