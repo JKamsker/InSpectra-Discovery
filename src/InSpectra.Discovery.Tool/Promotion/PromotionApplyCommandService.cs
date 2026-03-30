@@ -14,41 +14,7 @@ internal sealed class PromotionApplyCommandService
         var now = DateTimeOffset.UtcNow;
         var downloadDirectory = Path.GetFullPath(downloadRoot);
         var plan = await PromotionPlanSupport.LoadMergedPlanAsync(downloadDirectory, cancellationToken);
-
-        var resultLookup = new Dictionary<string, (JsonObject Result, string ArtifactDirectory)>(StringComparer.OrdinalIgnoreCase);
-        var legacyResultLookup = new Dictionary<string, (JsonObject Result, string ArtifactDirectory)>(StringComparer.OrdinalIgnoreCase);
-        foreach (var resultPath in Directory.GetFiles(downloadDirectory, "result.json", SearchOption.AllDirectories))
-        {
-            var result = JsonNode.Parse(await File.ReadAllTextAsync(resultPath, cancellationToken))?.AsObject();
-            if (result is null)
-            {
-                continue;
-            }
-
-            var artifactDirectory = Path.GetDirectoryName(resultPath)!;
-            foreach (var key in HelpBatchArtifactSupport.BuildResultKeys(result, artifactDirectory))
-            {
-                if (!resultLookup.TryGetValue(key, out var existing)
-                    || GetAttempt(result) >= GetAttempt(existing.Result))
-                {
-                    resultLookup[key] = (result, artifactDirectory);
-                }
-            }
-
-            var resultPackageId = result["packageId"]?.GetValue<string>();
-            var resultVersion = result["version"]?.GetValue<string>();
-            if (string.IsNullOrWhiteSpace(resultPackageId) || string.IsNullOrWhiteSpace(resultVersion))
-            {
-                continue;
-            }
-
-            var legacyKey = HelpBatchArtifactSupport.BuildPackageVersionKey(resultPackageId, resultVersion);
-            if (!legacyResultLookup.TryGetValue(legacyKey, out var existingLegacy)
-                || GetAttempt(result) >= GetAttempt(existingLegacy.Result))
-            {
-                legacyResultLookup[legacyKey] = (result, artifactDirectory);
-            }
-        }
+        var resultLookup = await PromotionResultArtifactLookup.BuildAsync(downloadDirectory, cancellationToken);
 
         var summary = new JsonObject
         {
@@ -69,23 +35,9 @@ internal sealed class PromotionApplyCommandService
 
         foreach (var item in plan.Items.OfType<JsonObject>())
         {
-            var key = HelpBatchArtifactSupport.BuildPlanItemKey(item);
-            var hasResultArtifact = resultLookup.TryGetValue(key, out var resultEntry);
-            if (!hasResultArtifact
-                && string.IsNullOrWhiteSpace(item["artifactName"]?.GetValue<string>())
-                && string.IsNullOrWhiteSpace(item["command"]?.GetValue<string>()))
-            {
-                var itemPackageId = item["packageId"]?.GetValue<string>()
-                    ?? throw new InvalidOperationException("Plan item is missing packageId.");
-                var itemVersion = item["version"]?.GetValue<string>()
-                    ?? throw new InvalidOperationException($"Plan item '{itemPackageId}' is missing version.");
-                hasResultArtifact = legacyResultLookup.TryGetValue(
-                    HelpBatchArtifactSupport.BuildPackageVersionKey(itemPackageId, itemVersion),
-                    out resultEntry);
-            }
-
+            var hasResultArtifact = resultLookup.TryResolve(item, out var resultEntry);
             var result = hasResultArtifact
-                ? resultEntry.Result
+                ? resultEntry!.Result
                 : PromotionResultSupport.NewSyntheticFailureResult(
                     item,
                     item["attempt"]?.GetValue<int?>() ?? 1,
@@ -94,7 +46,7 @@ internal sealed class PromotionApplyCommandService
                     plan.BatchId ?? string.Empty,
                     now);
             PromotionResultSupport.MergePlanItemIntoResult(item, result);
-            var artifactDirectory = hasResultArtifact ? resultEntry.ArtifactDirectory : null;
+            var artifactDirectory = hasResultArtifact ? resultEntry!.ArtifactDirectory : null;
             if (!hasResultArtifact)
             {
                 summary["missingCount"] = (summary["missingCount"]?.GetValue<int>() ?? 0) + 1;
@@ -283,7 +235,4 @@ internal sealed class PromotionApplyCommandService
             json,
             cancellationToken);
     }
-
-    private static int GetAttempt(JsonObject result)
-        => result["attempt"]?.GetValue<int?>() ?? 0;
 }
