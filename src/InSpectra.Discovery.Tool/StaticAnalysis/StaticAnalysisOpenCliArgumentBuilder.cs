@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 internal sealed class StaticAnalysisOpenCliArgumentBuilder
 {
-    public JsonArray? BuildArguments(StaticCommandDefinition? staticCommand, ToolHelpDocument? helpDocument)
+    public JsonArray? BuildArguments(StaticCommandDefinition? staticCommand, Document? helpDocument)
     {
         if (staticCommand?.Values.Count is > 0)
         {
@@ -31,7 +31,7 @@ internal sealed class StaticAnalysisOpenCliArgumentBuilder
         return helpOnlyArgs.Count > 0 ? helpOnlyArgs : null;
     }
 
-    private JsonArray? BuildMetadataFirstArguments(StaticCommandDefinition staticCommand, ToolHelpDocument? helpDocument)
+    private JsonArray? BuildMetadataFirstArguments(StaticCommandDefinition staticCommand, Document? helpDocument)
     {
         var array = new JsonArray();
         var helpArguments = helpDocument?.Arguments.ToList() ?? [];
@@ -47,7 +47,7 @@ internal sealed class StaticAnalysisOpenCliArgumentBuilder
                 helpArgumentIndex = index;
             }
 
-            ToolHelpItem? helpArgument = null;
+            Item? helpArgument = null;
             if (helpArgumentIndex >= 0)
             {
                 matchedHelpArguments[helpArgumentIndex] = true;
@@ -105,7 +105,7 @@ internal sealed class StaticAnalysisOpenCliArgumentBuilder
     }
 
     private static int FindHelpArgumentIndex(
-        IReadOnlyList<ToolHelpItem> helpArguments,
+        IReadOnlyList<Item> helpArguments,
         IReadOnlyList<bool> matched,
         string? name)
     {

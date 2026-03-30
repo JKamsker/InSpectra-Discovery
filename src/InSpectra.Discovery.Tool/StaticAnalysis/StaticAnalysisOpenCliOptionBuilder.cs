@@ -4,7 +4,7 @@ using System.Text.Json.Nodes;
 
 internal sealed class StaticAnalysisOpenCliOptionBuilder
 {
-    public JsonArray? BuildOptions(StaticCommandDefinition? staticCommand, ToolHelpDocument? helpDocument)
+    public JsonArray? BuildOptions(StaticCommandDefinition? staticCommand, Document? helpDocument)
     {
         if (helpDocument?.Options.Count is not > 0 && staticCommand?.Options.Count is not > 0)
         {

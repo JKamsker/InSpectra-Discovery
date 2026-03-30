@@ -86,7 +86,7 @@ public sealed class CommandLineParserSixthPassBenchmarkTests
               --version          Display version information.
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(2, result.CandidateCount);

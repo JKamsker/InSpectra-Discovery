@@ -26,7 +26,7 @@ public sealed class CommandLineParserFourteenthPassBenchmarkTests
               verbs-from-options-file                              Execute several verbs in one run.
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);
@@ -87,7 +87,7 @@ public sealed class CommandLineParserFourteenthPassBenchmarkTests
                 },
             });
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);

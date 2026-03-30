@@ -8,7 +8,7 @@ internal static class AnalysisModule
     public static IServiceCollection AddAnalysisModule(this IServiceCollection services)
     {
         services.AddTransient<AutoCommandService>();
-        services.AddTransient<ToolHelpService>();
+        services.AddTransient<HelpService>();
         services.AddTransient<HelpBatchCommandService>();
         services.AddTransient<CliFxService>();
         services.AddTransient<StaticService>();

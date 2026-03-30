@@ -5,7 +5,7 @@ using System.Text.Json.Nodes;
 internal sealed class StaticAnalysisCrawlOpenCliSupport
 {
     private readonly StaticAnalysisOpenCliBuilder _openCliBuilder = new();
-    private readonly ToolHelpTextParser _parser = new();
+    private readonly TextParser _parser = new();
 
     public JsonObject RegenerateOpenCli(StaticAnalysisCrawlArtifactCandidate candidate)
     {
@@ -26,9 +26,9 @@ internal sealed class StaticAnalysisCrawlOpenCliSupport
         return openCli;
     }
 
-    private Dictionary<string, ToolHelpDocument> ParseCaptures(JsonArray? captures)
+    private Dictionary<string, Document> ParseCaptures(JsonArray? captures)
     {
-        var documents = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase);
+        var documents = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase);
         foreach (var capture in captures?.OfType<JsonObject>() ?? [])
         {
             var payload = ExtractPayload(capture);

@@ -56,7 +56,7 @@ internal sealed class StaticInstalledToolAnalysisSupport
             return;
         }
 
-        var crawler = new ToolHelpCrawler(_runtime);
+        var crawler = new Crawler(_runtime);
         var crawl = await crawler.CrawlAsync(installedTool.CommandPath, tempRoot, installedTool.Environment, commandTimeoutSeconds, cancellationToken);
         crawlStopwatch.Stop();
 

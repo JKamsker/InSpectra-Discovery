@@ -9,31 +9,31 @@ public sealed class StaticAnalysisOpenCliBuilderTests
     public void Build_Nests_MultiSegment_Help_Commands_And_Preserves_Leaf_Inputs()
     {
         var builder = new StaticAnalysisOpenCliBuilder();
-        var helpDocuments = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase)
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
         {
             [""] = CreateHelpDocument(
                 commands:
                 [
-                    new ToolHelpItem("config", false, "Configuration commands"),
+                    new Item("config", false, "Configuration commands"),
                 ]),
             ["config"] = CreateHelpDocument(
                 description: "Configuration commands",
                 commands:
                 [
-                    new ToolHelpItem("credentials", false, "Manage credentials"),
+                    new Item("credentials", false, "Manage credentials"),
                 ]),
             ["config credentials"] = CreateHelpDocument(
                 description: "Manage credentials",
                 commands:
                 [
-                    new ToolHelpItem("set", false, "Set a credential"),
+                    new Item("set", false, "Set a credential"),
                 ]),
             ["config credentials set"] = CreateHelpDocument(
                 description: "Set a credential",
                 options:
                 [
-                    new ToolHelpItem("--key", true, "Credential key"),
-                    new ToolHelpItem("--value", true, "Credential value"),
+                    new Item("--key", true, "Credential key"),
+                    new Item("--value", true, "Credential value"),
                 ]),
         };
 
@@ -98,7 +98,7 @@ public sealed class StaticAnalysisOpenCliBuilderTests
             "1.0.0",
             "CommandLineParser",
             staticCommands,
-            new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase));
+            new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase));
 
         var rootCommands = Assert.IsType<JsonArray>(document["commands"]);
         var deploy = Assert.IsType<JsonObject>(Assert.Single(rootCommands));
@@ -175,17 +175,17 @@ public sealed class StaticAnalysisOpenCliBuilderTests
             "1.0.0",
             "System.CommandLine",
             staticCommands,
-            new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase));
+            new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase));
 
         var options = Assert.IsType<JsonArray>(document["options"]);
         var config = Assert.Single(options);
         Assert.Equal("--config", config!["name"]?.GetValue<string>());
     }
 
-    private static ToolHelpDocument CreateHelpDocument(
+    private static Document CreateHelpDocument(
         string? description = null,
-        IReadOnlyList<ToolHelpItem>? options = null,
-        IReadOnlyList<ToolHelpItem>? commands = null)
+        IReadOnlyList<Item>? options = null,
+        IReadOnlyList<Item>? commands = null)
         => new(
             Title: null,
             Version: null,

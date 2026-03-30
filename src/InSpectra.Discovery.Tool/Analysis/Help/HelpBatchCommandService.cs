@@ -9,7 +9,7 @@ internal sealed class HelpBatchCommandService
     private readonly IStaticBatchRunner _staticRunner;
 
     public HelpBatchCommandService()
-        : this(new ToolHelpBatchRunner(), new CliFxBatchRunner(), new StaticBatchRunner())
+        : this(new HelpBatchRunner(), new CliFxBatchRunner(), new StaticBatchRunner())
     {
     }
 

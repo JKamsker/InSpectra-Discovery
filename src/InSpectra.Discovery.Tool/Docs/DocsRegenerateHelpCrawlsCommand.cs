@@ -2,7 +2,7 @@ namespace InSpectra.Discovery.Tool.Docs;
 
 internal sealed class DocsRegenerateHelpCrawlsCommand : DocsArtifactRegenerationCommandBase
 {
-    private readonly ToolHelpCrawlArtifactRegenerator _regenerator = new();
+    private readonly CrawlArtifactRegenerator _regenerator = new();
 
     protected override string ArtifactLabel => "Help-crawl artifacts";
 

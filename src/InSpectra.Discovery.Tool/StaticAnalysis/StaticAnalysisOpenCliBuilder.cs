@@ -13,7 +13,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
         string packageVersion,
         string framework,
         IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
-        IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
+        IReadOnlyDictionary<string, Document> helpDocuments)
     {
         helpDocuments.TryGetValue(string.Empty, out var rootHelp);
         staticCommands.TryGetValue(string.Empty, out var defaultCommand);
@@ -39,7 +39,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
     private static JsonObject BuildInfoNode(
         string commandName,
         string packageVersion,
-        ToolHelpDocument? rootHelp,
+        Document? rootHelp,
         StaticCommandDefinition? defaultCommand)
     {
         var info = new JsonObject
@@ -57,7 +57,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
     private static JsonObject BuildExtensionMetadata(
         string framework,
         IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
-        IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
+        IReadOnlyDictionary<string, Document> helpDocuments)
     {
         var optionCount = staticCommands.Values.Sum(c => c.Options.Count);
         var valueCount = staticCommands.Values.Sum(c => c.Values.Count);
@@ -91,7 +91,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
     private JsonArray BuildCommandNodes(
         string commandName,
         IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
-        IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
+        IReadOnlyDictionary<string, Document> helpDocuments)
     {
         var nodes = _commandTreeBuilder.Build(BuildCommandDescriptors(commandName, staticCommands, helpDocuments));
         return new JsonArray(nodes.Select(node => BuildCommandNode(node, staticCommands, helpDocuments)).ToArray());
@@ -100,7 +100,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
     private static IEnumerable<OpenCliCommandDescriptor> BuildCommandDescriptors(
         string commandName,
         IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
-        IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
+        IReadOnlyDictionary<string, Document> helpDocuments)
     {
         foreach (var pair in staticCommands.Where(pair => !string.IsNullOrWhiteSpace(pair.Key)))
         {
@@ -109,15 +109,15 @@ internal sealed class StaticAnalysisOpenCliBuilder
 
         foreach (var pair in helpDocuments)
         {
-            if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryInventoryEcho(pair.Key, pair.Value))
+            if (DocumentInspector.IsBuiltinAuxiliaryInventoryEcho(pair.Key, pair.Value))
             {
                 continue;
             }
 
             foreach (var child in pair.Value.Commands)
             {
-                var childFullName = ToolHelpCommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);
-                if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryCommandPath(childFullName))
+                var childFullName = CommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);
+                if (DocumentInspector.IsBuiltinAuxiliaryCommandPath(childFullName))
                 {
                     continue;
                 }
@@ -135,7 +135,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
     private JsonObject BuildCommandNode(
         OpenCliCommandTreeNode commandNode,
         IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
-        IReadOnlyDictionary<string, ToolHelpDocument> helpDocuments)
+        IReadOnlyDictionary<string, Document> helpDocuments)
     {
         staticCommands.TryGetValue(commandNode.FullName, out var staticCommand);
         helpDocuments.TryGetValue(commandNode.FullName, out var helpDocument);

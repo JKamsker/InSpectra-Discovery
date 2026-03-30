@@ -4,10 +4,10 @@ using Xunit;
 
 internal static class ValidatedGenericHelpFrameworkCases
 {
-    public static TheoryData<ToolHelpServiceLiveTests.LiveToolCase> LoadForLiveTests()
+    public static TheoryData<HelpServiceLiveTests.LiveToolCase> LoadForLiveTests()
     {
         var plan = LoadPlan();
-        var data = new TheoryData<ToolHelpServiceLiveTests.LiveToolCase>();
+        var data = new TheoryData<HelpServiceLiveTests.LiveToolCase>();
 
         foreach (var item in plan.Items.Where(item =>
             string.Equals(item.AnalysisMode, "help", StringComparison.OrdinalIgnoreCase)
@@ -24,7 +24,7 @@ internal static class ValidatedGenericHelpFrameworkCases
                 throw new InvalidOperationException($"Plan item '{item.PackageId} {item.Version}' is missing live expectations.");
             }
 
-            data.Add(new ToolHelpServiceLiveTests.LiveToolCase(
+            data.Add(new HelpServiceLiveTests.LiveToolCase(
                 framework,
                 item.PackageId,
                 item.Version,

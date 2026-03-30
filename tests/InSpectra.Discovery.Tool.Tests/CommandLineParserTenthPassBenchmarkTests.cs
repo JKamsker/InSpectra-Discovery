@@ -33,7 +33,7 @@ public sealed class CommandLineParserTenthPassBenchmarkTests
               --version            Display version information.
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);

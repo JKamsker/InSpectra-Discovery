@@ -10,7 +10,7 @@ public sealed class ValidatedGenericHelpFrameworkCasesTests
         Runtime.Initialize();
 
         var cases = ValidatedGenericHelpFrameworkCases.LoadForLiveTests()
-            .Select(entry => Assert.IsType<ToolHelpServiceLiveTests.LiveToolCase>(Assert.Single(entry)))
+            .Select(entry => Assert.IsType<HelpServiceLiveTests.LiveToolCase>(Assert.Single(entry)))
             .ToArray();
 
         Assert.DoesNotContain(cases, testCase =>

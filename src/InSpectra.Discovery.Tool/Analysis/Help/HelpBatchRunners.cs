@@ -36,9 +36,9 @@ internal interface IStaticBatchRunner
         CancellationToken cancellationToken);
 }
 
-internal sealed class ToolHelpBatchRunner : IHelpBatchRunner
+internal sealed class HelpBatchRunner : IHelpBatchRunner
 {
-    private readonly ToolHelpService _service = new();
+    private readonly HelpService _service = new();
 
     public Task<int> RunAsync(
         HelpBatchItem item,

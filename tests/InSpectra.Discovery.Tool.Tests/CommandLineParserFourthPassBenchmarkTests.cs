@@ -34,7 +34,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
               version        Display version information.
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);
@@ -100,7 +100,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
                 },
             });
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);
@@ -158,7 +158,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
               --version        Display version information.
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);
@@ -211,7 +211,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
             Opensquiggly.com
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(2, result.CandidateCount);

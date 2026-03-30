@@ -49,7 +49,7 @@ public sealed class CommandLineParserBenchmarkTests
                                      Mutually exclusive to the --recursive option.
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);
@@ -132,7 +132,7 @@ public sealed class CommandLineParserBenchmarkTests
                 },
             });
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);
@@ -177,7 +177,7 @@ public sealed class CommandLineParserBenchmarkTests
               --version          Display version information.
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);
@@ -213,7 +213,7 @@ public sealed class CommandLineParserBenchmarkTests
             https://aka.ms/dotnet/app-launch-failed
             """);
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);

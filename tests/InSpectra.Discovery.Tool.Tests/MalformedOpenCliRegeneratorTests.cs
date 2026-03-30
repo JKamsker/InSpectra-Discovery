@@ -53,7 +53,7 @@ public sealed class MalformedOpenCliRegeneratorTests
             });
         RepositoryPathResolver.WriteJsonFile(openCliPath, new JsonArray { "broken" });
 
-        var regenerator = new ToolHelpCrawlArtifactRegenerator();
+        var regenerator = new CrawlArtifactRegenerator();
         var result = regenerator.RegenerateRepository(repositoryRoot);
 
         Assert.Equal(1, result.CandidateCount);

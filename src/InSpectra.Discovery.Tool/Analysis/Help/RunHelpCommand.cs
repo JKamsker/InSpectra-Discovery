@@ -6,9 +6,9 @@ using System.ComponentModel;
 
 internal sealed class RunHelpCommand : AsyncCommand<RunHelpCommand.Settings>
 {
-    private readonly ToolHelpService _service;
+    private readonly HelpService _service;
 
-    public RunHelpCommand(ToolHelpService service)
+    public RunHelpCommand(HelpService service)
     {
         _service = service;
     }
