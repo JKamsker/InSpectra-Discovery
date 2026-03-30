@@ -116,6 +116,9 @@ internal sealed class StaticAnalysisService
                 commandName,
                 cancellationToken);
             var resolvedCommandName = bootstrap.CommandName;
+            result["command"] = resolvedCommandName;
+            result["entryPoint"] = bootstrap.EntryPointPath;
+            result["toolSettingsPath"] = bootstrap.ToolSettingsPath;
             if (string.IsNullOrWhiteSpace(resolvedCommandName))
             {
                 NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
@@ -126,7 +129,6 @@ internal sealed class StaticAnalysisService
             }
             else
             {
-                result["command"] = resolvedCommandName;
                 using var analysisTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 analysisTimeout.CancelAfter(TimeSpan.FromSeconds(analysisTimeoutSeconds));
 

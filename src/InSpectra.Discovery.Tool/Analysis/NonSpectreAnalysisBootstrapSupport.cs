@@ -15,7 +15,7 @@ internal static class NonSpectreAnalysisBootstrapSupport
 
         return new NonSpectreAnalysisBootstrapResult(
             registrationLeaf.PackageContent,
-            await ResolveCommandNameAsync(apiClient, registrationLeaf.PackageContent, commandName, cancellationToken));
+            await ResolveCommandInfoAsync(apiClient, registrationLeaf.PackageContent, commandName, cancellationToken));
     }
 
     private static void ApplyPackageMetadata(
@@ -36,7 +36,7 @@ internal static class NonSpectreAnalysisBootstrapSupport
         result["nugetDescription"] = catalogLeaf.Description;
     }
 
-    private static async Task<string?> ResolveCommandNameAsync(
+    private static async Task<ResolvedToolCommandInfo> ResolveCommandInfoAsync(
         NuGetApiClient apiClient,
         string packageContentUrl,
         string? commandName,
@@ -44,14 +44,29 @@ internal static class NonSpectreAnalysisBootstrapSupport
     {
         if (!string.IsNullOrWhiteSpace(commandName))
         {
-            return commandName;
+            return new ResolvedToolCommandInfo(commandName, null, null);
         }
 
-        var packageInspection = await new PackageArchiveInspector(apiClient).InspectAsync(packageContentUrl, cancellationToken);
-        return packageInspection.ToolCommandNames.FirstOrDefault();
+        var packageLayout = await new PackageToolCommandInspector(apiClient).InspectAsync(packageContentUrl, cancellationToken);
+        return new ResolvedToolCommandInfo(
+            packageLayout.ToolCommandNames.FirstOrDefault(),
+            packageLayout.ToolEntryPointPaths.FirstOrDefault(),
+            packageLayout.ToolSettingsPaths.FirstOrDefault());
     }
 }
 
 internal sealed record NonSpectreAnalysisBootstrapResult(
     string PackageContentUrl,
-    string? CommandName);
+    ResolvedToolCommandInfo CommandInfo)
+{
+    public string? CommandName => CommandInfo.CommandName;
+
+    public string? EntryPointPath => CommandInfo.EntryPointPath;
+
+    public string? ToolSettingsPath => CommandInfo.ToolSettingsPath;
+}
+
+internal sealed record ResolvedToolCommandInfo(
+    string? CommandName,
+    string? EntryPointPath,
+    string? ToolSettingsPath);
