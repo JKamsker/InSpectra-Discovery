@@ -183,8 +183,8 @@ internal sealed class AutoAnalysisCommandService
         var shouldUseHelp = string.Equals(descriptor.PreferredAnalysisMode, "help", StringComparison.OrdinalIgnoreCase);
         if (!shouldUseCliFx && !shouldUseStatic && !shouldUseHelp)
         {
-            shouldUseCliFx = CliFrameworkSupport.HasCliFx(descriptor.CliFramework);
-            shouldUseStatic = !shouldUseCliFx && CliFrameworkSupport.HasStaticAnalysisSupport(descriptor.CliFramework);
+            shouldUseCliFx = CliFrameworkProviderRegistry.HasCliFxAnalysisSupport(descriptor.CliFramework);
+            shouldUseStatic = !shouldUseCliFx && CliFrameworkProviderRegistry.HasStaticAnalysisSupport(descriptor.CliFramework);
             shouldUseHelp = !shouldUseCliFx && !shouldUseStatic;
         }
 
@@ -279,7 +279,7 @@ internal sealed class AutoAnalysisCommandService
             ["reason"] = descriptor.SelectionReason,
         };
 
-        if (CliFrameworkSupport.ShouldReplace(result["cliFramework"]?.GetValue<string>(), descriptor.CliFramework))
+        if (CliFrameworkProviderRegistry.ShouldReplace(result["cliFramework"]?.GetValue<string>(), descriptor.CliFramework))
         {
             result["cliFramework"] = descriptor.CliFramework;
         }

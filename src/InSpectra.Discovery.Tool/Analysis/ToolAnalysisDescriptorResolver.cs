@@ -31,21 +31,21 @@ internal sealed class ToolAnalysisDescriptorResolver : IToolAnalysisDescriptorRe
     {
         if (HasConfirmedSpectreCli(catalogLeaf, packageInspection))
         {
-            var classified = CliFrameworkCatalogClassifier.Detect(catalogLeaf);
+            var classified = CliFrameworkProviderRegistry.Detect(catalogLeaf);
             return string.IsNullOrWhiteSpace(classified) || string.Equals(classified, "Spectre.Console.Cli", StringComparison.Ordinal)
                 ? "Spectre.Console.Cli"
                 : $"Spectre.Console.Cli + {classified}";
         }
 
-        return CliFrameworkCatalogClassifier.Detect(catalogLeaf);
+        return CliFrameworkProviderRegistry.Detect(catalogLeaf);
     }
 
     private static (string PreferredMode, string Reason) SelectMode(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection, string? cliFramework)
         => HasConfirmedSpectreCli(catalogLeaf, packageInspection)
             ? ("native", "confirmed-spectre-console-cli")
-            : CliFrameworkSupport.HasCliFx(cliFramework)
+            : CliFrameworkProviderRegistry.HasCliFxAnalysisSupport(cliFramework)
                 ? ("clifx", "confirmed-clifx")
-                : CliFrameworkSupport.HasStaticAnalysisSupport(cliFramework)
+                : CliFrameworkProviderRegistry.HasStaticAnalysisSupport(cliFramework)
                     ? ("static", "confirmed-static-analysis-framework")
                     : ("help", "generic-help-crawl");
 

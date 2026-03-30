@@ -8,37 +8,6 @@ internal sealed class StaticAnalysisService
     private readonly StaticAnalysisOpenCliBuilder _openCliBuilder = new();
     private readonly StaticAnalysisCoverageClassifier _coverageClassifier = new();
 
-    private static readonly Dictionary<string, IStaticAttributeReader> AttributeReaders = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["CommandLineParser"] = new CmdParserAttributeReader(),
-        ["System.CommandLine"] = new SystemCommandLineAttributeReader(),
-        ["McMaster.Extensions.CommandLineUtils"] = new McMasterAttributeReader(),
-        ["Microsoft.Extensions.CommandLineUtils"] = new McMasterAttributeReader(),
-        ["Cocona"] = new CoconaAttributeReader(),
-        ["PowerArgs"] = new PowerArgsAttributeReader(),
-        ["CommandDotNet"] = new CommandDotNetAttributeReader(),
-        ["Argu"] = new ArguAttributeReader(),
-    };
-
-    private static readonly Dictionary<string, string> AssemblyNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["CommandLineParser"] = "CommandLine",
-        ["System.CommandLine"] = "System.CommandLine",
-        ["McMaster.Extensions.CommandLineUtils"] = "McMaster.Extensions.CommandLineUtils",
-        ["Microsoft.Extensions.CommandLineUtils"] = "Microsoft.Extensions.CommandLineUtils",
-        ["Cocona"] = "Cocona",
-        ["PowerArgs"] = "PowerArgs",
-        ["CommandDotNet"] = "CommandDotNet",
-        ["Argu"] = "Argu",
-        ["DocoptNet"] = "DocoptNet",
-        ["ConsoleAppFramework"] = "ConsoleAppFramework",
-        ["Oakton"] = "Oakton",
-        ["ManyConsole"] = "ManyConsole",
-        ["Mono.Options"] = "Mono.Options",
-        ["NDesk.Options"] = "NDesk.Options",
-        ["Mono.Options / NDesk.Options"] = "Mono.Options",
-    };
-
     public Task<int> RunQuietAsync(
         string packageId,
         string version,
@@ -378,13 +347,13 @@ internal sealed class StaticAnalysisService
 
     private AssemblyInspectionResult InspectAssemblies(string installDirectory, string cliFramework)
     {
-        var assemblyName = ResolveAssemblyName(cliFramework);
-        if (assemblyName is null)
+        var adapter = CliFrameworkProviderRegistry.ResolveStaticAnalysisAdapter(cliFramework);
+        if (adapter is null)
         {
             return AssemblyInspectionResult.NoReader(cliFramework);
         }
 
-        var modules = _assemblyScanner.ScanForFramework(installDirectory, assemblyName);
+        var modules = _assemblyScanner.ScanForFramework(installDirectory, adapter.AssemblyName);
         if (modules.Count == 0)
         {
             return AssemblyInspectionResult.FrameworkNotFound(cliFramework);
@@ -392,13 +361,7 @@ internal sealed class StaticAnalysisService
 
         try
         {
-            var reader = ResolveAttributeReader(cliFramework);
-            if (reader is null)
-            {
-                return AssemblyInspectionResult.NoReader(cliFramework);
-            }
-
-            var commands = new Dictionary<string, StaticCommandDefinition>(reader.Read(modules), StringComparer.OrdinalIgnoreCase);
+            var commands = new Dictionary<string, StaticCommandDefinition>(adapter.Reader.Read(modules), StringComparer.OrdinalIgnoreCase);
             if (commands.Count == 0)
             {
                 return AssemblyInspectionResult.NoAttributes(cliFramework, modules.Count);
@@ -434,44 +397,8 @@ internal sealed class StaticAnalysisService
             => new("no-reader", framework, 0, new(StringComparer.OrdinalIgnoreCase));
     }
 
-    private static IStaticAttributeReader? ResolveAttributeReader(string cliFramework)
-    {
-        foreach (var part in cliFramework.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            if (AttributeReaders.TryGetValue(part, out var reader))
-            {
-                return reader;
-            }
-        }
-
-        return null;
-    }
-
-    private static string? ResolveAssemblyName(string cliFramework)
-    {
-        foreach (var part in cliFramework.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            if (AssemblyNames.TryGetValue(part, out var name))
-            {
-                return name;
-            }
-        }
-
-        return null;
-    }
-
     private static string ResolveFrameworkName(string cliFramework)
-    {
-        foreach (var part in cliFramework.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-        {
-            if (AssemblyNames.ContainsKey(part))
-            {
-                return part;
-            }
-        }
-
-        return cliFramework;
-    }
+        => CliFrameworkProviderRegistry.ResolveStaticAnalysisAdapter(cliFramework)?.FrameworkName ?? cliFramework;
 
     private static void WriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
     {

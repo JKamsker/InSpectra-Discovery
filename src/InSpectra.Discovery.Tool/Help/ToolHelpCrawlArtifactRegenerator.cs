@@ -357,7 +357,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
 
         var cliFramework = metadata?["cliFramework"]?.GetValue<string>()
             ?? openCli?["x-inspectra"]?["cliFramework"]?.GetValue<string>();
-        if (CliFrameworkSupport.HasCliFx(cliFramework))
+        if (CliFrameworkProviderRegistry.HasCliFxAnalysisSupport(cliFramework))
         {
             return null;
         }

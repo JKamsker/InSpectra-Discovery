@@ -313,7 +313,7 @@ internal sealed class CliFxCrawlArtifactRegenerator
             ?? metadata?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
         var cliFramework = metadata?["cliFramework"]?.GetValue<string>()
             ?? openCli?["x-inspectra"]?["cliFramework"]?.GetValue<string>();
-        if (!CliFrameworkSupport.HasCliFx(cliFramework)
+        if (!CliFrameworkProviderRegistry.HasCliFxAnalysisSupport(cliFramework)
             || !IsCliFxCrawlArtifactSource(artifactSource))
         {
             return null;
