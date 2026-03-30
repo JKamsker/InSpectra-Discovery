@@ -11,10 +11,10 @@ internal sealed class AnalysisRunHelpBatchCommand : AsyncCommand<AnalysisRunHelp
         [CommandOption("--plan <PATH>")]
         public string PlanPath { get; set; } = string.Empty;
 
-        [CommandOption("--output-root <PATH>")]
+        [CommandOption("--output-root|--output|--out <PATH>")]
         public string OutputRoot { get; set; } = string.Empty;
 
-        [CommandOption("--batch-id <ID>")]
+        [CommandOption("--batch-id|--batch <ID>")]
         public string? BatchId { get; set; }
 
         [CommandOption("--source <NAME>")]

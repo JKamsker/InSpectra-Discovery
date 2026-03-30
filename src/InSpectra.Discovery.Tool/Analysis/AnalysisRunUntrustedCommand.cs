@@ -6,24 +6,8 @@ internal sealed class AnalysisRunUntrustedCommand : AsyncCommand<AnalysisRunUntr
 {
     private readonly AnalysisCommandService _service = new();
 
-    public sealed class Settings : GlobalSettings
+    public sealed class Settings : PackageAnalysisSettingsBase
     {
-        [CommandOption("--package-id <ID>")]
-        public string PackageId { get; set; } = string.Empty;
-
-        [CommandOption("--version <VERSION>")]
-        public string Version { get; set; } = string.Empty;
-
-        [CommandOption("--output-root <PATH>")]
-        public string OutputRoot { get; set; } = string.Empty;
-
-        [CommandOption("--batch-id <ID>")]
-        public string BatchId { get; set; } = string.Empty;
-
-        [CommandOption("--attempt <NUMBER>")]
-        [DefaultValue(1)]
-        public int Attempt { get; set; } = 1;
-
         [CommandOption("--source <NAME>")]
         [DefaultValue("untrusted-batch")]
         public string Source { get; set; } = "untrusted-batch";
@@ -37,15 +21,7 @@ internal sealed class AnalysisRunUntrustedCommand : AsyncCommand<AnalysisRunUntr
         public int CommandTimeoutSeconds { get; set; } = 60;
 
         public override ValidationResult Validate()
-            => string.IsNullOrWhiteSpace(PackageId) ||
-               string.IsNullOrWhiteSpace(Version) ||
-               string.IsNullOrWhiteSpace(OutputRoot) ||
-               string.IsNullOrWhiteSpace(BatchId) ||
-               Attempt <= 0 ||
-               InstallTimeoutSeconds <= 0 ||
-               CommandTimeoutSeconds <= 0
-                ? ValidationResult.Error("`--package-id`, `--version`, `--output-root`, `--batch-id`, and positive timeout/attempt values are required.")
-                : ValidationResult.Success();
+            => ValidatePackageAnalysis(InstallTimeoutSeconds, CommandTimeoutSeconds);
     }
 
     public override Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)

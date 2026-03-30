@@ -6,27 +6,8 @@ internal sealed class AnalysisRunCliFxCommand : AsyncCommand<AnalysisRunCliFxCom
 {
     private readonly CliFxAnalysisService _service = new();
 
-    public sealed class Settings : GlobalSettings
+    public sealed class Settings : NonSpectrePackageAnalysisSettingsBase
     {
-        [CommandOption("--package-id <ID>")]
-        public string PackageId { get; set; } = string.Empty;
-
-        [CommandOption("--version <VERSION>")]
-        public string Version { get; set; } = string.Empty;
-
-        [CommandOption("--command <NAME>")]
-        public string? Command { get; set; }
-
-        [CommandOption("--output-root <PATH>")]
-        public string OutputRoot { get; set; } = string.Empty;
-
-        [CommandOption("--batch-id <ID>")]
-        public string BatchId { get; set; } = string.Empty;
-
-        [CommandOption("--attempt <NUMBER>")]
-        [DefaultValue(1)]
-        public int Attempt { get; set; } = 1;
-
         [CommandOption("--source <NAME>")]
         [DefaultValue("clifx-help-crawl")]
         public string Source { get; set; } = "clifx-help-crawl";
@@ -44,16 +25,7 @@ internal sealed class AnalysisRunCliFxCommand : AsyncCommand<AnalysisRunCliFxCom
         public int CommandTimeoutSeconds { get; set; } = 30;
 
         public override ValidationResult Validate()
-            => string.IsNullOrWhiteSpace(PackageId)
-                || string.IsNullOrWhiteSpace(Version)
-                || string.IsNullOrWhiteSpace(OutputRoot)
-                || string.IsNullOrWhiteSpace(BatchId)
-                || Attempt <= 0
-                || InstallTimeoutSeconds <= 0
-                || AnalysisTimeoutSeconds <= 0
-                || CommandTimeoutSeconds <= 0
-                ? ValidationResult.Error("`--package-id`, `--version`, `--output-root`, `--batch-id`, and positive timeout/attempt values are required.")
-                : ValidationResult.Success();
+            => ValidatePackageAnalysis(InstallTimeoutSeconds, AnalysisTimeoutSeconds, CommandTimeoutSeconds);
     }
 
     public override Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
