@@ -1,6 +1,4 @@
 using System.Text.Json.Nodes;
-using System.Xml.Linq;
-
 internal static class PromotionArtifactWriter
 {
     public static async Task<JsonObject> WriteSuccessArtifactsAsync(
@@ -24,43 +22,23 @@ internal static class PromotionArtifactWriter
         var xmlDocArtifact = result["artifacts"]?["xmldocArtifact"]?.GetValue<string>();
         var openCliArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, openCliArtifact);
         var xmlDocArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, xmlDocArtifact);
-        string? openCliSource = null;
-        JsonObject? openCliDocument = null;
-        string? xmlDocContent = null;
-
-        if (openCliArtifactPath is not null
-            && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out var parsedOpenCli, out _))
-        {
-            openCliSource = ResolveOpenCliSource(parsedOpenCli!, result);
-            OpenCliDocumentSanitizer.EnsureArtifactSource(parsedOpenCli!, openCliSource);
-            openCliDocument = OpenCliDocumentSanitizer.Sanitize(parsedOpenCli!);
-        }
-
-        if (xmlDocArtifactPath is not null)
-        {
-            xmlDocContent = await File.ReadAllTextAsync(xmlDocArtifactPath, cancellationToken);
-        }
-
-        if (openCliDocument is null && !string.IsNullOrWhiteSpace(xmlDocContent))
-        {
-            openCliDocument = OpenCliDocumentSynthesizer.ConvertFromXmldoc(
-                XDocument.Parse(xmlDocContent),
-                result["command"]?.GetValue<string>() ?? packageId,
-                version);
-            openCliSource = "synthesized-from-xmldoc";
-        }
+        var preparedOpenCliArtifact = await PromotionOpenCliArtifactSupport.PrepareAsync(
+            result,
+            packageId,
+            version,
+            openCliArtifactPath,
+            xmlDocArtifactPath,
+            cancellationToken);
+        var openCliDocument = preparedOpenCliArtifact.OpenCliDocument;
+        var openCliSource = preparedOpenCliArtifact.OpenCliSource;
+        var xmlDocContent = preparedOpenCliArtifact.XmlDocContent;
 
         PromotionAnalysisModeSupport.BackfillAnalysisModeSelection(
             result,
             OpenCliArtifactSourceSupport.InferAnalysisMode(openCliSource)
             ?? OpenCliArtifactSourceSupport.InferAnalysisMode(openCliDocument?["x-inspectra"]?["artifactSource"]?.GetValue<string>()));
 
-        if (openCliDocument is not null && !string.IsNullOrWhiteSpace(result["cliFramework"]?.GetValue<string>()))
-        {
-            openCliDocument["x-inspectra"]!.AsObject()["cliFramework"] = result["cliFramework"]!.GetValue<string>();
-        }
-
-        var hasOpenCliOutput = openCliDocument is not null;
+        var hasOpenCliOutput = preparedOpenCliArtifact.HasOpenCliOutput;
         if (hasOpenCliOutput)
         {
             RepositoryPathResolver.WriteJsonFile(openCliPath, openCliDocument);
@@ -72,9 +50,9 @@ internal static class PromotionArtifactWriter
 
         var hasCrawlArtifact = PromotionArtifactSupport.SyncOptionalArtifact(artifactDirectory, crawlArtifact, crawlPath);
 
-        if (!string.IsNullOrWhiteSpace(xmlDocContent))
+        if (preparedOpenCliArtifact.HasXmlDocContent)
         {
-            RepositoryPathResolver.WriteTextFile(xmlDocPath, xmlDocContent);
+            RepositoryPathResolver.WriteTextFile(xmlDocPath, xmlDocContent!);
         }
         else if (File.Exists(xmlDocPath))
         {
@@ -84,7 +62,7 @@ internal static class PromotionArtifactWriter
         var openCliStep = result["steps"]?["opencli"]?.DeepClone() as JsonObject;
         var introspection = result["introspection"]?.DeepClone() as JsonObject ?? new JsonObject();
         var openCliIntrospection = introspection["opencli"]?.DeepClone() as JsonObject;
-        var inferredOpenCliClassification = ResolveOpenCliClassification(openCliSource, openCliStep, openCliIntrospection);
+        var inferredOpenCliClassification = PromotionOpenCliArtifactSupport.ResolveOpenCliClassification(openCliSource, openCliStep, openCliIntrospection);
         if (openCliStep is null && hasOpenCliOutput)
         {
             openCliStep = new JsonObject
@@ -102,7 +80,12 @@ internal static class PromotionArtifactWriter
         {
             if (hasOpenCliOutput)
             {
-                BackfillOpenCliStepMetadata(openCliStep, repositoryRoot, openCliPath, openCliSource, inferredOpenCliClassification);
+                PromotionOpenCliArtifactSupport.BackfillOpenCliStepMetadata(
+                    openCliStep,
+                    repositoryRoot,
+                    openCliPath,
+                    openCliSource,
+                    inferredOpenCliClassification);
             }
             else
             {
@@ -113,7 +96,7 @@ internal static class PromotionArtifactWriter
         var xmlDocStep = result["steps"]?["xmldoc"]?.DeepClone() as JsonObject;
         if (xmlDocStep is not null)
         {
-            if (!string.IsNullOrWhiteSpace(xmlDocContent))
+            if (preparedOpenCliArtifact.HasXmlDocContent)
             {
                 xmlDocStep["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, xmlDocPath);
             }
@@ -138,23 +121,15 @@ internal static class PromotionArtifactWriter
 
         if (openCliIntrospection is not null && hasOpenCliOutput)
         {
-            BackfillOpenCliIntrospectionMetadata(openCliIntrospection, openCliSource, inferredOpenCliClassification);
+            PromotionOpenCliArtifactSupport.BackfillOpenCliIntrospectionMetadata(
+                openCliIntrospection,
+                openCliSource,
+                inferredOpenCliClassification);
             introspection["opencli"] = openCliIntrospection;
         }
 
-        var metadataAnalysisMode = OpenCliArtifactSourceSupport.InferAnalysisMode(openCliSource)
-            ?? OpenCliArtifactSourceSupport.InferAnalysisMode(openCliDocument?["x-inspectra"]?["artifactSource"]?.GetValue<string>())
-            ?? result["analysisMode"]?.GetValue<string>();
-        var metadataAnalysisSelection = result["analysisSelection"]?.DeepClone() as JsonObject;
-        if (!string.IsNullOrWhiteSpace(metadataAnalysisMode))
-        {
-            metadataAnalysisSelection ??= new JsonObject();
-            metadataAnalysisSelection["selectedMode"] = metadataAnalysisMode;
-            if (metadataAnalysisSelection["preferredMode"] is null)
-            {
-                metadataAnalysisSelection["preferredMode"] = metadataAnalysisMode;
-            }
-        }
+        var metadataAnalysisMode = PromotionOpenCliArtifactSupport.ResolveMetadataAnalysisMode(result, preparedOpenCliArtifact);
+        var metadataAnalysisSelection = PromotionOpenCliArtifactSupport.BuildMetadataAnalysisSelection(result, metadataAnalysisMode);
 
         var metadata = new JsonObject
         {
@@ -199,7 +174,7 @@ internal static class PromotionArtifactWriter
                 ["opencliPath"] = hasOpenCliOutput ? RepositoryPathResolver.GetRelativePath(repositoryRoot, openCliPath) : null,
                 ["opencliSource"] = hasOpenCliOutput ? openCliSource : null,
                 ["crawlPath"] = hasCrawlArtifact ? RepositoryPathResolver.GetRelativePath(repositoryRoot, crawlPath) : null,
-                ["xmldocPath"] = !string.IsNullOrWhiteSpace(xmlDocContent) ? RepositoryPathResolver.GetRelativePath(repositoryRoot, xmlDocPath) : null,
+                ["xmldocPath"] = preparedOpenCliArtifact.HasXmlDocContent ? RepositoryPathResolver.GetRelativePath(repositoryRoot, xmlDocPath) : null,
             },
         };
 
@@ -213,89 +188,10 @@ internal static class PromotionArtifactWriter
                 openCliPath,
                 openCliSource,
                 crawlPath: hasCrawlArtifact ? crawlPath : null,
-                xmldocPath: !string.IsNullOrWhiteSpace(xmlDocContent) ? xmlDocPath : null,
+                xmldocPath: preparedOpenCliArtifact.HasXmlDocContent ? xmlDocPath : null,
                 synthesizedArtifact: string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.OrdinalIgnoreCase));
         }
 
         return metadata["artifacts"]!.DeepClone().AsObject();
     }
-
-    private static string ResolveOpenCliSource(JsonObject document, JsonObject result)
-        => FirstNonEmpty(
-            document["x-inspectra"]?["artifactSource"]?.GetValue<string>(),
-            result["artifacts"]?["opencliSource"]?.GetValue<string>(),
-            result["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>(),
-            result["introspection"]?["opencli"]?["artifactSource"]?.GetValue<string>(),
-            OpenCliArtifactSourceSupport.InferArtifactSource(result["analysisMode"]?.GetValue<string>()),
-            "tool-output") ?? "tool-output";
-
-    private static string? InferOpenCliClassification(string? openCliSource)
-        => OpenCliArtifactSourceSupport.InferClassification(openCliSource);
-
-    private static string? ResolveOpenCliClassification(string? openCliSource, params JsonObject?[] sources)
-    {
-        if (string.Equals(openCliSource, "tool-output", StringComparison.OrdinalIgnoreCase))
-        {
-            var preserved = sources
-                .Select(source => source?["classification"]?.GetValue<string>())
-                .FirstOrDefault(classification => string.Equals(classification, "json-ready-with-nonzero-exit", StringComparison.OrdinalIgnoreCase));
-            if (!string.IsNullOrWhiteSpace(preserved))
-            {
-                return preserved;
-            }
-        }
-
-        return InferOpenCliClassification(openCliSource);
-    }
-
-    private static void BackfillOpenCliStepMetadata(
-        JsonObject openCliStep,
-        string repositoryRoot,
-        string openCliPath,
-        string? openCliSource,
-        string? inferredOpenCliClassification)
-    {
-        openCliStep["status"] = "ok";
-        openCliStep["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, openCliPath);
-        openCliStep.Remove("message");
-        if (!string.IsNullOrWhiteSpace(openCliSource))
-        {
-            openCliStep["artifactSource"] = openCliSource;
-        }
-
-        if (!string.IsNullOrWhiteSpace(inferredOpenCliClassification))
-        {
-            openCliStep["classification"] = inferredOpenCliClassification;
-        }
-    }
-
-    private static void BackfillOpenCliIntrospectionMetadata(
-        JsonObject openCliIntrospection,
-        string? openCliSource,
-        string? inferredOpenCliClassification)
-    {
-        openCliIntrospection["status"] = "ok";
-        openCliIntrospection.Remove("message");
-        if (string.Equals(openCliSource, "synthesized-from-xmldoc", StringComparison.Ordinal))
-        {
-            openCliIntrospection["synthesizedArtifact"] = true;
-        }
-        else
-        {
-            openCliIntrospection.Remove("synthesizedArtifact");
-        }
-
-        if (!string.IsNullOrWhiteSpace(openCliSource))
-        {
-            openCliIntrospection["artifactSource"] = openCliSource;
-        }
-
-        if (!string.IsNullOrWhiteSpace(inferredOpenCliClassification))
-        {
-            openCliIntrospection["classification"] = inferredOpenCliClassification;
-        }
-    }
-
-    private static string? FirstNonEmpty(params string?[] values)
-        => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 }
