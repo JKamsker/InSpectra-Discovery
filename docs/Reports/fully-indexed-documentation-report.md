@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-30 13:06:50+00:00
+Generated: 2026-03-30 15:51:27+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -16,7 +16,7 @@ Incomplete: 7
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [BellaBaxter.Cli](#pkg-bellabaxter-cli) | 0.1.1-preview.29 | ok | xml-ready | 71/71 | 51/174 | 13/30 | 32/59 | FAIL |
+| [BellaBaxter.Cli](#pkg-bellabaxter-cli) | 0.1.1-preview.34 | ok | xml-ready | 71/71 | 51/174 | 13/30 | 32/59 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
 | [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.45 | ok | xml-ready | 8/8 | 88/88 | 4/4 | 0/5 | FAIL |
 | [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.5 | ok | xml-ready | 253/253 | 2195/2348 | 58/163 | 0/211 | FAIL |
@@ -38,7 +38,7 @@ Incomplete: 7
 <a id="pkg-bellabaxter-cli"></a>
 ### BellaBaxter.Cli
 
-- Version: `0.1.1-preview.29`
+- Version: `0.1.1-preview.34`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
