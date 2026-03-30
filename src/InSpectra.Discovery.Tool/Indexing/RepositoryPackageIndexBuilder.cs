@@ -239,53 +239,13 @@ internal static class RepositoryPackageIndexBuilder
 
     private static void WriteBrowserIndex(JsonObject allIndex, string outputPath, DateTimeOffset now)
     {
-        var packages = new JsonArray();
-        foreach (var package in allIndex["packages"]?.AsArray().OfType<JsonObject>() ?? [])
-        {
-            if (string.IsNullOrWhiteSpace(package["latestPaths"]?["opencliPath"]?.GetValue<string>()))
-            {
-                continue;
-            }
-
-            var latestVersionRecord = package["versions"]?.AsArray().OfType<JsonObject>().FirstOrDefault();
-            var packageId = package["packageId"]?.GetValue<string>() ?? string.Empty;
-            var latestVersion = package["latestVersion"]?.GetValue<string>() ?? string.Empty;
-            var packageTimestamps = ResolvePackageTimestamps(package);
-            var packageEntry = new JsonObject
-            {
-                ["packageId"] = packageId,
-                ["commandName"] = latestVersionRecord?["command"]?.GetValue<string>(),
-                ["versionCount"] = package["versions"]?.AsArray().Count ?? 0,
-                ["latestVersion"] = latestVersion,
-                ["createdAt"] = packageTimestamps.CreatedAt,
-                ["updatedAt"] = packageTimestamps.UpdatedAt,
-                ["completeness"] = package["latestStatus"]?.GetValue<string>() switch
-                {
-                    "ok" => "full",
-                    "partial" => "partial",
-                    var other => other,
-                },
-                ["packageIconUrl"] = string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(latestVersion)
-                    ? null
-                    : $"https://api.nuget.org/v3-flatcontainer/{packageId.ToLowerInvariant()}/{latestVersion.ToLowerInvariant()}/icon",
-                ["totalDownloads"] = package["totalDownloads"]?.GetValue<long?>(),
-                ["commandCount"] = package["commandCount"]?.GetValue<int?>() ?? 0,
-                ["commandGroupCount"] = package["commandGroupCount"]?.GetValue<int?>() ?? 0,
-            };
-            SetOptionalString(packageEntry, "cliFramework", package["cliFramework"]?.GetValue<string>());
-            packages.Add(packageEntry);
-        }
-
-        var timestamps = ResolveDocumentTimestamps(outputPath, now);
-        RepositoryPathResolver.WriteJsonFile(outputPath, new JsonObject
-        {
-            ["schemaVersion"] = 1,
-            ["createdAt"] = timestamps.CreatedAt,
-            ["updatedAt"] = timestamps.UpdatedAt,
-            ["generatedAt"] = now.ToString("O"),
-            ["packageCount"] = packages.Count,
-            ["packages"] = packages,
-        });
+        RepositoryPathResolver.WriteJsonFile(
+            outputPath,
+            DocsBrowserIndexSupport.BuildBrowserIndex(
+                allIndex,
+                outputPath,
+                CancellationToken.None,
+                now));
     }
 
     private static DocumentTimestamps ResolveDocumentTimestamps(string path, DateTimeOffset now)
