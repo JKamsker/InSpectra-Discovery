@@ -138,37 +138,30 @@ internal sealed class ToolHelpTextParser
         sections.TryGetValue("commands", out var commandLines);
 
         var usageSectionParts = ToolHelpUsageSectionSplitter.Split(usageLines ?? []);
-        var rawArgumentLines = new List<string>(argumentLines ?? []);
-        rawArgumentLines.AddRange(usageSectionParts.ArgumentLines);
-        rawArgumentLines.AddRange(ToolHelpPreambleArgumentInference.InferArgumentLines(preamble, title));
         var trailingStructuredBlock = ToolHelpTrailingStructuredBlockInference.Infer(sections);
-        rawArgumentLines.AddRange(trailingStructuredBlock.ArgumentLines);
+        var rawArgumentLines = ToolHelpParserInputAssemblySupport.BuildRawArgumentLines(
+            preamble,
+            title,
+            sections,
+            usageSectionParts,
+            trailingStructuredBlock);
         ToolHelpItemParser.SplitArgumentSectionLines(rawArgumentLines, out var parsedArgumentLines, out var optionStyleArgumentLines);
 
         var parsedUsageLines = TrimNonEmpty(
             usageSectionParts.UsageLines.Count > 0
                 ? usageSectionParts.UsageLines
                 : ToolHelpPreambleInference.InferUsageLines(preamble));
-        var optionCandidateLines = preamble
-            .Skip(string.IsNullOrWhiteSpace(title) ? 0 : 1)
-            .Concat(trailingStructuredBlock.OptionLines)
-            .ToArray();
-        IReadOnlyList<string> seededOptionLines = optionLines ?? ToolHelpLegacyOptionTable.InferOptionLines(optionCandidateLines, parsedUsageLines);
-        if (optionLines is null)
-        {
-            ToolHelpItemParser.SplitArgumentSectionLines(seededOptionLines, out var inferredArgumentLines, out var inferredOptionLines);
-            rawArgumentLines.AddRange(inferredArgumentLines);
-            seededOptionLines = inferredOptionLines;
-        }
-
-        var fullTextInferredOptionLines = ToolHelpLegacyOptionTable.InferOptionLines(lines, parsedUsageLines);
-        ToolHelpItemParser.SplitArgumentSectionLines(fullTextInferredOptionLines, out var fullTextInferredArgumentLines, out var fullTextInferredOptionOnlyLines);
-        AppendDistinctLines(rawArgumentLines, fullTextInferredArgumentLines);
-
-        var rawOptionLines = new List<string>(seededOptionLines);
-        AppendDistinctLines(rawOptionLines, fullTextInferredOptionOnlyLines);
-        rawOptionLines.AddRange(usageSectionParts.OptionLines);
-        rawOptionLines.AddRange(optionStyleArgumentLines);
+        var rawOptionLines = ToolHelpParserInputAssemblySupport.BuildRawOptionLines(
+            lines,
+            preamble,
+            title,
+            sections,
+            parsedUsageLines,
+            usageSectionParts,
+            trailingStructuredBlock,
+            optionStyleArgumentLines,
+            rawArgumentLines,
+            out rawArgumentLines);
         var parsedOptions = ToolHelpItemParser.ParseItems(
             ToolHelpLegacyOptionTable.NormalizeOptionLines(rawOptionLines),
             ToolHelpItemKind.Option);
@@ -199,17 +192,6 @@ internal sealed class ToolHelpTextParser
 
     private static IReadOnlyList<string> TrimNonEmpty(IEnumerable<string> lines)
         => lines.Select(line => line.Trim()).Where(line => line.Length > 0).ToArray();
-
-    private static void AppendDistinctLines(ICollection<string> target, IEnumerable<string> lines)
-    {
-        foreach (var line in lines)
-        {
-            if (!target.Contains(line, StringComparer.Ordinal))
-            {
-                target.Add(line);
-            }
-        }
-    }
 
     private static string? JoinLines(IEnumerable<string> lines)
     {
