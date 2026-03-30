@@ -31,59 +31,31 @@ internal sealed class CliFxInstalledToolAnalysisSupport
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        var environment = _runtime.CreateSandboxEnvironment(tempRoot);
-        foreach (var directory in environment.Directories)
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var installDirectory = Path.Combine(tempRoot, "tool");
-        var installResult = await _runtime.InvokeProcessCaptureAsync(
-            "dotnet",
-            ["tool", "install", packageId, "--version", version, "--tool-path", installDirectory],
+        var installedTool = await ToolCommandInstallationSupport.InstallToolAsync(
+            _runtime,
+            result,
+            packageId,
+            version,
+            commandName,
             tempRoot,
-            environment.Values,
             installTimeoutSeconds,
-            tempRoot,
             cancellationToken);
-
-        result["steps"]!.AsObject()["install"] = installResult.ToJsonObject();
-        result["timings"]!.AsObject()["installMs"] = installResult.DurationMs;
-
-        if (installResult.TimedOut || installResult.ExitCode != 0)
+        if (installedTool is null)
         {
-            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
-                result,
-                phase: "install",
-                classification: installResult.TimedOut ? "install-timeout" : "install-failed",
-                CliFxToolRuntime.NormalizeConsoleText(installResult.Stdout)
-                ?? CliFxToolRuntime.NormalizeConsoleText(installResult.Stderr)
-                ?? "Tool installation failed.");
-            return;
-        }
-
-        var commandPath = _runtime.ResolveInstalledCommandPath(installDirectory, commandName);
-        if (commandPath is null)
-        {
-            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
-                result,
-                phase: "install",
-                classification: "installed-command-missing",
-                $"Installed tool command '{commandName}' was not found.");
             return;
         }
 
         var crawlStopwatch = Stopwatch.StartNew();
-        var staticCommands = NormalizeCommandLookup(_metadataInspector.Inspect(installDirectory));
+        var staticCommands = NormalizeCommandLookup(_metadataInspector.Inspect(installedTool.InstallDirectory));
         var crawler = new CliFxHelpCrawler(_runtime);
-        var crawl = await crawler.CrawlAsync(commandPath, tempRoot, environment.Values, commandTimeoutSeconds, cancellationToken);
+        var crawl = await crawler.CrawlAsync(installedTool.CommandPath, tempRoot, installedTool.Environment, commandTimeoutSeconds, cancellationToken);
         crawlStopwatch.Stop();
         var coverage = _coverageClassifier.Classify(staticCommands.Count, crawl);
         var coverageJson = coverage.ToJsonObject();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         result["coverage"] = coverageJson;
-        WriteCrawlArtifact(
+        ToolCommandInstallationSupport.WriteCrawlArtifact(
             outputDirectory,
             result,
             CrawlArtifactBuilder.Build(
@@ -118,10 +90,4 @@ internal sealed class CliFxInstalledToolAnalysisSupport
 
     private static Dictionary<string, CliFxCommandDefinition> NormalizeCommandLookup(IReadOnlyDictionary<string, CliFxCommandDefinition> commands)
         => new(commands, StringComparer.OrdinalIgnoreCase);
-
-    private static void WriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
-    {
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), crawlArtifact);
-        result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
-    }
 }

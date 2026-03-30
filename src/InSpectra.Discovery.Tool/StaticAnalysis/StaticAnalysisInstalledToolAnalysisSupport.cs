@@ -32,57 +32,29 @@ internal sealed class StaticAnalysisInstalledToolAnalysisSupport
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        var environment = _runtime.CreateSandboxEnvironment(tempRoot);
-        foreach (var directory in environment.Directories)
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var installDirectory = Path.Combine(tempRoot, "tool");
-        var installResult = await _runtime.InvokeProcessCaptureAsync(
-            "dotnet",
-            ["tool", "install", packageId, "--version", version, "--tool-path", installDirectory],
+        var installedTool = await ToolCommandInstallationSupport.InstallToolAsync(
+            _runtime,
+            result,
+            packageId,
+            version,
+            commandName,
             tempRoot,
-            environment.Values,
             installTimeoutSeconds,
-            tempRoot,
             cancellationToken);
-
-        result["steps"]!.AsObject()["install"] = installResult.ToJsonObject();
-        result["timings"]!.AsObject()["installMs"] = installResult.DurationMs;
-
-        if (installResult.TimedOut || installResult.ExitCode != 0)
+        if (installedTool is null)
         {
-            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
-                result,
-                phase: "install",
-                classification: installResult.TimedOut ? "install-timeout" : "install-failed",
-                StaticAnalysisToolRuntime.NormalizeConsoleText(installResult.Stdout)
-                ?? StaticAnalysisToolRuntime.NormalizeConsoleText(installResult.Stderr)
-                ?? "Tool installation failed.");
-            return;
-        }
-
-        var commandPath = _runtime.ResolveInstalledCommandPath(installDirectory, commandName);
-        if (commandPath is null)
-        {
-            NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
-                result,
-                phase: "install",
-                classification: "installed-command-missing",
-                $"Installed tool command '{commandName}' was not found.");
             return;
         }
 
         var crawlStopwatch = Stopwatch.StartNew();
-        var inspection = _assemblyInspectionSupport.InspectAssemblies(installDirectory, cliFramework);
+        var inspection = _assemblyInspectionSupport.InspectAssemblies(installedTool.InstallDirectory, cliFramework);
         if (ApplyInspectionFailure(result, inspection))
         {
             return;
         }
 
         var crawler = new ToolHelpCrawler(_runtime);
-        var crawl = await crawler.CrawlAsync(commandPath, tempRoot, environment.Values, commandTimeoutSeconds, cancellationToken);
+        var crawl = await crawler.CrawlAsync(installedTool.CommandPath, tempRoot, installedTool.Environment, commandTimeoutSeconds, cancellationToken);
         crawlStopwatch.Stop();
 
         var staticCommands = inspection.Commands;
@@ -91,7 +63,7 @@ internal sealed class StaticAnalysisInstalledToolAnalysisSupport
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         result["coverage"] = coverageJson;
-        WriteCrawlArtifact(
+        ToolCommandInstallationSupport.WriteCrawlArtifact(
             outputDirectory,
             result,
             CrawlArtifactBuilder.Build(
@@ -166,10 +138,4 @@ internal sealed class StaticAnalysisInstalledToolAnalysisSupport
 
     private static string ResolveFrameworkName(string cliFramework)
         => CliFrameworkProviderRegistry.ResolveStaticAnalysisAdapter(cliFramework)?.FrameworkName ?? cliFramework;
-
-    private static void WriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
-    {
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), crawlArtifact);
-        result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
-    }
 }
