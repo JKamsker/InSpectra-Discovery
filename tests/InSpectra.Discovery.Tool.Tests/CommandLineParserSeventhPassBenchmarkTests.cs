@@ -269,7 +269,9 @@ public sealed class CommandLineParserSeventhPassBenchmarkTests
         Assert.DoesNotContain(codegen!["options"]!.AsArray(), option => string.Equals(option?["name"]?.GetValue<string>(), "--name", StringComparison.Ordinal));
         Assert.NotNull(FindOption(apigen["options"]!.AsArray(), "--root-namespace"));
         Assert.NotNull(FindOption(codegen["options"]!.AsArray(), "--root-namespace"));
-        Assert.NotNull(FindOption(schemagen["options"]!.AsArray(), "--name"));
+        var schemaOptions = Assert.IsType<JsonArray>(schemagen!["options"]);
+        var schemaName = FindOption(schemaOptions, "--name");
+        Assert.NotNull(schemaName);
     }
 
     private static JsonObject? FindOption(JsonArray options, string name)
