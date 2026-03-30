@@ -10,69 +10,22 @@ internal sealed class StaticAnalysisCrawlArtifactRegenerator
         ArtifactRegenerationScope? scope = null,
         bool rebuildIndexes = true)
     {
-        var root = RepositoryPathResolver.ResolveRepositoryRoot(repositoryRoot);
-        var packagesRoot = Path.Combine(root, "index", "packages");
-        if (!Directory.Exists(packagesRoot))
-        {
-            return new StaticAnalysisCrawlArtifactRegenerationResult(0, 0, 0, 0, 0, [], []);
-        }
-
-        var metadataPaths = ArtifactRegenerationMetadataPathSupport.EnumerateMetadataPaths(packagesRoot, scope);
-        var candidates = metadataPaths
-            .Select(path => TryCreateCandidate(root, path))
-            .Where(candidate => candidate is not null)
-            .Select(candidate => candidate!)
-            .ToList();
-        var rewritten = new List<string>();
-        var failed = new List<string>();
-        var unchangedCount = 0;
-
-        foreach (var candidate in candidates)
-        {
-            try
-            {
-                var regenerated = RegenerateOpenCli(candidate);
-                var existing = TryLoadJsonNode(candidate.OpenCliPath);
-                var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
-                if (openCliChanged)
-                {
-                    RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
-                }
-
-                var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
-                    root,
-                    candidate.MetadataPath,
-                    candidate.OpenCliPath,
-                    "static-analysis",
-                    crawlPath: candidate.CrawlPath);
-                var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
-                if (!openCliChanged && !metadataChanged && !stateChanged)
-                {
-                    unchangedCount++;
-                    continue;
-                }
-
-                rewritten.Add(candidate.DisplayName);
-            }
-            catch (Exception ex)
-            {
-                failed.Add($"{candidate.DisplayName}: {ex.Message}");
-            }
-        }
-
-        if (rebuildIndexes && candidates.Count > 0)
-        {
-            RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex: true);
-        }
+        var result = ArtifactRegenerationRunner.Run(
+            repositoryRoot,
+            scope,
+            rebuildIndexes,
+            TryCreateCandidate,
+            ProcessCandidate,
+            static candidate => candidate.DisplayName);
 
         return new StaticAnalysisCrawlArtifactRegenerationResult(
-            ScannedCount: metadataPaths.Count,
-            CandidateCount: candidates.Count,
-            RewrittenCount: rewritten.Count,
-            UnchangedCount: unchangedCount,
-            FailedCount: failed.Count,
-            RewrittenItems: rewritten,
-            FailedItems: failed);
+            result.ScannedCount,
+            result.CandidateCount,
+            result.RewrittenCount,
+            result.UnchangedCount,
+            result.FailedCount,
+            result.RewrittenItems,
+            result.FailedItems);
     }
 
     private JsonObject RegenerateOpenCli(StaticAnalysisCrawlArtifactCandidate candidate)
@@ -81,7 +34,7 @@ internal sealed class StaticAnalysisCrawlArtifactRegenerator
             ?? throw new InvalidOperationException($"Crawl artifact '{candidate.CrawlPath}' is empty.");
         var helpDocuments = ParseCaptures(crawl["commands"] as JsonArray);
         var staticCommands = StaticAnalysisCrawlArtifactSupport.DeserializeStaticCommands(crawl["staticCommands"]);
-        var existingOpenCli = TryLoadJsonNode(candidate.OpenCliPath) as JsonObject;
+        var existingOpenCli = JsonNodeFileLoader.TryLoadJsonNode(candidate.OpenCliPath) as JsonObject;
 
         var framework = ResolveFramework(candidate.CliFramework);
         var openCli = _openCliBuilder.Build(candidate.CommandName, candidate.Version, framework, staticCommands, helpDocuments);
@@ -194,21 +147,24 @@ internal sealed class StaticAnalysisCrawlArtifactRegenerator
             openCliPath);
     }
 
-    private static JsonNode? TryLoadJsonNode(string path)
+    private bool ProcessCandidate(string repositoryRoot, StaticAnalysisCrawlArtifactCandidate candidate)
     {
-        if (!File.Exists(path))
+        var regenerated = RegenerateOpenCli(candidate);
+        var existing = JsonNodeFileLoader.TryLoadJsonNode(candidate.OpenCliPath);
+        var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
+        if (openCliChanged)
         {
-            return null;
+            RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
         }
 
-        try
-        {
-            return JsonNode.Parse(File.ReadAllText(path));
-        }
-        catch
-        {
-            return null;
-        }
+        var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
+            repositoryRoot,
+            candidate.MetadataPath,
+            candidate.OpenCliPath,
+            "static-analysis",
+            crawlPath: candidate.CrawlPath);
+        var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(repositoryRoot, candidate.MetadataPath);
+        return openCliChanged || metadataChanged || stateChanged;
     }
 
     private static void RestoreExistingCliMetadataEnrichment(JsonObject regenerated, JsonObject? existing)

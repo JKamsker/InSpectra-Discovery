@@ -2,15 +2,6 @@ using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
-internal sealed record ArtifactRegenerationCommandResult(
-    int ScannedCount,
-    int CandidateCount,
-    int RewrittenCount,
-    int UnchangedCount,
-    int FailedCount,
-    IReadOnlyList<string> RewrittenItems,
-    IReadOnlyList<string> FailedItems);
-
 internal class DocsArtifactRegenerationSettings : GlobalSettings
 {
     [CommandOption("--package-id|--package <PACKAGE_ID>")]
@@ -35,7 +26,7 @@ internal abstract class DocsArtifactRegenerationCommandBase : AsyncCommand<DocsA
 {
     protected abstract string ArtifactLabel { get; }
 
-    protected abstract ArtifactRegenerationCommandResult Regenerate(
+    protected abstract ArtifactRegenerationRunResult Regenerate(
         string repositoryRoot,
         ArtifactRegenerationScope scope,
         bool rebuildIndexes);

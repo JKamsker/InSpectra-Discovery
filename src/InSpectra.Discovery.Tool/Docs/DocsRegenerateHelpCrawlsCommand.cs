@@ -4,10 +4,10 @@ internal sealed class DocsRegenerateHelpCrawlsCommand : DocsArtifactRegeneration
 
     protected override string ArtifactLabel => "Help-crawl artifacts";
 
-    protected override ArtifactRegenerationCommandResult Regenerate(string repositoryRoot, ArtifactRegenerationScope scope, bool rebuildIndexes)
+    protected override ArtifactRegenerationRunResult Regenerate(string repositoryRoot, ArtifactRegenerationScope scope, bool rebuildIndexes)
     {
         var result = _regenerator.RegenerateRepository(repositoryRoot, scope, rebuildIndexes);
-        return new ArtifactRegenerationCommandResult(
+        return new ArtifactRegenerationRunResult(
             result.ScannedCount,
             result.CandidateCount,
             result.RewrittenCount,

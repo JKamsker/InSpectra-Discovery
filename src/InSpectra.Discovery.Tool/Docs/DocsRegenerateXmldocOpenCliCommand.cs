@@ -4,10 +4,10 @@ internal sealed class DocsRegenerateXmldocOpenCliCommand : DocsArtifactRegenerat
 
     protected override string ArtifactLabel => "XMLDoc-synthesized artifacts";
 
-    protected override ArtifactRegenerationCommandResult Regenerate(string repositoryRoot, ArtifactRegenerationScope scope, bool rebuildIndexes)
+    protected override ArtifactRegenerationRunResult Regenerate(string repositoryRoot, ArtifactRegenerationScope scope, bool rebuildIndexes)
     {
         var result = _regenerator.RegenerateRepository(repositoryRoot, scope, rebuildIndexes);
-        return new ArtifactRegenerationCommandResult(
+        return new ArtifactRegenerationRunResult(
             result.ScannedCount,
             result.CandidateCount,
             result.RewrittenCount,

@@ -10,69 +10,22 @@ internal sealed class CliFxCrawlArtifactRegenerator
         ArtifactRegenerationScope? scope = null,
         bool rebuildIndexes = true)
     {
-        var root = RepositoryPathResolver.ResolveRepositoryRoot(repositoryRoot);
-        var packagesRoot = Path.Combine(root, "index", "packages");
-        if (!Directory.Exists(packagesRoot))
-        {
-            return new CliFxCrawlArtifactRegenerationResult(0, 0, 0, 0, 0, [], []);
-        }
-
-        var metadataPaths = ArtifactRegenerationMetadataPathSupport.EnumerateMetadataPaths(packagesRoot, scope);
-        var candidates = metadataPaths
-            .Select(path => TryCreateCandidate(root, path))
-            .Where(candidate => candidate is not null)
-            .Select(candidate => candidate!)
-            .ToList();
-        var rewritten = new List<string>();
-        var failed = new List<string>();
-        var unchangedCount = 0;
-
-        foreach (var candidate in candidates)
-        {
-            try
-            {
-                var regenerated = RegenerateOpenCli(candidate);
-                var existing = TryLoadJsonNode(candidate.OpenCliPath);
-                var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
-                if (openCliChanged)
-                {
-                    RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
-                }
-
-                var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
-                    root,
-                    candidate.MetadataPath,
-                    candidate.OpenCliPath,
-                    "crawled-from-clifx-help",
-                    crawlPath: candidate.CrawlPath);
-                var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
-                if (!openCliChanged && !metadataChanged && !stateChanged)
-                {
-                    unchangedCount++;
-                    continue;
-                }
-
-                rewritten.Add(candidate.DisplayName);
-            }
-            catch (Exception ex)
-            {
-                failed.Add($"{candidate.DisplayName}: {ex.Message}");
-            }
-        }
-
-        if (rebuildIndexes && candidates.Count > 0)
-        {
-            RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex: true);
-        }
+        var result = ArtifactRegenerationRunner.Run(
+            repositoryRoot,
+            scope,
+            rebuildIndexes,
+            TryCreateCandidate,
+            ProcessCandidate,
+            static candidate => candidate.DisplayName);
 
         return new CliFxCrawlArtifactRegenerationResult(
-            ScannedCount: metadataPaths.Count,
-            CandidateCount: candidates.Count,
-            RewrittenCount: rewritten.Count,
-            UnchangedCount: unchangedCount,
-            FailedCount: failed.Count,
-            RewrittenItems: rewritten,
-            FailedItems: failed);
+            result.ScannedCount,
+            result.CandidateCount,
+            result.RewrittenCount,
+            result.UnchangedCount,
+            result.FailedCount,
+            result.RewrittenItems,
+            result.FailedItems);
     }
 
     private JsonObject RegenerateOpenCli(CliFxCrawlArtifactCandidate candidate)
@@ -306,7 +259,7 @@ internal sealed class CliFxCrawlArtifactRegenerator
         var openCliPath = string.IsNullOrWhiteSpace(openCliRelativePath)
             ? Path.Combine(versionDirectory, "opencli.json")
             : Path.Combine(repositoryRoot, openCliRelativePath);
-        var openCli = TryLoadJsonNode(openCliPath) as JsonObject;
+        var openCli = JsonNodeFileLoader.TryLoadJsonNode(openCliPath) as JsonObject;
         var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
             ?? metadata?["artifacts"]?["opencliSource"]?.GetValue<string>()
             ?? metadata?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
@@ -336,21 +289,24 @@ internal sealed class CliFxCrawlArtifactRegenerator
             openCliPath);
     }
 
-    private static JsonNode? TryLoadJsonNode(string path)
+    private bool ProcessCandidate(string repositoryRoot, CliFxCrawlArtifactCandidate candidate)
     {
-        if (!File.Exists(path))
+        var regenerated = RegenerateOpenCli(candidate);
+        var existing = JsonNodeFileLoader.TryLoadJsonNode(candidate.OpenCliPath);
+        var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
+        if (openCliChanged)
         {
-            return null;
+            RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, regenerated);
         }
 
-        try
-        {
-            return JsonNode.Parse(File.ReadAllText(path));
-        }
-        catch
-        {
-            return null;
-        }
+        var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
+            repositoryRoot,
+            candidate.MetadataPath,
+            candidate.OpenCliPath,
+            "crawled-from-clifx-help",
+            crawlPath: candidate.CrawlPath);
+        var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(repositoryRoot, candidate.MetadataPath);
+        return openCliChanged || metadataChanged || stateChanged;
     }
 
     private static bool IsCliFxCrawlArtifactSource(string? artifactSource)

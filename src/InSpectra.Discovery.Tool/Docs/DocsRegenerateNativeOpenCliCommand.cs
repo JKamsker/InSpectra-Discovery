@@ -4,10 +4,10 @@ internal sealed class DocsRegenerateNativeOpenCliCommand : DocsArtifactRegenerat
 
     protected override string ArtifactLabel => "Native OpenCLI artifacts";
 
-    protected override ArtifactRegenerationCommandResult Regenerate(string repositoryRoot, ArtifactRegenerationScope scope, bool rebuildIndexes)
+    protected override ArtifactRegenerationRunResult Regenerate(string repositoryRoot, ArtifactRegenerationScope scope, bool rebuildIndexes)
     {
         var result = _regenerator.RegenerateRepository(repositoryRoot, scope, rebuildIndexes);
-        return new ArtifactRegenerationCommandResult(
+        return new ArtifactRegenerationRunResult(
             result.ScannedCount,
             result.CandidateCount,
             result.RewrittenCount,

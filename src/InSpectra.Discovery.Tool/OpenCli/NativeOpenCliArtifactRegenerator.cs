@@ -7,131 +7,22 @@ internal sealed class NativeOpenCliArtifactRegenerator
         ArtifactRegenerationScope? scope = null,
         bool rebuildIndexes = true)
     {
-        var root = RepositoryPathResolver.ResolveRepositoryRoot(repositoryRoot);
-        var packagesRoot = Path.Combine(root, "index", "packages");
-        if (!Directory.Exists(packagesRoot))
-        {
-            return new NativeOpenCliArtifactRegenerationResult(0, 0, 0, 0, 0, [], []);
-        }
-
-        var metadataPaths = ArtifactRegenerationMetadataPathSupport.EnumerateMetadataPaths(packagesRoot, scope);
-        var candidates = metadataPaths
-            .Select(path => TryCreateCandidate(root, path))
-            .Where(candidate => candidate is not null)
-            .Select(candidate => candidate!)
-            .ToList();
-        var rewritten = new List<string>();
-        var failed = new List<string>();
-        var unchangedCount = 0;
-
-        foreach (var candidate in candidates)
-        {
-            try
-            {
-                var fileSize = new FileInfo(candidate.OpenCliPath).Length;
-                if (fileSize > 2 * 1024 * 1024)
-                {
-                    var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
-                        root,
-                        candidate.MetadataPath,
-                        candidate.OpenCliPath,
-                        $"OpenCLI artifact is implausibly large ({fileSize / 1024 / 1024} MB).",
-                        xmldocPath: candidate.XmlDocPath);
-                    var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
-                    if (!rejectedMetadataChanged && !rejectedStateChanged)
-                    {
-                        unchangedCount++;
-                        continue;
-                    }
-
-                    rewritten.Add(candidate.DisplayName);
-                    continue;
-                }
-
-                var existingNode = TryLoadJsonNode(candidate.OpenCliPath);
-                if (existingNode is not JsonObject existing)
-                {
-                    var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
-                        root,
-                        candidate.MetadataPath,
-                        candidate.OpenCliPath,
-                        "Stored OpenCLI artifact is not a JSON object.",
-                        xmldocPath: candidate.XmlDocPath);
-                    var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
-                    if (!rejectedMetadataChanged && !rejectedStateChanged)
-                    {
-                        unchangedCount++;
-                        continue;
-                    }
-
-                    rewritten.Add(candidate.DisplayName);
-                    continue;
-                }
-
-                var sanitized = existing.DeepClone()?.AsObject()
-                    ?? throw new InvalidOperationException($"OpenCLI artifact '{candidate.OpenCliPath}' could not be cloned.");
-                OpenCliDocumentSanitizer.EnsureArtifactSource(sanitized, "tool-output");
-                OpenCliDocumentSanitizer.Sanitize(sanitized);
-
-                if (!OpenCliDocumentValidator.TryValidateDocument(sanitized, out var validationError))
-                {
-                    var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
-                        root,
-                        candidate.MetadataPath,
-                        candidate.OpenCliPath,
-                        validationError ?? "Native OpenCLI artifact is not publishable.",
-                        xmldocPath: candidate.XmlDocPath);
-                    var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
-                    if (!rejectedMetadataChanged && !rejectedStateChanged)
-                    {
-                        unchangedCount++;
-                        continue;
-                    }
-
-                    rewritten.Add(candidate.DisplayName);
-                    continue;
-                }
-
-                var openCliChanged = !JsonNode.DeepEquals(existing, sanitized);
-                if (openCliChanged)
-                {
-                    RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, sanitized);
-                }
-
-                var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
-                    root,
-                    candidate.MetadataPath,
-                    candidate.OpenCliPath,
-                    "tool-output",
-                    xmldocPath: candidate.XmlDocPath);
-                var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(root, candidate.MetadataPath);
-                if (!openCliChanged && !metadataChanged && !stateChanged)
-                {
-                    unchangedCount++;
-                    continue;
-                }
-
-                rewritten.Add(candidate.DisplayName);
-            }
-            catch (Exception ex)
-            {
-                failed.Add($"{candidate.DisplayName}: {ex.Message}");
-            }
-        }
-
-        if (rebuildIndexes && candidates.Count > 0)
-        {
-            RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex: true);
-        }
+        var result = ArtifactRegenerationRunner.Run(
+            repositoryRoot,
+            scope,
+            rebuildIndexes,
+            TryCreateCandidate,
+            ProcessCandidate,
+            static candidate => candidate.DisplayName);
 
         return new NativeOpenCliArtifactRegenerationResult(
-            ScannedCount: metadataPaths.Count,
-            CandidateCount: candidates.Count,
-            RewrittenCount: rewritten.Count,
-            UnchangedCount: unchangedCount,
-            FailedCount: failed.Count,
-            RewrittenItems: rewritten,
-            FailedItems: failed);
+            result.ScannedCount,
+            result.CandidateCount,
+            result.RewrittenCount,
+            result.UnchangedCount,
+            result.FailedCount,
+            result.RewrittenItems,
+            result.FailedItems);
     }
 
     private static NativeOpenCliArtifactCandidate? TryCreateCandidate(string repositoryRoot, string metadataPath)
@@ -168,7 +59,7 @@ internal sealed class NativeOpenCliArtifactRegenerator
 
         var openCliFileSize = new FileInfo(openCliPath).Length;
         var openCli = openCliFileSize <= 2 * 1024 * 1024
-            ? TryLoadJsonObject(openCliPath)
+            ? JsonNodeFileLoader.TryLoadJsonObject(openCliPath)
             : null;
         var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
             ?? artifacts?["opencliSource"]?.GetValue<string>()
@@ -206,25 +97,66 @@ internal sealed class NativeOpenCliArtifactRegenerator
         return new NativeOpenCliArtifactCandidate(packageId, version, metadataPath, openCliPath, xmlDocPath);
     }
 
-    private static JsonNode? TryLoadJsonNode(string path)
+    private static bool ProcessCandidate(string repositoryRoot, NativeOpenCliArtifactCandidate candidate)
     {
-        if (!File.Exists(path))
+        var fileSize = new FileInfo(candidate.OpenCliPath).Length;
+        if (fileSize > 2 * 1024 * 1024)
         {
-            return null;
+            var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
+                repositoryRoot,
+                candidate.MetadataPath,
+                candidate.OpenCliPath,
+                $"OpenCLI artifact is implausibly large ({fileSize / 1024 / 1024} MB).",
+                xmldocPath: candidate.XmlDocPath);
+            var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(repositoryRoot, candidate.MetadataPath);
+            return rejectedMetadataChanged || rejectedStateChanged;
         }
 
-        try
+        var existingNode = JsonNodeFileLoader.TryLoadJsonNode(candidate.OpenCliPath);
+        if (existingNode is not JsonObject existing)
         {
-            return JsonNode.Parse(File.ReadAllText(path));
+            var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
+                repositoryRoot,
+                candidate.MetadataPath,
+                candidate.OpenCliPath,
+                "Stored OpenCLI artifact is not a JSON object.",
+                xmldocPath: candidate.XmlDocPath);
+            var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(repositoryRoot, candidate.MetadataPath);
+            return rejectedMetadataChanged || rejectedStateChanged;
         }
-        catch
+
+        var sanitized = existing.DeepClone()?.AsObject()
+            ?? throw new InvalidOperationException($"OpenCLI artifact '{candidate.OpenCliPath}' could not be cloned.");
+        OpenCliDocumentSanitizer.EnsureArtifactSource(sanitized, "tool-output");
+        OpenCliDocumentSanitizer.Sanitize(sanitized);
+
+        if (!OpenCliDocumentValidator.TryValidateDocument(sanitized, out var validationError))
         {
-            return null;
+            var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
+                repositoryRoot,
+                candidate.MetadataPath,
+                candidate.OpenCliPath,
+                validationError ?? "Native OpenCLI artifact is not publishable.",
+                xmldocPath: candidate.XmlDocPath);
+            var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(repositoryRoot, candidate.MetadataPath);
+            return rejectedMetadataChanged || rejectedStateChanged;
         }
+
+        var openCliChanged = !JsonNode.DeepEquals(existing, sanitized);
+        if (openCliChanged)
+        {
+            RepositoryPathResolver.WriteJsonFile(candidate.OpenCliPath, sanitized);
+        }
+
+        var metadataChanged = OpenCliArtifactMetadataRepair.SyncMetadata(
+            repositoryRoot,
+            candidate.MetadataPath,
+            candidate.OpenCliPath,
+            "tool-output",
+            xmldocPath: candidate.XmlDocPath);
+        var stateChanged = IndexedStatePathsRepair.SyncFromMetadata(repositoryRoot, candidate.MetadataPath);
+        return openCliChanged || metadataChanged || stateChanged;
     }
-
-    private static JsonObject? TryLoadJsonObject(string path)
-        => TryLoadJsonNode(path) as JsonObject;
 }
 
 internal sealed record NativeOpenCliArtifactRegenerationResult(
