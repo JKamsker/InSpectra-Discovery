@@ -115,6 +115,71 @@ public sealed class StaticAnalysisOpenCliBuilderTests
             option => string.Equals(option?["name"]?.GetValue<string>(), "--target", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Build_Skips_Metadata_Only_Builtin_Help_And_Version_Flags()
+    {
+        var builder = new StaticAnalysisOpenCliBuilder();
+        var staticCommands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Name: null,
+                Description: "Default command",
+                IsDefault: true,
+                IsHidden: false,
+                Values: [],
+                Options:
+                [
+                    new StaticOptionDefinition(
+                        LongName: "help",
+                        ShortName: 'h',
+                        IsRequired: false,
+                        IsSequence: false,
+                        IsBoolLike: true,
+                        ClrType: "System.Boolean",
+                        Description: "Show help information.",
+                        DefaultValue: null,
+                        MetaValue: null,
+                        AcceptedValues: [],
+                        PropertyName: "Help"),
+                    new StaticOptionDefinition(
+                        LongName: "version",
+                        ShortName: null,
+                        IsRequired: false,
+                        IsSequence: false,
+                        IsBoolLike: true,
+                        ClrType: "System.Boolean",
+                        Description: "Display version information.",
+                        DefaultValue: null,
+                        MetaValue: null,
+                        AcceptedValues: [],
+                        PropertyName: "Version"),
+                    new StaticOptionDefinition(
+                        LongName: "config",
+                        ShortName: 'c',
+                        IsRequired: true,
+                        IsSequence: false,
+                        IsBoolLike: false,
+                        ClrType: "System.String",
+                        Description: "Configuration path.",
+                        DefaultValue: null,
+                        MetaValue: "CONFIG",
+                        AcceptedValues: [],
+                        PropertyName: "Config"),
+                ]),
+        };
+
+        var document = builder.Build(
+            "demo",
+            "1.0.0",
+            "System.CommandLine",
+            staticCommands,
+            new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase));
+
+        var options = Assert.IsType<JsonArray>(document["options"]);
+        var config = Assert.Single(options);
+        Assert.Equal("--config", config!["name"]?.GetValue<string>());
+    }
+
     private static ToolHelpDocument CreateHelpDocument(
         string? description = null,
         IReadOnlyList<ToolHelpItem>? options = null,
