@@ -1,10 +1,14 @@
 using System.Diagnostics;
-using System.Text.Json.Nodes;
 
 internal sealed class ToolHelpAnalysisService
 {
     private readonly ToolCommandRuntime _runtime = new();
-    private readonly ToolHelpOpenCliBuilder _openCliBuilder = new();
+    private readonly ToolHelpInstalledToolAnalysisSupport _installedToolAnalyzer;
+
+    public ToolHelpAnalysisService()
+    {
+        _installedToolAnalyzer = new ToolHelpInstalledToolAnalysisSupport(_runtime, new ToolHelpOpenCliBuilder());
+    }
 
     public Task<int> RunQuietAsync(
         string packageId,
@@ -75,53 +79,17 @@ internal sealed class ToolHelpAnalysisService
 
         try
         {
-            using var scope = ToolRuntime.CreateNuGetApiClientScope();
-            var bootstrap = await NonSpectreAnalysisBootstrapSupport.PopulateResultAsync(
+            await PopulateAndAnalyzeAsync(
                 result,
-                scope.Client,
                 packageId,
                 version,
                 commandName,
+                outputDirectory,
+                tempRoot,
+                installTimeoutSeconds,
+                analysisTimeoutSeconds,
+                commandTimeoutSeconds,
                 cancellationToken);
-            var resolvedCommandName = bootstrap.CommandName;
-            result["command"] = resolvedCommandName;
-            result["entryPoint"] = bootstrap.EntryPointPath;
-            result["toolSettingsPath"] = bootstrap.ToolSettingsPath;
-            if (string.IsNullOrWhiteSpace(resolvedCommandName))
-            {
-                NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
-                    result,
-                    phase: "bootstrap",
-                    classification: "tool-command-missing",
-                    $"No tool command could be resolved for package '{packageId}' version '{version}'.");
-            }
-            else
-            {
-                using var analysisTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                analysisTimeout.CancelAfter(TimeSpan.FromSeconds(analysisTimeoutSeconds));
-
-                try
-                {
-                    await AnalyzeInstalledToolAsync(
-                        result,
-                        packageId,
-                        version,
-                        resolvedCommandName,
-                        outputDirectory,
-                        tempRoot,
-                        installTimeoutSeconds,
-                        commandTimeoutSeconds,
-                        analysisTimeout.Token);
-                }
-                catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && analysisTimeout.IsCancellationRequested)
-                {
-                    NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
-                        result,
-                        phase: "analysis",
-                        classification: "analysis-timeout",
-                        $"Help analysis exceeded the overall timeout of {analysisTimeoutSeconds} seconds.");
-                }
-            }
         }
         catch (Exception ex)
         {
@@ -133,21 +101,7 @@ internal sealed class ToolHelpAnalysisService
             result["timings"]!.AsObject()["totalMs"] = (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds);
             NonSpectreAnalysisResultSupport.FinalizeFailureSignature(result);
             RepositoryPathResolver.WriteJsonFile(resultPath, result);
-
-            _runtime.TerminateSandboxProcesses(tempRoot);
-            if (Directory.Exists(tempRoot))
-            {
-                try
-                {
-                    Directory.Delete(tempRoot, recursive: true);
-                }
-                catch (IOException)
-                {
-                }
-                catch (UnauthorizedAccessException)
-                {
-                }
-            }
+            CleanupTempRoot(tempRoot);
         }
 
         if (suppressOutput)
@@ -164,106 +118,83 @@ internal sealed class ToolHelpAnalysisService
             cancellationToken);
     }
 
-    private async Task AnalyzeInstalledToolAsync(
-        JsonObject result,
+    private async Task PopulateAndAnalyzeAsync(
+        System.Text.Json.Nodes.JsonObject result,
         string packageId,
         string version,
-        string commandName,
+        string? commandName,
         string outputDirectory,
         string tempRoot,
         int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        var environment = _runtime.CreateSandboxEnvironment(tempRoot);
-        foreach (var directory in environment.Directories)
-        {
-            Directory.CreateDirectory(directory);
-        }
-
-        var installDirectory = Path.Combine(tempRoot, "tool");
-        var installResult = await _runtime.InvokeProcessCaptureAsync(
-            "dotnet",
-            ["tool", "install", packageId, "--version", version, "--tool-path", installDirectory],
-            tempRoot,
-            environment.Values,
-            installTimeoutSeconds,
-            tempRoot,
+        using var scope = ToolRuntime.CreateNuGetApiClientScope();
+        var bootstrap = await NonSpectreAnalysisBootstrapSupport.PopulateResultAsync(
+            result,
+            scope.Client,
+            packageId,
+            version,
+            commandName,
             cancellationToken);
-
-        result["steps"]!.AsObject()["install"] = installResult.ToJsonObject();
-        result["timings"]!.AsObject()["installMs"] = installResult.DurationMs;
-
-        if (installResult.TimedOut || installResult.ExitCode != 0)
+        var resolvedCommandName = bootstrap.CommandName;
+        result["command"] = resolvedCommandName;
+        result["entryPoint"] = bootstrap.EntryPointPath;
+        result["toolSettingsPath"] = bootstrap.ToolSettingsPath;
+        if (string.IsNullOrWhiteSpace(resolvedCommandName))
         {
             NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
                 result,
-                phase: "install",
-                classification: installResult.TimedOut ? "install-timeout" : "install-failed",
-                ToolCommandRuntime.NormalizeConsoleText(installResult.Stdout)
-                ?? ToolCommandRuntime.NormalizeConsoleText(installResult.Stderr)
-                ?? "Tool installation failed.");
+                phase: "bootstrap",
+                classification: "tool-command-missing",
+                $"No tool command could be resolved for package '{packageId}' version '{version}'.");
             return;
         }
 
-        var commandPath = _runtime.ResolveInstalledCommandPath(installDirectory, commandName);
-        if (commandPath is null)
+        using var analysisTimeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        analysisTimeout.CancelAfter(TimeSpan.FromSeconds(analysisTimeoutSeconds));
+
+        try
+        {
+            await _installedToolAnalyzer.AnalyzeAsync(
+                result,
+                packageId,
+                version,
+                resolvedCommandName,
+                outputDirectory,
+                tempRoot,
+                installTimeoutSeconds,
+                commandTimeoutSeconds,
+                analysisTimeout.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested && analysisTimeout.IsCancellationRequested)
         {
             NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
                 result,
-                phase: "install",
-                classification: "installed-command-missing",
-                $"Installed tool command '{commandName}' was not found.");
-            return;
+                phase: "analysis",
+                classification: "analysis-timeout",
+                $"Help analysis exceeded the overall timeout of {analysisTimeoutSeconds} seconds.");
         }
-
-        var crawlStopwatch = Stopwatch.StartNew();
-        var crawler = new ToolHelpCrawler(_runtime);
-        var crawl = await crawler.CrawlAsync(commandPath, tempRoot, environment.Values, commandTimeoutSeconds, cancellationToken);
-        crawlStopwatch.Stop();
-
-        result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
-        WriteCrawlArtifact(outputDirectory, result, CrawlArtifactBuilder.Build(crawl.Documents.Count, crawl.Captures));
-        if (crawl.Documents.Count == 0)
-        {
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
-                result,
-                phase: "crawl",
-                classification: "help-crawl-empty",
-                "No help documents could be captured from the installed tool.");
-            return;
-        }
-
-        var openCliDocument = _openCliBuilder.Build(commandName, version, crawl.Documents);
-        if (!string.IsNullOrWhiteSpace(result["cliFramework"]?.GetValue<string>()))
-        {
-            openCliDocument["x-inspectra"]!["cliFramework"] = result["cliFramework"]!.GetValue<string>();
-        }
-
-        OpenCliDocumentSanitizer.ApplyNuGetMetadata(
-            openCliDocument,
-            result["nugetTitle"]?.GetValue<string>(),
-            result["nugetDescription"]?.GetValue<string>());
-
-        if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
-        {
-            NonSpectreAnalysisResultSupport.ApplyTerminalFailure(
-                result,
-                phase: "opencli",
-                classification: "invalid-opencli-artifact",
-                validationError ?? "Generated OpenCLI artifact is not publishable.");
-            return;
-        }
-
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
-        result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        NonSpectreAnalysisResultSupport.ApplySuccess(result, classification: "help-crawl", artifactSource: "crawled-from-help");
     }
 
-    private static void WriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
+    private void CleanupTempRoot(string tempRoot)
     {
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), crawlArtifact);
-        result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
-    }
+        _runtime.TerminateSandboxProcesses(tempRoot);
+        if (!Directory.Exists(tempRoot))
+        {
+            return;
+        }
 
+        try
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+    }
 }
