@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 
 internal static class AutoAnalysisExecutionSupport
 {
-    public static async Task<NativeAnalysisOutcome> TryRunNativeAnalysisAsync(
+    public static Task<NativeAnalysisOutcome> TryRunNativeAnalysisAsync(
         IAutoAnalysisNativeRunner nativeRunner,
         string packageId,
         string version,
@@ -17,38 +17,21 @@ internal static class AutoAnalysisExecutionSupport
         bool json,
         bool suppressOutput,
         CancellationToken cancellationToken)
-    {
-        if (!string.Equals(descriptor.PreferredAnalysisMode, "native", StringComparison.OrdinalIgnoreCase))
-        {
-            return NativeAnalysisOutcome.Continue(null);
-        }
-
-        await nativeRunner.RunAsync(
+        => AutoAnalysisNativeExecutionSupport.TryRunAsync(
+            nativeRunner,
             packageId,
             version,
+            descriptor,
             outputDirectory,
             batchId,
             attempt,
             source,
             installTimeoutSeconds,
             commandTimeoutSeconds,
+            resultPath,
+            json,
+            suppressOutput,
             cancellationToken);
-
-        var nativeResult = AutoAnalysisResultSupport.LoadResult(resultPath);
-        if (nativeResult is null)
-        {
-            return NativeAnalysisOutcome.Continue(null);
-        }
-
-        AutoAnalysisResultSupport.ApplyDescriptor(nativeResult, descriptor, "native", null);
-        RepositoryPathResolver.WriteJsonFile(resultPath, nativeResult);
-        if (!AutoAnalysisResultInspector.ShouldTryHelpFallback(nativeResult))
-        {
-            return NativeAnalysisOutcome.Return(await AutoAnalysisResultSupport.WriteResultAsync(packageId, version, resultPath, nativeResult, json, suppressOutput, cancellationToken));
-        }
-
-        return NativeAnalysisOutcome.Continue(nativeResult);
-    }
 
     public static Task<JsonObject> RunSelectedAnalyzerAsync(
         string selectedMode,
@@ -117,7 +100,7 @@ internal static class AutoAnalysisExecutionSupport
                 cancellationToken),
         };
 
-    private static async Task<JsonObject> RunCliFxAsync(
+    private static Task<JsonObject> RunCliFxAsync(
         IAutoAnalysisCliFxRunner cliFxRunner,
         string packageId,
         string version,
@@ -132,28 +115,35 @@ internal static class AutoAnalysisExecutionSupport
         string resultPath,
         JsonObject? nativeResult,
         CancellationToken cancellationToken)
-    {
-        await cliFxRunner.RunAsync(
+        => AutoAnalysisSelectedAnalyzerSupport.RunAsync(
+            async token =>
+            {
+                await cliFxRunner.RunAsync(
+                    packageId,
+                    version,
+                    descriptor.CommandName,
+                    descriptor.CliFramework,
+                    outputDirectory,
+                    batchId,
+                    attempt,
+                    source,
+                    installTimeoutSeconds,
+                    analysisTimeoutSeconds,
+                    commandTimeoutSeconds,
+                    token);
+            },
             packageId,
             version,
-            descriptor.CommandName,
-            descriptor.CliFramework,
-            outputDirectory,
+            descriptor,
             batchId,
             attempt,
             source,
-            installTimeoutSeconds,
-            analysisTimeoutSeconds,
-            commandTimeoutSeconds,
+            resultPath,
+            nativeResult,
+            selectedMode: "clifx",
             cancellationToken);
 
-        var cliFxResult = AutoAnalysisResultSupport.LoadResult(resultPath)
-            ?? AutoAnalysisResultSupport.CreateFailureResult(packageId, version, batchId, attempt, source, "The selected analyzer did not write result.json.");
-        AutoAnalysisResultSupport.ApplyDescriptor(cliFxResult, descriptor, "clifx", nativeResult);
-        return cliFxResult;
-    }
-
-    private static async Task<JsonObject> RunStaticAsync(
+    private static Task<JsonObject> RunStaticAsync(
         IAutoAnalysisStaticRunner staticRunner,
         string packageId,
         string version,
@@ -168,28 +158,35 @@ internal static class AutoAnalysisExecutionSupport
         string resultPath,
         JsonObject? nativeResult,
         CancellationToken cancellationToken)
-    {
-        await staticRunner.RunAsync(
+        => AutoAnalysisSelectedAnalyzerSupport.RunAsync(
+            async token =>
+            {
+                await staticRunner.RunAsync(
+                    packageId,
+                    version,
+                    descriptor.CommandName,
+                    descriptor.CliFramework,
+                    outputDirectory,
+                    batchId,
+                    attempt,
+                    source,
+                    installTimeoutSeconds,
+                    analysisTimeoutSeconds,
+                    commandTimeoutSeconds,
+                    token);
+            },
             packageId,
             version,
-            descriptor.CommandName,
-            descriptor.CliFramework,
-            outputDirectory,
+            descriptor,
             batchId,
             attempt,
             source,
-            installTimeoutSeconds,
-            analysisTimeoutSeconds,
-            commandTimeoutSeconds,
+            resultPath,
+            nativeResult,
+            selectedMode: "static",
             cancellationToken);
 
-        var staticResult = AutoAnalysisResultSupport.LoadResult(resultPath)
-            ?? AutoAnalysisResultSupport.CreateFailureResult(packageId, version, batchId, attempt, source, "The selected analyzer did not write result.json.");
-        AutoAnalysisResultSupport.ApplyDescriptor(staticResult, descriptor, "static", nativeResult);
-        return staticResult;
-    }
-
-    private static async Task<JsonObject> RunHelpAsync(
+    private static Task<JsonObject> RunHelpAsync(
         IAutoAnalysisHelpRunner helpRunner,
         string packageId,
         string version,
@@ -204,26 +201,33 @@ internal static class AutoAnalysisExecutionSupport
         string resultPath,
         JsonObject? nativeResult,
         CancellationToken cancellationToken)
-    {
-        await helpRunner.RunAsync(
+        => AutoAnalysisSelectedAnalyzerSupport.RunAsync(
+            async token =>
+            {
+                await helpRunner.RunAsync(
+                    packageId,
+                    version,
+                    descriptor.CommandName,
+                    outputDirectory,
+                    batchId,
+                    attempt,
+                    source,
+                    descriptor.CliFramework,
+                    installTimeoutSeconds,
+                    analysisTimeoutSeconds,
+                    commandTimeoutSeconds,
+                    token);
+            },
             packageId,
             version,
-            descriptor.CommandName,
-            outputDirectory,
+            descriptor,
             batchId,
             attempt,
             source,
-            descriptor.CliFramework,
-            installTimeoutSeconds,
-            analysisTimeoutSeconds,
-            commandTimeoutSeconds,
+            resultPath,
+            nativeResult,
+            selectedMode: "help",
             cancellationToken);
-
-        var helpResult = AutoAnalysisResultSupport.LoadResult(resultPath)
-            ?? AutoAnalysisResultSupport.CreateFailureResult(packageId, version, batchId, attempt, source, "The selected analyzer did not write result.json.");
-        AutoAnalysisResultSupport.ApplyDescriptor(helpResult, descriptor, "help", nativeResult);
-        return helpResult;
-    }
 }
 
 internal sealed record NativeAnalysisOutcome(bool ShouldReturnImmediately, int ExitCode, JsonObject? Result)
