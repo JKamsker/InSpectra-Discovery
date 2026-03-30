@@ -9,7 +9,7 @@ internal static class CommandTreeWalker
         {
             Name = GetProperty<string>(command, "Name"),
             Description = GetProperty<string>(command, "Description"),
-            IsHidden = GetProperty<bool>(command, "IsHidden"),
+            IsHidden = GetProperty<bool>(command, "Hidden") || GetProperty<bool>(command, "IsHidden"),
         };
 
         // Aliases
@@ -46,8 +46,10 @@ internal static class CommandTreeWalker
         {
             Name = GetProperty<string>(option, "Name"),
             Description = GetProperty<string>(option, "Description"),
-            IsRequired = GetProperty<bool>(option, "IsRequired"),
-            IsHidden = GetProperty<bool>(option, "IsHidden"),
+            // S.CL 2.0.5+ uses "Required" and "Hidden" (not "IsRequired"/"IsHidden").
+            // Try both for cross-version compatibility.
+            IsRequired = GetProperty<bool>(option, "Required") || GetProperty<bool>(option, "IsRequired"),
+            IsHidden = GetProperty<bool>(option, "Hidden") || GetProperty<bool>(option, "IsHidden"),
             Recursive = GetProperty<bool>(option, "Recursive"),
         };
 
@@ -55,31 +57,43 @@ internal static class CommandTreeWalker
         foreach (var alias in GetEnumerable<string>(option, "Aliases"))
             captured.Aliases.Add(alias);
 
-        // ValueType — may be on Option directly or on its inner Argument.
+        // ValueType — directly on Option in 2.0.5+, or on inner Argument in beta.
         var valueType = GetProperty<Type>(option, "ValueType");
-        var innerArgument = GetProperty<object>(option, "Argument");
+        var innerArgument = GetProperty<object>(option, "Argument"); // beta only
         if (valueType is null && innerArgument is not null)
             valueType = GetProperty<Type>(innerArgument, "ValueType");
         captured.ValueType = FormatTypeName(valueType);
 
-        // Argument name — the display name shown in help (e.g., "SERVER", "COUNT").
-        // In S.CL, each Option has an inner Argument with a Name property.
-        if (innerArgument is not null)
-        {
-            captured.ArgumentName = GetProperty<string>(innerArgument, "Name");
+        // Argument display name (e.g., "SERVER", "COUNT").
+        // S.CL 2.0.5+: "HelpName" property on Option.
+        // Beta: inner Argument.Name.
+        // Fallback: synthesize from option name (--server → SERVER).
+        captured.ArgumentName = GetProperty<string>(option, "HelpName")
+                             ?? (innerArgument is not null ? GetProperty<string>(innerArgument, "Name") : null)
+                             ?? SynthesizeArgumentName(captured.Name, captured.ValueType);
+
+        // Default values — try option directly first, then inner argument.
+        (captured.HasDefaultValue, captured.DefaultValue) = ReadDefaultValue(option);
+        if (!captured.HasDefaultValue && innerArgument is not null)
             (captured.HasDefaultValue, captured.DefaultValue) = ReadDefaultValue(innerArgument);
-            captured.AllowedValues = ReadAllowedValues(innerArgument, valueType);
-        }
-        else
-        {
-            (captured.HasDefaultValue, captured.DefaultValue) = ReadDefaultValue(option);
-            captured.AllowedValues = ReadAllowedValues(option, valueType);
-        }
+
+        captured.AllowedValues = ReadAllowedValues(option, valueType)
+                              ?? (innerArgument is not null ? ReadAllowedValues(innerArgument, valueType) : null);
 
         // Arity
         (captured.MinArity, captured.MaxArity) = ReadArity(option);
 
         return captured;
+    }
+
+    private static string? SynthesizeArgumentName(string? optionName, string? valueType)
+    {
+        // Don't synthesize for flags (Boolean/Void).
+        if (valueType is null or "Void" or "Boolean") return null;
+
+        // --server → SERVER, --output-root → OUTPUT_ROOT
+        if (optionName is null) return null;
+        return optionName.TrimStart('-').Replace('-', '_').ToUpperInvariant();
     }
 
     private static CapturedArgument WalkArgument(object argument)
@@ -89,7 +103,7 @@ internal static class CommandTreeWalker
         {
             Name = GetProperty<string>(argument, "Name"),
             Description = GetProperty<string>(argument, "Description"),
-            IsHidden = GetProperty<bool>(argument, "IsHidden"),
+            IsHidden = GetProperty<bool>(argument, "Hidden") || GetProperty<bool>(argument, "IsHidden"),
             ValueType = FormatTypeName(valueType),
         };
 
@@ -201,4 +215,5 @@ internal static class CommandTreeWalker
             return default;
         }
     }
+
 }
