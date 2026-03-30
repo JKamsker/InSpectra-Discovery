@@ -11,27 +11,30 @@ internal static class AnalysisCommandOutputSupport
         string? selectionReason = null,
         string? fallbackFrom = null)
     {
+        var resultSummary = LoadResultSummary(resultPath, analysisMode);
         var output = ToolRuntime.CreateOutput();
         return output.WriteSuccessAsync(
             new AnalysisCommandResult(
                 packageId,
                 version,
-                analysisMode,
+                resultSummary.AnalysisMode,
+                resultSummary.Command,
+                resultSummary.CliFramework,
                 selectionReason,
                 fallbackFrom,
                 disposition,
                 resultPath),
-            BuildSummaryRows(packageId, version, resultPath, disposition, analysisMode, selectionReason, fallbackFrom),
+            BuildSummaryRows(packageId, version, resultPath, disposition, resultSummary, selectionReason, fallbackFrom),
             json,
             cancellationToken);
     }
 
-    private static IReadOnlyList<SummaryRow> BuildSummaryRows(
+    internal static IReadOnlyList<SummaryRow> BuildSummaryRows(
         string packageId,
         string version,
         string resultPath,
         string? disposition,
-        string? analysisMode,
+        AnalysisCommandResultSummary resultSummary,
         string? selectionReason,
         string? fallbackFrom)
     {
@@ -40,9 +43,19 @@ internal static class AnalysisCommandOutputSupport
             new("Package", $"{packageId} {version}"),
         };
 
-        if (!string.IsNullOrWhiteSpace(analysisMode))
+        if (!string.IsNullOrWhiteSpace(resultSummary.AnalysisMode))
         {
-            rows.Add(new SummaryRow("Mode", analysisMode));
+            rows.Add(new SummaryRow("Mode", resultSummary.AnalysisMode));
+        }
+
+        if (!string.IsNullOrWhiteSpace(resultSummary.Command))
+        {
+            rows.Add(new SummaryRow("Command", resultSummary.Command));
+        }
+
+        if (!string.IsNullOrWhiteSpace(resultSummary.CliFramework))
+        {
+            rows.Add(new SummaryRow("Framework", resultSummary.CliFramework));
         }
 
         if (!string.IsNullOrWhiteSpace(fallbackFrom))
@@ -60,12 +73,30 @@ internal static class AnalysisCommandOutputSupport
         return rows;
     }
 
+    private static AnalysisCommandResultSummary LoadResultSummary(string resultPath, string? analysisMode)
+    {
+        var result = JsonNodeFileLoader.TryLoadJsonObject(resultPath);
+        return new AnalysisCommandResultSummary(
+            !string.IsNullOrWhiteSpace(analysisMode)
+                ? analysisMode
+                : result?["analysisMode"]?.GetValue<string>(),
+            result?["command"]?.GetValue<string>(),
+            result?["cliFramework"]?.GetValue<string>());
+    }
+
     private sealed record AnalysisCommandResult(
         string PackageId,
         string Version,
         string? AnalysisMode,
+        string? Command,
+        string? CliFramework,
         string? SelectionReason,
         string? FallbackFrom,
         string? Disposition,
         string ResultPath);
+
+    internal sealed record AnalysisCommandResultSummary(
+        string? AnalysisMode,
+        string? Command,
+        string? CliFramework);
 }
