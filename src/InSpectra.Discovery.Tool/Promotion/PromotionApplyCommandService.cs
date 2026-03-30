@@ -54,90 +54,14 @@ internal sealed class PromotionApplyCommandService
 
             if (string.Equals(result["disposition"]?.GetValue<string>(), "success", StringComparison.Ordinal))
             {
-                var openCliArtifact = result["artifacts"]?["opencliArtifact"]?.GetValue<string>();
-                var crawlArtifact = result["artifacts"]?["crawlArtifact"]?.GetValue<string>();
-                var xmlDocArtifact = result["artifacts"]?["xmldocArtifact"]?.GetValue<string>();
-                var openCliArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, openCliArtifact);
-                var crawlArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, crawlArtifact);
-                var xmlDocArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, xmlDocArtifact);
-                var openCliExists = openCliArtifactPath is not null;
-                var crawlExists = crawlArtifactPath is not null;
-                var xmlDocExists = xmlDocArtifactPath is not null;
-                string? openCliValidationError = null;
-                string? xmlDocValidationError = null;
-                JsonObject? openCliDocument = null;
-                JsonObject? crawlDocument = null;
-                var hasUsableOpenCli = openCliArtifactPath is not null
-                    && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out openCliDocument, out openCliValidationError);
-                var hasUsableCrawl = crawlArtifactPath is not null
-                    && PromotionArtifactSupport.TryLoadJsonObject(crawlArtifactPath, out crawlDocument);
-                var hasUsableXmlDoc = xmlDocArtifactPath is not null
-                    && PromotionAnalysisModeSupport.TryLoadXmlArtifact(xmlDocArtifactPath, out xmlDocValidationError);
-                var selectedAnalysisMode = PromotionAnalysisModeSupport.ResolveAnalysisMode(
-                    hasUsableOpenCli ? openCliDocument : null,
-                    hasUsableCrawl ? crawlDocument : null,
+                var validatedSuccess = PromotionSuccessArtifactValidationSupport.Validate(
                     item,
-                    result);
-                PromotionAnalysisModeSupport.BackfillAnalysisModeSelection(result, selectedAnalysisMode);
-                var requiresCrawlArtifact = HelpBatchArtifactSupport.RequiresCrawlArtifact(selectedAnalysisMode);
-                var declaredMissing = new List<string>();
-                var invalidArtifacts = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(openCliArtifact) && !openCliExists)
-                {
-                    declaredMissing.Add(openCliArtifact);
-                }
-
-                if (!string.IsNullOrWhiteSpace(crawlArtifact) && !crawlExists)
-                {
-                    declaredMissing.Add(crawlArtifact);
-                }
-
-                if (!string.IsNullOrWhiteSpace(xmlDocArtifact) && !xmlDocExists)
-                {
-                    declaredMissing.Add(xmlDocArtifact);
-                }
-
-                if (openCliArtifactPath is not null && !hasUsableOpenCli && (!hasUsableXmlDoc || requiresCrawlArtifact))
-                {
-                    invalidArtifacts.Add(openCliArtifact!);
-                }
-
-                if (crawlArtifactPath is not null && !hasUsableCrawl)
-                {
-                    invalidArtifacts.Add(crawlArtifact!);
-                }
-
-                if (xmlDocArtifactPath is not null && !hasUsableXmlDoc)
-                {
-                    invalidArtifacts.Add(xmlDocArtifact!);
-                }
-
-                if (declaredMissing.Count > 0
-                    || invalidArtifacts.Count > 0
-                    || !(hasUsableOpenCli || hasUsableXmlDoc)
-                    || (requiresCrawlArtifact && !hasUsableCrawl))
-                {
-                    var message = declaredMissing.Count > 0
-                        ? "Success result declared artifact(s) that were not uploaded: " + string.Join(", ", declaredMissing)
-                        : invalidArtifacts.Count > 0
-                            ? !string.IsNullOrWhiteSpace(openCliValidationError)
-                                ? openCliValidationError
-                                : !string.IsNullOrWhiteSpace(xmlDocValidationError)
-                                    ? xmlDocValidationError
-                                    : "Success result declared JSON artifact(s) that are not usable JSON objects: " + string.Join(", ", invalidArtifacts)
-                        : requiresCrawlArtifact && !hasUsableCrawl
-                            ? "Success result did not include a usable crawl.json artifact."
-                            : "Success result did not include either opencli.json or xmldoc.xml.";
-                    result = PromotionResultSupport.NewSyntheticFailureResult(
-                        item,
-                        result["attempt"]?.GetValue<int?>() ?? item["attempt"]?.GetValue<int?>() ?? 1,
-                        "missing-success-artifact",
-                        message,
-                        plan.BatchId ?? string.Empty,
-                        now);
-                    artifactDirectory = null;
-                }
+                    result,
+                    artifactDirectory,
+                    plan.BatchId ?? string.Empty,
+                    now);
+                result = validatedSuccess.Result;
+                artifactDirectory = validatedSuccess.ArtifactDirectory;
             }
 
             var packageId = item["packageId"]?.GetValue<string>() ?? throw new InvalidOperationException("Plan item is missing packageId.");
@@ -145,13 +69,9 @@ internal sealed class PromotionApplyCommandService
             var lowerId = packageId.ToLowerInvariant();
             var lowerVersion = version.ToLowerInvariant();
             var statePath = Path.Combine(stateRoot, "packages", lowerId, $"{lowerVersion}.json");
-            var existingState = File.Exists(statePath)
-                ? JsonNode.Parse(await File.ReadAllTextAsync(statePath, cancellationToken))?.AsObject()
-                : null;
+            var existingState = await JsonNodeFileLoader.TryLoadJsonObjectAsync(statePath, cancellationToken);
             var existingPackageIndexPath = Path.Combine(packagesRoot, lowerId, "index.json");
-            var existingPackageIndex = File.Exists(existingPackageIndexPath)
-                ? JsonNode.Parse(await File.ReadAllTextAsync(existingPackageIndexPath, cancellationToken))?.AsObject()
-                : null;
+            var existingPackageIndex = await JsonNodeFileLoader.TryLoadJsonObjectAsync(existingPackageIndexPath, cancellationToken);
 
             JsonObject? indexedPaths = null;
             if (string.Equals(result["disposition"]?.GetValue<string>(), "success", StringComparison.Ordinal))
