@@ -30,7 +30,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
 
     private JsonObject RegenerateOpenCli(HelpCrawlArtifactCandidate candidate)
     {
-        var crawl = JsonNode.Parse(File.ReadAllText(candidate.CrawlPath))?.AsObject()
+        var crawl = JsonNodeFileLoader.TryLoadJsonObject(candidate.CrawlPath)
             ?? throw new InvalidOperationException($"Crawl artifact '{candidate.CrawlPath}' is empty.");
         var parsedCaptures = ParseCaptures(candidate.CommandName, crawl["commands"] as JsonArray);
         if (!parsedCaptures.TryGetValue(string.Empty, out _))
@@ -38,7 +38,7 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             parsedCaptures[string.Empty] = CreateEmptyRootDocument();
         }
 
-        var helpDocuments = BuildReachableDocuments(candidate.CommandName, parsedCaptures);
+        var helpDocuments = ToolHelpReachableDocumentSupport.BuildReachableDocuments(candidate.CommandName, parsedCaptures);
         if (helpDocuments.Count == 0)
         {
             helpDocuments[string.Empty] = CreateEmptyRootDocument();
@@ -69,185 +69,16 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
         var documents = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase);
         foreach (var capture in captures?.OfType<JsonObject>() ?? [])
         {
-            var storedCommand = capture["command"]?.GetValue<string>() ?? string.Empty;
-            var payload = SelectBestPayload(rootCommandName, storedCommand, capture);
-            if (string.IsNullOrWhiteSpace(payload))
+            var selected = ToolHelpCapturePayloadSupport.SelectBestDocument(_parser, rootCommandName, capture);
+            if (selected is null)
             {
                 continue;
             }
 
-            var document = _parser.Parse(payload);
-            var commandSegments = ToolHelpCommandPathSupport.ResolveStoredCaptureSegments(rootCommandName, storedCommand, document);
-            if (!document.HasContent || !ToolHelpDocumentInspector.IsCompatible(commandSegments, document))
+            if (!documents.TryGetValue(selected.CommandKey, out var existing)
+                || ToolHelpDocumentInspector.Score(selected.Document) > ToolHelpDocumentInspector.Score(existing))
             {
-                continue;
-            }
-
-            var commandKey = commandSegments.Length == 0 ? string.Empty : string.Join(' ', commandSegments);
-
-            if (!documents.TryGetValue(commandKey, out var existing) || ToolHelpDocumentInspector.Score(document) > ToolHelpDocumentInspector.Score(existing))
-            {
-                documents[commandKey] = document;
-            }
-        }
-
-        return documents;
-    }
-
-    private string? SelectBestPayload(string rootCommandName, string storedCommand, JsonObject capture)
-    {
-        var candidates = SelectPayloadCandidates(capture);
-        ToolHelpDocument? bestDocument = null;
-        string? bestPayload = null;
-        var bestScore = -1;
-        var helpInvocation = capture["helpInvocation"]?.GetValue<string>();
-
-        foreach (var payload in candidates)
-        {
-            var document = _parser.Parse(payload);
-            var commandSegments = ToolHelpCommandPathSupport.ResolveStoredCaptureSegments(rootCommandName, storedCommand, document);
-            var compatibleDocument = document.HasContent && ToolHelpDocumentInspector.IsCompatible(commandSegments, document)
-                ? document
-                : null;
-            var score = compatibleDocument is not null
-                ? ScorePayloadCandidate(storedCommand, compatibleDocument, helpInvocation, payload)
-                : 0;
-            if (score <= bestScore)
-            {
-                continue;
-            }
-
-            bestScore = score;
-            bestDocument = compatibleDocument;
-            bestPayload = payload;
-        }
-
-        return bestDocument is not null ? bestPayload : null;
-    }
-
-    private static int ScorePayloadCandidate(string storedCommand, ToolHelpDocument document, string? helpInvocation, string payload)
-    {
-        var score = ToolHelpDocumentInspector.Score(document) - GetPayloadSelectionPenalty(payload, helpInvocation);
-        if (string.IsNullOrWhiteSpace(storedCommand))
-        {
-            return score;
-        }
-
-        var storedCommandLeaf = ToolHelpCommandPathSupport.SplitSegments(storedCommand).LastOrDefault();
-        var hasLeafSurface = document.Options.Count > 0 || document.Arguments.Count > 0;
-        if (!hasLeafSurface
-            && document.Commands.Count > 0
-            && (string.Equals(storedCommandLeaf, "help", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(storedCommandLeaf, "version", StringComparison.OrdinalIgnoreCase)))
-        {
-            return int.MinValue;
-        }
-
-        if (hasLeafSurface)
-        {
-            score += 20;
-        }
-
-        if (!hasLeafSurface && document.Commands.Count > 0)
-        {
-            score -= 10;
-        }
-
-        return score;
-    }
-
-    private static int GetPayloadSelectionPenalty(string payload, string? helpInvocation)
-    {
-        if (string.IsNullOrWhiteSpace(payload) || string.IsNullOrWhiteSpace(helpInvocation))
-        {
-            return 0;
-        }
-
-        var lines = payload
-            .Replace("\r\n", "\n", StringComparison.Ordinal)
-            .Replace('\r', '\n')
-            .Split('\n')
-            .Select(line => line.Trim())
-            .Where(line => line.Length > 0)
-            .ToArray();
-        var edgeLines = lines
-            .Take(4)
-            .Concat(lines.TakeLast(4))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        return edgeLines.Any(line => string.Equals(line, helpInvocation, StringComparison.OrdinalIgnoreCase))
-            ? 50
-            : 0;
-    }
-
-    private static IReadOnlyList<string> SelectPayloadCandidates(JsonObject capture)
-    {
-        var payloads = new List<string>();
-        var storedPayload = ToolCommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>());
-        if (!string.IsNullOrWhiteSpace(storedPayload))
-        {
-            payloads.Add(storedPayload);
-        }
-
-        if (capture["result"] is JsonObject processResult)
-        {
-            var stdout = ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>());
-            var stderr = ToolCommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
-
-            if (!string.IsNullOrWhiteSpace(stdout))
-            {
-                payloads.Add(stdout);
-            }
-
-            if (!string.IsNullOrWhiteSpace(stderr))
-            {
-                payloads.Add(stderr);
-            }
-
-            if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
-            {
-                payloads.Add($"{stdout}\n{stderr}");
-                payloads.Add($"{stderr}\n{stdout}");
-            }
-        }
-
-        return payloads.Distinct(StringComparer.Ordinal).ToArray();
-    }
-
-    private static Dictionary<string, ToolHelpDocument> BuildReachableDocuments(
-        string rootCommandName,
-        IReadOnlyDictionary<string, ToolHelpDocument> parsedCaptures)
-    {
-        var documents = new Dictionary<string, ToolHelpDocument>(StringComparer.OrdinalIgnoreCase);
-        if (!parsedCaptures.TryGetValue(string.Empty, out var rootDocument))
-        {
-            return documents;
-        }
-
-        var queue = new Queue<string>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { string.Empty };
-        documents[string.Empty] = rootDocument;
-        queue.Enqueue(string.Empty);
-
-        while (queue.Count > 0)
-        {
-            var commandKey = queue.Dequeue();
-            var current = documents[commandKey];
-            if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryInventoryEcho(commandKey, current))
-            {
-                continue;
-            }
-
-            foreach (var child in current.Commands)
-            {
-                var childKey = ToolHelpCommandPathSupport.ResolveChildKey(rootCommandName, commandKey, child.Key);
-                if (!seen.Add(childKey) || !parsedCaptures.TryGetValue(childKey, out var childDocument))
-                {
-                    continue;
-                }
-
-                documents[childKey] = childDocument;
-                queue.Enqueue(childKey);
+                documents[selected.CommandKey] = selected.Document;
             }
         }
 
@@ -255,63 +86,8 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
     }
 
     private static HelpCrawlArtifactCandidate? TryCreateCandidate(string repositoryRoot, string metadataPath)
-    {
-        var versionDirectory = Path.GetDirectoryName(metadataPath);
-        if (string.IsNullOrWhiteSpace(versionDirectory))
-        {
-            return null;
-        }
+        => ToolHelpCrawlArtifactCandidateFactory.TryCreate(repositoryRoot, metadataPath);
 
-        var crawlPath = Path.Combine(versionDirectory, "crawl.json");
-        if (!File.Exists(crawlPath))
-        {
-            return null;
-        }
-
-        var metadata = JsonNode.Parse(File.ReadAllText(metadataPath))?.AsObject();
-        var openCliRelativePath = metadata?["artifacts"]?["opencliPath"]?.GetValue<string>();
-        var openCliPath = string.IsNullOrWhiteSpace(openCliRelativePath)
-            ? Path.Combine(versionDirectory, "opencli.json")
-            : Path.Combine(repositoryRoot, openCliRelativePath);
-        var openCli = JsonNodeFileLoader.TryLoadJsonNode(openCliPath) as JsonObject;
-        var artifactSource = openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>()
-            ?? metadata?["artifacts"]?["opencliSource"]?.GetValue<string>()
-            ?? metadata?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>();
-        var openCliClassification = metadata?["steps"]?["opencli"]?["classification"]?.GetValue<string>();
-        var analysisMode = metadata?["analysisMode"]?.GetValue<string>();
-        var recoverRejectedHelpArtifact =
-            string.Equals(openCliClassification, "invalid-opencli-artifact", StringComparison.OrdinalIgnoreCase)
-            && string.Equals(analysisMode, "help", StringComparison.OrdinalIgnoreCase);
-        if (!string.Equals(artifactSource, "crawled-from-help", StringComparison.OrdinalIgnoreCase)
-            && !recoverRejectedHelpArtifact)
-        {
-            return null;
-        }
-
-        var cliFramework = metadata?["cliFramework"]?.GetValue<string>()
-            ?? openCli?["x-inspectra"]?["cliFramework"]?.GetValue<string>();
-        if (CliFrameworkProviderRegistry.HasCliFxAnalysisSupport(cliFramework))
-        {
-            return null;
-        }
-
-        var packageId = metadata?["packageId"]?.GetValue<string>();
-        var version = metadata?["version"]?.GetValue<string>();
-        var commandName = metadata?["command"]?.GetValue<string>();
-        if (string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(version) || string.IsNullOrWhiteSpace(commandName))
-        {
-            return null;
-        }
-
-        return new HelpCrawlArtifactCandidate(
-            packageId,
-            version,
-            commandName,
-            cliFramework,
-            metadataPath,
-            crawlPath,
-            openCliPath);
-    }
     private bool ProcessCandidate(string repositoryRoot, HelpCrawlArtifactCandidate candidate)
     {
         var regenerated = RegenerateOpenCli(candidate);
