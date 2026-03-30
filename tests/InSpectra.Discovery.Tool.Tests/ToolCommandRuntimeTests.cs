@@ -1,11 +1,13 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
-public sealed class ToolCommandRuntimeTests
+public sealed class CommandRuntimeTests
 {
     [Fact]
     public void NormalizeConsoleText_Strips_Ansi_Control_Codes_And_Bom()
     {
-        var normalized = ToolCommandRuntime.NormalizeConsoleText("\uFEFF\u001b[31merror\u001b[0m");
+        var normalized = CommandRuntime.NormalizeConsoleText("\uFEFF\u001b[31merror\u001b[0m");
 
         Assert.Equal("error", normalized);
     }
@@ -13,7 +15,7 @@ public sealed class ToolCommandRuntimeTests
     [Fact]
     public void ResolveInstalledCommandPath_Prefers_Existing_Command_File()
     {
-        var runtime = new ToolCommandRuntime();
+        var runtime = new CommandRuntime();
         var tempRoot = Path.Combine(Path.GetTempPath(), "inspectra-runtime-tests", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempRoot);
 
@@ -35,3 +37,5 @@ public sealed class ToolCommandRuntimeTests
         }
     }
 }
+
+

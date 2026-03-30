@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -7,7 +9,7 @@ public sealed class PromotionApplyXmldocFallbackTests
     [Fact]
     public async Task ApplyUntrustedAsync_Allows_Invalid_OpenCli_When_Xmldoc_Fallback_Is_Available()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -171,3 +173,5 @@ public sealed class PromotionApplyXmldocFallbackTests
         }
     }
 }
+
+

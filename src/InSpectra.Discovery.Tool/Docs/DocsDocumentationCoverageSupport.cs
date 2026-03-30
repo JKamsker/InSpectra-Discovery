@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 using System.Text.Json.Nodes;
 
 internal static class DocsDocumentationCoverageSupport
@@ -115,3 +117,4 @@ internal sealed class DocumentationStats
         VisibleArguments == DescribedArguments &&
         VisibleLeafCommands == LeafCommandsWithExamples;
 }
+

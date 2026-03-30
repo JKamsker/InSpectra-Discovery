@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal sealed class CoconaAttributeReader : IStaticAttributeReader
@@ -215,3 +217,4 @@ internal sealed class CoconaAttributeReader : IStaticAttributeReader
         => string.Equals(typeSig?.FullName, "System.Threading.CancellationToken", StringComparison.Ordinal);
 
 }
+

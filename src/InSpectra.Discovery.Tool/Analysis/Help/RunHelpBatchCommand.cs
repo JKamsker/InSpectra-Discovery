@@ -6,7 +6,12 @@ using System.ComponentModel;
 
 internal sealed class RunHelpBatchCommand : AsyncCommand<RunHelpBatchCommand.Settings>
 {
-    private readonly HelpBatchCommandService _service = new();
+    private readonly HelpBatchCommandService _service;
+
+    public RunHelpBatchCommand(HelpBatchCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -63,3 +68,6 @@ internal sealed class RunHelpBatchCommand : AsyncCommand<RunHelpBatchCommand.Set
             settings.Json,
             cancellationToken);
 }
+
+
+

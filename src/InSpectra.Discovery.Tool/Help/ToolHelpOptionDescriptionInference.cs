@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpOptionDescriptionInference
 {
     public static string? InferArgumentName(ToolHelpOptionSignature signature, string? description)
@@ -151,3 +153,4 @@ internal static class ToolHelpOptionDescriptionInference
         => string.Equals(defaultValue, "false", StringComparison.OrdinalIgnoreCase)
             || string.Equals(defaultValue, "true", StringComparison.OrdinalIgnoreCase);
 }
+

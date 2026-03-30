@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Xunit;
@@ -7,7 +9,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
     [Fact]
     public void Regenerates_Synthesized_OpenCli_From_Stored_Xmldoc()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -73,7 +75,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
     [Fact]
     public void Ignores_NonSynthesized_OpenCli_Artifacts()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -120,7 +122,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
     [Fact]
     public void Repairs_Stale_Xmldoc_Metadata_When_OpenCli_Is_Already_Current()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -202,7 +204,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
     [Fact]
     public void Backfills_Missing_OpenCli_From_Stored_Xmldoc_Metadata()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -255,7 +257,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
     [Fact]
     public void Does_Not_Backfill_Over_Existing_Native_OpenCli_When_Metadata_Path_Is_Missing()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -304,7 +306,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
     [Fact]
     public void Repairs_Corrupted_Synthesized_OpenCli()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -354,7 +356,7 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
     [Fact]
     public void Ignores_Blank_Provenance_When_OpenCli_Already_Exists()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -434,3 +436,5 @@ public sealed class XmldocOpenCliArtifactRegeneratorTests
         }
     }
 }
+
+

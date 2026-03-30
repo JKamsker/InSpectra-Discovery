@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using System.Text.Json.Nodes;
 
 internal sealed class PromotionApplyCommandService
@@ -156,3 +158,4 @@ internal sealed class PromotionApplyCommandService
             cancellationToken);
     }
 }
+

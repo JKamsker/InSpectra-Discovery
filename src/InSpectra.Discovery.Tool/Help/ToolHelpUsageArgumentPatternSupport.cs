@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static class ToolHelpUsageArgumentPatternSupport
@@ -53,3 +55,4 @@ internal static class ToolHelpUsageArgumentPatternSupport
             : null;
     }
 }
+

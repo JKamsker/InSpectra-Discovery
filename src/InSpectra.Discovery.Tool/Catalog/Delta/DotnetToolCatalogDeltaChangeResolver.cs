@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 using System.Collections.Concurrent;
 
 internal sealed class DotnetToolCatalogDeltaChangeResolver
@@ -196,3 +198,4 @@ internal sealed class DotnetToolCatalogDeltaChangeResolver
         }
     }
 }
+

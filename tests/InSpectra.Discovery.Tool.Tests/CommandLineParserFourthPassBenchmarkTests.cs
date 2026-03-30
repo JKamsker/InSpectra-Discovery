@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
     [Fact]
     public void Regenerator_Parses_CommandLineParser_Alias_Command_Inventory_As_Commands()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -47,7 +49,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Let_CommandLineParser_Positionals_Bleed_Into_Version_Description()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -114,7 +116,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
     [Fact]
     public void Regenerator_Ignores_Example_Command_Headings_And_License_Prose()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -171,7 +173,7 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
     [Fact]
     public void Regenerator_Cleans_CommandLineParser_Status_And_Help_Heading_Titles()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -294,3 +296,5 @@ public sealed class CommandLineParserFourthPassBenchmarkTests
         }
     }
 }
+
+

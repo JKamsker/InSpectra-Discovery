@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Indexing;
+
 internal sealed class DotnetToolIndexEntryResolver
 {
     private readonly NuGetApiClient _apiClient;
@@ -130,3 +132,4 @@ internal sealed class DotnetToolIndexEntryResolver
             ReadmeUrl: leaf.CatalogEntry.ReadmeUrl);
     }
 }
+

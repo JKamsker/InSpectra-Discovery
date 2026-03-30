@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 /// <summary>
@@ -211,3 +213,4 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
         return sb.ToString();
     }
 }
+

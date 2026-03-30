@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -100,3 +102,4 @@ internal static partial class OpenCliDocumentPublishabilityInspector
     [GeneratedRegex(@"^(?:Error|Warning)\b|^There was an error\b|\bfatal error\b|\berror creating\b|\berror while\b|\bPlease try the command\b|\blibhostpolicy\.so\b|\bAttempt to copy\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex ErrorLikeTitleRegex();
 }
+

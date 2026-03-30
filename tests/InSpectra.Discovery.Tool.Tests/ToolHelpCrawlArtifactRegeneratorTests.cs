@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerates_Generic_Help_OpenCli_From_Stored_Crawls()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -153,7 +155,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Drops_CommandLineParser_Pseudo_Verbs_From_Crawled_Help()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -254,7 +256,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Prefers_Stored_Single_Stream_Help_Payload_Over_Invocation_Echo_Combination()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -351,7 +353,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_DoesNot_Nest_Builtin_Auxiliary_Inventory_Echoes()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -448,7 +450,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Rejects_Unparseable_Root_Capture_As_Invalid_OpenCli()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -517,7 +519,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Rejects_Interactive_Error_Output_As_Invalid_OpenCli()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -594,7 +596,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Repairs_Stale_Help_Metadata_When_OpenCli_Is_Already_Current()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -706,7 +708,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Rebuilds_Generic_Help_When_OpenCli_Is_Missing_Using_Metadata_Provenance()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -768,7 +770,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Replays_Generic_Help_From_Stored_Process_Output_When_Payload_Is_Noisy()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -837,7 +839,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Prefers_Clean_Stream_Over_Mixed_Exception_Payload()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -910,7 +912,7 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Does_Not_Attach_Root_Help_To_Subcommand_Captures()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1010,3 +1012,5 @@ public sealed class ToolHelpCrawlArtifactRegeneratorTests
         }
     }
 }
+
+

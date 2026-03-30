@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 internal sealed record DotnetToolDeltaQueueSnapshot(
     DateTimeOffset GeneratedAtUtc,
     string Filter,
@@ -43,3 +45,4 @@ internal sealed record DotnetToolQueueItem(
 internal sealed record DotnetToolDeltaQueueComputation(
     DotnetToolDeltaQueueSnapshot Delta,
     DotnetToolQueueSnapshot Queue);
+

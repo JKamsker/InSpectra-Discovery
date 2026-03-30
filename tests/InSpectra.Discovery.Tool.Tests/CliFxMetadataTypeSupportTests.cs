@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Reflection;
 using Xunit;
 
@@ -42,3 +44,4 @@ public sealed class CliFxMetadataTypeSupportTests
         public string[] Paths { get; init; } = [];
     }
 }
+

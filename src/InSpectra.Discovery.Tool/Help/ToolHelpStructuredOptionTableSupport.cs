@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpStructuredOptionTableSupport
 {
     public static IReadOnlyList<string> TryExtractStructuredOptionLines(IReadOnlyList<string> lines)
@@ -142,3 +144,4 @@ internal static class ToolHelpStructuredOptionTableSupport
         return hasRows ? results : [];
     }
 }
+

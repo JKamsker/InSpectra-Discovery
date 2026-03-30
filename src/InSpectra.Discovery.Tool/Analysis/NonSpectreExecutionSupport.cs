@@ -270,3 +270,5 @@ internal sealed record NonSpectreInstalledToolAnalysisRequest(
     string TempRoot,
     int InstallTimeoutSeconds,
     int CommandTimeoutSeconds);
+
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.Json.Nodes;
 
 internal static class ToolHelpCrawlArtifactCandidateFactory
@@ -75,3 +77,4 @@ internal static class ToolHelpCrawlArtifactCandidateFactory
             || recoverRejectedHelpArtifact;
     }
 }
+

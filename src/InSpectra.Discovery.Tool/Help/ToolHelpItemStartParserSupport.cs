@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpItemStartParserSupport
@@ -149,3 +151,4 @@ internal static partial class ToolHelpItemStartParserSupport
     [GeneratedRegex(@"^(?<key>\S(?:.*?\S)?)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 }
+

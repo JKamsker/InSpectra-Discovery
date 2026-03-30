@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserSixthPassBenchmarkTests
     [Fact]
     public void Regenerator_Preserves_Root_Command_Summaries_And_Infers_Value_Options_From_Descriptions()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -179,3 +181,5 @@ public sealed class CommandLineParserSixthPassBenchmarkTests
         }
     }
 }
+
+

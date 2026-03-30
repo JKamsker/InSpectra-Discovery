@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpRequiredDescriptionSupport
 {
     private static readonly string[] RequiredPrefixes =
@@ -42,3 +44,4 @@ internal static class ToolHelpRequiredDescriptionSupport
         return false;
     }
 }
+

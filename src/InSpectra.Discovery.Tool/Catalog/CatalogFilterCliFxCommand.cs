@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Catalog;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class CatalogFilterCliFxCommand : AsyncCommand<CatalogFilterCliFxCommand.Settings>
 {
-    private readonly CatalogCommandService _service = new();
+    private readonly CatalogCommandService _service;
+
+    public CatalogFilterCliFxCommand(CatalogCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -37,3 +44,5 @@ internal sealed class CatalogFilterCliFxCommand : AsyncCommand<CatalogFilterCliF
             },
             cancellationToken);
 }
+
+

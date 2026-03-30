@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class CliFrameworkProviderRegistryTests
@@ -88,3 +90,4 @@ public sealed class CliFrameworkProviderRegistryTests
         Assert.Equal(expected, CliFrameworkProviderRegistry.ShouldReplace(existingCliFramework, candidateCliFramework));
     }
 }
+

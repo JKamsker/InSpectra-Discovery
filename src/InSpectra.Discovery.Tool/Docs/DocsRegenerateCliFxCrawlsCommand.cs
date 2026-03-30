@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 internal sealed class DocsRegenerateCliFxCrawlsCommand : DocsArtifactRegenerationCommandBase
 {
     private readonly CliFxCrawlArtifactRegenerator _regenerator = new();
@@ -17,3 +19,4 @@ internal sealed class DocsRegenerateCliFxCrawlsCommand : DocsArtifactRegeneratio
             result.FailedItems);
     }
 }
+

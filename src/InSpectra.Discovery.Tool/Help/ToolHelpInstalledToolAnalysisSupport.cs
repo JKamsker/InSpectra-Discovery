@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using InSpectra.Discovery.Tool.Analysis;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
@@ -81,3 +83,4 @@ internal sealed class ToolHelpInstalledToolAnalysisSupport
         NonSpectreResultSupport.ApplySuccess(result, classification: "help-crawl", artifactSource: "crawled-from-help");
     }
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class OpenCliValidationSupport
@@ -47,3 +49,4 @@ internal static class OpenCliValidationSupport
             ? text
             : null;
 }
+

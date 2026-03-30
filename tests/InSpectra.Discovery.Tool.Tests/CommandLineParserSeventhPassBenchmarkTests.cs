@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserSeventhPassBenchmarkTests
     [Fact]
     public void Regenerator_Infers_Value_Options_From_Specify_Descriptions_And_Inline_Examples()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -60,7 +62,7 @@ public sealed class CommandLineParserSeventhPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Infer_Value_Arguments_For_Boolean_Default_Flags()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -116,7 +118,7 @@ public sealed class CommandLineParserSeventhPassBenchmarkTests
     [Fact]
     public void Regenerator_Infers_Format_Options_From_CommandLineParser_Examples()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -175,7 +177,7 @@ public sealed class CommandLineParserSeventhPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Create_Fake_Options_From_Wrapped_Option_References()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -347,3 +349,5 @@ public sealed class CommandLineParserSeventhPassBenchmarkTests
         }
     }
 }
+
+

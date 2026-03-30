@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Indexing;
+
 using System.Text.Json.Nodes;
 
 internal static class RepositoryPackageSummaryBuilder
@@ -206,3 +208,4 @@ internal static class RepositoryPackageSummaryBuilder
 }
 
 internal sealed record CurrentPackageSnapshot(long? TotalDownloads, string? ProjectUrl);
+

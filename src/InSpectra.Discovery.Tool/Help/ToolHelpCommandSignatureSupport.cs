@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpCommandSignatureSupport
 {
     public static string NormalizeCommandKey(string key)
@@ -87,3 +89,4 @@ internal static class ToolHelpCommandSignatureSupport
             && !segment.StartsWith("CommandLine.", StringComparison.Ordinal)
             && segment.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' or '.' or ':' or '+');
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserThirteenthPassBenchmarkTests
     [Fact]
     public void Regenerator_Strips_CommandLineParser_Banner_Version_Suffix_And_Infers_Suppress_List_Values()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -128,3 +130,5 @@ public sealed class CommandLineParserThirteenthPassBenchmarkTests
         }
     }
 }
+
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpLegacyOptionTable
@@ -178,3 +180,4 @@ internal static partial class ToolHelpLegacyOptionTable
     private static bool LooksLikeLooseOptionRow(string rawLine)
         => ToolHelpLegacyOptionRowSupport.LooksLikeLooseOptionRow(rawLine);
 }
+

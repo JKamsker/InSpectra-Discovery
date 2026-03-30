@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal sealed class PowerArgsAttributeReader : IStaticAttributeReader
@@ -217,3 +219,4 @@ internal sealed class PowerArgsAttributeReader : IStaticAttributeReader
     }
 
 }
+

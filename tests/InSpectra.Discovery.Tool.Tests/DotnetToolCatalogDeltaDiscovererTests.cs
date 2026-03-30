@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;
@@ -263,3 +265,4 @@ public sealed class DotnetToolCatalogDeltaDiscovererTests
         }
     }
 }
+

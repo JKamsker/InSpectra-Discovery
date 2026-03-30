@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class OpenCliOptionCollisionMergeSupport
@@ -219,3 +221,4 @@ internal static class OpenCliOptionCollisionMergeSupport
             StringComparison.Ordinal);
     }
 }
+

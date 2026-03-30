@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserEleventhPassBenchmarkTests
     [Fact]
     public void Regenerator_Parses_Mixed_Short_Long_Value_Signatures()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -49,7 +51,7 @@ public sealed class CommandLineParserEleventhPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Treat_Wrapped_Usage_Value_Continuations_As_Positionals()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -117,7 +119,7 @@ public sealed class CommandLineParserEleventhPassBenchmarkTests
     [Fact]
     public void Regenerator_Balances_Current_CommandLineParser_Value_And_Flag_Phrases()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -258,3 +260,5 @@ public sealed class CommandLineParserEleventhPassBenchmarkTests
         }
     }
 }
+
+

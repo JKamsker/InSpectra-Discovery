@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpRootCommandInventoryInference
 {
     public static IReadOnlyList<string> InferLines(IReadOnlyList<string> preamble)
@@ -109,3 +111,4 @@ internal static class ToolHelpRootCommandInventoryInference
     private static int GetIndentation(string rawLine)
         => rawLine.TakeWhile(char.IsWhiteSpace).Count();
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -116,3 +118,4 @@ internal static partial class OpenCliXmldocSupport
     [GeneratedRegex(@"^System\.Nullable`1\[\[(?<inner>.+)\]\]$", RegexOptions.Compiled)]
     private static partial Regex NullableClrTypeRegex();
 }
+

@@ -203,3 +203,5 @@ internal static partial class CommandProcessSupport
     [GeneratedRegex(@"\x1B[@-_]", RegexOptions.Compiled)]
     private static partial Regex AnsiEscapeRegex();
 }
+
+

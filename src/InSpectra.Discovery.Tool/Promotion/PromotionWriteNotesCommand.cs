@@ -1,9 +1,16 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 internal sealed class PromotionWriteNotesCommand : AsyncCommand<PromotionWriteNotesCommand.Settings>
 {
-    private readonly PromotionCommandService _service = new();
+    private readonly PromotionCommandService _service;
+
+    public PromotionWriteNotesCommand(PromotionCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -34,3 +41,5 @@ internal sealed class PromotionWriteNotesCommand : AsyncCommand<PromotionWriteNo
             settings.Json,
             cancellationToken);
 }
+
+

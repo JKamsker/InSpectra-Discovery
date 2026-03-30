@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -323,3 +325,4 @@ public sealed class CliFxOpenCliBuilderTests
         Assert.Equal("--hidden", options[1]!["name"]!.GetValue<string>());
     }
 }
+

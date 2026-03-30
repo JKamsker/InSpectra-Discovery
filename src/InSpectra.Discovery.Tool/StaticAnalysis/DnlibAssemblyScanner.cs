@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal sealed class DnlibAssemblyScanner
@@ -62,3 +64,4 @@ internal sealed record ScannedModule(string Path, ModuleDefMD Module) : IDisposa
 {
     public void Dispose() => Module.Dispose();
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class OpenCliArtifactMetadataRepair
@@ -135,3 +137,4 @@ internal static class OpenCliArtifactMetadataRepair
         return !string.IsNullOrWhiteSpace(inferredClassification) ? inferredClassification : existingClassification;
     }
 }
+

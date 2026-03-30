@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class CliFxCommandTreeBuilderTests
@@ -100,3 +102,4 @@ public sealed class CliFxCommandTreeBuilderTests
         Assert.Equal(new[] { "gen-docker", "gen", "gen-kubernetes" }, tree.Select(node => node.DisplayName).ToArray());
     }
 }
+

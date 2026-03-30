@@ -6,7 +6,12 @@ using System.ComponentModel;
 
 internal sealed class RunHelpCommand : AsyncCommand<RunHelpCommand.Settings>
 {
-    private readonly ToolHelpService _service = new();
+    private readonly ToolHelpService _service;
+
+    public RunHelpCommand(ToolHelpService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : CliFrameworkPackageAnalysisSettingsBase
     {
@@ -46,3 +51,6 @@ internal sealed class RunHelpCommand : AsyncCommand<RunHelpCommand.Settings>
             settings.Json,
             cancellationToken);
 }
+
+
+

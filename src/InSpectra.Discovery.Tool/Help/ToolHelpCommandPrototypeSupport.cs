@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpCommandPrototypeSupport
@@ -93,3 +95,4 @@ internal static partial class ToolHelpCommandPrototypeSupport
     [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_.-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex BareShortLongAliasRowRegex();
 }
+

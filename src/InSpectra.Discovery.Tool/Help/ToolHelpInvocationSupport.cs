@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpInvocationSupport
 {
     public static IReadOnlyList<string[]> BuildHelpInvocations(IReadOnlyList<string> commandSegments)
@@ -43,3 +45,4 @@ internal static class ToolHelpInvocationSupport
         yield return commandSegments.Concat(new[] { "help" }).ToArray();
     }
 }
+

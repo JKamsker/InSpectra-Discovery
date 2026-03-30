@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
@@ -95,3 +97,4 @@ internal static class PromotionAnalysisModeSupport
     private static string? FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 }
+

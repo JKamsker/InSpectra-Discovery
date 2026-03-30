@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpOptionDescriptionInferenceTests
@@ -14,3 +16,4 @@ public sealed class ToolHelpOptionDescriptionInferenceTests
         Assert.Null(argumentName);
     }
 }
+

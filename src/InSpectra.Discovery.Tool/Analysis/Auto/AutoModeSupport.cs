@@ -44,3 +44,5 @@ internal static class AutoModeSupport
         return "help";
     }
 }
+
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 internal sealed class StaticOptionDefinitionMatcher
 {
     private readonly IReadOnlyList<StaticOptionDefinition> _definitions;
@@ -127,3 +129,4 @@ internal sealed class StaticOptionDefinitionMatcher
         return lookup;
     }
 }
+

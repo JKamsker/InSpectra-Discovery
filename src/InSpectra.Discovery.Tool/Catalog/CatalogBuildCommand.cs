@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Catalog;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class CatalogBuildCommand : AsyncCommand<CatalogBuildCommand.Settings>
 {
-    private readonly CatalogCommandService _service = new();
+    private readonly CatalogCommandService _service;
+
+    public CatalogBuildCommand(CatalogCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -47,3 +54,5 @@ internal sealed class CatalogBuildCommand : AsyncCommand<CatalogBuildCommand.Set
             },
             cancellationToken);
 }
+
+

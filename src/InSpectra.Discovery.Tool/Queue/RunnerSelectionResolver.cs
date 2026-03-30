@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using System.IO.Compression;
 using System.Text.Json.Nodes;
 
@@ -218,3 +220,4 @@ internal static class RunnerSelectionResolver
     private static bool IsMacOsRid(string rid)
         => rid.StartsWith("osx", StringComparison.OrdinalIgnoreCase) || rid.StartsWith("maccatalyst", StringComparison.OrdinalIgnoreCase);
 }
+

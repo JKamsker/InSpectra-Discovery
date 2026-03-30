@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.NuGet;
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -56,3 +58,4 @@ internal sealed class CatalogRepositoryJsonConverter : JsonConverter<CatalogRepo
         writer.WriteEndObject();
     }
 }
+

@@ -84,3 +84,5 @@ internal sealed class InstalledToolAnalysisSupport
         IntrospectionSupport.ApplyClassification(result, openCliOutcome, xmlDocOutcome);
     }
 }
+
+

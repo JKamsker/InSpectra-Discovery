@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpTextNoiseClassifier
@@ -117,3 +119,4 @@ internal static partial class ToolHelpTextNoiseClassifier
     [GeneratedRegex(@"^Template Name\s{2,}Short Name\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex TemplateInstallHeaderRegex();
 }
+

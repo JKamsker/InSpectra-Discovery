@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -7,7 +9,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_ProjectsTotalDownloadsIntoMetadataAndIndexes()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -322,7 +324,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_PreservesHelpDerivedOpenCliProvenance_AndMarksSuccessAsOk()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -506,7 +508,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Infers_Help_Provenance_From_Crawl_Artifact_When_Analysis_Mode_Is_Stale()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -647,7 +649,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Does_Not_Let_Stale_Plan_Mode_Hide_Missing_Help_Crawl_Artifacts()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -764,7 +766,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Backfills_Partial_Help_OpenCli_Metadata_From_Analysis_Mode()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -921,7 +923,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Preserves_Native_Nonzero_Exit_OpenCli_Classification()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1046,7 +1048,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Backfills_CliFx_OpenCli_Provenance_And_Classification()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1202,7 +1204,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_MarksXmldocSynthesizedSuccess_AsOk()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1351,7 +1353,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Rejects_NonObject_OpenCli_Artifacts()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1444,7 +1446,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Rejects_OpenCli_Artifacts_Without_Root_OpenCli_Marker()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1540,7 +1542,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Rejects_Malformed_OpenCli_Artifacts()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1630,7 +1632,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Downgrades_Invalid_Xmldoc_Artifacts_Without_Aborting()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1720,7 +1722,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Rejects_Artifacts_Outside_The_Result_Directory()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1814,7 +1816,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Infers_Help_Analysis_Mode_From_Crawl_Artifact_When_Metadata_Is_Legacy()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -1926,7 +1928,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Rejects_Invalid_Help_OpenCli_Even_When_Xmldoc_Is_Present()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -2030,7 +2032,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Rejects_Malformed_Xmldoc_Even_When_OpenCli_Is_Valid()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -2127,7 +2129,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_MergesMultipleExpectedPlans()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -2233,7 +2235,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Rejects_Help_Success_Without_Crawl_Artifact()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -2335,7 +2337,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Removes_Stale_Indexed_Version_When_RePromotion_Fails()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -2430,7 +2432,7 @@ public sealed class PromotionApplyCommandServiceTests
     [Fact]
     public async Task ApplyUntrustedAsync_Removes_Stale_Indexed_Version_When_Success_Write_Throws()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -2712,3 +2714,5 @@ public sealed class PromotionApplyCommandServiceTests
         }
     }
 }
+
+

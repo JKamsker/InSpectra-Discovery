@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 internal static class OpenCliArtifactSourceSupport
 {
     public static string? InferClassification(string? artifactSource)
@@ -45,3 +47,4 @@ internal static class OpenCliArtifactSourceSupport
             _ => null,
         };
 }
+

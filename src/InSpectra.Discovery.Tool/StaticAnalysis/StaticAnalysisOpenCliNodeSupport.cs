@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using System.Text.Json.Nodes;
 
 internal static class StaticAnalysisOpenCliNodeSupport
@@ -99,3 +101,4 @@ internal static class StaticAnalysisOpenCliNodeSupport
                 || string.Equals(longName, "version", StringComparison.OrdinalIgnoreCase));
     }
 }
+

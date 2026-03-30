@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal sealed class ToolHelpTextParser
 {
     private const string IgnoredSectionName = "__ignored__";
@@ -199,3 +201,4 @@ internal sealed class ToolHelpTextParser
         return joined.Length == 0 ? null : joined;
     }
 }
+

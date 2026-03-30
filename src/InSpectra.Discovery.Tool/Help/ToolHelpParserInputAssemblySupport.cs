@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpParserInputAssemblySupport
 {
     public static IReadOnlyList<string> BuildRawArgumentLines(
@@ -72,3 +74,4 @@ internal static class ToolHelpParserInputAssemblySupport
         }
     }
 }
+

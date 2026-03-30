@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Indexing;
+
 using System.Text.Json.Nodes;
 
 internal static class RepositoryLatestArtifactSupport
@@ -119,3 +121,4 @@ internal sealed record RepositoryLatestArtifactPaths(
             ["xmldocPath"] = XmldocPath,
         };
 }
+

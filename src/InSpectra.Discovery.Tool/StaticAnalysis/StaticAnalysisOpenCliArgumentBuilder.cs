@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using System.Text.Json.Nodes;
 
 internal sealed class StaticAnalysisOpenCliArgumentBuilder
@@ -132,3 +134,4 @@ internal sealed class StaticAnalysisOpenCliArgumentBuilder
         return -1;
     }
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpRequiredDescriptionSupportTests
@@ -22,3 +24,4 @@ public sealed class ToolHelpRequiredDescriptionSupportTests
         Assert.Equal(description, ToolHelpRequiredDescriptionSupport.TrimLeadingRequiredPrefix(description));
     }
 }
+

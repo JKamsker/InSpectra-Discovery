@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using System.Text.Json.Nodes;
 
 internal static class QueueCommandSupport
@@ -109,3 +111,4 @@ internal static class QueueCommandSupport
         return normalized;
     }
 }
+

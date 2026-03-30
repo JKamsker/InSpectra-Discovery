@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -223,3 +225,4 @@ internal static partial class OpenCliDocumentSanitizer
     [GeneratedRegex(@"/tmp/inspectra-[^\s""'\]}>)]+", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex SandboxPathRegex();
 }
+

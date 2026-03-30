@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using System.Text.Json.Nodes;
 internal static class PromotionArtifactWriter
 {
@@ -195,3 +197,4 @@ internal static class PromotionArtifactWriter
         return metadata["artifacts"]!.DeepClone().AsObject();
     }
 }
+

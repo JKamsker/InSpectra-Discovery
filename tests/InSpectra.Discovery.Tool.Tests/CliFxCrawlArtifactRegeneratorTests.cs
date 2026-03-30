@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerates_CliFx_OpenCli_From_Stored_Crawl_And_Metadata()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -126,7 +128,7 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerates_Legacy_CliFx_Crawl_From_Result_Payload_And_Historic_Artifact_Source()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -256,7 +258,7 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerates_TitleCase_CliFx_Crawl_When_OpenCli_Is_Missing()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -356,7 +358,7 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
     [Fact]
     public void Preserves_CliFramework_From_Existing_OpenCli_When_Metadata_Is_Blank()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -428,7 +430,7 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Drops_Unreachable_CliFx_Captures_And_Respects_Metadata_OpenCli_Path()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -562,7 +564,7 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Respects_Metadata_Crawl_Path()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -696,3 +698,5 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
         }
     }
 }
+
+

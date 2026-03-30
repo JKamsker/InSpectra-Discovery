@@ -21,3 +21,5 @@ internal static class AutoResultInspector
     private static bool HasOpenCliArtifact(JsonObject result)
         => !string.IsNullOrWhiteSpace(result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
 }
+
+

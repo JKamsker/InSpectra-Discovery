@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Packages;
+
 using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
@@ -121,3 +123,4 @@ internal sealed record PackageArchiveAssemblyInspection(
 {
     public static PackageArchiveAssemblyInspection Empty(string path) => new(path, null, null, null, []);
 }
+

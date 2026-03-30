@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Indexing;
+
 internal sealed class BootstrapOptions
 {
     public const string DefaultOutputPath = "artifacts/index/dotnet-tools.current.json";
@@ -11,3 +13,4 @@ internal sealed class BootstrapOptions
     public int PageSize { get; init; } = 1000;
     public int MetadataConcurrency { get; init; } = 12;
 }
+

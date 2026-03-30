@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class DocsBrowserIndexCommand : AsyncCommand<DocsBrowserIndexCommand.Settings>
 {
-    private readonly DocsCommandService _service = new();
+    private readonly DocsCommandService _service;
+
+    public DocsBrowserIndexCommand(DocsCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -27,3 +34,5 @@ internal sealed class DocsBrowserIndexCommand : AsyncCommand<DocsBrowserIndexCom
             settings.Json,
             cancellationToken);
 }
+
+

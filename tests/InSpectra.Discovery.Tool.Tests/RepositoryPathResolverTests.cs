@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class RepositoryPathResolverTests
@@ -29,3 +31,4 @@ public sealed class RepositoryPathResolverTests
         }
     }
 }
+

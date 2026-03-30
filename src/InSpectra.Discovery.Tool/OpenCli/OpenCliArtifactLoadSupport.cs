@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class OpenCliArtifactLoadSupport
@@ -90,3 +92,4 @@ internal static class OpenCliArtifactLoadSupport
             .Select(relativePath => Path.Combine(repositoryRoot, relativePath!))
             .Where(File.Exists);
 }
+

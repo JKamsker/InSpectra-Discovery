@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserBenchmarkTests
     [Fact]
     public void Regenerator_Reclassifies_CommandLineParser_Usage_Block_Options_And_Positionals()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -67,7 +69,7 @@ public sealed class CommandLineParserBenchmarkTests
     [Fact]
     public void Regenerator_Ignores_Indented_Alias_Mentions_Inside_CommandLineParser_Descriptions()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -149,7 +151,7 @@ public sealed class CommandLineParserBenchmarkTests
     [Fact]
     public void Regenerator_Rejects_CommandLineParser_BuiltIn_Version_Switch_Collisions()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -190,7 +192,7 @@ public sealed class CommandLineParserBenchmarkTests
     [Fact]
     public void Regenerator_Rejects_CommandLineParser_Runtime_Failure_Output()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -291,3 +293,5 @@ public sealed class CommandLineParserBenchmarkTests
         }
     }
 }
+
+

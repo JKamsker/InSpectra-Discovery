@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -590,3 +592,4 @@ public sealed class ToolHelpOpenCliBuilderTests
         Assert.Equal("Config feval command line tool", config!["description"]!.GetValue<string>());
     }
 }
+

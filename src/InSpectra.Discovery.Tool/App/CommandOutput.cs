@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.App;
+
 using System.Text.Json;
 
 internal sealed class CommandOutput
@@ -93,3 +95,4 @@ internal sealed record MachineError(
     string Message);
 
 internal sealed record MachineMeta(int SchemaVersion);
+

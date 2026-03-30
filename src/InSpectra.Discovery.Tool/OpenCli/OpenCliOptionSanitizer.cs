@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class OpenCliOptionSanitizer
@@ -8,3 +10,4 @@ internal static class OpenCliOptionSanitizer
     public static void DeduplicateSafeOptionCollisions(JsonArray options)
         => OpenCliOptionCollisionResolver.DeduplicateSafeOptionCollisions(options);
 }
+

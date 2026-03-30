@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using dnlib.DotNet;
 using Xunit;
 
@@ -129,3 +131,4 @@ internal sealed class StaticAnalysisAttributeSupportSample : StaticAnalysisAttri
     {
     }
 }
+

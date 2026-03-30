@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class QueueUntrustedBatchPlanCommand : AsyncCommand<QueueUntrustedBatchPlanCommand.Settings>
 {
-    private readonly QueueCommandService _service = new();
+    private readonly QueueCommandService _service;
+
+    public QueueUntrustedBatchPlanCommand(QueueCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -50,3 +57,5 @@ internal sealed class QueueUntrustedBatchPlanCommand : AsyncCommand<QueueUntrust
             settings.Json,
             cancellationToken);
 }
+
+

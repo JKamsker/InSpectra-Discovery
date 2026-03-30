@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class DocsFullyIndexedReportCommand : AsyncCommand<DocsFullyIndexedReportCommand.Settings>
 {
-    private readonly DocsCommandService _service = new();
+    private readonly DocsCommandService _service;
+
+    public DocsFullyIndexedReportCommand(DocsCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -27,3 +34,5 @@ internal sealed class DocsFullyIndexedReportCommand : AsyncCommand<DocsFullyInde
             settings.Json,
             cancellationToken);
 }
+
+

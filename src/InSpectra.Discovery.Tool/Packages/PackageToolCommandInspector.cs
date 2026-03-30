@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Packages;
+
 internal sealed class PackageToolCommandInspector
 {
     private readonly NuGetApiClient _apiClient;
@@ -15,3 +17,4 @@ internal sealed class PackageToolCommandInspector
             DotnetToolPackageLayoutReader.Read,
             cancellationToken);
 }
+

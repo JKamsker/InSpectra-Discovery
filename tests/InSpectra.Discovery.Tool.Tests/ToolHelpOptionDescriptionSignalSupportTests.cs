@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpOptionDescriptionSignalSupportTests
@@ -44,3 +46,4 @@ public sealed class ToolHelpOptionDescriptionSignalSupportTests
         Assert.True(containsExample);
     }
 }
+

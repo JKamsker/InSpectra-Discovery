@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
@@ -156,3 +158,4 @@ internal sealed record PromotionPreparedOpenCliArtifact(
 
     public bool HasXmlDocContent => !string.IsNullOrWhiteSpace(XmlDocContent);
 }
+

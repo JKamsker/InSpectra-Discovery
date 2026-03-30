@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Linq;
 using System.Text.RegularExpressions;
 using Xunit;
@@ -44,3 +46,4 @@ public sealed partial class ToolHelpOptionSignatureSupportTests
     [GeneratedRegex(@"<[^>]+>", RegexOptions.Compiled)]
     private static partial Regex PlaceholderRegex();
 }
+

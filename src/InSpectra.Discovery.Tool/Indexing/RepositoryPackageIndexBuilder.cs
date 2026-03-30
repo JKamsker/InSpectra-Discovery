@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Indexing;
+
 using System.Text.Json.Nodes;
 
 internal static class RepositoryPackageIndexBuilder
@@ -137,3 +139,4 @@ internal static class RepositoryPackageIndexBuilder
 }
 
 internal sealed record RepositoryPackageIndexBuildResult(int PackageCount, int VersionRecordCount, string AllIndexPath, string? BrowserIndexPath);
+

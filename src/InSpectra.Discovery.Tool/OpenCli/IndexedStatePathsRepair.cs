@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class IndexedStatePathsRepair
@@ -50,3 +52,4 @@ internal static class IndexedStatePathsRepair
         return true;
     }
 }
+

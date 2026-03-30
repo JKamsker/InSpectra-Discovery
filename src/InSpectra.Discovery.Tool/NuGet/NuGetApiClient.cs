@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.NuGet;
+
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -202,3 +204,4 @@ internal sealed class NuGetApiClient
     private static bool IsRetryable(HttpStatusCode statusCode)
         => statusCode == HttpStatusCode.TooManyRequests || (int)statusCode >= 500;
 }
+

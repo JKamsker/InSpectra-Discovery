@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class QueueBackfillIndexedMetadataCommand : AsyncCommand<QueueBackfillIndexedMetadataCommand.Settings>
 {
-    private readonly QueueBackfillCommandService _service = new();
+    private readonly QueueBackfillCommandService _service;
+
+    public QueueBackfillIndexedMetadataCommand(QueueBackfillCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -29,3 +36,5 @@ internal sealed class QueueBackfillIndexedMetadataCommand : AsyncCommand<QueueBa
             settings.Json,
             cancellationToken);
 }
+
+

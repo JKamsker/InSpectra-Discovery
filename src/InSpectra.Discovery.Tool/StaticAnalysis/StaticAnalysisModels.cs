@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 internal sealed record StaticCommandDefinition(
     string? Name,
     string? Description,
@@ -28,3 +30,4 @@ internal sealed record StaticValueDefinition(
     string? Description,
     string? DefaultValue,
     IReadOnlyList<string> AcceptedValues);
+

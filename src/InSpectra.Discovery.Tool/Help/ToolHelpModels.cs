@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal sealed record ToolHelpDocument(
     string? Title,
     string? Version,
@@ -21,3 +23,4 @@ internal sealed record ToolHelpItem(
     string Key,
     bool IsRequired,
     string? Description);
+

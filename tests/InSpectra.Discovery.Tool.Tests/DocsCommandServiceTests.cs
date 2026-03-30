@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task RebuildIndexesAsync_ProjectsPackageLinksIntoSummaries()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -89,7 +91,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task BuildBrowserIndexAsync_PreservesTotalDownloadsFromAllIndex()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -180,7 +182,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task RebuildIndexesAsync_Rebases_Latest_Metadata_Artifact_Paths_And_Copies_Crawl()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -284,7 +286,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task BuildFullyIndexedDocumentationReportAsync_Requires_ToolOutput_Provenance()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -412,7 +414,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task BuildFullyIndexedDocumentationReportAsync_Prefers_Latest_OpenCli_Provenance_Over_Stale_Metadata()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -495,7 +497,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task BuildFullyIndexedDocumentationReportAsync_Falls_Back_To_Versioned_OpenCli_When_Latest_Mirror_Is_Missing()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -577,7 +579,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task BuildFullyIndexedDocumentationReportAsync_Falls_Back_To_Versioned_OpenCli_When_Latest_Mirror_Is_Invalid()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -674,7 +676,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task BuildFullyIndexedDocumentationReportAsync_Falls_Back_To_Versioned_OpenCli_When_Latest_Mirror_Has_Invalid_Command_Node()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -782,7 +784,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task BuildFullyIndexedDocumentationReportAsync_Falls_Back_To_OpenCli_Step_Path_When_Artifacts_Path_Is_Missing()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -865,7 +867,7 @@ public sealed class DocsCommandServiceTests
     [Fact]
     public async Task BuildFullyIndexedDocumentationReportAsync_Includes_JsonReadyWithNonzeroExit_Tool_Output()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -971,3 +973,5 @@ public sealed class DocsCommandServiceTests
         }
     }
 }
+
+

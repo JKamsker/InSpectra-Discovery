@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.Json.Nodes;
 
 internal sealed class ToolHelpOptionNodeBuilder
@@ -74,3 +76,4 @@ internal sealed class ToolHelpOptionNodeBuilder
             ["maximum"] = 1,
         };
 }
+

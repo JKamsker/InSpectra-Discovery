@@ -125,3 +125,5 @@ internal sealed class HookInstalledToolAnalysisSupport
         return File.Exists(hookPath) ? hookPath : null;
     }
 }
+
+

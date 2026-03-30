@@ -1,16 +1,18 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
-public sealed class ToolCommandInstallationSupportTests
+public sealed class CommandInstallationSupportTests
 {
     [Fact]
     public async Task InstallToolAsync_Returns_Command_Context_When_Install_Succeeds()
     {
         using var tempDirectory = new TemporaryDirectory();
-        var runtime = new FakeToolCommandRuntime(commandNameToCreate: "demo");
+        var runtime = new FakeCommandRuntime(commandNameToCreate: "demo");
         var result = CreateResultSkeleton();
 
-        var installedTool = await ToolCommandInstallationSupport.InstallToolAsync(
+        var installedTool = await CommandInstallationSupport.InstallToolAsync(
             runtime,
             result,
             packageId: "Demo.Tool",
@@ -31,8 +33,8 @@ public sealed class ToolCommandInstallationSupportTests
     public async Task InstallToolAsync_Applies_Install_Failure_When_Process_Fails()
     {
         using var tempDirectory = new TemporaryDirectory();
-        var runtime = new FakeToolCommandRuntime(
-            installResult: new ToolCommandRuntime.ProcessResult(
+        var runtime = new FakeCommandRuntime(
+            installResult: new CommandRuntime.ProcessResult(
                 Status: "failed",
                 TimedOut: false,
                 ExitCode: 1,
@@ -41,7 +43,7 @@ public sealed class ToolCommandInstallationSupportTests
                 Stderr: "install exploded"));
         var result = CreateResultSkeleton();
 
-        var installedTool = await ToolCommandInstallationSupport.InstallToolAsync(
+        var installedTool = await CommandInstallationSupport.InstallToolAsync(
             runtime,
             result,
             packageId: "Demo.Tool",
@@ -61,10 +63,10 @@ public sealed class ToolCommandInstallationSupportTests
     public async Task InstallToolAsync_Applies_Command_Missing_Failure_When_Command_File_Is_Not_Present()
     {
         using var tempDirectory = new TemporaryDirectory();
-        var runtime = new FakeToolCommandRuntime();
+        var runtime = new FakeCommandRuntime();
         var result = CreateResultSkeleton();
 
-        var installedTool = await ToolCommandInstallationSupport.InstallToolAsync(
+        var installedTool = await CommandInstallationSupport.InstallToolAsync(
             runtime,
             result,
             packageId: "Demo.Tool",
@@ -91,11 +93,11 @@ public sealed class ToolCommandInstallationSupportTests
             ["disposition"] = null,
         };
 
-    private sealed class FakeToolCommandRuntime(
-        ToolCommandRuntime.ProcessResult? installResult = null,
-        string? commandNameToCreate = null) : ToolCommandRuntime
+    private sealed class FakeCommandRuntime(
+        CommandRuntime.ProcessResult? installResult = null,
+        string? commandNameToCreate = null) : CommandRuntime
     {
-        private readonly ToolCommandRuntime.ProcessResult _installResult = installResult ?? new ToolCommandRuntime.ProcessResult(
+        private readonly CommandRuntime.ProcessResult _installResult = installResult ?? new CommandRuntime.ProcessResult(
             Status: "ok",
             TimedOut: false,
             ExitCode: 0,
@@ -104,7 +106,7 @@ public sealed class ToolCommandInstallationSupportTests
             Stderr: string.Empty);
         private readonly string? _commandNameToCreate = commandNameToCreate;
 
-        public override Task<ToolCommandRuntime.ProcessResult> InvokeProcessCaptureAsync(
+        public override Task<CommandRuntime.ProcessResult> InvokeProcessCaptureAsync(
             string filePath,
             IReadOnlyList<string> argumentList,
             string workingDirectory,
@@ -145,3 +147,5 @@ public sealed class ToolCommandInstallationSupportTests
         }
     }
 }
+
+

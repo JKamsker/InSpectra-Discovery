@@ -1,8 +1,15 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 internal sealed class DocsRebuildIndexesCommand : AsyncCommand<DocsRebuildIndexesCommand.Settings>
 {
-    private readonly DocsCommandService _service = new();
+    private readonly DocsCommandService _service;
+
+    public DocsRebuildIndexesCommand(DocsCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -19,3 +26,5 @@ internal sealed class DocsRebuildIndexesCommand : AsyncCommand<DocsRebuildIndexe
             settings.Json,
             cancellationToken);
 }
+
+

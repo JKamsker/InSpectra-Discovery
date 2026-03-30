@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
@@ -69,3 +71,4 @@ internal abstract class DocsArtifactRegenerationCommandBase : AsyncCommand<DocsA
             cancellationToken);
     }
 }
+

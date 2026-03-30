@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.NuGet;
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -112,3 +114,4 @@ internal sealed record CatalogRepositoryObjectSpec(
     [property: JsonPropertyName("type")] string? Type,
     [property: JsonPropertyName("url")] string? Url,
     [property: JsonPropertyName("commit")] string? Commit);
+

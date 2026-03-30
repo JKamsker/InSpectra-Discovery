@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpUsageArgumentInventorySupport
 {
     public static bool LooksLikeCommandInventoryEcho(
@@ -49,3 +51,4 @@ internal static class ToolHelpUsageArgumentInventorySupport
     private static string NormalizeCommandInventoryKey(string key)
         => NormalizeInlineText(key).Trim('[', ']', '<', '>', '(', ')').ToLowerInvariant();
 }
+

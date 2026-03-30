@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpRootCommandInventoryInferenceTests
@@ -56,3 +58,4 @@ public sealed class ToolHelpRootCommandInventoryInferenceTests
         Assert.False(looksLikeAliasInventory);
     }
 }
+

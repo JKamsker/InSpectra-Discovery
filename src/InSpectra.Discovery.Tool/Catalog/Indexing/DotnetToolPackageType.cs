@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Indexing;
+
 using System.Text.Json;
 
 internal static class DotnetToolPackageType
@@ -56,3 +58,4 @@ internal static class DotnetToolPackageType
         return true;
     }
 }
+

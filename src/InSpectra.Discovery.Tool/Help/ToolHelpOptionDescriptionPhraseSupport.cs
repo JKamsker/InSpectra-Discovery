@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpOptionDescriptionPhraseSupport
 {
     private static readonly HashSet<string> InformationalOptionDescriptions = new(StringComparer.OrdinalIgnoreCase)
@@ -135,3 +137,4 @@ internal static class ToolHelpOptionDescriptionPhraseSupport
     private static bool ContainsAny(string value, IReadOnlyList<string> fragments)
         => fragments.Any(fragment => value.Contains(fragment, StringComparison.OrdinalIgnoreCase));
 }
+

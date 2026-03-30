@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 public sealed class TestTemporaryDirectory : IDisposable
 {
     public TestTemporaryDirectory()
@@ -16,3 +18,4 @@ public sealed class TestTemporaryDirectory : IDisposable
         }
     }
 }
+

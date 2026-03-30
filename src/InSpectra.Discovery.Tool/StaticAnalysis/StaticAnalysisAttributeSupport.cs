@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal static class StaticAnalysisAttributeSupport
@@ -175,3 +177,4 @@ internal static class StaticAnalysisAttributeSupport
         return [];
     }
 }
+

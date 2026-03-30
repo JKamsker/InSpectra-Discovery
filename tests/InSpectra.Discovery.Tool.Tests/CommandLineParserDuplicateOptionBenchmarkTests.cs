@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserDuplicateOptionBenchmarkTests
     [Fact]
     public void Regenerator_Merges_CommandLineParser_Usage_And_Option_Table_Duplicates()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -57,7 +59,7 @@ public sealed class CommandLineParserDuplicateOptionBenchmarkTests
     [Fact]
     public void Regenerator_Merges_CommandLineParser_BuiltIn_Version_Rows_With_Trailing_Positional_Noise()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -168,3 +170,5 @@ public sealed class CommandLineParserDuplicateOptionBenchmarkTests
         }
     }
 }
+
+

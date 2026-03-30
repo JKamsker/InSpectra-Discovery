@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 internal sealed record IndexDeltaAllToolsOptions
 {
     public const string DefaultInputDeltaPath = "state/discovery/dotnet-tools.delta.json";
@@ -9,3 +11,4 @@ internal sealed record IndexDeltaAllToolsOptions
     public string OutputDeltaPath { get; init; } = DefaultOutputDeltaPath;
     public string QueueOutputPath { get; init; } = DefaultQueueOutputPath;
 }
+

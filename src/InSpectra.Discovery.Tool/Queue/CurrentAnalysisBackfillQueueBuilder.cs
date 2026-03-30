@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -80,3 +82,4 @@ internal sealed class CurrentAnalysisBackfillQueueBuilder
             queue);
     }
 }
+

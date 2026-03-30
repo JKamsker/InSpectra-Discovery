@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Catalog;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class CatalogDeltaQueueSpectreCliCommand : AsyncCommand<CatalogDeltaQueueSpectreCliCommand.Settings>
 {
-    private readonly CatalogCommandService _service = new();
+    private readonly CatalogCommandService _service;
+
+    public CatalogDeltaQueueSpectreCliCommand(CatalogCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -42,3 +49,5 @@ internal sealed class CatalogDeltaQueueSpectreCliCommand : AsyncCommand<CatalogD
             },
             cancellationToken);
 }
+
+

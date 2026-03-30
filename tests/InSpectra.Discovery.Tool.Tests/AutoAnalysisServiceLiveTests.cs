@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 using Xunit.Abstractions;
@@ -26,7 +28,7 @@ public sealed class AutoAnalysisServiceLiveTests
             return;
         }
 
-        var service = new AutoAnalysisCommandService();
+        var service = new AutoCommandService();
         var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-auto", Guid.NewGuid().ToString("N"));
 
         try
@@ -172,3 +174,4 @@ public sealed class AutoAnalysisServiceLiveTests
             => $"{ExpectedAnalysisMode}: {PackageId} {Version}";
     }
 }
+

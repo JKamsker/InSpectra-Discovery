@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -101,3 +103,4 @@ internal sealed class PromotionValidationTemporaryDirectory : IDisposable
         }
     }
 }
+

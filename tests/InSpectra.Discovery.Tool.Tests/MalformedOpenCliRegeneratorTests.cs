@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class MalformedOpenCliRegeneratorTests
     [Fact]
     public void HelpRegenerator_Rewrites_Malformed_OpenCli_Using_Metadata_Provenance()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = InitializeRepository(tempDirectory.Path);
@@ -63,7 +65,7 @@ public sealed class MalformedOpenCliRegeneratorTests
     [Fact]
     public void CliFxRegenerator_Rewrites_Malformed_OpenCli_Using_Metadata_Provenance()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = InitializeRepository(tempDirectory.Path);
@@ -123,7 +125,7 @@ public sealed class MalformedOpenCliRegeneratorTests
     [Fact]
     public void XmldocRegenerator_Rewrites_Malformed_OpenCli_When_Metadata_Leaves_Provenance_Blank()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = InitializeRepository(tempDirectory.Path);
@@ -167,7 +169,7 @@ public sealed class MalformedOpenCliRegeneratorTests
     [Fact]
     public void NativeRegenerator_Rejects_Malformed_OpenCli_Without_Aborting_The_Run()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = InitializeRepository(tempDirectory.Path);
@@ -235,3 +237,5 @@ public sealed class MalformedOpenCliRegeneratorTests
         }
     }
 }
+
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpCommandPathSupport
 {
     public static string ResolveChildKey(string rootCommandName, string parentKey, string childKey)
@@ -154,3 +156,4 @@ internal static class ToolHelpCommandPathSupport
         }
     }
 }
+

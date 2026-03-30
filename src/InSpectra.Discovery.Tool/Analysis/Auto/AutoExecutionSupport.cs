@@ -299,3 +299,5 @@ internal sealed record NativeAnalysisOutcome(bool ShouldReturnImmediately, int E
     public static NativeAnalysisOutcome Return(int exitCode)
         => new(true, exitCode, null);
 }
+
+

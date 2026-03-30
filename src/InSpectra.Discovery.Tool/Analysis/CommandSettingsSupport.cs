@@ -44,3 +44,5 @@ internal abstract class CliFrameworkPackageAnalysisSettingsBase : NonSpectrePack
     [CommandOption("--cli-framework|--framework <NAME>")]
     public string? CliFramework { get; set; }
 }
+
+

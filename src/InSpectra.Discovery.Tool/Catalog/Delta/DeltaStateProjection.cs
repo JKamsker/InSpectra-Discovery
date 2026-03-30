@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 internal static class DeltaStateProjection
 {
     public static DotnetToolDeltaState Project(DotnetToolIndexEntry entry)
@@ -59,3 +61,4 @@ internal static class DeltaStateProjection
             ReadmeUrl: entry.ReadmeUrl,
             Detection: entry.Detection);
 }
+

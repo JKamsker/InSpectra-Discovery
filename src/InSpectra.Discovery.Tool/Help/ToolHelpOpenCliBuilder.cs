@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -121,3 +123,4 @@ internal sealed partial class ToolHelpOpenCliBuilder
     [GeneratedRegex(@"^(?:Handle|Manage|Deploy|Generate|Create|Build|Run|Pack|Detect|Scaffold|Determine|Upload|Download|Install|Automagic|Convert|Transform|Publish|Update|Open|Execute|Launch|Parse|Analyze|Check|Validate|Scan|Watch|Monitor|Collect|Extract|Import|Export|Apply|Process|Send|Resolve|Configure|Migrate|Synchronize|Sync|Format|Serve|Clean|Remove|Delete|Compile|Inspect|Aggregate|Map|Push|Copy|Start|Stop|Test|Verify)\w*\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex DescriptionLikeTitleRegex();
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.NuGet;
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -90,3 +92,4 @@ internal sealed class NuGetRepositoryJsonConverter : JsonConverter<CatalogReposi
         return new CatalogRepositorySpec(payload.Type, payload.Url, payload.Commit);
     }
 }
+

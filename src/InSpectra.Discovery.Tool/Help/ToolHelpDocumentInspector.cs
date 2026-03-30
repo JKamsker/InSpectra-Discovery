@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpDocumentInspector
@@ -179,3 +181,4 @@ internal sealed class ToolHelpInvocationComparer : IEqualityComparer<string[]>
         return hash.ToHashCode();
     }
 }
+

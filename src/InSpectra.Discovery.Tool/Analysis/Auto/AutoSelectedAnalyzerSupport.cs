@@ -31,3 +31,5 @@ internal static class AutoSelectedAnalyzerSupport
         return selectedResult;
     }
 }
+
+

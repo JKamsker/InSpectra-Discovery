@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -54,3 +56,4 @@ internal static partial class OpenCliDocumentPublishabilityInspector
     [GeneratedRegex(@"^[|/\\]{1,2}$|\.cs:line\s+\d+|^at\s+\S+\.\S+\(", RegexOptions.Compiled)]
     private static partial Regex GarbageCommandNameRegex();
 }
+

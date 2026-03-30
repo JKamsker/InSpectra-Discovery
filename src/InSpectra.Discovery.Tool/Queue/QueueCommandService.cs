@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using System.IO.Compression;
 using System.Text.Json.Nodes;
 using InSpectra.Discovery.Tool.Analysis;
@@ -212,3 +214,4 @@ internal sealed class QueueCommandService
     }
 
 }
+

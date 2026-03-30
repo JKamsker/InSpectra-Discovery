@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Packages;
+
 using System.IO.Compression;
 
 internal static class PackageArchiveInspectionSupport
@@ -29,3 +31,4 @@ internal static class PackageArchiveInspectionSupport
         }
     }
 }
+

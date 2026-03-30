@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.IO.Compression;
 using Xunit;
 
@@ -32,3 +34,4 @@ public sealed class PackageArchivePathSupportTests
         Assert.False(PackageArchivePathSupport.IsToolManagedAssembly(spectreEntry, toolDirectories, "Spectre.Console.dll"));
     }
 }
+

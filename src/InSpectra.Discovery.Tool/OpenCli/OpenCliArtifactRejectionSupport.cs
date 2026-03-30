@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class OpenCliArtifactRejectionSupport
@@ -89,3 +91,4 @@ internal static class OpenCliArtifactRejectionSupport
     private static bool HasExistingPath(string? path)
         => !string.IsNullOrWhiteSpace(path) && File.Exists(path);
 }
+

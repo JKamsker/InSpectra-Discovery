@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -84,3 +86,4 @@ public sealed class CliFxCoverageClassifierTests
         Assert.Equal("3.1.0", coverage.RequiredFrameworks[0].Version);
     }
 }
+

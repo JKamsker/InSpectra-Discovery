@@ -1,0 +1,40 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
+using Microsoft.Extensions.DependencyInjection;
+using Spectre.Console.Cli;
+
+internal static class DocsModule
+{
+    public static IServiceCollection AddDocsModule(this IServiceCollection services)
+    {
+        services.AddTransient<DocsCommandService>();
+        services.AddTransient<DocsRebuildIndexesCommand>();
+        services.AddTransient<DocsRegenerateNativeOpenCliCommand>();
+        services.AddTransient<DocsRegenerateStaticCrawlsCommand>();
+        services.AddTransient<DocsRegenerateCliFxCrawlsCommand>();
+        services.AddTransient<DocsRegenerateHelpCrawlsCommand>();
+        services.AddTransient<DocsRegenerateXmldocOpenCliCommand>();
+        services.AddTransient<DocsBrowserIndexCommand>();
+        services.AddTransient<DocsFullyIndexedReportCommand>();
+
+        return services;
+    }
+
+    public static void RegisterCommands(IConfigurator config)
+    {
+        config.AddBranch("docs", docs =>
+        {
+            docs.SetDescription("Generate derived discovery documentation artifacts.");
+            docs.AddCommand<DocsRebuildIndexesCommand>("rebuild-indexes").WithDescription("Rebuild package summaries, index/all.json, and index/index.json from indexed metadata.");
+            docs.AddCommand<DocsRegenerateNativeOpenCliCommand>("regenerate-native-opencli").WithDescription("Resanitize native OpenCLI artifacts from stored opencli.json files.");
+            docs.AddCommand<DocsRegenerateStaticCrawlsCommand>("regenerate-static-crawls").WithDescription("Regenerate static-analysis OpenCLI artifacts from stored crawl.json captures.");
+            docs.AddCommand<DocsRegenerateCliFxCrawlsCommand>("regenerate-clifx-crawls").WithDescription("Regenerate CliFx OpenCLI artifacts from stored crawl.json captures.");
+            docs.AddCommand<DocsRegenerateHelpCrawlsCommand>("regenerate-help-crawls").WithDescription("Regenerate generic help OpenCLI artifacts from stored crawl.json captures.");
+            docs.AddCommand<DocsRegenerateXmldocOpenCliCommand>("regenerate-xmldoc-opencli").WithDescription("Regenerate XMLDoc-synthesized OpenCLI artifacts from stored xmldoc.xml files.");
+            docs.AddCommand<DocsBrowserIndexCommand>("browser-index").WithDescription("Build the lightweight browser index from index/all.json.");
+            docs.AddCommand<DocsFullyIndexedReportCommand>("fully-indexed-report").WithDescription("Build the fully indexed package documentation coverage report.");
+        });
+    }
+}
+
+

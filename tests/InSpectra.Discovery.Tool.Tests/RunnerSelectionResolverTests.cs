@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class RunnerSelectionResolverTests
@@ -58,3 +60,4 @@ public sealed class RunnerSelectionResolverTests
         Assert.Equal("default-ubuntu", selection.Reason);
     }
 }
+

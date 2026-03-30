@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 internal static class StaticCommandDefinitionSupport
 {
     public static void UpsertBest(
@@ -19,3 +21,4 @@ internal static class StaticCommandDefinitionSupport
     public static int Score(StaticCommandDefinition definition)
         => definition.Values.Count + definition.Options.Count + (definition.Description is null ? 0 : 1);
 }
+

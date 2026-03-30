@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class OpenCliMetrics
@@ -204,3 +206,4 @@ internal sealed record OpenCliMetricsResult(
 {
     public static OpenCliMetricsResult Empty { get; } = new(0, 0, 0.0, 0, 0);
 }
+

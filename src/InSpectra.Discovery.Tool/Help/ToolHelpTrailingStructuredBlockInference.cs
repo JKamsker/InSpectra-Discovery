@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpTrailingStructuredBlockInference
@@ -126,3 +128,4 @@ internal static partial class ToolHelpTrailingStructuredBlockInference
         Argument,
     }
 }
+

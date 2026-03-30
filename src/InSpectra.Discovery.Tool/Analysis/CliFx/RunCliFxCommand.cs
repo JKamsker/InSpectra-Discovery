@@ -6,7 +6,12 @@ using System.ComponentModel;
 
 internal sealed class RunCliFxCommand : AsyncCommand<RunCliFxCommand.Settings>
 {
-    private readonly CliFxService _service = new();
+    private readonly CliFxService _service;
+
+    public RunCliFxCommand(CliFxService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : NonSpectrePackageAnalysisSettingsBase
     {
@@ -46,3 +51,6 @@ internal sealed class RunCliFxCommand : AsyncCommand<RunCliFxCommand.Settings>
             settings.Json,
             cancellationToken);
 }
+
+
+

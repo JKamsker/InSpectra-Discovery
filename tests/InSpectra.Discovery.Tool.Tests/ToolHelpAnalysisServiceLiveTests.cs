@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 using Xunit.Abstractions;
@@ -8,12 +10,12 @@ public sealed class LiveToolAnalysisCollectionDefinition
 }
 
 [Collection("LiveToolAnalysis")]
-public sealed class ToolHelpAnalysisServiceLiveTests
+public sealed class ToolHelpServiceLiveTests
 {
     private const string EnableEnvVar = "INSPECTRA_DISCOVERY_LIVE_HELP_TESTS";
     private readonly ITestOutputHelper _output;
 
-    public ToolHelpAnalysisServiceLiveTests(ITestOutputHelper output)
+    public ToolHelpServiceLiveTests(ITestOutputHelper output)
     {
         _output = output;
     }
@@ -31,7 +33,7 @@ public sealed class ToolHelpAnalysisServiceLiveTests
             return;
         }
 
-        var service = new ToolHelpAnalysisService();
+        var service = new ToolHelpService();
         var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-help", Guid.NewGuid().ToString("N"));
 
         try
@@ -178,3 +180,4 @@ public sealed class ToolHelpAnalysisServiceLiveTests
             => $"{Framework}: {PackageId} {Version}";
     }
 }
+

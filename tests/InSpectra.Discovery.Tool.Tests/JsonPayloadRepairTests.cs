@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -42,3 +44,4 @@ public sealed class JsonPayloadRepairTests
         Assert.Equal(valid, candidates[0]);
     }
 }
+

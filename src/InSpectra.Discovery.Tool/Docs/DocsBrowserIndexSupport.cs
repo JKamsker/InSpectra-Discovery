@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 using System.Text.Json.Nodes;
 
 internal sealed record BrowserIndexDocument(
@@ -109,3 +111,4 @@ internal static class DocsBrowserIndexSupport
         return now;
     }
 }
+

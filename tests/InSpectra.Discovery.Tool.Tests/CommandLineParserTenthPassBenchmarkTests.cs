@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserTenthPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Treat_Defaulted_Flag_Phrases_As_Value_Options_Without_Other_Evidence()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -118,3 +120,5 @@ public sealed class CommandLineParserTenthPassBenchmarkTests
         }
     }
 }
+
+

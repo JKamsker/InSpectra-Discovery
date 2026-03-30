@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserNinthPassBenchmarkTests
     [Fact]
     public void Regenerator_Infers_Value_Options_From_Name_Number_Type_And_Parameter_Phrases()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -67,7 +69,7 @@ public sealed class CommandLineParserNinthPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Infer_Value_Arguments_From_Gather_Delete_Save_Use_Or_Search_Flag_Phrases()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -190,3 +192,5 @@ public sealed class CommandLineParserNinthPassBenchmarkTests
         }
     }
 }
+
+

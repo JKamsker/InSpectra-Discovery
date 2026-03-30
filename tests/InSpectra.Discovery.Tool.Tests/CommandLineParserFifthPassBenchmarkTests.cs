@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserFifthPassBenchmarkTests
     [Fact]
     public void Regenerator_Traverses_Nested_CommandLineParser_Dispatchers()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -102,7 +104,7 @@ public sealed class CommandLineParserFifthPassBenchmarkTests
     [Fact]
     public void Regenerator_Prefers_Command_Specific_CommandLineParser_Payload_Over_Repeated_Root_Inventory()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -203,7 +205,7 @@ public sealed class CommandLineParserFifthPassBenchmarkTests
     [Fact]
     public void Regenerator_Recovers_Blank_CommandLineParser_Options_From_Markdown_Footers()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -270,7 +272,7 @@ public sealed class CommandLineParserFifthPassBenchmarkTests
     [Fact]
     public void Regenerator_Recovers_CommandLineParser_Preamble_Positionals_After_Blank_Option_Rows()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -404,3 +406,5 @@ public sealed class CommandLineParserFifthPassBenchmarkTests
         }
     }
 }
+
+

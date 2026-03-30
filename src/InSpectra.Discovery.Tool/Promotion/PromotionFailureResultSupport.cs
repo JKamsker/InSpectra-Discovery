@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using System.Text.Json.Nodes;
 
 internal static class PromotionFailureResultSupport
@@ -84,3 +86,4 @@ internal static class PromotionFailureResultSupport
             _ => "No explicit reason was recorded.",
         };
 }
+

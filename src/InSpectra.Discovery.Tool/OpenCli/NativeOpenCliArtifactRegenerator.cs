@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal sealed class NativeOpenCliArtifactRegenerator
@@ -177,3 +179,4 @@ internal sealed record NativeOpenCliArtifactCandidate(
 {
     public string DisplayName => $"{PackageId} {Version}";
 }
+

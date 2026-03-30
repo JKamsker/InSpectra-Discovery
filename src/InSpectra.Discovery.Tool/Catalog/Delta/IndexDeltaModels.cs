@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 internal sealed record DotnetToolCatalogCursorState(
     int SchemaVersion,
     string ServiceIndexUrl,
@@ -51,3 +53,4 @@ internal sealed record DotnetToolDeltaComputation(
     DotnetToolDeltaSnapshot Delta,
     DotnetToolCatalogCursorState CursorState,
     DotnetToolIndexSnapshot UpdatedCurrentSnapshot);
+

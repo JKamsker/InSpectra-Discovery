@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
@@ -158,3 +160,4 @@ internal sealed record XmldocOpenCliArtifactCandidate(
 {
     public string DisplayName => $"{PackageId} {Version}";
 }
+

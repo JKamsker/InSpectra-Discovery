@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpTitleInference
@@ -178,3 +180,4 @@ internal static partial class ToolHelpTitleInference
     [GeneratedRegex(@"^(?:finished|completed|elapsed)\s+\d+(?:\.\d+)?(?:ms|s|sec|secs|seconds?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex TransientStatusLineRegex();
 }
+

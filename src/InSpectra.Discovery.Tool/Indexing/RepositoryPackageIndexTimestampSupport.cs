@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Indexing;
+
 using System.Text.Json.Nodes;
 
 internal static class RepositoryPackageIndexTimestampSupport
@@ -84,3 +86,4 @@ internal static class RepositoryPackageIndexTimestampSupport
 internal sealed record PackageEntryTimestamps(string? CreatedAt, string? UpdatedAt);
 
 internal sealed record DocumentTimestamps(string CreatedAt, string UpdatedAt);
+

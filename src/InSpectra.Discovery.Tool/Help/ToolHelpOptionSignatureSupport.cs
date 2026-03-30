@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpOptionSignatureSupport
 {
     public static ToolHelpOptionSignature Parse(string key)
@@ -27,3 +29,4 @@ internal sealed record ToolHelpOptionSignature(
     IReadOnlyList<string> Aliases,
     string? ArgumentName,
     bool ArgumentRequired);
+

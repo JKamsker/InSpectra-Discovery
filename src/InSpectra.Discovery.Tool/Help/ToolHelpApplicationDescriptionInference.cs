@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpApplicationDescriptionInference
@@ -72,3 +74,4 @@ internal static partial class ToolHelpApplicationDescriptionInference
     [GeneratedRegex(@"^#+\s+[A-Za-z]", RegexOptions.Compiled)]
     private static partial Regex MarkdownHeadingRegex();
 }
+

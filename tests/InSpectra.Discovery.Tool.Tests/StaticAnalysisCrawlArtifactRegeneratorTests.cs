@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class StaticAnalysisCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Preserves_Previously_Enriched_NuGet_Description()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -112,7 +114,7 @@ public sealed class StaticAnalysisCrawlArtifactRegeneratorTests
     [Fact]
     public void Regenerator_Preserves_Existing_Description_When_Regenerated_Description_Is_Blank()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -216,3 +218,5 @@ public sealed class StaticAnalysisCrawlArtifactRegeneratorTests
         }
     }
 }
+
+

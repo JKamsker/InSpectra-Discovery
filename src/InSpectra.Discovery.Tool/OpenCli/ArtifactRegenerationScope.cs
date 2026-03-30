@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 internal sealed record ArtifactRegenerationScope(string? PackageId, string? Version)
 {
     public static ArtifactRegenerationScope All { get; } = new(null, null);
@@ -66,3 +68,4 @@ internal static class ArtifactRegenerationMetadataPathSupport
             .ToArray();
     }
 }
+

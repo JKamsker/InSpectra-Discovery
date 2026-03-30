@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserSixteenthPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Infer_Positional_Args_From_Unrecognized_Markdown_Sections()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -65,7 +67,7 @@ public sealed class CommandLineParserSixteenthPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Infer_Positional_Args_From_Usage_Examples_In_Unrecognized_Sections()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -118,7 +120,7 @@ public sealed class CommandLineParserSixteenthPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Infer_Positional_Args_From_Example_Invocations()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -158,7 +160,7 @@ public sealed class CommandLineParserSixteenthPassBenchmarkTests
     [Fact]
     public void Regenerator_Keeps_Legitimate_Usage_Positionals_But_Rejects_Bogus_Ones()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -313,3 +315,5 @@ public sealed class CommandLineParserSixteenthPassBenchmarkTests
         }
     }
 }
+
+

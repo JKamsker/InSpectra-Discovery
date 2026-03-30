@@ -69,3 +69,5 @@ internal sealed class ToolDescriptorResolver : IToolDescriptorResolver
             || packageEntryNames.Any(name => string.Equals(name, "Spectre.Console.Cli.dll", StringComparison.OrdinalIgnoreCase));
     }
 }
+
+

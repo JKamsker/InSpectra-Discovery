@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog;
+
 using System.Text.Json;
 
 internal sealed class CatalogCommandService
@@ -229,3 +231,4 @@ internal sealed class CatalogCommandService
         await JsonSerializer.SerializeAsync(outputStream, value, JsonOptions.RepositoryFiles, cancellationToken);
     }
 }
+

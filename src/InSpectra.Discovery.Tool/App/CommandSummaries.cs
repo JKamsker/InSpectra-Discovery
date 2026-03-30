@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.App;
+
 internal sealed record IndexBuildCommandSummary(
     string Command,
     string OutputPath,
@@ -39,3 +41,4 @@ internal sealed record SpectreConsoleFilterCommandSummary(
     string OutputPath,
     int ScannedPackageCount,
     int MatchedPackageCount);
+

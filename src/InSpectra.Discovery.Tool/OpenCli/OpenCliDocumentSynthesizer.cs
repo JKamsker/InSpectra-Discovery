@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
@@ -165,3 +167,4 @@ internal static class OpenCliDocumentSynthesizer
         }
     }
 }
+

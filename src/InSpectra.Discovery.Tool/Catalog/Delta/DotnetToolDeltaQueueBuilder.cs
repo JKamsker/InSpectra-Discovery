@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 using System.Text.Json;
 
 internal sealed class DotnetToolDeltaQueueBuilder
@@ -68,3 +70,4 @@ internal sealed class DotnetToolDeltaQueueBuilder
                 queueItems));
     }
 }
+

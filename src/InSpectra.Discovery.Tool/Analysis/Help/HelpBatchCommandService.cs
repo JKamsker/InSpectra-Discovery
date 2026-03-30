@@ -156,3 +156,5 @@ internal sealed class HelpBatchCommandService
         return HelpBatchResultSupport.CreateOutcome(item, artifactName, itemOutputRoot, exitCode, snapshotLookup);
     }
 }
+
+

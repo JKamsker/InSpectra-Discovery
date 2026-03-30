@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpBracketedUsageArgumentSupport
@@ -65,3 +67,4 @@ internal static partial class ToolHelpBracketedUsageArgumentSupport
     [GeneratedRegex(@"(?<all>\[?<(?<name>[^>]+)>\]?)", RegexOptions.Compiled)]
     private static partial Regex UsageArgumentRegex();
 }
+

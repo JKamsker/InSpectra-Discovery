@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 using System.Text.Json.Nodes;
 
 internal sealed record DocumentationReportBuildResult(
@@ -44,3 +46,4 @@ internal static class DocsDocumentationReportSupport
             Lines: DocsDocumentationReportFormattingSupport.BuildDocumentationReport(sortedRows, fullyDocumentedCount, incompleteCount));
     }
 }
+

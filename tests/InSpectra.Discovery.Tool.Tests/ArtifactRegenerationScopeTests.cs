@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ArtifactRegenerationScopeTests
@@ -69,3 +71,4 @@ public sealed class ArtifactRegenerationScopeTests
         }
     }
 }
+

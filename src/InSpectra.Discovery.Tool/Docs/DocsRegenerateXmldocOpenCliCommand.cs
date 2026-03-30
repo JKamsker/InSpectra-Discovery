@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 internal sealed class DocsRegenerateXmldocOpenCliCommand : DocsArtifactRegenerationCommandBase
 {
     private readonly XmldocOpenCliArtifactRegenerator _regenerator = new();
@@ -17,3 +19,4 @@ internal sealed class DocsRegenerateXmldocOpenCliCommand : DocsArtifactRegenerat
             result.FailedItems);
     }
 }
+

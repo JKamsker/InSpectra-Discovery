@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpOptionValueInferenceSupport
@@ -123,3 +125,4 @@ internal static partial class ToolHelpOptionValueInferenceSupport
     [GeneratedRegex(@"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|\d+", RegexOptions.Compiled)]
     private static partial Regex CamelCaseTokenRegex();
 }
+

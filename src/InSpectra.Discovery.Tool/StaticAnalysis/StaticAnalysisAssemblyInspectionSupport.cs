@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal sealed class StaticAnalysisAssemblyInspectionSupport
@@ -61,3 +63,4 @@ internal sealed record StaticAnalysisAssemblyInspectionResult(
     public static StaticAnalysisAssemblyInspectionResult NoReader(string framework)
         => new("no-reader", framework, 0, new(StringComparer.OrdinalIgnoreCase));
 }
+

@@ -6,7 +6,12 @@ using System.ComponentModel;
 
 internal sealed class RunHookCommand : AsyncCommand<RunHookCommand.Settings>
 {
-    private readonly HookService _service = new();
+    private readonly HookService _service;
+
+    public RunHookCommand(HookService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : NonSpectrePackageAnalysisSettingsBase
     {
@@ -46,3 +51,6 @@ internal sealed class RunHookCommand : AsyncCommand<RunHookCommand.Settings>
             settings.Json,
             cancellationToken);
 }
+
+
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -194,3 +196,4 @@ public sealed class StaticAnalysisOpenCliBuilderTests
             Options: options ?? [],
             Commands: commands ?? []);
 }
+

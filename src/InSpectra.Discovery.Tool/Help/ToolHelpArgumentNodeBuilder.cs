@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
@@ -185,3 +187,4 @@ internal sealed partial class ToolHelpArgumentNodeBuilder
 internal sealed record ToolHelpArgumentSignature(
     string Name,
     bool IsSequence);
+

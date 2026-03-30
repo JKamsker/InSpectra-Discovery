@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal sealed class ToolHelpCommandTreeBuilder
 {
     private readonly OpenCliCommandTreeBuilder _commandTreeBuilder = new();
@@ -44,3 +46,4 @@ internal sealed record ToolHelpCommandNode(
 {
     public IReadOnlyList<ToolHelpCommandNode> Children { get; init; } = [];
 }
+

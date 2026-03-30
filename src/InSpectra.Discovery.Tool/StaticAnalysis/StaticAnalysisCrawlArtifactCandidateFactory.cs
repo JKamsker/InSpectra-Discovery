@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using System.Text.Json.Nodes;
 
 internal static class StaticAnalysisCrawlArtifactCandidateFactory
@@ -50,3 +52,4 @@ internal static class StaticAnalysisCrawlArtifactCandidateFactory
             openCliPath);
     }
 }
+

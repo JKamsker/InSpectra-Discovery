@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
     [Fact]
     public void Regenerates_Native_OpenCli_Artifacts_And_Syncs_Metadata()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -101,7 +103,7 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
     [Fact]
     public void Ignores_Help_Derived_OpenCli_Artifacts()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -171,7 +173,7 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
     [Fact]
     public void Prefers_OpenCli_Artifact_Provenance_Over_Stale_Metadata()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -213,7 +215,7 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
     [Fact]
     public void Regenerates_Native_OpenCli_When_Only_Dead_Crawl_And_Xmldoc_Paths_Remain()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -294,3 +296,5 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
         }
     }
 }
+
+

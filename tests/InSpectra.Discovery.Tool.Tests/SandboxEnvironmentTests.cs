@@ -1,11 +1,13 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class SandboxEnvironmentTests
 {
     [Fact]
-    public void ToolCommandRuntime_CreateSandboxEnvironment_Disables_GlobalToolPathMutation_And_Only_Returns_Directories()
+    public void CommandRuntime_CreateSandboxEnvironment_Disables_GlobalToolPathMutation_And_Only_Returns_Directories()
     {
-        var runtime = new ToolCommandRuntime();
+        var runtime = new CommandRuntime();
         var environment = runtime.CreateSandboxEnvironment(@"C:\temp\inspectra-test");
 
         Assert.Equal("0", environment.Values["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"]);
@@ -24,9 +26,9 @@ public sealed class SandboxEnvironmentTests
     }
 
     [Fact]
-    public void AnalysisRuntimeSupport_CreateSandboxEnvironment_Disables_GlobalToolPathMutation()
+    public void RuntimeSupport_CreateSandboxEnvironment_Disables_GlobalToolPathMutation()
     {
-        var environment = AnalysisRuntimeSupport.CreateSandboxEnvironment(@"C:\temp\inspectra-test");
+        var environment = RuntimeSupport.CreateSandboxEnvironment(@"C:\temp\inspectra-test");
 
         Assert.Equal("0", environment.Values["DOTNET_ADD_GLOBAL_TOOLS_TO_PATH"]);
         Assert.Equal("0", environment.Values["DOTNET_GENERATE_ASPNET_CERTIFICATE"]);
@@ -38,3 +40,5 @@ public sealed class SandboxEnvironmentTests
         Assert.Equal(environment.Values["TMPDIR"], environment.Values["TEMP"]);
     }
 }
+
+

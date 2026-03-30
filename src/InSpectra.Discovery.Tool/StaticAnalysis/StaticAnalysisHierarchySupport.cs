@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal static class StaticAnalysisHierarchySupport
@@ -30,3 +32,4 @@ internal static class StaticAnalysisHierarchySupport
         return baseTypeRef.ResolveTypeDef();
     }
 }
+

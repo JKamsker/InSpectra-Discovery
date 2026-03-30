@@ -62,3 +62,5 @@ internal static class RepositoryPathResolver
         File.WriteAllLines(path, lines, new UTF8Encoding(false));
     }
 }
+
+

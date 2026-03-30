@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class CommandLineParserEighthPassBenchmarkTests
     [Fact]
     public void Regenerator_Prefers_Usage_Placeholders_Over_Generic_Value_Position_Rows()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -47,7 +49,7 @@ public sealed class CommandLineParserEighthPassBenchmarkTests
     [Fact]
     public void Regenerator_Infers_Sequence_Arguments_From_CommandLineParser_Plus_Usage()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -86,7 +88,7 @@ public sealed class CommandLineParserEighthPassBenchmarkTests
     [Fact]
     public void Regenerator_Infers_Bare_Bracketed_Usage_Arguments_And_Sequences()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -127,7 +129,7 @@ public sealed class CommandLineParserEighthPassBenchmarkTests
     [Fact]
     public void Regenerator_Drops_Generic_Value_Position_Rows_When_Usage_Is_Argument_Free()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -163,7 +165,7 @@ public sealed class CommandLineParserEighthPassBenchmarkTests
     [Fact]
     public void Regenerator_Infers_Value_Options_From_CommandLineParser_Hard_Description_Hints()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -208,7 +210,7 @@ public sealed class CommandLineParserEighthPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Require_Defaulted_Explicit_Value_Options_Or_Invent_Boolean_Flag_Arguments()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -258,7 +260,7 @@ public sealed class CommandLineParserEighthPassBenchmarkTests
     [Fact]
     public void Regenerator_Infers_Override_Value_Options_Without_Inventing_Nearby_Flags()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -369,3 +371,5 @@ public sealed class CommandLineParserEighthPassBenchmarkTests
         }
     }
 }
+
+

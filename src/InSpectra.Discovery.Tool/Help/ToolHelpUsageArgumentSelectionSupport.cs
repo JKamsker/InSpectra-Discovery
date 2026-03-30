@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpUsageArgumentSelectionSupport
 {
     public static IReadOnlyList<ToolHelpItem> Select(
@@ -53,3 +55,4 @@ internal static class ToolHelpUsageArgumentSelectionSupport
             : explicitArgument;
     }
 }
+

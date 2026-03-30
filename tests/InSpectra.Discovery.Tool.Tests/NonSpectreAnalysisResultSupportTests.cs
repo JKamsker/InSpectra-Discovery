@@ -1,14 +1,16 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
-public sealed class NonSpectreAnalysisResultSupportTests
+public sealed class NonSpectreResultSupportTests
 {
     [Fact]
     public void CreateInitialResult_Seeds_NonSpectre_Result_Shape()
     {
         var analyzedAt = DateTimeOffset.Parse("2026-03-28T12:00:00Z");
 
-        var result = NonSpectreAnalysisResultSupport.CreateInitialResult(
+        var result = NonSpectreResultSupport.CreateInitialResult(
             "Sample.Tool",
             "1.2.3",
             "sample",
@@ -35,7 +37,7 @@ public sealed class NonSpectreAnalysisResultSupportTests
     [Fact]
     public void ApplyRetryableFailure_Finalizes_Failure_Signature()
     {
-        var result = NonSpectreAnalysisResultSupport.CreateInitialResult(
+        var result = NonSpectreResultSupport.CreateInitialResult(
             "Sample.Tool",
             "1.2.3",
             "sample",
@@ -46,12 +48,12 @@ public sealed class NonSpectreAnalysisResultSupportTests
             "help",
             DateTimeOffset.UtcNow);
 
-        NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
+        NonSpectreResultSupport.ApplyRetryableFailure(
             result,
             phase: "install",
             classification: "install-timeout",
             message: "Tool installation failed.");
-        NonSpectreAnalysisResultSupport.FinalizeFailureSignature(result);
+        NonSpectreResultSupport.FinalizeFailureSignature(result);
 
         Assert.Equal("retryable-failure", result["disposition"]?.GetValue<string>());
         Assert.True(result["retryEligible"]?.GetValue<bool>());
@@ -63,7 +65,7 @@ public sealed class NonSpectreAnalysisResultSupportTests
     [Fact]
     public void ApplySuccess_Adds_OpenCli_Provenance_Nodes()
     {
-        var result = NonSpectreAnalysisResultSupport.CreateInitialResult(
+        var result = NonSpectreResultSupport.CreateInitialResult(
             "CliFx.Tool",
             "2.0.0",
             "clifx-tool",
@@ -74,8 +76,8 @@ public sealed class NonSpectreAnalysisResultSupportTests
             "clifx",
             DateTimeOffset.UtcNow);
 
-        NonSpectreAnalysisResultSupport.ApplySuccess(result, "clifx-crawl", "crawled-from-clifx-help");
-        NonSpectreAnalysisResultSupport.FinalizeFailureSignature(result);
+        NonSpectreResultSupport.ApplySuccess(result, "clifx-crawl", "crawled-from-clifx-help");
+        NonSpectreResultSupport.FinalizeFailureSignature(result);
 
         Assert.Equal("success", result["disposition"]?.GetValue<string>());
         Assert.False(result["retryEligible"]?.GetValue<bool>());
@@ -90,7 +92,7 @@ public sealed class NonSpectreAnalysisResultSupportTests
     [Fact]
     public void ApplyUnexpectedRetryableFailure_Replaces_Uninitialized_Classification()
     {
-        var result = NonSpectreAnalysisResultSupport.CreateInitialResult(
+        var result = NonSpectreResultSupport.CreateInitialResult(
             "Sample.Tool",
             "1.2.3",
             "sample",
@@ -101,8 +103,8 @@ public sealed class NonSpectreAnalysisResultSupportTests
             "help",
             DateTimeOffset.UtcNow);
 
-        NonSpectreAnalysisResultSupport.ApplyUnexpectedRetryableFailure(result, "boom");
-        NonSpectreAnalysisResultSupport.FinalizeFailureSignature(result);
+        NonSpectreResultSupport.ApplyUnexpectedRetryableFailure(result, "boom");
+        NonSpectreResultSupport.FinalizeFailureSignature(result);
 
         Assert.Equal("retryable-failure", result["disposition"]?.GetValue<string>());
         Assert.Equal("bootstrap", result["phase"]?.GetValue<string>());
@@ -110,3 +112,4 @@ public sealed class NonSpectreAnalysisResultSupportTests
         Assert.Equal("bootstrap|unexpected-exception|boom", result["failureSignature"]?.GetValue<string>());
     }
 }
+

@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class QueueBackfillLegacyTerminalNegativeCommand : AsyncCommand<QueueBackfillLegacyTerminalNegativeCommand.Settings>
 {
-    private readonly QueueBackfillCommandService _service = new();
+    private readonly QueueBackfillCommandService _service;
+
+    public QueueBackfillLegacyTerminalNegativeCommand(QueueBackfillCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -33,3 +40,5 @@ internal sealed class QueueBackfillLegacyTerminalNegativeCommand : AsyncCommand<
             settings.Json,
             cancellationToken);
 }
+
+

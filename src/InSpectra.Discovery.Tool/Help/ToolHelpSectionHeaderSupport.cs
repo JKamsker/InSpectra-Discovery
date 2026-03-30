@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpSectionHeaderSupport
@@ -123,3 +125,4 @@ internal static partial class ToolHelpSectionHeaderSupport
     [GeneratedRegex(@"^#+\s*(?<header>[\p{L}\p{M}\s]+?)(?:\s*:\s*(?<value>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex MarkdownSectionHeaderRegex();
 }
+

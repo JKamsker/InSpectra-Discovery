@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Frameworks;
+
 internal static class CliFrameworkProviderRegistry
 {
     private static readonly IReadOnlyList<CliFrameworkProvider> Providers = CreateProviders();
@@ -163,3 +165,4 @@ internal static class CliFrameworkProviderRegistry
             SupportsCliFxAnalysis: false,
             StaticAnalysisAdapter: new StaticAnalysisFrameworkAdapter(name, staticAssemblyName, reader));
 }
+

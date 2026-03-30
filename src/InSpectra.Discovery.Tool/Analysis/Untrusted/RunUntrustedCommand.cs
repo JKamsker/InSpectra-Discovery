@@ -6,7 +6,12 @@ using System.ComponentModel;
 
 internal sealed class RunUntrustedCommand : AsyncCommand<RunUntrustedCommand.Settings>
 {
-    private readonly UntrustedCommandService _service = new();
+    private readonly UntrustedCommandService _service;
+
+    public RunUntrustedCommand(UntrustedCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : PackageAnalysisSettingsBase
     {
@@ -39,3 +44,6 @@ internal sealed class RunUntrustedCommand : AsyncCommand<RunUntrustedCommand.Set
             settings.Json,
             cancellationToken);
 }
+
+
+

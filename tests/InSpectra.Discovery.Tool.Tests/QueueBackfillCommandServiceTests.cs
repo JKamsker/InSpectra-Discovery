@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class QueueBackfillCommandServiceTests
     [Fact]
     public async Task BuildCurrentAnalysisBackfillQueueAsync_SelectsEligibleCurrentPackagesByDownloadRank()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -165,3 +167,5 @@ public sealed class QueueBackfillCommandServiceTests
         }
     }
 }
+
+

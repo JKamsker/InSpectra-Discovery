@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpItemParserTests
@@ -46,3 +48,4 @@ public sealed class ToolHelpItemParserTests
         Assert.Equal("Build the project", command.Description);
     }
 }
+

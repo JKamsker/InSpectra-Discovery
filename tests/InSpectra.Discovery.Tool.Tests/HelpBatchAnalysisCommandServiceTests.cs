@@ -1,12 +1,14 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
-public sealed class HelpBatchAnalysisCommandServiceTests
+public sealed class HelpBatchCommandServiceTests
 {
     [Fact]
     public async Task RunAsync_WritesPromotionReadyExpectedPlan()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -92,7 +94,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(
+        var service = new HelpBatchCommandService(
             runner,
             new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
             new NoOpStaticBatchRunner());
@@ -134,7 +136,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_ReturnsErrorWhenAnyItemFails()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -178,7 +180,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(
+        var service = new HelpBatchCommandService(
             runner,
             new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
             new NoOpStaticBatchRunner());
@@ -207,7 +209,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_SkipsItemsThatAreNotConfiguredForHelpAnalysis()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -280,7 +282,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(
+        var service = new HelpBatchCommandService(
             runner,
             new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
             new NoOpStaticBatchRunner());
@@ -314,7 +316,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_RoutesCliFxItems_ToCliFxRunner()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -381,7 +383,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(helpRunner, cliFxRunner, new NoOpStaticBatchRunner());
+        var service = new HelpBatchCommandService(helpRunner, cliFxRunner, new NoOpStaticBatchRunner());
         var exitCode = await service.RunAsync(
             repositoryRoot,
             "plans/help-batch.json",
@@ -410,7 +412,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_DefaultArtifactName_Includes_Command_Discriminator()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -475,7 +477,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(
+        var service = new HelpBatchCommandService(
             runner,
             new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
             new NoOpStaticBatchRunner());
@@ -508,7 +510,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_Treats_Help_Success_Without_Crawl_Artifact_As_Failure()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -556,7 +558,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(
+        var service = new HelpBatchCommandService(
             runner,
             new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
             new NoOpStaticBatchRunner());
@@ -579,7 +581,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_Treats_Help_Success_With_Empty_OpenCli_Surface_As_Failure()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -644,7 +646,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
             return 0;
         });
 
-        var service = new HelpBatchAnalysisCommandService(
+        var service = new HelpBatchCommandService(
             runner,
             new FakeCliFxBatchAnalysisRunner((_, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
             new NoOpStaticBatchRunner());
@@ -668,7 +670,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
 
-    private sealed class FakeHelpBatchAnalysisRunner : IHelpBatchAnalysisRunner
+    private sealed class FakeHelpBatchAnalysisRunner : IHelpBatchRunner
     {
         private readonly Func<HelpBatchItem, string, string, string, HelpBatchTimeouts, int> _handler;
 
@@ -695,7 +697,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
 
     private sealed record FakeInvocation(string OutputRoot, string BatchId, string Source, HelpBatchTimeouts Timeouts, string PackageId);
 
-    private sealed class FakeCliFxBatchAnalysisRunner : ICliFxBatchAnalysisRunner
+    private sealed class FakeCliFxBatchAnalysisRunner : ICliFxBatchRunner
     {
         private readonly Func<HelpBatchItem, string, string, string, HelpBatchTimeouts, int> _handler;
 
@@ -720,7 +722,7 @@ public sealed class HelpBatchAnalysisCommandServiceTests
         }
     }
 
-    private sealed class NoOpStaticBatchRunner : IStaticBatchAnalysisRunner
+    private sealed class NoOpStaticBatchRunner : IStaticBatchRunner
     {
         public Task<int> RunAsync(HelpBatchItem item, string outputRoot, string batchId, string source, HelpBatchTimeouts timeouts, CancellationToken cancellationToken)
             => throw new InvalidOperationException("Static runner should not run.");
@@ -747,3 +749,5 @@ public sealed class HelpBatchAnalysisCommandServiceTests
         }
     }
 }
+
+

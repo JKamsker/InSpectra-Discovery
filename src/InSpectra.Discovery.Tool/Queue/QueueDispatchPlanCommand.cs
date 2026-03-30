@@ -1,10 +1,17 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;
 
 internal sealed class QueueDispatchPlanCommand : AsyncCommand<QueueDispatchPlanCommand.Settings>
 {
-    private readonly QueueCommandService _service = new();
+    private readonly QueueCommandService _service;
+
+    public QueueDispatchPlanCommand(QueueCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -46,3 +53,5 @@ internal sealed class QueueDispatchPlanCommand : AsyncCommand<QueueDispatchPlanC
             settings.Json,
             cancellationToken);
 }
+
+

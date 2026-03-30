@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class SpectreConsoleCatalogInspectorTests
@@ -74,3 +76,4 @@ public sealed class SpectreConsoleCatalogInspectorTests
             MatchedDependencyIds: matchedDependencyIds ?? [],
             PackageInspection: packageInspection ?? SpectrePackageInspection.Empty);
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpOptionDescriptionSignalSupport
 {
     public static bool IsInformationalOptionDescription(string description)
@@ -18,3 +20,4 @@ internal static class ToolHelpOptionDescriptionSignalSupport
     public static bool ContainsInlineOptionExample(ToolHelpOptionSignature signature, string description)
         => ToolHelpInlineOptionExampleSupport.ContainsInlineOptionExample(signature, description);
 }
+

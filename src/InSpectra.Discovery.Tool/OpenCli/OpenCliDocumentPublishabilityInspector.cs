@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static partial class OpenCliDocumentPublishabilityInspector
@@ -23,3 +25,4 @@ internal static partial class OpenCliDocumentPublishabilityInspector
     public static bool LooksLikeNonPublishableDescription(string? description)
         => LooksLikeNonPublishableDescriptionCore(description);
 }
+

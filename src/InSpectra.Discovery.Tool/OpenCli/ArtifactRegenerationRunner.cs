@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal sealed record ArtifactRegenerationRunResult(
@@ -69,3 +71,4 @@ internal static class ArtifactRegenerationRunner
             FailedItems: failed);
     }
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using InSpectra.Discovery.Tool.Analysis;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
@@ -140,3 +142,4 @@ internal sealed class StaticInstalledToolAnalysisSupport
     private static string ResolveFrameworkName(string cliFramework)
         => CliFrameworkProviderRegistry.ResolveStaticAnalysisAdapter(cliFramework)?.FrameworkName ?? cliFramework;
 }
+

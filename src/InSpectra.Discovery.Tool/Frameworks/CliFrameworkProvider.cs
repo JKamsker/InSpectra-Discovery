@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Frameworks;
+
 internal sealed record CliFrameworkProvider(
     string Name,
     IReadOnlyList<string> LabelAliases,
@@ -27,3 +29,4 @@ internal sealed record StaticAnalysisFrameworkAdapter(
     string FrameworkName,
     string AssemblyName,
     IStaticAttributeReader Reader);
+

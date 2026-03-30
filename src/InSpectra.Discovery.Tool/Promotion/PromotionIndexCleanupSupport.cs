@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 internal static class PromotionIndexCleanupSupport
 {
     public static bool RemoveIndexedVersionArtifacts(string packagesRoot, string packageId, string version)
@@ -43,3 +45,4 @@ internal static class PromotionIndexCleanupSupport
         return normalizedCandidate.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
     }
 }
+

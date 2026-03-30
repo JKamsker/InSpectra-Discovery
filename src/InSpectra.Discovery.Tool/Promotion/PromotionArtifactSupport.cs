@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using System.Text.Json.Nodes;
 
 internal static class PromotionArtifactSupport
@@ -52,3 +54,4 @@ internal static class PromotionArtifactSupport
             || candidatePath.StartsWith(normalizedDirectory + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
     }
 }
+

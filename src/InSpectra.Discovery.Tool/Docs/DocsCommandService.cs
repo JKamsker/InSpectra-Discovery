@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 internal sealed class DocsCommandService
 {
     public async Task<int> RebuildIndexesAsync(
@@ -90,3 +92,4 @@ internal sealed class DocsCommandService
             cancellationToken);
     }
 }
+

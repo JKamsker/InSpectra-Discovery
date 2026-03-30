@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.IO.Compression;
 using Xunit;
 
@@ -32,3 +34,4 @@ public sealed class DotnetToolPackageLayoutReaderTests
         Assert.Contains("tools/net8.0/any", layout.ToolDirectories);
     }
 }
+

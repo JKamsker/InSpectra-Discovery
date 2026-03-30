@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 internal sealed class DocsRegenerateHelpCrawlsCommand : DocsArtifactRegenerationCommandBase
 {
     private readonly ToolHelpCrawlArtifactRegenerator _regenerator = new();
@@ -17,3 +19,4 @@ internal sealed class DocsRegenerateHelpCrawlsCommand : DocsArtifactRegeneration
             result.FailedItems);
     }
 }
+

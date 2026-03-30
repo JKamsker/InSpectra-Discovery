@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Xunit;
@@ -7,7 +9,7 @@ public sealed class XmldocRegeneratorConsistencyTests
     [Fact]
     public void RegenerateRepository_Refreshes_Latest_Index_And_State_When_Version_Artifacts_Are_Current()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -150,7 +152,7 @@ public sealed class XmldocRegeneratorConsistencyTests
     [Fact]
     public void RegenerateRepository_Ignores_Stale_Crawl_Path_When_Xmldoc_Is_The_Only_Usable_Source()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -233,3 +235,5 @@ public sealed class XmldocRegeneratorConsistencyTests
         }
     }
 }
+
+

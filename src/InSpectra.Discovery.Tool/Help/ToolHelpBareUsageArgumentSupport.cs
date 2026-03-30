@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpBareUsageArgumentSupport
@@ -92,3 +94,4 @@ internal static partial class ToolHelpBareUsageArgumentSupport
     [GeneratedRegex(@"\.[A-Za-z0-9]{1,8}$", RegexOptions.Compiled)]
     private static partial Regex FileLikeUsageTokenRegex();
 }
+

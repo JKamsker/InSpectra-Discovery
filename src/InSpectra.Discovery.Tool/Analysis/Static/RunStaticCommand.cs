@@ -6,7 +6,12 @@ using System.ComponentModel;
 
 internal sealed class RunStaticCommand : AsyncCommand<RunStaticCommand.Settings>
 {
-    private readonly StaticService _service = new();
+    private readonly StaticService _service;
+
+    public RunStaticCommand(StaticService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : CliFrameworkPackageAnalysisSettingsBase
     {
@@ -46,3 +51,6 @@ internal sealed class RunStaticCommand : AsyncCommand<RunStaticCommand.Settings>
             settings.Json,
             cancellationToken);
 }
+
+
+

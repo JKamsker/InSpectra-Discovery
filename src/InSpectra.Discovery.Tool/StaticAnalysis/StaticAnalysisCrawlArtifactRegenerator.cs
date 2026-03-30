@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using System.Text.Json.Nodes;
 
 internal sealed class StaticAnalysisCrawlArtifactRegenerator
@@ -68,3 +70,4 @@ internal sealed record StaticAnalysisCrawlArtifactCandidate(
 {
     public string DisplayName => $"{PackageId} {Version}";
 }
+

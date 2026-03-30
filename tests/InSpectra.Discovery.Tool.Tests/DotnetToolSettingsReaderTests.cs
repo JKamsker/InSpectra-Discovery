@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text;
 using Xunit;
 
@@ -43,3 +45,4 @@ public sealed class DotnetToolSettingsReaderTests
         Assert.Equal("tools/net8.0/any/sample.dll", command.EntryPointPath);
     }
 }
+

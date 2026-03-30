@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal static class StaticAnalysisTypeSupport
@@ -87,3 +89,4 @@ internal static class StaticAnalysisTypeSupport
             ? genericInstSig.GenericArguments[0]
             : typeSig;
 }
+

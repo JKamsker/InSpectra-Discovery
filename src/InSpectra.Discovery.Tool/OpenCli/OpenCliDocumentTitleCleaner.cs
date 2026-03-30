@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.RegularExpressions;
 
 internal static partial class OpenCliDocumentTitleCleaner
@@ -39,3 +41,4 @@ internal static partial class OpenCliDocumentTitleCleaner
     [GeneratedRegex(@"\s{2,}", RegexOptions.Compiled)]
     private static partial Regex MultipleSpacesRegex();
 }
+

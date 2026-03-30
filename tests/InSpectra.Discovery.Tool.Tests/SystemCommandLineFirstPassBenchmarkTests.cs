@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class SystemCommandLineFirstPassBenchmarkTests
     [Fact]
     public void Regenerator_Does_Not_Treat_Enum_Values_As_Option_Aliases()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -79,7 +81,7 @@ public sealed class SystemCommandLineFirstPassBenchmarkTests
     [Fact]
     public void Regenerator_Preserves_Pipe_Delimited_Option_Aliases()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -115,7 +117,7 @@ public sealed class SystemCommandLineFirstPassBenchmarkTests
     [Fact]
     public void Regenerator_Uses_Command_Name_When_Title_Is_Description()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -160,7 +162,7 @@ public sealed class SystemCommandLineFirstPassBenchmarkTests
     [Fact]
     public void Regenerator_Keeps_Product_Name_Title()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -267,3 +269,5 @@ public sealed class SystemCommandLineFirstPassBenchmarkTests
         }
     }
 }
+
+

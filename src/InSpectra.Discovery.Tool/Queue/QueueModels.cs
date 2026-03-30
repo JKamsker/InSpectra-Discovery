@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 internal sealed record QueueDispatchBatch(
     string BatchId,
     string QueuePath,
@@ -109,3 +111,4 @@ internal sealed record CurrentAnalysisBackfillQueueComputation(
     int LegacyTerminalFailureCount,
     int RetryableCount,
     DotnetToolQueueSnapshot Queue);
+

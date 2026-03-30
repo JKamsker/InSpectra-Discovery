@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.Json.Nodes;
 
 internal static class ToolHelpCapturePayloadSupport
@@ -177,3 +179,4 @@ internal static class ToolHelpCapturePayloadSupport
 
 internal sealed record SelectedToolHelpCapture(string CommandKey, ToolHelpDocument Document);
 internal sealed record SelectedToolHelpPayload(ToolHelpDocument? Document, string? Payload, bool IsTerminalNonHelp);
+

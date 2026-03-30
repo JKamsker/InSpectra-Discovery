@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Net;
 using System.Collections.Concurrent;
 using System.Text.Json;
@@ -290,3 +292,4 @@ public sealed class NuGetApiClientLiveTests
         [property: JsonPropertyName("registrationLeafUrl")] string RegistrationLeafUrl,
         [property: JsonPropertyName("catalogEntryUrl")] string CatalogEntryUrl);
 }
+

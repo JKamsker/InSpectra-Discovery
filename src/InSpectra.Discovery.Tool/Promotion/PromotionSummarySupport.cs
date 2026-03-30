@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using System.Text.Json.Nodes;
 
 internal static class PromotionSummarySupport
@@ -51,3 +53,4 @@ internal static class PromotionSummarySupport
         }
     }
 }
+

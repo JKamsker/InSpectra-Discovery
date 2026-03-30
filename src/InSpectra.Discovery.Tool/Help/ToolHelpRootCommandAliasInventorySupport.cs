@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpRootCommandAliasInventorySupport
 {
     public static IReadOnlyList<string> InferAliasInventoryLines(IReadOnlyList<string> lines)
@@ -119,3 +121,4 @@ internal static class ToolHelpRootCommandAliasInventorySupport
     private static int GetIndentation(string rawLine)
         => rawLine.TakeWhile(char.IsWhiteSpace).Count();
 }
+

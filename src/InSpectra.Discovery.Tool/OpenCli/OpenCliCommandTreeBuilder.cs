@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 internal sealed class OpenCliCommandTreeBuilder
 {
     public IReadOnlyList<OpenCliCommandTreeNode> Build(IEnumerable<OpenCliCommandDescriptor> commands)
@@ -131,3 +133,4 @@ internal sealed record OpenCliCommandTreeNode(
 {
     public IReadOnlyList<OpenCliCommandTreeNode> Children { get; init; } = [];
 }
+

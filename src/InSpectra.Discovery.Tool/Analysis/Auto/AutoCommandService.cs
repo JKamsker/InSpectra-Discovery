@@ -146,3 +146,5 @@ internal sealed class AutoCommandService
         return await AutoResultSupport.WriteResultAsync(packageId, version, resultPath, selectedResult, json, suppressOutput, cancellationToken);
     }
 }
+
+

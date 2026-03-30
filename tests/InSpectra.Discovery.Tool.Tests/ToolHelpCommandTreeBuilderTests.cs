@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpCommandTreeBuilderTests
@@ -143,3 +145,4 @@ public sealed class ToolHelpCommandTreeBuilderTests
         Assert.Equal("Config feval command line tool", config.Description);
     }
 }
+

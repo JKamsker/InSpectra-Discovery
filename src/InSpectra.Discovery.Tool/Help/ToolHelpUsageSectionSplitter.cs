@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpUsageSectionSplitter
@@ -119,3 +121,4 @@ internal static partial class ToolHelpUsageSectionSplitter
         Options,
     }
 }
+

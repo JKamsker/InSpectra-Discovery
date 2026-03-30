@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using InSpectra.Discovery.Tool.Analysis.Help;
 using System.Text.Json.Nodes;
 
@@ -54,3 +56,4 @@ internal sealed record MergedPromotionPlan(
     string? BatchId,
     string TargetBranch,
     JsonArray Items);
+

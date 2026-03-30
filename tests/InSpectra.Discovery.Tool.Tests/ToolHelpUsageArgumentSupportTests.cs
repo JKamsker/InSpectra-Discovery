@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpUsageArgumentSupportTests
@@ -80,3 +82,4 @@ public sealed class ToolHelpUsageArgumentSupportTests
         Assert.True(looksLikeInventory);
     }
 }
+

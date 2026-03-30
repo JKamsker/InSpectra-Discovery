@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal sealed class McMasterAttributeReader : IStaticAttributeReader
@@ -196,3 +198,4 @@ internal sealed class McMasterAttributeReader : IStaticAttributeReader
     }
 
 }
+

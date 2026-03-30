@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.Json.Nodes;
 
 internal sealed class ToolHelpCrawler
@@ -205,3 +207,4 @@ internal sealed record ToolHelpCaptureSummary(
     int? ExitCode,
     string? Stdout,
     string? Stderr);
+

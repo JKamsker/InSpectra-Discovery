@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpStructuredOptionTableParsingSupport
@@ -207,3 +209,4 @@ internal static partial class ToolHelpStructuredOptionTableParsingSupport
         Continuation,
     }
 }
+

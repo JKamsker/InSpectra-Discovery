@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Queue;
+
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -81,3 +83,4 @@ internal sealed class LegacyTerminalNegativeQueueBuilder
         return new LegacyTerminalNegativeQueueComputation(snapshot.PackageCount, eligibleCount, queue);
     }
 }
+

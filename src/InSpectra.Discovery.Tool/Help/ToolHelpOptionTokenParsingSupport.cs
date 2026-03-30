@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.RegularExpressions;
 
 internal static partial class ToolHelpOptionTokenParsingSupport
@@ -183,3 +185,4 @@ internal static partial class ToolHelpOptionTokenParsingSupport
     [GeneratedRegex(@"^[A-Za-z0-9][A-Za-z0-9_\.\?\-]*$", RegexOptions.Compiled)]
     private static partial Regex PipeDelimitedOptionAliasSegmentRegex();
 }
+

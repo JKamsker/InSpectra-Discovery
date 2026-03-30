@@ -1,17 +1,19 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
-public sealed class AutoAnalysisCommandServiceTests
+public sealed class AutoCommandServiceTests
 {
     [Fact]
     public async Task RunAsync_PreservesNativeSuccess_WhenPreferredModeIsNative()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var outputRoot = tempDirectory.GetPath("analysis");
-        var service = new AutoAnalysisCommandService(
-            new FakeDescriptorResolver(new ToolAnalysisDescriptor(
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
                 "Sample.Tool",
                 "1.2.3",
                 "sample",
@@ -24,7 +26,8 @@ public sealed class AutoAnalysisCommandServiceTests
             new FakeNativeRunner((path, _, _, _, _, _, _, _) => WriteResult(path, "success")),
             new FakeHelpRunner((_, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("Help fallback should not run.")),
             new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
-            new NoOpStaticRunner());
+            new NoOpStaticRunner(),
+            new NoOpHookRunner());
 
         var exitCode = await service.RunAsync(
             "Sample.Tool",
@@ -51,14 +54,14 @@ public sealed class AutoAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_FallsBackToHelp_WhenNativeResultIsNotSuccessful()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var outputRoot = tempDirectory.GetPath("analysis");
         string? capturedCommandName = null;
 
-        var service = new AutoAnalysisCommandService(
-            new FakeDescriptorResolver(new ToolAnalysisDescriptor(
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
                 "Broken.Tool",
                 "0.1.0",
                 "broken",
@@ -75,7 +78,8 @@ public sealed class AutoAnalysisCommandServiceTests
             {
                 capturedCommandName = commandName;
                 WriteResult(path, "success", cliFramework: cliFramework);
-            }));
+            }),
+            new NoOpHookRunner());
 
         var exitCode = await service.RunAsync(
             "Broken.Tool",
@@ -104,14 +108,14 @@ public sealed class AutoAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_FallsBackToCliFx_WhenNativeResultIsNotSuccessful_ForCliFxDescriptor()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var outputRoot = tempDirectory.GetPath("analysis");
         string? capturedCommandName = null;
 
-        var service = new AutoAnalysisCommandService(
-            new FakeDescriptorResolver(new ToolAnalysisDescriptor(
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
                 "Mixed.Tool",
                 "0.2.0",
                 "mixed",
@@ -129,7 +133,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 Assert.Equal("System.CommandLine + CliFx", cliFramework);
                 WriteResult(path, "success", cliFramework: "CliFx");
             }),
-            new NoOpStaticRunner());
+            new NoOpStaticRunner(),
+            new NoOpHookRunner());
 
         var exitCode = await service.RunAsync(
             "Mixed.Tool",
@@ -158,14 +163,14 @@ public sealed class AutoAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_FallsBackToHelp_WhenNativeSuccessDoesNotIncludeOpenCliArtifact()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var outputRoot = tempDirectory.GetPath("analysis");
         string? capturedCommandName = null;
 
-        var service = new AutoAnalysisCommandService(
-            new FakeDescriptorResolver(new ToolAnalysisDescriptor(
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
                 "Cake.Tool",
                 "6.1.0",
                 "dotnet-cake",
@@ -182,7 +187,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 WriteResult(path, "success", cliFramework: framework);
             }),
             new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
-            new NoOpStaticRunner());
+            new NoOpStaticRunner(),
+            new NoOpHookRunner());
 
         var exitCode = await service.RunAsync(
             "Cake.Tool",
@@ -211,13 +217,13 @@ public sealed class AutoAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_PreservesNativeSuccess_WhenHelpFallbackFails_AfterMissingOpenCliArtifact()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var outputRoot = tempDirectory.GetPath("analysis");
 
-        var service = new AutoAnalysisCommandService(
-            new FakeDescriptorResolver(new ToolAnalysisDescriptor(
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
                 "Cake.Tool",
                 "6.1.0",
                 "dotnet-cake",
@@ -230,7 +236,8 @@ public sealed class AutoAnalysisCommandServiceTests
             new FakeNativeRunner((path, _, _, _, _, _, _, _) => WriteResult(path, "success", includeOpenCliArtifact: false, includeXmlDocArtifact: true)),
             new FakeHelpRunner((path, _, _, _, _, _, _, _, _, _) => WriteResult(path, "terminal-failure", "help-crawl-failed", includeOpenCliArtifact: false)),
             new FakeCliFxRunner((_, _, _, _, _, _, _, _, _, _, _) => throw new InvalidOperationException("CliFx runner should not run.")),
-            new NoOpStaticRunner());
+            new NoOpStaticRunner(),
+            new NoOpHookRunner());
 
         var exitCode = await service.RunAsync(
             "Cake.Tool",
@@ -258,14 +265,14 @@ public sealed class AutoAnalysisCommandServiceTests
     [Fact]
     public async Task RunAsync_UsesCliFxRunner_WhenPreferredModeIsCliFx()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var outputRoot = tempDirectory.GetPath("analysis");
         string? capturedCommandName = null;
 
-        var service = new AutoAnalysisCommandService(
-            new FakeDescriptorResolver(new ToolAnalysisDescriptor(
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
                 "CliFx.Tool",
                 "2.0.0",
                 "clifx-tool",
@@ -283,7 +290,8 @@ public sealed class AutoAnalysisCommandServiceTests
                 WriteResult(path, "success", cliFramework: "CliFx");
                 Assert.Equal("CliFx + System.CommandLine", cliFramework);
             }),
-            new NoOpStaticRunner());
+            new NoOpStaticRunner(),
+            new NoOpHookRunner());
 
         var exitCode = await service.RunAsync(
             "CliFx.Tool",
@@ -344,13 +352,13 @@ public sealed class AutoAnalysisCommandServiceTests
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
 
-    private sealed class FakeDescriptorResolver(ToolAnalysisDescriptor descriptor) : IToolAnalysisDescriptorResolver
+    private sealed class FakeDescriptorResolver(ToolDescriptor descriptor) : IToolDescriptorResolver
     {
-        public Task<ToolAnalysisDescriptor> ResolveAsync(string packageId, string version, CancellationToken cancellationToken)
+        public Task<ToolDescriptor> ResolveAsync(string packageId, string version, CancellationToken cancellationToken)
             => Task.FromResult(descriptor);
     }
 
-    private sealed class FakeNativeRunner(Action<string, string, string, string, int, string, int, int> handler) : IAutoAnalysisNativeRunner
+    private sealed class FakeNativeRunner(Action<string, string, string, string, int, string, int, int> handler) : IAutoNativeRunner
     {
         public Task RunAsync(string packageId, string version, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
         {
@@ -359,7 +367,7 @@ public sealed class AutoAnalysisCommandServiceTests
         }
     }
 
-    private sealed class FakeHelpRunner(Action<string, string, string?, string, string, int, string?, int, int, int> handler) : IAutoAnalysisHelpRunner
+    private sealed class FakeHelpRunner(Action<string, string, string?, string, string, int, string?, int, int, int> handler) : IAutoHelpRunner
     {
         public Task RunAsync(string packageId, string version, string? commandName, string outputRoot, string batchId, int attempt, string source, string? cliFramework, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
         {
@@ -368,7 +376,7 @@ public sealed class AutoAnalysisCommandServiceTests
         }
     }
 
-    private sealed class FakeCliFxRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoAnalysisCliFxRunner
+    private sealed class FakeCliFxRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoCliFxRunner
     {
         public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
         {
@@ -377,13 +385,19 @@ public sealed class AutoAnalysisCommandServiceTests
         }
     }
 
-    private sealed class NoOpStaticRunner : IAutoAnalysisStaticRunner
+    private sealed class NoOpStaticRunner : IAutoStaticRunner
     {
         public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
             => throw new InvalidOperationException("Static runner should not run.");
     }
 
-    private sealed class FakeStaticRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoAnalysisStaticRunner
+    private sealed class NoOpHookRunner : IAutoHookRunner
+    {
+        public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+            => throw new InvalidOperationException("Hook runner should not run.");
+    }
+
+    private sealed class FakeStaticRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoStaticRunner
     {
         public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
         {
@@ -413,3 +427,5 @@ public sealed class AutoAnalysisCommandServiceTests
         }
     }
 }
+
+

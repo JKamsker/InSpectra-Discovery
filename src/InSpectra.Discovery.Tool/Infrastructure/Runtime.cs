@@ -58,3 +58,5 @@ internal sealed class NuGetApiClientScope : IDisposable
         _handler.Dispose();
     }
 }
+
+

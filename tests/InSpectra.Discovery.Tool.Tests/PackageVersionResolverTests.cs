@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class PackageVersionResolverTests
@@ -117,3 +119,4 @@ public sealed class PackageVersionResolverTests
         }
     }
 }
+

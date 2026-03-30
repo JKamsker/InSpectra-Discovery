@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpUsageArgumentExtractionSupport
 {
     public static IReadOnlyList<ToolHelpItem> Extract(
@@ -56,3 +58,4 @@ internal static class ToolHelpUsageArgumentExtractionSupport
         return arguments;
     }
 }
+

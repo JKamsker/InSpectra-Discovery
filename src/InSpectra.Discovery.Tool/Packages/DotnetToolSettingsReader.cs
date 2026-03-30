@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Packages;
+
 using System.Xml.Linq;
 
 internal static class DotnetToolSettingsReader
@@ -57,3 +59,4 @@ internal sealed record DotnetToolSettingsDocument(
 internal sealed record DotnetToolSettingsCommand(
     string? CommandName,
     string? EntryPointPath);
+

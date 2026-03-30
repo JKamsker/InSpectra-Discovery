@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using System.Text.Json.Nodes;
 
 internal static class StaticAnalysisCrawlArtifactSupport
@@ -124,3 +126,4 @@ internal static class StaticAnalysisCrawlArtifactSupport
         return string.IsNullOrWhiteSpace(value) ? null : value[0];
     }
 }
+

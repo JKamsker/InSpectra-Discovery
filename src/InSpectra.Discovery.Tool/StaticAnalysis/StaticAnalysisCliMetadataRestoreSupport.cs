@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using System.Text.Json.Nodes;
 
 internal static class StaticAnalysisCliMetadataRestoreSupport
@@ -65,3 +67,4 @@ internal static class StaticAnalysisCliMetadataRestoreSupport
         regeneratedInspectra[cliParsedPropertyName] = existingCliParsedValue;
     }
 }
+

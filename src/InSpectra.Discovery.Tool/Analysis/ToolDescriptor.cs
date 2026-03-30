@@ -12,3 +12,5 @@ internal sealed record ToolDescriptor(
     string? CatalogEntryUrl,
     string? PackageTitle = null,
     string? PackageDescription = null);
+
+

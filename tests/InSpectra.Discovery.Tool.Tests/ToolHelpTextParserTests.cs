@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpTextParserTests
@@ -1017,3 +1019,4 @@ public sealed class ToolHelpTextParserTests
         Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "Use", StringComparison.Ordinal));
     }
 }
+

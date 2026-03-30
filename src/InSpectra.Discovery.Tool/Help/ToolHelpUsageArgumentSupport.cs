@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpUsageArgumentSupport
 {
     public static IReadOnlyList<ToolHelpItem> ExtractUsageArguments(
@@ -22,3 +24,4 @@ internal static class ToolHelpUsageArgumentSupport
         IReadOnlyList<string> usageLines)
         => ToolHelpUsageArgumentInventorySupport.LooksLikeAuxiliaryInventoryEcho(explicitArguments, usageLines);
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 using System.Text.Json.Nodes;
 
 internal sealed class ToolHelpCrawlArtifactRegenerator
@@ -141,3 +143,4 @@ internal sealed record HelpCrawlArtifactCandidate(
 {
     public string DisplayName => $"{PackageId} {Version}";
 }
+

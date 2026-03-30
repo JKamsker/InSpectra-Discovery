@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 using System.Text.Json.Nodes;
 
 internal static class DocsDocumentationReportPackageSupport
@@ -132,3 +134,4 @@ internal sealed record DocumentationReportPackageContext(
     string OpenCliClassification,
     string XmlDocClassification,
     JsonObject OpenCli);
+

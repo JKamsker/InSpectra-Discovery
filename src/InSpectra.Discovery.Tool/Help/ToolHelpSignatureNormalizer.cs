@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpSignatureNormalizer
 {
     public static string NormalizeCommandKey(string key)
@@ -27,3 +29,4 @@ internal static class ToolHelpSignatureNormalizer
     public static bool LooksLikeMarkdownTableLine(string line)
         => ToolHelpCommandSignatureSupport.LooksLikeMarkdownTableLine(line);
 }
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpItemParser
 {
     public static IReadOnlyList<ToolHelpItem> ParseItems(IReadOnlyList<string> lines, ToolHelpItemKind kind)
@@ -147,3 +149,4 @@ internal static class ToolHelpItemParser
             || (kind == ToolHelpItemKind.Command && ToolHelpTextNoiseClassifier.LooksLikeSubcommandHelpHint(trimmed));
     }
 }
+

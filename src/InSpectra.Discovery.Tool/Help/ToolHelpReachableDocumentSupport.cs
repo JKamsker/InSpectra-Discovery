@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpReachableDocumentSupport
 {
     public static Dictionary<string, ToolHelpDocument> BuildReachableDocuments(
@@ -40,3 +42,4 @@ internal static class ToolHelpReachableDocumentSupport
         return documents;
     }
 }
+

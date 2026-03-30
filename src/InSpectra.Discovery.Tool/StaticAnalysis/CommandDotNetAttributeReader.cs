@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
@@ -191,3 +193,4 @@ internal sealed class CommandDotNetAttributeReader : IStaticAttributeReader
         => string.Equals(typeSig?.FullName, "System.Threading.CancellationToken", StringComparison.Ordinal);
 
 }
+

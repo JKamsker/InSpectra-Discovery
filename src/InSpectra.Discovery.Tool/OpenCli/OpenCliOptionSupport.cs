@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.OpenCli;
+
 using System.Text.Json.Nodes;
 
 internal static class OpenCliOptionSupport
@@ -103,3 +105,4 @@ internal static class OpenCliOptionSupport
                         .Select(ch => char.IsLetterOrDigit(ch) ? char.ToUpperInvariant(ch) : '_'))
                 .Trim('_');
 }
+

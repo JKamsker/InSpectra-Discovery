@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json;
 using Xunit;
 
@@ -41,3 +43,4 @@ public sealed class DotnetToolPackageTypeTests
         Assert.True(result);
     }
 }
+

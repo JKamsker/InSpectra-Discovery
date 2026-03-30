@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class CliFxHelpParserTests
@@ -111,3 +113,4 @@ public sealed class CliFxHelpParserTests
         Assert.Equal("convert", document.Commands[0].Key);
     }
 }
+

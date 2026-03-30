@@ -6,7 +6,12 @@ using System.ComponentModel;
 
 internal sealed class RunAutoCommand : AsyncCommand<RunAutoCommand.Settings>
 {
-    private readonly AutoCommandService _service = new();
+    private readonly AutoCommandService _service;
+
+    public RunAutoCommand(AutoCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : PackageAnalysisSettingsBase
     {
@@ -44,3 +49,6 @@ internal sealed class RunAutoCommand : AsyncCommand<RunAutoCommand.Settings>
             settings.Json,
             cancellationToken);
 }
+
+
+

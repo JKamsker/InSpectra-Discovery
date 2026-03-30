@@ -36,3 +36,5 @@ internal sealed record IntrospectionOutcome(
         return metadata;
     }
 }
+
+

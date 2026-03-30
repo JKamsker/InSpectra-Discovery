@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class ToolHelpCrawlCanonicalizationTests
     [Fact]
     public void Regenerator_Canonicalizes_Alias_Bearing_Stored_Command_Keys()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -86,7 +88,7 @@ public sealed class ToolHelpCrawlCanonicalizationTests
     [Fact]
     public void Regenerator_Reaches_Fully_Qualified_Child_Command_Listings()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -175,3 +177,5 @@ public sealed class ToolHelpCrawlCanonicalizationTests
         }
     }
 }
+
+

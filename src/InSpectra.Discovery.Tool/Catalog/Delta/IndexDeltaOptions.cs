@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 internal sealed record IndexDeltaOptions
 {
     public const string DefaultCurrentSnapshotPath = "state/discovery/dotnet-tools.current.json";
@@ -13,3 +15,4 @@ internal sealed record IndexDeltaOptions
     public int OverlapMinutes { get; init; } = 30;
     public DateTimeOffset? SeedCursorUtc { get; init; }
 }
+

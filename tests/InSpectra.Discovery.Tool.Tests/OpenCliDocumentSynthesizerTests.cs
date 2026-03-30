@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Xunit;
@@ -122,3 +124,4 @@ public sealed class OpenCliDocumentSynthesizerTests
         Assert.Equal("url-or-input-file", argument["name"]!.GetValue<string>());
     }
 }
+

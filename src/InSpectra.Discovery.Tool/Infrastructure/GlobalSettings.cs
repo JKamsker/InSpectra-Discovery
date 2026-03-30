@@ -16,3 +16,5 @@ internal abstract class GlobalSettings : CommandSettings
     [CommandOption("--no-color")]
     public bool NoColor { get; set; }
 }
+
+

@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpSignatureNormalizerTests
@@ -39,3 +41,4 @@ public sealed class ToolHelpSignatureNormalizerTests
         Assert.Equal("write file", normalizedDescription);
     }
 }
+

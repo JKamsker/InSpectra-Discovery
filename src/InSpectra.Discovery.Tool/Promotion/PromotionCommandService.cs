@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using System.Text;
 using System.Text.Json.Nodes;
 
@@ -126,3 +128,4 @@ internal sealed class PromotionCommandService
         builder.AppendLine();
     }
 }
+

@@ -85,3 +85,5 @@ internal static class IntrospectionFailureClassifier
     private static bool MatchesAny(string text, IEnumerable<string> patterns)
         => patterns.Any(pattern => Regex.IsMatch(text, pattern, RegexOptions.IgnoreCase | RegexOptions.Singleline));
 }
+
+

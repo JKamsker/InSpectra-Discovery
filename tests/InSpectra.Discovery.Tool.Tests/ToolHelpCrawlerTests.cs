@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpCrawlerTests
@@ -28,7 +30,7 @@ public sealed class ToolHelpCrawlerTests
     [Fact]
     public async Task CrawlAsync_Continues_After_Rejected_Help_Switch_Until_A_Valid_Probe_Succeeds()
     {
-        var runtime = new FakeToolCommandRuntime(arguments =>
+        var runtime = new FakeCommandRuntime(arguments =>
         {
             var key = string.Join(' ', arguments);
             if (string.Equals(key, "convert-from-plugin --help", StringComparison.Ordinal)
@@ -84,7 +86,7 @@ public sealed class ToolHelpCrawlerTests
     [Fact]
     public async Task CrawlAsync_Continues_After_CommandLineParser_BadVerb_Help_Probe()
     {
-        var runtime = new FakeToolCommandRuntime(arguments =>
+        var runtime = new FakeCommandRuntime(arguments =>
         {
             var key = string.Join(' ', arguments);
             return key switch
@@ -135,7 +137,7 @@ public sealed class ToolHelpCrawlerTests
     [Fact]
     public async Task CrawlAsync_Stops_Probing_A_Subcommand_After_Terminal_NonHelp_Output()
     {
-        var runtime = new FakeToolCommandRuntime(arguments =>
+        var runtime = new FakeCommandRuntime(arguments =>
         {
             var key = string.Join(' ', arguments);
             return key switch
@@ -179,7 +181,7 @@ public sealed class ToolHelpCrawlerTests
     [Fact]
     public async Task CrawlAsync_Prefers_Single_Stream_Help_Payload_Over_Invocation_Echo_Combination()
     {
-        var runtime = new FakeToolCommandRuntime(arguments =>
+        var runtime = new FakeCommandRuntime(arguments =>
         {
             var key = string.Join(' ', arguments);
             if (string.Equals(key, "convert-from-plugin --help", StringComparison.Ordinal)
@@ -250,7 +252,7 @@ public sealed class ToolHelpCrawlerTests
     [Fact]
     public async Task CrawlAsync_DoesNot_Recurse_Into_Builtin_Auxiliary_Inventory_Echoes()
     {
-        var runtime = new FakeToolCommandRuntime(arguments =>
+        var runtime = new FakeCommandRuntime(arguments =>
         {
             var key = string.Join(' ', arguments);
             return key switch
@@ -311,7 +313,7 @@ public sealed class ToolHelpCrawlerTests
         Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.StartsWith("version ", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static ToolCommandRuntime.ProcessResult Result(string? stdout = null, string? stderr = null, int exitCode = 0, bool timedOut = false)
+    private static CommandRuntime.ProcessResult Result(string? stdout = null, string? stderr = null, int exitCode = 0, bool timedOut = false)
         => new(
             Status: timedOut ? "timed-out" : exitCode == 0 ? "ok" : "failed",
             TimedOut: timedOut,
@@ -320,11 +322,11 @@ public sealed class ToolHelpCrawlerTests
             Stdout: stdout ?? string.Empty,
             Stderr: stderr ?? string.Empty);
 
-    private sealed class FakeToolCommandRuntime : ToolCommandRuntime
+    private sealed class FakeCommandRuntime : CommandRuntime
     {
         private readonly Func<IReadOnlyList<string>, ProcessResult> _handler;
 
-        public FakeToolCommandRuntime(Func<IReadOnlyList<string>, ProcessResult> handler)
+        public FakeCommandRuntime(Func<IReadOnlyList<string>, ProcessResult> handler)
         {
             _handler = handler;
         }
@@ -346,3 +348,5 @@ public sealed class ToolHelpCrawlerTests
         }
     }
 }
+
+

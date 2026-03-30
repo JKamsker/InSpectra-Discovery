@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using Xunit;
 
 public sealed class ToolHelpTextParserOptionRegressionTests
@@ -108,3 +110,4 @@ public sealed class ToolHelpTextParserOptionRegressionTests
             && string.Equals(option.Description, "Enables full script debugging in Visual Studio", StringComparison.Ordinal));
     }
 }
+

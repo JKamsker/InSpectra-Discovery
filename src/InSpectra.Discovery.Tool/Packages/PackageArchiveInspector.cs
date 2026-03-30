@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Packages;
+
 using System.IO.Compression;
 using System.Text.Json;
 
@@ -173,3 +175,4 @@ internal sealed class PackageArchiveInspector
         public static SpectreToolAssemblyReferenceInspection Empty { get; } = new([], []);
     }
 }
+

@@ -20,3 +20,5 @@ internal static class JsonOptions
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 }
+
+

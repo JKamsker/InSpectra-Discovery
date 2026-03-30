@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using dnlib.DotNet;
 
 internal sealed class CmdParserAttributeReader : IStaticAttributeReader
@@ -194,3 +196,4 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
     }
 
 }
+

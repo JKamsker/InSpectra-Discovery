@@ -1,9 +1,16 @@
+namespace InSpectra.Discovery.Tool.Promotion;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 internal sealed class PromotionApplyUntrustedCommand : AsyncCommand<PromotionApplyUntrustedCommand.Settings>
 {
-    private readonly PromotionApplyCommandService _service = new();
+    private readonly PromotionApplyCommandService _service;
+
+    public PromotionApplyUntrustedCommand(PromotionApplyCommandService service)
+    {
+        _service = service;
+    }
 
     public sealed class Settings : GlobalSettings
     {
@@ -26,3 +33,5 @@ internal sealed class PromotionApplyUntrustedCommand : AsyncCommand<PromotionApp
             settings.Json,
             cancellationToken);
 }
+
+

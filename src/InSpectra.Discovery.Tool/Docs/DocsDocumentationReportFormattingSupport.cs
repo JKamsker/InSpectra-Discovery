@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Docs;
+
 internal static class DocsDocumentationReportFormattingSupport
 {
     public static string ToAnchorSlug(string value)
@@ -89,3 +91,4 @@ internal sealed record ReportRow(
     string MissingOptionDescriptions,
     string MissingArgumentDescriptions,
     string MissingLeafExamples);
+

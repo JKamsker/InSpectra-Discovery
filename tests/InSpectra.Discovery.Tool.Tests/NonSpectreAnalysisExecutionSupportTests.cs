@@ -1,7 +1,9 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
-public sealed class NonSpectreAnalysisExecutionSupportTests
+public sealed class NonSpectreExecutionSupportTests
 {
     [Fact]
     public async Task RunQuietAsync_Uses_Default_Framework_And_Writes_Result()
@@ -9,8 +11,8 @@ public sealed class NonSpectreAnalysisExecutionSupportTests
         using var tempDirectory = new TemporaryDirectory();
         var resultPath = Path.Combine(tempDirectory.Path, "output", "result.json");
 
-        var exitCode = await NonSpectreAnalysisExecutionSupport.RunQuietAsync(
-            runtime: new ToolCommandRuntime(),
+        var exitCode = await NonSpectreExecutionSupport.RunQuietAsync(
+            runtime: new CommandRuntime(),
             definition: new NonSpectreAnalysisExecutionDefinition(
                 AnalysisMode: "static",
                 TempRootPrefix: "inspectra-static",
@@ -57,8 +59,8 @@ public sealed class NonSpectreAnalysisExecutionSupportTests
         using var tempDirectory = new TemporaryDirectory();
         var analyzeCalled = false;
 
-        await NonSpectreAnalysisExecutionSupport.RunQuietAsync(
-            runtime: new ToolCommandRuntime(),
+        await NonSpectreExecutionSupport.RunQuietAsync(
+            runtime: new CommandRuntime(),
             definition: new NonSpectreAnalysisExecutionDefinition("help", "inspectra-help", "Help analysis"),
             bootstrapAsync: (_, _, _, _, _) => Task.FromResult(
                 new NonSpectreAnalysisBootstrapResult(
@@ -95,8 +97,8 @@ public sealed class NonSpectreAnalysisExecutionSupportTests
     {
         using var tempDirectory = new TemporaryDirectory();
 
-        await NonSpectreAnalysisExecutionSupport.RunQuietAsync(
-            runtime: new ToolCommandRuntime(),
+        await NonSpectreExecutionSupport.RunQuietAsync(
+            runtime: new CommandRuntime(),
             definition: new NonSpectreAnalysisExecutionDefinition("clifx", "inspectra-clifx", "CliFx analysis"),
             bootstrapAsync: (_, _, _, _, _) => Task.FromResult(
                 new NonSpectreAnalysisBootstrapResult(
@@ -148,3 +150,5 @@ public sealed class NonSpectreAnalysisExecutionSupportTests
         }
     }
 }
+
+

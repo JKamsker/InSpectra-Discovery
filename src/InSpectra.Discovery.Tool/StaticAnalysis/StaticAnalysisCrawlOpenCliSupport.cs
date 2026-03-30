@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.StaticAnalysis;
+
 using System.Text.Json.Nodes;
 
 internal sealed class StaticAnalysisCrawlOpenCliSupport
@@ -76,3 +78,4 @@ internal sealed class StaticAnalysisCrawlOpenCliSupport
         return cliFramework ?? "unknown";
     }
 }
+

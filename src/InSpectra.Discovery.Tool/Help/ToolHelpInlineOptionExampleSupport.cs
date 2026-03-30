@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpInlineOptionExampleSupport
 {
     private static readonly HashSet<string> InlineReferenceWords = new(StringComparer.OrdinalIgnoreCase)
@@ -95,3 +97,4 @@ internal static class ToolHelpInlineOptionExampleSupport
     private static bool LooksLikeInlineReferenceWord(string word)
         => InlineReferenceWords.Contains(word);
 }
+

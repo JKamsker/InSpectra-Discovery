@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 internal sealed record IndexDeltaSpectreConsoleCliOptions
 {
     public const string DefaultInputDeltaPath = "state/discovery/dotnet-tools.delta.json";
@@ -10,3 +12,4 @@ internal sealed record IndexDeltaSpectreConsoleCliOptions
     public string QueueOutputPath { get; init; } = DefaultQueueOutputPath;
     public int Concurrency { get; init; } = 12;
 }
+

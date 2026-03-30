@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Catalog.Delta;
+
 using System.Text.Json;
 
 internal sealed class DotnetToolCatalogDeltaDiscoverer
@@ -196,3 +198,4 @@ internal sealed class DotnetToolCatalogDeltaDiscoverer
     private static string NormalizePath(string path)
         => path.Replace('\\', '/');
 }
+

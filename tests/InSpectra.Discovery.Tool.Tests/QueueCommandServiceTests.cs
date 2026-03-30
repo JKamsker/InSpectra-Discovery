@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -6,7 +8,7 @@ public sealed class QueueCommandServiceTests
     [Fact]
     public async Task BuildUntrustedBatchPlanAsync_EnrichesItemsWithAnalysisMetadata()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -33,7 +35,7 @@ public sealed class QueueCommandServiceTests
             });
 
         var service = new QueueCommandService(new FakeDescriptorResolver(
-            new ToolAnalysisDescriptor(
+            new ToolDescriptor(
                 "Sample.Tool",
                 "1.2.3",
                 "sample",
@@ -70,7 +72,7 @@ public sealed class QueueCommandServiceTests
     [Fact]
     public async Task BuildUntrustedBatchPlanAsync_FallsBackToAutoMode_WhenAnalysisDescriptorResolutionFails()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -121,7 +123,7 @@ public sealed class QueueCommandServiceTests
     [Fact]
     public async Task BuildUntrustedBatchPlanAsync_RequeuesLegacyTerminalNegativeStates()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -160,7 +162,7 @@ public sealed class QueueCommandServiceTests
             });
 
         var service = new QueueCommandService(new FakeDescriptorResolver(
-            new ToolAnalysisDescriptor(
+            new ToolDescriptor(
                 "Legacy.Tool",
                 "2.0.0",
                 "legacy",
@@ -193,7 +195,7 @@ public sealed class QueueCommandServiceTests
     [Fact]
     public async Task BuildLegacyTerminalNegativeQueueAsync_SelectsCurrentLegacyNegativesByDownloadRank()
     {
-        ToolRuntime.Initialize();
+        Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var repositoryRoot = tempDirectory.Path;
@@ -295,15 +297,15 @@ public sealed class QueueCommandServiceTests
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
 
-    private sealed class FakeDescriptorResolver(ToolAnalysisDescriptor descriptor) : IToolAnalysisDescriptorResolver
+    private sealed class FakeDescriptorResolver(ToolDescriptor descriptor) : IToolDescriptorResolver
     {
-        public Task<ToolAnalysisDescriptor> ResolveAsync(string packageId, string version, CancellationToken cancellationToken)
+        public Task<ToolDescriptor> ResolveAsync(string packageId, string version, CancellationToken cancellationToken)
             => Task.FromResult(descriptor);
     }
 
-    private sealed class ThrowingDescriptorResolver(string message) : IToolAnalysisDescriptorResolver
+    private sealed class ThrowingDescriptorResolver(string message) : IToolDescriptorResolver
     {
-        public Task<ToolAnalysisDescriptor> ResolveAsync(string packageId, string version, CancellationToken cancellationToken)
+        public Task<ToolDescriptor> ResolveAsync(string packageId, string version, CancellationToken cancellationToken)
             => throw new InvalidOperationException(message);
     }
 
@@ -326,3 +328,5 @@ public sealed class QueueCommandServiceTests
         }
     }
 }
+
+

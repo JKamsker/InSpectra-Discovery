@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -370,3 +372,4 @@ public sealed class OpenCliDocumentSanitizerTests
         Assert.Equal(2, document["options"]!.AsArray().Count);
     }
 }
+

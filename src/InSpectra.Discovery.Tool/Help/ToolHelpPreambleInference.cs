@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Help;
+
 internal static class ToolHelpPreambleInference
 {
     public static IReadOnlyList<string> InferUsageLines(IReadOnlyList<string> preamble)
@@ -44,3 +46,4 @@ internal static class ToolHelpPreambleInference
             || line.Contains("--", StringComparison.Ordinal)
             || line.Contains(" -", StringComparison.Ordinal);
 }
+

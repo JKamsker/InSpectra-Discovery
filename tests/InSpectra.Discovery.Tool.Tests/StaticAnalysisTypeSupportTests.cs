@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
 using dnlib.DotNet;
 using Xunit;
 
@@ -75,3 +77,4 @@ internal enum StaticAnalysisTypeSampleMode
     Basic,
     Advanced,
 }
+

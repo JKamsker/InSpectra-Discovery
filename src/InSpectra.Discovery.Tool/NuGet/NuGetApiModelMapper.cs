@@ -1,3 +1,5 @@
+namespace InSpectra.Discovery.Tool.NuGet;
+
 using System.Text.Json;
 
 internal static class NuGetApiModelMapper
@@ -225,3 +227,4 @@ internal static class NuGetApiModelMapper
     private static DateTimeOffset RequiredDateTimeOffset(DateTimeOffset? value, string propertyName)
         => value ?? throw new JsonException($"Required property '{propertyName}' was not present.");
 }
+
