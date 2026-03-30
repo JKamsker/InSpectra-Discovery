@@ -98,6 +98,14 @@ internal sealed class UntrustedCommandService
             var detection = ResultSupport.BuildDetection(catalogLeaf);
             result["detection"] = detection.ToJsonObject();
 
+            if (detection.HasSpectreConsoleCli)
+            {
+                var classified = CliFrameworkProviderRegistry.Detect(catalogLeaf);
+                result["cliFramework"] = string.IsNullOrWhiteSpace(classified) || string.Equals(classified, "Spectre.Console.Cli", StringComparison.Ordinal)
+                    ? "Spectre.Console.Cli"
+                    : $"Spectre.Console.Cli + {classified}";
+            }
+
             if (!detection.HasSpectreConsoleCli)
             {
                 result["disposition"] = "terminal-negative";
