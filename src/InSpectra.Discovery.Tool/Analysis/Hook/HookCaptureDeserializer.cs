@@ -76,6 +76,18 @@ internal sealed class HookCapturedOption
 
     [JsonPropertyName("recursive")]
     public bool Recursive { get; set; }
+
+    [JsonPropertyName("argumentName")]
+    public string? ArgumentName { get; set; }
+
+    [JsonPropertyName("hasDefaultValue")]
+    public bool HasDefaultValue { get; set; }
+
+    [JsonPropertyName("defaultValue")]
+    public string? DefaultValue { get; set; }
+
+    [JsonPropertyName("allowedValues")]
+    public List<string>? AllowedValues { get; set; }
 }
 
 internal sealed class HookCapturedArgument
@@ -94,6 +106,15 @@ internal sealed class HookCapturedArgument
 
     [JsonPropertyName("maxArity")]
     public int MaxArity { get; set; }
+
+    [JsonPropertyName("hasDefaultValue")]
+    public bool HasDefaultValue { get; set; }
+
+    [JsonPropertyName("defaultValue")]
+    public string? DefaultValue { get; set; }
+
+    [JsonPropertyName("allowedValues")]
+    public List<string>? AllowedValues { get; set; }
 
     [JsonPropertyName("valueType")]
     public string? ValueType { get; set; }

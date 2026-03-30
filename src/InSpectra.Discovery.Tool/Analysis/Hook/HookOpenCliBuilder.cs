@@ -91,39 +91,57 @@ internal static class HookOpenCliBuilder
         {
             if (opt.Name is null) continue;
 
-            // Skip built-in help/version options — OpenCLI convention doesn't include them.
-            if (opt.Name is "--help" or "--version")
-                continue;
-
             var node = new JsonObject
             {
                 ["name"] = opt.Name,
+                ["recursive"] = opt.Recursive,
+                ["hidden"] = opt.IsHidden,
             };
 
             if (!string.IsNullOrWhiteSpace(opt.Description))
-                node["description"] = opt.Description;
+            {
+                // Append default value to description (matching help-crawl format).
+                var desc = opt.Description;
+                if (opt.HasDefaultValue && opt.DefaultValue is not null)
+                    desc += $" [default: {opt.DefaultValue}]";
+                node["description"] = desc;
+            }
+
             if (opt.IsRequired)
                 node["required"] = true;
-            if (opt.IsHidden)
-                node["hidden"] = true;
-            if (opt.Recursive)
-                node["recursive"] = true;
 
             var aliases = BuildAliases(opt.Aliases, opt.Name);
             if (aliases.Count > 0)
                 node["aliases"] = aliases;
 
             // Arguments sub-node for the option's value.
-            if (opt.ValueType is not null && opt.ValueType != "Void" && opt.ValueType != "Boolean")
+            if (opt.ValueType is not null && opt.ValueType is not "Void")
             {
                 var argNode = new JsonObject();
-                if (opt.MinArity > 0 || opt.MaxArity > 0)
+
+                // Argument name (e.g., "SERVER", "COUNT") — matches help-crawl output.
+                var argName = opt.ArgumentName;
+                if (!string.IsNullOrWhiteSpace(argName))
+                    argNode["name"] = argName.ToUpperInvariant();
+
+                // Boolean options are flags — arity 0..1, not required.
+                var isFlag = opt.ValueType == "Boolean";
+                argNode["required"] = !isFlag && opt.MinArity > 0;
+
+                argNode["arity"] = new JsonObject
                 {
-                    argNode["arity"] = new JsonObject
-                    {
-                        ["min"] = opt.MinArity,
-                        ["max"] = opt.MaxArity,
-                    };
+                    ["minimum"] = opt.MinArity,
+                    ["maximum"] = opt.MaxArity,
+                };
+
+                if (opt.ValueType is not null)
+                    argNode["type"] = opt.ValueType;
+
+                if (opt.AllowedValues is { Count: > 0 })
+                {
+                    var valuesArray = new JsonArray();
+                    foreach (var v in opt.AllowedValues) valuesArray.Add(v);
+                    argNode["allowedValues"] = valuesArray;
                 }
 
                 node["arguments"] = new JsonArray { argNode };
@@ -145,16 +163,35 @@ internal static class HookOpenCliBuilder
             };
 
             if (!string.IsNullOrWhiteSpace(arg.Description))
-                node["description"] = arg.Description;
+            {
+                var desc = arg.Description;
+                if (arg.HasDefaultValue && arg.DefaultValue is not null)
+                    desc += $" [default: {arg.DefaultValue}]";
+                node["description"] = desc;
+            }
+
             if (arg.IsHidden)
                 node["hidden"] = true;
+
+            node["required"] = arg.MinArity > 0;
+
             if (arg.MinArity > 0 || arg.MaxArity > 0)
             {
                 node["arity"] = new JsonObject
                 {
-                    ["min"] = arg.MinArity,
-                    ["max"] = arg.MaxArity,
+                    ["minimum"] = arg.MinArity,
+                    ["maximum"] = arg.MaxArity,
                 };
+            }
+
+            if (arg.ValueType is not null)
+                node["type"] = arg.ValueType;
+
+            if (arg.AllowedValues is { Count: > 0 })
+            {
+                var valuesArray = new JsonArray();
+                foreach (var v in arg.AllowedValues) valuesArray.Add(v);
+                node["allowedValues"] = valuesArray;
             }
 
             array.Add(node);

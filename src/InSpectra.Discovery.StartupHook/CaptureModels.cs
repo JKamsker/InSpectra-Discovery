@@ -73,6 +73,18 @@ internal sealed class CapturedOption
 
     [JsonPropertyName("recursive")]
     public bool Recursive { get; set; }
+
+    [JsonPropertyName("argumentName")]
+    public string? ArgumentName { get; set; }
+
+    [JsonPropertyName("hasDefaultValue")]
+    public bool HasDefaultValue { get; set; }
+
+    [JsonPropertyName("defaultValue")]
+    public string? DefaultValue { get; set; }
+
+    [JsonPropertyName("allowedValues")]
+    public List<string>? AllowedValues { get; set; }
 }
 
 internal sealed class CapturedArgument
@@ -94,4 +106,13 @@ internal sealed class CapturedArgument
 
     [JsonPropertyName("valueType")]
     public string? ValueType { get; set; }
+
+    [JsonPropertyName("hasDefaultValue")]
+    public bool HasDefaultValue { get; set; }
+
+    [JsonPropertyName("defaultValue")]
+    public string? DefaultValue { get; set; }
+
+    [JsonPropertyName("allowedValues")]
+    public List<string>? AllowedValues { get; set; }
 }

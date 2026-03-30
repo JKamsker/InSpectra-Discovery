@@ -5,7 +5,6 @@ internal static class CommandTreeWalker
 {
     public static CapturedCommand Walk(object command, Assembly sclAssembly)
     {
-        var commandType = command.GetType();
         var captured = new CapturedCommand
         {
             Name = GetProperty<string>(command, "Name"),
@@ -14,38 +13,22 @@ internal static class CommandTreeWalker
         };
 
         // Aliases
-        var aliases = GetProperty<IEnumerable>(command, "Aliases");
-        if (aliases is not null)
-        {
-            foreach (var alias in aliases)
-            {
-                if (alias is string s)
-                    captured.Aliases.Add(s);
-            }
-        }
+        foreach (var alias in GetEnumerable<string>(command, "Aliases"))
+            captured.Aliases.Add(alias);
 
         // Options
-        var options = GetProperty<IEnumerable>(command, "Options");
-        if (options is not null)
-        {
-            foreach (var option in options)
-                captured.Options.Add(WalkOption(option));
-        }
+        foreach (var option in GetEnumerable<object>(command, "Options"))
+            captured.Options.Add(WalkOption(option));
 
         // Arguments
-        var arguments = GetProperty<IEnumerable>(command, "Arguments");
-        if (arguments is not null)
-        {
-            foreach (var argument in arguments)
-                captured.Arguments.Add(WalkArgument(argument));
-        }
+        foreach (var argument in GetEnumerable<object>(command, "Arguments"))
+            captured.Arguments.Add(WalkArgument(argument));
 
         // Subcommands - property name varies: "Subcommands" (newer) or "Children" (older).
         var subcommands = GetProperty<IEnumerable>(command, "Subcommands")
                        ?? GetProperty<IEnumerable>(command, "Children");
         if (subcommands is not null)
         {
-            // "Children" may include Options and Arguments mixed in; filter to Command types.
             var commandBaseType = sclAssembly.GetType("System.CommandLine.Command");
             foreach (var child in subcommands)
             {
@@ -69,63 +52,138 @@ internal static class CommandTreeWalker
         };
 
         // Aliases
-        var aliases = GetProperty<IEnumerable>(option, "Aliases");
-        if (aliases is not null)
-        {
-            foreach (var alias in aliases)
-            {
-                if (alias is string s)
-                    captured.Aliases.Add(s);
-            }
-        }
+        foreach (var alias in GetEnumerable<string>(option, "Aliases"))
+            captured.Aliases.Add(alias);
 
-        // ValueType - may be directly on Option or on its Argument property.
+        // ValueType — may be on Option directly or on its inner Argument.
         var valueType = GetProperty<Type>(option, "ValueType");
-        if (valueType is null)
+        var innerArgument = GetProperty<object>(option, "Argument");
+        if (valueType is null && innerArgument is not null)
+            valueType = GetProperty<Type>(innerArgument, "ValueType");
+        captured.ValueType = FormatTypeName(valueType);
+
+        // Argument name — the display name shown in help (e.g., "SERVER", "COUNT").
+        // In S.CL, each Option has an inner Argument with a Name property.
+        if (innerArgument is not null)
         {
-            var argument = GetProperty<object>(option, "Argument");
-            if (argument is not null)
-                valueType = GetProperty<Type>(argument, "ValueType");
+            captured.ArgumentName = GetProperty<string>(innerArgument, "Name");
+            (captured.HasDefaultValue, captured.DefaultValue) = ReadDefaultValue(innerArgument);
+            captured.AllowedValues = ReadAllowedValues(innerArgument, valueType);
         }
-        captured.ValueType = valueType?.Name;
+        else
+        {
+            (captured.HasDefaultValue, captured.DefaultValue) = ReadDefaultValue(option);
+            captured.AllowedValues = ReadAllowedValues(option, valueType);
+        }
 
         // Arity
-        ReadArity(option, captured);
+        (captured.MinArity, captured.MaxArity) = ReadArity(option);
 
         return captured;
     }
 
     private static CapturedArgument WalkArgument(object argument)
     {
+        var valueType = GetProperty<Type>(argument, "ValueType");
         var captured = new CapturedArgument
         {
             Name = GetProperty<string>(argument, "Name"),
             Description = GetProperty<string>(argument, "Description"),
             IsHidden = GetProperty<bool>(argument, "IsHidden"),
+            ValueType = FormatTypeName(valueType),
         };
 
-        var valueType = GetProperty<Type>(argument, "ValueType");
-        captured.ValueType = valueType?.Name;
-
-        ReadArity(argument, captured);
+        (captured.MinArity, captured.MaxArity) = ReadArity(argument);
+        (captured.HasDefaultValue, captured.DefaultValue) = ReadDefaultValue(argument);
+        captured.AllowedValues = ReadAllowedValues(argument, valueType);
 
         return captured;
     }
 
-    private static void ReadArity(object source, CapturedOption target)
+    private static (int Min, int Max) ReadArity(object source)
     {
         var arity = GetProperty<object>(source, "Arity");
-        if (arity is null) return;
-        target.MinArity = GetProperty<int>(arity, "MinimumNumberOfValues");
-        target.MaxArity = GetProperty<int>(arity, "MaximumNumberOfValues");
+        if (arity is null) return (0, 0);
+        return (GetProperty<int>(arity, "MinimumNumberOfValues"), GetProperty<int>(arity, "MaximumNumberOfValues"));
     }
 
-    private static void ReadArity(object source, CapturedArgument target)
+    private static (bool HasDefault, string? DefaultValue) ReadDefaultValue(object source)
     {
-        var arity = GetProperty<object>(source, "Arity");
-        if (arity is null) return;
-        target.MinArity = GetProperty<int>(arity, "MinimumNumberOfValues");
-        target.MaxArity = GetProperty<int>(arity, "MaximumNumberOfValues");
+        try
+        {
+            var hasDefault = GetProperty<bool>(source, "HasDefaultValue");
+            if (!hasDefault) return (false, null);
+
+            var method = source.GetType().GetMethod("GetDefaultValue",
+                BindingFlags.Public | BindingFlags.Instance, null, Type.EmptyTypes, null);
+            if (method is not null)
+            {
+                var value = method.Invoke(source, null);
+                return (true, value?.ToString());
+            }
+
+            return (true, null);
+        }
+        catch
+        {
+            return (false, null);
+        }
+    }
+
+    private static List<string>? ReadAllowedValues(object source, Type? valueType)
+    {
+        // If the value type is an enum, extract all enum names as allowed values.
+        if (valueType is null || !valueType.IsEnum) return null;
+
+        try
+        {
+            return Enum.GetNames(valueType).ToList();
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? FormatTypeName(Type? type)
+    {
+        if (type is null) return null;
+
+        // Unwrap Nullable<T>
+        var underlying = Nullable.GetUnderlyingType(type);
+        if (underlying is not null) type = underlying;
+
+        // Friendly names for common types
+        return type.Name switch
+        {
+            "String" => "String",
+            "Int32" => "Int32",
+            "Int64" => "Int64",
+            "Boolean" => "Boolean",
+            "Double" => "Double",
+            "Single" => "Float",
+            "Decimal" => "Decimal",
+            "DateTime" => "DateTime",
+            "DateTimeOffset" => "DateTimeOffset",
+            "TimeSpan" => "TimeSpan",
+            "Guid" => "Guid",
+            "Uri" => "Uri",
+            "FileInfo" => "FileInfo",
+            "DirectoryInfo" => "DirectoryInfo",
+            _ when type.IsEnum => type.Name,
+            _ when type.IsArray => $"{FormatTypeName(type.GetElementType())}[]",
+            _ => type.Name,
+        };
+    }
+
+    private static IEnumerable<T> GetEnumerable<T>(object obj, string name)
+    {
+        var enumerable = GetProperty<IEnumerable>(obj, name);
+        if (enumerable is null) yield break;
+        foreach (var item in enumerable)
+        {
+            if (item is T t) yield return t;
+        }
     }
 
     private static T? GetProperty<T>(object obj, string name)
