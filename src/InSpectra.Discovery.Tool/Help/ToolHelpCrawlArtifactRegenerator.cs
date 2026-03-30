@@ -5,7 +5,10 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
     private readonly ToolHelpOpenCliBuilder _openCliBuilder = new();
     private readonly ToolHelpTextParser _parser = new();
 
-    public HelpCrawlArtifactRegenerationResult RegenerateRepository(string repositoryRoot)
+    public HelpCrawlArtifactRegenerationResult RegenerateRepository(
+        string repositoryRoot,
+        ArtifactRegenerationScope? scope = null,
+        bool rebuildIndexes = true)
     {
         var root = RepositoryPathResolver.ResolveRepositoryRoot(repositoryRoot);
         var packagesRoot = Path.Combine(root, "index", "packages");
@@ -14,7 +17,12 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             return new HelpCrawlArtifactRegenerationResult(0, 0, 0, 0, 0, [], []);
         }
 
-        var candidates = EnumerateCandidates(root, packagesRoot).ToList();
+        var metadataPaths = ArtifactRegenerationMetadataPathSupport.EnumerateMetadataPaths(packagesRoot, scope);
+        var candidates = metadataPaths
+            .Select(path => TryCreateCandidate(root, path))
+            .Where(candidate => candidate is not null)
+            .Select(candidate => candidate!)
+            .ToList();
         var rewritten = new List<string>();
         var failed = new List<string>();
         var unchangedCount = 0;
@@ -71,14 +79,13 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
             }
         }
 
-        if (candidates.Count > 0)
+        if (rebuildIndexes && candidates.Count > 0)
         {
             RepositoryPackageIndexBuilder.Rebuild(root, writeBrowserIndex: true);
         }
 
         return new HelpCrawlArtifactRegenerationResult(
-            ScannedCount: Directory.GetFiles(packagesRoot, "metadata.json", SearchOption.AllDirectories)
-                .Count(path => !string.Equals(Path.GetFileName(Path.GetDirectoryName(path)), "latest", StringComparison.OrdinalIgnoreCase)),
+            ScannedCount: metadataPaths.Count,
             CandidateCount: candidates.Count,
             RewrittenCount: rewritten.Count,
             UnchangedCount: unchangedCount,
@@ -312,14 +319,6 @@ internal sealed class ToolHelpCrawlArtifactRegenerator
 
         return documents;
     }
-
-    private static IEnumerable<HelpCrawlArtifactCandidate> EnumerateCandidates(string repositoryRoot, string packagesRoot)
-        => Directory.GetFiles(packagesRoot, "metadata.json", SearchOption.AllDirectories)
-            .Where(path => !string.Equals(Path.GetFileName(Path.GetDirectoryName(path)), "latest", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-            .Select(path => TryCreateCandidate(repositoryRoot, path))
-            .Where(candidate => candidate is not null)
-            .Select(candidate => candidate!);
 
     private static HelpCrawlArtifactCandidate? TryCreateCandidate(string repositoryRoot, string metadataPath)
     {
