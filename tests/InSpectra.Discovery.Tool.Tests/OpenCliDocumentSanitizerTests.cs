@@ -302,4 +302,71 @@ public sealed class OpenCliDocumentSanitizerTests
             "JSON file containing XAML Styler settings\nconfiguration.",
             config!["description"]?.GetValue<string>());
     }
+
+    [Fact]
+    public void Sanitize_Merges_Standalone_Alias_Into_Richer_Option()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "-c",
+                },
+                new JsonObject
+                {
+                    ["name"] = "--config",
+                    ["aliases"] = new JsonArray("-c"),
+                    ["description"] = "Configuration file to load.",
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var config = Assert.Single(document["options"]!.AsArray());
+        Assert.Equal("--config", config!["name"]?.GetValue<string>());
+        Assert.Equal("Configuration file to load.", config["description"]?.GetValue<string>());
+        Assert.Contains(config["aliases"]!.AsArray(), alias => string.Equals(alias?.GetValue<string>(), "-c", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Sanitize_Does_Not_Merge_Different_Informational_Options_That_Only_Share_A_Primary_Name()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--help",
+                    ["aliases"] = new JsonArray("-h"),
+                    ["description"] = "Show help information.",
+                },
+                new JsonObject
+                {
+                    ["name"] = "--help",
+                    ["aliases"] = new JsonArray("/?"),
+                    ["description"] = "Show help information.",
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        Assert.Equal(2, document["options"]!.AsArray().Count);
+    }
 }
