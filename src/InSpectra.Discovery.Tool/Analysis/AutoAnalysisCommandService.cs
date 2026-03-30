@@ -355,24 +355,14 @@ internal sealed class AutoAnalysisCommandService
             return 0;
         }
 
-        var output = ToolRuntime.CreateOutput();
-        return await output.WriteSuccessAsync(
-            new
-            {
-                packageId,
-                version,
-                analysisMode = result["analysisMode"]?.GetValue<string>(),
-                disposition = result["disposition"]?.GetValue<string>(),
-                resultPath,
-            },
-            [
-                new SummaryRow("Package", $"{packageId} {version}"),
-                new SummaryRow("Mode", result["analysisMode"]?.GetValue<string>() ?? string.Empty),
-                new SummaryRow("Disposition", result["disposition"]?.GetValue<string>() ?? string.Empty),
-                new SummaryRow("Result artifact", resultPath),
-            ],
+        return await AnalysisCommandOutputSupport.WriteResultAsync(
+            packageId,
+            version,
+            resultPath,
+            result["disposition"]?.GetValue<string>(),
             json,
-            cancellationToken);
+            cancellationToken,
+            result["analysisMode"]?.GetValue<string>());
     }
 
     private sealed class AutoAnalysisNativeRunnerAdapter : IAutoAnalysisNativeRunner

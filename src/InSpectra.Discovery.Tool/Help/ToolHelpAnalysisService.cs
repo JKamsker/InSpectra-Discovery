@@ -76,23 +76,14 @@ internal sealed class ToolHelpAnalysisService
         try
         {
             using var scope = ToolRuntime.CreateNuGetApiClientScope();
-            var (registrationLeaf, catalogLeaf) = await PackageVersionResolver.ResolveAsync(scope.Client, packageId, version, cancellationToken);
-            result["packageUrl"] = $"https://www.nuget.org/packages/{packageId}/{version}";
-            result["projectUrl"] = catalogLeaf.ProjectUrl;
-            result["sourceRepositoryUrl"] = PackageVersionResolver.NormalizeRepositoryUrl(catalogLeaf.Repository?.Url);
-            result["nugetTitle"] = catalogLeaf.Title;
-            result["nugetDescription"] = catalogLeaf.Description;
-            result["registrationLeafUrl"] = registrationLeaf.Id;
-            result["catalogEntryUrl"] = registrationLeaf.CatalogEntryUrl;
-            result["packageContentUrl"] = registrationLeaf.PackageContent;
-            result["publishedAt"] = registrationLeaf.Published?.ToUniversalTime().ToString("O");
-
-            var resolvedCommandName = commandName;
-            if (string.IsNullOrWhiteSpace(resolvedCommandName))
-            {
-                var packageInspection = await new PackageArchiveInspector(scope.Client).InspectAsync(registrationLeaf.PackageContent, cancellationToken);
-                resolvedCommandName = packageInspection.ToolCommandNames.FirstOrDefault();
-            }
+            var bootstrap = await NonSpectreAnalysisBootstrapSupport.PopulateResultAsync(
+                result,
+                scope.Client,
+                packageId,
+                version,
+                commandName,
+                cancellationToken);
+            var resolvedCommandName = bootstrap.CommandName;
             if (string.IsNullOrWhiteSpace(resolvedCommandName))
             {
                 NonSpectreAnalysisResultSupport.ApplyRetryableFailure(
@@ -162,20 +153,11 @@ internal sealed class ToolHelpAnalysisService
             return 0;
         }
 
-        var output = ToolRuntime.CreateOutput();
-        return await output.WriteSuccessAsync(
-            new
-            {
-                packageId,
-                version,
-                disposition = result["disposition"]?.GetValue<string>(),
-                resultPath,
-            },
-            [
-                new SummaryRow("Package", $"{packageId} {version}"),
-                new SummaryRow("Disposition", result["disposition"]?.GetValue<string>() ?? string.Empty),
-                new SummaryRow("Result artifact", resultPath),
-            ],
+        return await AnalysisCommandOutputSupport.WriteResultAsync(
+            packageId,
+            version,
+            resultPath,
+            result["disposition"]?.GetValue<string>(),
             json,
             cancellationToken);
     }
