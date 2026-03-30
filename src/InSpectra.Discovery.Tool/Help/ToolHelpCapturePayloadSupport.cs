@@ -35,6 +35,43 @@ internal static class ToolHelpCapturePayloadSupport
         return bestCandidate;
     }
 
+    public static SelectedToolHelpPayload SelectBestProcessCapture(
+        ToolHelpTextParser parser,
+        IReadOnlyList<string> commandSegments,
+        IReadOnlyList<string> invokedArguments,
+        ToolCommandRuntime.ProcessResult processResult)
+    {
+        var helpInvocation = invokedArguments.Count == 0
+            ? null
+            : string.Join(' ', invokedArguments);
+        var candidates = EnumeratePayloadCandidates(processResult);
+        ToolHelpDocument? bestDocument = null;
+        var bestPayload = candidates.FirstOrDefault();
+        var bestScore = -1;
+
+        foreach (var payload in candidates)
+        {
+            var document = parser.Parse(payload);
+            var compatibleDocument = document.HasContent && ToolHelpDocumentInspector.IsCompatible(commandSegments, document)
+                ? document
+                : null;
+            var score = compatibleDocument is not null
+                ? ToolHelpDocumentInspector.Score(compatibleDocument) - GetPayloadSelectionPenalty(payload, helpInvocation)
+                : 0;
+            if (score <= bestScore)
+            {
+                continue;
+            }
+
+            bestScore = score;
+            bestDocument = compatibleDocument;
+            bestPayload = payload;
+        }
+
+        var isTerminalNonHelp = bestDocument is null && candidates.Any(ToolHelpDocumentInspector.LooksLikeTerminalNonHelpPayload);
+        return new(bestDocument, bestPayload, isTerminalNonHelp);
+    }
+
     private static int ScorePayloadCandidate(
         string storedCommand,
         ToolHelpDocument document,
@@ -94,35 +131,44 @@ internal static class ToolHelpCapturePayloadSupport
             : 0;
     }
 
+    private static IReadOnlyList<string> EnumeratePayloadCandidates(ToolCommandRuntime.ProcessResult processResult)
+        => EnumeratePayloadCandidates(
+            storedPayload: null,
+            stdout: ToolCommandRuntime.NormalizeConsoleText(processResult.Stdout),
+            stderr: ToolCommandRuntime.NormalizeConsoleText(processResult.Stderr));
+
     private static IReadOnlyList<string> EnumeratePayloadCandidates(JsonObject capture)
+        => EnumeratePayloadCandidates(
+            storedPayload: ToolCommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>()),
+            stdout: capture["result"] is JsonObject processResult
+                ? ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>())
+                : null,
+            stderr: capture["result"] is JsonObject processResultValue
+                ? ToolCommandRuntime.NormalizeConsoleText(processResultValue["stderr"]?.GetValue<string>())
+                : null);
+
+    private static IReadOnlyList<string> EnumeratePayloadCandidates(string? storedPayload, string? stdout, string? stderr)
     {
         var payloads = new List<string>();
-        var storedPayload = ToolCommandRuntime.NormalizeConsoleText(capture["payload"]?.GetValue<string>());
         if (!string.IsNullOrWhiteSpace(storedPayload))
         {
             payloads.Add(storedPayload);
         }
 
-        if (capture["result"] is JsonObject processResult)
+        if (!string.IsNullOrWhiteSpace(stdout))
         {
-            var stdout = ToolCommandRuntime.NormalizeConsoleText(processResult["stdout"]?.GetValue<string>());
-            var stderr = ToolCommandRuntime.NormalizeConsoleText(processResult["stderr"]?.GetValue<string>());
+            payloads.Add(stdout);
+        }
 
-            if (!string.IsNullOrWhiteSpace(stdout))
-            {
-                payloads.Add(stdout);
-            }
+        if (!string.IsNullOrWhiteSpace(stderr))
+        {
+            payloads.Add(stderr);
+        }
 
-            if (!string.IsNullOrWhiteSpace(stderr))
-            {
-                payloads.Add(stderr);
-            }
-
-            if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
-            {
-                payloads.Add($"{stdout}\n{stderr}");
-                payloads.Add($"{stderr}\n{stdout}");
-            }
+        if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
+        {
+            payloads.Add($"{stdout}\n{stderr}");
+            payloads.Add($"{stderr}\n{stdout}");
         }
 
         return payloads.Distinct(StringComparer.Ordinal).ToArray();
@@ -130,3 +176,4 @@ internal static class ToolHelpCapturePayloadSupport
 }
 
 internal sealed record SelectedToolHelpCapture(string CommandKey, ToolHelpDocument Document);
+internal sealed record SelectedToolHelpPayload(ToolHelpDocument? Document, string? Payload, bool IsTerminalNonHelp);

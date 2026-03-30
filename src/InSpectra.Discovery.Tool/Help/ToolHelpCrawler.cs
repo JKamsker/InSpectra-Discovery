@@ -32,7 +32,7 @@ internal sealed class ToolHelpCrawler
         while (queue.Count > 0)
         {
             var commandSegments = queue.Dequeue();
-            var key = GetKey(commandSegments);
+            var key = ToolHelpInvocationSupport.GetCommandKey(commandSegments);
             if (documents.ContainsKey(key))
             {
                 continue;
@@ -58,7 +58,7 @@ internal sealed class ToolHelpCrawler
             {
                 var resolvedChildKey = ToolHelpCommandPathSupport.ResolveChildKey(commandPath, key, child.Key);
                 var childSegments = ToolHelpCommandPathSupport.SplitSegments(resolvedChildKey);
-                var childKey = GetKey(childSegments);
+                var childKey = ToolHelpInvocationSupport.GetCommandKey(childSegments);
                 if (ToolHelpDocumentInspector.IsBuiltinAuxiliaryCommandPath(childKey))
                 {
                     continue;
@@ -83,7 +83,7 @@ internal sealed class ToolHelpCrawler
         CancellationToken cancellationToken)
     {
         ToolHelpCapture? bestCapture = null;
-        foreach (var candidate in BuildHelpInvocations(commandSegments))
+        foreach (var candidate in ToolHelpInvocationSupport.BuildHelpInvocations(commandSegments))
         {
             var processResult = await _runtime.InvokeProcessCaptureAsync(
                 commandPath,
@@ -119,101 +119,19 @@ internal sealed class ToolHelpCrawler
         IReadOnlyList<string> invokedArguments,
         ToolCommandRuntime.ProcessResult processResult)
     {
-        var candidates = SelectPayloadCandidates(processResult);
-        ToolHelpDocument? bestDocument = null;
-        var bestPayload = candidates.FirstOrDefault();
-        var bestScore = -1;
         var helpInvocation = invokedArguments.Count == 0
             ? null
             : string.Join(' ', invokedArguments);
-
-        foreach (var payload in candidates)
-        {
-            var document = _parser.Parse(payload);
-            var compatibleDocument = document.HasContent && ToolHelpDocumentInspector.IsCompatible(commandSegments, document)
-                ? document
-                : null;
-            var score = compatibleDocument is not null
-                ? ToolHelpDocumentInspector.Score(compatibleDocument) - GetPayloadSelectionPenalty(payload, helpInvocation)
-                : 0;
-            if (score <= bestScore)
-            {
-                continue;
-            }
-
-            bestScore = score;
-            bestDocument = compatibleDocument;
-            bestPayload = payload;
-        }
-
-        var isTerminalNonHelp = bestDocument is null && candidates.Any(ToolHelpDocumentInspector.LooksLikeTerminalNonHelpPayload);
-        return new ToolHelpCapture(helpInvocation, processResult, bestDocument, bestPayload, isTerminalNonHelp);
+        var selection = ToolHelpCapturePayloadSupport.SelectBestProcessCapture(
+            _parser,
+            commandSegments,
+            invokedArguments,
+            processResult);
+        return new ToolHelpCapture(helpInvocation, processResult, selection.Document, selection.Payload, selection.IsTerminalNonHelp);
     }
 
     internal static IReadOnlyList<string[]> BuildHelpInvocations(IReadOnlyList<string> commandSegments)
-    {
-        var invocations = new List<string[]>
-        {
-            commandSegments.Concat(new[] { "--help" }).ToArray(),
-            commandSegments.Concat(new[] { "-h" }).ToArray(),
-            commandSegments.Concat(new[] { "-?" }).ToArray(),
-            commandSegments.Concat(new[] { "/help" }).ToArray(),
-            commandSegments.Concat(new[] { "/?" }).ToArray(),
-        };
-
-        invocations.AddRange(BuildKeywordHelpInvocations(commandSegments));
-        invocations.Add(commandSegments.ToArray());
-
-        return invocations
-            .Distinct(new ToolHelpInvocationComparer())
-            .ToArray();
-    }
-
-    private static IEnumerable<string[]> BuildKeywordHelpInvocations(IReadOnlyList<string> commandSegments)
-    {
-        if (commandSegments.Count == 0)
-        {
-            yield return ["help"];
-            yield break;
-        }
-
-        yield return (new[] { "help" }).Concat(commandSegments).ToArray();
-
-        for (var index = 1; index < commandSegments.Count; index++)
-        {
-            yield return commandSegments.Take(index)
-                .Concat(new[] { "help" })
-                .Concat(commandSegments.Skip(index))
-                .ToArray();
-        }
-
-        yield return commandSegments.Concat(new[] { "help" }).ToArray();
-    }
-
-    private static IReadOnlyList<string> SelectPayloadCandidates(ToolCommandRuntime.ProcessResult processResult)
-    {
-        var stdout = ToolCommandRuntime.NormalizeConsoleText(processResult.Stdout);
-        var stderr = ToolCommandRuntime.NormalizeConsoleText(processResult.Stderr);
-        var payloads = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(stdout))
-        {
-            payloads.Add(stdout);
-        }
-
-        if (!string.IsNullOrWhiteSpace(stderr))
-        {
-            payloads.Add(stderr);
-        }
-
-        if (!string.IsNullOrWhiteSpace(stdout) && !string.IsNullOrWhiteSpace(stderr))
-        {
-            payloads.Add($"{stdout}\n{stderr}");
-            payloads.Add($"{stderr}\n{stdout}");
-        }
-
-        return payloads.Distinct(StringComparer.Ordinal).ToArray();
-    }
+        => ToolHelpInvocationSupport.BuildHelpInvocations(commandSegments);
 
     private static int Score(ToolHelpCapture capture)
     {
@@ -234,33 +152,6 @@ internal sealed class ToolHelpCrawler
 
         return capture.ProcessResult?.ExitCode is 0 ? 1 : 2;
     }
-
-    private static int GetPayloadSelectionPenalty(string payload, string? helpInvocation)
-    {
-        if (string.IsNullOrWhiteSpace(payload) || string.IsNullOrWhiteSpace(helpInvocation))
-        {
-            return 0;
-        }
-
-        var lines = payload
-            .Replace("\r\n", "\n", StringComparison.Ordinal)
-            .Replace('\r', '\n')
-            .Split('\n')
-            .Select(line => line.Trim())
-            .Where(line => line.Length > 0)
-            .ToArray();
-        var edgeLines = lines
-            .Take(4)
-            .Concat(lines.TakeLast(4))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        return edgeLines.Any(line => string.Equals(line, helpInvocation, StringComparison.OrdinalIgnoreCase))
-            ? 50
-            : 0;
-    }
-
-    private static string GetKey(IReadOnlyList<string> commandSegments)
-        => commandSegments.Count == 0 ? string.Empty : string.Join(' ', commandSegments);
 
     internal sealed record ToolHelpCrawlResult(
         IReadOnlyDictionary<string, ToolHelpDocument> Documents,
