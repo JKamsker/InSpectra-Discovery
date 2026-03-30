@@ -75,8 +75,8 @@ internal static class PromotionSuccessArtifactValidationSupport
                 ? "Success result did not include a usable crawl.json artifact."
                 : "Success result did not include either opencli.json or xmldoc.xml.";
 
-        return new PromotionSuccessArtifactValidationOutcome(
-            PromotionResultSupport.NewSyntheticFailureResult(
+            return new PromotionSuccessArtifactValidationOutcome(
+            PromotionFailureResultSupport.NewSyntheticFailureResult(
                 item,
                 result["attempt"]?.GetValue<int?>() ?? item["attempt"]?.GetValue<int?>() ?? 1,
                 "missing-success-artifact",

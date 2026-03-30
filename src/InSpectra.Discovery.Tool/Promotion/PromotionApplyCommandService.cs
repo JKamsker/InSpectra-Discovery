@@ -38,14 +38,14 @@ internal sealed class PromotionApplyCommandService
             var hasResultArtifact = resultLookup.TryResolve(item, out var resultEntry);
             var result = hasResultArtifact
                 ? resultEntry!.Result
-                : PromotionResultSupport.NewSyntheticFailureResult(
+                : PromotionFailureResultSupport.NewSyntheticFailureResult(
                     item,
                     item["attempt"]?.GetValue<int?>() ?? 1,
                     "missing-result-artifact",
                     "No result artifact was uploaded for this matrix item.",
                     plan.BatchId ?? string.Empty,
                     now);
-            PromotionResultSupport.MergePlanItemIntoResult(item, result);
+            PromotionPlanItemMergeSupport.MergeIntoResult(item, result);
             var artifactDirectory = hasResultArtifact ? resultEntry!.ArtifactDirectory : null;
             if (!hasResultArtifact)
             {
@@ -87,14 +87,14 @@ internal sealed class PromotionApplyCommandService
                 }
                 catch (Exception ex)
                 {
-                    result = PromotionResultSupport.NewSyntheticFailureResult(
+                    result = PromotionFailureResultSupport.NewSyntheticFailureResult(
                         item,
                         result["attempt"]?.GetValue<int?>() ?? item["attempt"]?.GetValue<int?>() ?? 1,
                         "invalid-success-artifact",
                         $"Success artifacts could not be promoted: {ex.Message}",
                         plan.BatchId ?? string.Empty,
                         now);
-                    PromotionResultSupport.MergePlanItemIntoResult(item, result);
+                    PromotionPlanItemMergeSupport.MergeIntoResult(item, result);
                 }
             }
 
@@ -103,11 +103,11 @@ internal sealed class PromotionApplyCommandService
                 PromotionIndexCleanupSupport.RemoveIndexedVersionArtifacts(packagesRoot, packageId, version);
             }
 
-            var stateRecord = PromotionResultSupport.UpdateStateRecord(existingState, result, indexedPaths, now);
+            var stateRecord = PromotionStateRecordSupport.UpdateStateRecord(existingState, result, indexedPaths, now);
             RepositoryPathResolver.WriteJsonFile(statePath, stateRecord);
 
-            PromotionResultSupport.IncrementSummaryCount(summary, stateRecord["currentStatus"]?.GetValue<string>());
-            PromotionResultSupport.UpdatePackageChangeSummary(summary, existingPackageIndex, result);
+            PromotionSummarySupport.IncrementSummaryCount(summary, stateRecord["currentStatus"]?.GetValue<string>());
+            PromotionSummarySupport.UpdatePackageChangeSummary(summary, existingPackageIndex, result);
 
             if (!string.Equals(stateRecord["currentStatus"]?.GetValue<string>(), "success", StringComparison.Ordinal))
             {
@@ -119,7 +119,7 @@ internal sealed class PromotionApplyCommandService
                     ["disposition"] = result["disposition"]?.GetValue<string>(),
                     ["phase"] = result["phase"]?.GetValue<string>(),
                     ["classification"] = result["classification"]?.GetValue<string>(),
-                    ["reason"] = PromotionResultSupport.GetNonSuccessReason(result, stateRecord),
+                    ["reason"] = PromotionFailureResultSupport.GetNonSuccessReason(result, stateRecord),
                 });
             }
         }
