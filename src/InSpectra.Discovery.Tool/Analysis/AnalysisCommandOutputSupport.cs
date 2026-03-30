@@ -7,7 +7,9 @@ internal static class AnalysisCommandOutputSupport
         string? disposition,
         bool json,
         CancellationToken cancellationToken,
-        string? analysisMode = null)
+        string? analysisMode = null,
+        string? selectionReason = null,
+        string? fallbackFrom = null)
     {
         var output = ToolRuntime.CreateOutput();
         return output.WriteSuccessAsync(
@@ -15,9 +17,11 @@ internal static class AnalysisCommandOutputSupport
                 packageId,
                 version,
                 analysisMode,
+                selectionReason,
+                fallbackFrom,
                 disposition,
                 resultPath),
-            BuildSummaryRows(packageId, version, resultPath, disposition, analysisMode),
+            BuildSummaryRows(packageId, version, resultPath, disposition, analysisMode, selectionReason, fallbackFrom),
             json,
             cancellationToken);
     }
@@ -27,7 +31,9 @@ internal static class AnalysisCommandOutputSupport
         string version,
         string resultPath,
         string? disposition,
-        string? analysisMode)
+        string? analysisMode,
+        string? selectionReason,
+        string? fallbackFrom)
     {
         var rows = new List<SummaryRow>
         {
@@ -39,6 +45,16 @@ internal static class AnalysisCommandOutputSupport
             rows.Add(new SummaryRow("Mode", analysisMode));
         }
 
+        if (!string.IsNullOrWhiteSpace(fallbackFrom))
+        {
+            rows.Add(new SummaryRow("Fallback from", fallbackFrom));
+        }
+
+        if (!string.IsNullOrWhiteSpace(selectionReason))
+        {
+            rows.Add(new SummaryRow("Selection reason", selectionReason));
+        }
+
         rows.Add(new SummaryRow("Disposition", disposition ?? string.Empty));
         rows.Add(new SummaryRow("Result artifact", resultPath));
         return rows;
@@ -48,6 +64,8 @@ internal static class AnalysisCommandOutputSupport
         string PackageId,
         string Version,
         string? AnalysisMode,
+        string? SelectionReason,
+        string? FallbackFrom,
         string? Disposition,
         string ResultPath);
 }
