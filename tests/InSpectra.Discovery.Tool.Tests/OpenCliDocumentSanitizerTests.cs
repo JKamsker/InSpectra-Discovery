@@ -244,6 +244,55 @@ public sealed class OpenCliDocumentSanitizerTests
     }
 
     [Fact]
+    public void Sanitize_Merges_WellKnown_Informational_Option_By_Name_When_Descriptions_Drift()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Display Retype information",
+                    ["aliases"] = new JsonArray("-v"),
+                },
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Retype build information",
+                    ["arguments"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["required"] = false,
+                            ["arity"] = new JsonObject
+                            {
+                                ["minimum"] = 0,
+                                ["maximum"] = 1,
+                            },
+                            ["type"] = "Boolean",
+                        },
+                    },
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var version = Assert.Single(document["options"]!.AsArray())!;
+        Assert.Equal("--version", version["name"]?.GetValue<string>());
+        Assert.Equal("Display Retype information", version["description"]?.GetValue<string>());
+        Assert.Equal("-v", Assert.Single(version["aliases"]!.AsArray())!.GetValue<string>());
+        Assert.Null(version["arguments"]);
+    }
+
+    [Fact]
     public void Sanitize_Trims_Trailing_Noise_From_Single_Informational_Option()
     {
         var document = new JsonObject

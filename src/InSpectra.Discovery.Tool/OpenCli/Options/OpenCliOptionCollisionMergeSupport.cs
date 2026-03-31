@@ -30,8 +30,8 @@ internal static class OpenCliOptionCollisionMergeSupport
 
         var leftDescription = OpenCliOptionDescriptionSupport.NormalizeDescription(leftEntry.Option["description"]?.GetValue<string>());
         var rightDescription = OpenCliOptionDescriptionSupport.NormalizeDescription(rightOption["description"]?.GetValue<string>());
-        var leftInformational = OpenCliOptionDescriptionSupport.IsInformationalOptionDescription(leftDescription);
-        var rightInformational = OpenCliOptionDescriptionSupport.IsInformationalOptionDescription(rightDescription);
+        var leftInformational = IsInformationalOption(leftEntry.Option, leftDescription);
+        var rightInformational = IsInformationalOption(rightOption, rightDescription);
         if (TryResolveInformationalSelfArgumentDuplicate(leftEntry.Option, rightOption, leftInformational, rightInformational, out resolvedEntry))
         {
             return true;
@@ -145,6 +145,25 @@ internal static class OpenCliOptionCollisionMergeSupport
         return true;
     }
 
+    private static bool IsInformationalOption(JsonObject option, string normalizedDescription)
+    {
+        if (OpenCliOptionDescriptionSupport.IsInformationalOptionDescription(normalizedDescription))
+        {
+            return true;
+        }
+
+        return IsWellKnownInformationalName(option["name"]?.GetValue<string>())
+            && (!OpenCliOptionSupport.HasArguments(option) || HasIgnorableInformationalArguments(option));
+    }
+
+    private static bool IsWellKnownInformationalName(string? optionName)
+        => NormalizeOptionSemanticName(optionName) is "help" or "version";
+
+    private static string NormalizeOptionSemanticName(string? optionName)
+        => string.IsNullOrWhiteSpace(optionName)
+            ? string.Empty
+            : optionName.Trim().TrimStart('-', '/').ToLowerInvariant();
+
     private static JsonObject ChoosePreferredOption(
         JsonObject leftOption,
         JsonObject rightOption,
@@ -191,14 +210,20 @@ internal static class OpenCliOptionCollisionMergeSupport
 
     private static bool LooksLikeSyntheticSelfArgumentOption(JsonObject option)
     {
-        if (option["arguments"] is not JsonArray arguments || arguments.Count != 1)
+        var normalizedDescription = OpenCliOptionDescriptionSupport.NormalizeDescription(option["description"]?.GetValue<string>());
+        if (!string.IsNullOrWhiteSpace(normalizedDescription)
+            && !OpenCliOptionDescriptionSupport.IsInformationalOptionDescription(normalizedDescription)
+            && !IsWellKnownInformationalName(option["name"]?.GetValue<string>()))
         {
             return false;
         }
 
-        var normalizedDescription = OpenCliOptionDescriptionSupport.NormalizeDescription(option["description"]?.GetValue<string>());
-        if (!string.IsNullOrWhiteSpace(normalizedDescription)
-            && !OpenCliOptionDescriptionSupport.IsInformationalOptionDescription(normalizedDescription))
+        return HasIgnorableInformationalArguments(option);
+    }
+
+    private static bool HasIgnorableInformationalArguments(JsonObject option)
+    {
+        if (option["arguments"] is not JsonArray arguments || arguments.Count != 1)
         {
             return false;
         }
