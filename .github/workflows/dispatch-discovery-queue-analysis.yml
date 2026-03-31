@@ -279,7 +279,9 @@ jobs:
               [string]$Repository,
 
               [Parameter(Mandatory = $true)]
-              [string]$RunId
+              [string]$RunId,
+
+              [int]$MinimumJobsForDerivedCompletion = 1
             )
 
             $view = Invoke-GhJson -Arguments @(
@@ -288,7 +290,7 @@ jobs:
               '--json', 'conclusion,status,url,jobs')
 
             $jobs = @($view.jobs)
-            $allJobsCompleted = $jobs.Count -gt 0 -and @($jobs | Where-Object { $_.status -ne 'completed' }).Count -eq 0
+            $allJobsCompleted = $jobs.Count -ge $MinimumJobsForDerivedCompletion -and @($jobs | Where-Object { $_.status -ne 'completed' }).Count -eq 0
             $derivedConclusion = if ($allJobsCompleted) {
               Resolve-WorkflowRunConclusion -Jobs $jobs
             }
@@ -331,7 +333,9 @@ jobs:
 
               [int]$TimeoutSeconds = 120,
 
-              [int]$PollSeconds = 10
+              [int]$PollSeconds = 10,
+
+              [int]$MinimumJobsForDerivedCompletion = 1
             )
 
             $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
@@ -339,7 +343,8 @@ jobs:
             while ([DateTimeOffset]::UtcNow -lt $deadline) {
               $summary = Get-WorkflowRunSnapshot `
                 -Repository $Repository `
-                -RunId $RunId
+                -RunId $RunId `
+                -MinimumJobsForDerivedCompletion $MinimumJobsForDerivedCompletion
 
               if ($summary.isFinal) {
                 return $summary
@@ -391,7 +396,8 @@ jobs:
             -Repository $repository `
             -RunId $analysisRun.databaseId `
             -DisplayName 'analysis' `
-            -TimeoutSeconds 10800
+            -TimeoutSeconds 10800 `
+            -MinimumJobsForDerivedCompletion 2
 
           if ($analysisSummary.conclusion -ne 'success') {
             throw "Analysis run '$($analysisRun.databaseId)' completed with conclusion '$($analysisSummary.conclusion)'."
