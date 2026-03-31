@@ -1,33 +1,59 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "nssharp",
+    "title": "NSSharp - Objective-C Header Parser & C# Binding Generator",
     "version": "0.1.6",
-    "description": "NSSharp — Objective-C header parser and C# binding generator"
+    "description": "A .NET CLI tool that parses Objective-C headers and generates C# binding definitions (Xamarin.iOS / .NET for iOS style) or structured JSON output. No libclang required."
   },
   "x-inspectra": {
-    "artifactSource": "crawled-from-help",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "helpDocumentCount": 1,
-    "cliFramework": "System.CommandLine"
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Invoke-prefix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineConfiguration.Parse, OK: CommandLineConfiguration.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: CommandLineConfiguration.Invoke, OK: CommandLineConfiguration.Invoke, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: CommandLineConfiguration.InvokeAsync, OK: CommandLineConfiguration.InvokeAsync, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedTitle": "NSSharp",
+    "cliParsedDescription": "NSSharp — Objective-C header parser and C# binding generator"
   },
-  "commands": [],
   "options": [
     {
       "name": "--help",
-      "recursive": false,
+      "recursive": true,
       "hidden": false,
       "description": "Show help and usage information",
       "aliases": [
+        "-h",
+        "/h",
         "-?",
-        "-h"
+        "/?"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
       ]
     },
     {
       "name": "--version",
       "recursive": false,
       "hidden": false,
-      "description": "Show version information"
+      "description": "Show version information",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
     },
     {
       "name": "--xcframework",
@@ -37,11 +63,12 @@
       "arguments": [
         {
           "name": "XCFRAMEWORK",
-          "required": false,
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "DirectoryInfo"
         }
       ]
     },
@@ -49,13 +76,34 @@
       "name": "--slice",
       "recursive": false,
       "hidden": false,
-      "description": "Select a specific xcframework slice (e.g. ios-arm64). Use --list-slices to see available slices."
+      "description": "Select a specific xcframework slice (e.g. ios-arm64). Use --list-slices to see available slices.",
+      "arguments": [
+        {
+          "name": "SLICE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
     },
     {
       "name": "--list-slices",
       "recursive": false,
       "hidden": false,
-      "description": "List available slices in the xcframework and exit."
+      "description": "List available slices in the xcframework and exit.",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     },
     {
       "name": "--output",
@@ -68,11 +116,12 @@
       "arguments": [
         {
           "name": "OUTPUT",
-          "required": false,
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "FileInfo"
         }
       ]
     },
@@ -80,7 +129,17 @@
       "name": "--compact",
       "recursive": false,
       "hidden": false,
-      "description": "Output compact JSON instead of pretty-printed."
+      "description": "Output compact JSON instead of pretty-printed.",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     },
     {
       "name": "--format",
@@ -93,11 +152,12 @@
       "arguments": [
         {
           "name": "FORMAT",
-          "required": false,
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
@@ -105,15 +165,16 @@
       "name": "--extern-macros",
       "recursive": false,
       "hidden": false,
-      "description": "Macro names to treat as extern (e.g. --extern-macros PSPDF_EXPORT MY_EXPORT). []",
+      "description": "Macro names to treat as extern (e.g. --extern-macros PSPDF_EXPORT MY_EXPORT). [default: System.String[]]",
       "arguments": [
         {
           "name": "EXTERN_MACROS",
-          "required": false,
+          "required": true,
           "arity": {
-            "minimum": 0,
-            "maximum": 1
-          }
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
         }
       ]
     },
@@ -121,19 +182,49 @@
       "name": "--no-macro-heuristic",
       "recursive": false,
       "hidden": false,
-      "description": "Disable automatic UPPER_SNAKE_CASE macro detection. By default, identifiers like NS_SWIFT_NAME or VENDOR_DEPRECATED are auto-skipped."
+      "description": "Disable automatic UPPER_SNAKE_CASE macro detection. By default, identifiers like NS_SWIFT_NAME or VENDOR_DEPRECATED are auto-skipped.",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     },
     {
       "name": "--emit-c-bindings",
       "recursive": false,
       "hidden": false,
-      "description": "Include C function declarations ([DllImport]) in C# binding output. Extern constants ([Field]) are always included."
+      "description": "Include C function declarations ([DllImport]) in C# binding output. Extern constants ([Field]) are always included.",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     },
     {
       "name": "--split-by-header",
       "recursive": false,
       "hidden": false,
-      "description": "For C# format, write one .cs file per input header (requires --output directory)."
+      "description": "For C# format, write one .cs file per input header (requires --output directory).",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     },
     {
       "name": "--namespace",
@@ -143,25 +234,26 @@
       "arguments": [
         {
           "name": "NAMESPACE",
-          "required": false,
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     }
   ],
   "arguments": [
     {
-      "name": "FILES",
+      "name": "files",
+      "description": "One or more Objective-C header files to parse.",
       "required": false,
-      "hidden": false,
       "arity": {
         "minimum": 0,
-        "maximum": 1
+        "maximum": 100000
       },
-      "description": "One or more Objective-C header files to parse."
+      "type": "FileInfo[]"
     }
   ]
 }

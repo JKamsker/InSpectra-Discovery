@@ -3,57 +3,67 @@
   "info": {
     "title": "dotnet-bld",
     "version": "0.2.32",
-    "description": "bld"
+    "description": "Tool to clean build output folders for msbuild, dotnet build"
   },
   "x-inspectra": {
-    "artifactSource": "crawled-from-help",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "helpDocumentCount": 9,
-    "cliFramework": "System.CommandLine"
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "Parse-postfix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "bld"
   },
   "options": [
     {
       "name": "--help",
-      "required": false,
-      "description": "Show help and usage information",
-      "recursive": false,
+      "recursive": true,
       "hidden": false,
+      "description": "Show help and usage information",
       "aliases": [
+        "-h",
+        "/h",
         "-?",
-        "-h"
+        "/?"
       ]
     },
     {
       "name": "--version",
-      "required": false,
-      "description": "Show version information",
       "recursive": false,
-      "hidden": false
+      "hidden": false,
+      "description": "Show version information"
     }
   ],
-  "arguments": null,
   "commands": [
     {
       "name": "clean",
       "description": "Cleans solution / project build output (bin/obj etc.)",
-      "hidden": false,
       "options": [
         {
           "name": "--markdown",
-          "required": false,
-          "description": "Emit markdown table output where supported.",
           "recursive": false,
           "hidden": false,
+          "description": "Emit markdown table output where supported. [default: False]",
           "aliases": [
             "-md"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--root",
-          "required": false,
-          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "aliases": [
             "-r"
           ],
@@ -64,16 +74,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--depth",
-          "required": false,
-          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "recursive": false,
           "hidden": false,
+          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "aliases": [
             "-d"
           ],
@@ -84,89 +94,135 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
           "name": "--non-current",
-          "required": false,
-          "description": "Only clean directories for non-current target frameworks.",
           "recursive": false,
           "hidden": false,
+          "description": "Only clean directories for non-current target frameworks. [default: False]",
           "aliases": [
-            "-nc",
-            "--noncurrent"
-          ]
-        },
-        {
-          "name": "-obj",
-          "required": false,
-          "description": "Also clean BaseIntermediateOutputPath (obj folder).",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--keep-assets",
-          "required": false,
-          "description": "When cleaning obj, preserve NuGet restore artifacts (project.assets.json etc.) and only delete build output subdirectories.",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--verbosity",
-          "required": false,
-          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-v",
-            "--log"
+            "--noncurrent",
+            "-nc"
           ],
           "arguments": [
             {
-              "name": "DEBUG|ERROR|INFO|VERBOSE|WARNING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--obj",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also clean BaseIntermediateOutputPath (obj folder). [default: False]",
+          "aliases": [
+            "-obj"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--keep-assets",
+          "recursive": false,
+          "hidden": false,
+          "description": "When cleaning obj, preserve NuGet restore artifacts (project.assets.json etc.) and only delete build output subdirectories. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--log",
+          "recursive": false,
+          "hidden": false,
+          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
+          "aliases": [
+            "-v",
+            "--verbosity"
+          ],
+          "arguments": [
+            {
+              "name": "LOG",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "LogLevel",
+              "allowedValues": [
+                "Debug",
+                "Verbose",
+                "Info",
+                "Warning",
+                "Error"
+              ]
             }
           ]
         },
         {
           "name": "--output-file",
-          "required": false,
-          "description": "Path to the output file. [default: clean.sh]",
           "recursive": false,
           "hidden": false,
+          "description": "Path to the output file. [default: clean.sh]",
           "aliases": [
             "-o"
           ],
           "arguments": [
             {
-              "name": "OUTPUT-FILE",
+              "name": "OUTPUT_FILE",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--force",
-          "required": false,
-          "description": "Do not ask for confirmation (requires explicit root).",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Do not ask for confirmation (requires explicit root). [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--vstoolspath",
-          "required": false,
-          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "aliases": [
             "-vs"
           ],
@@ -177,33 +233,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--novstoolspath",
-          "required": false,
-          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe.",
           "recursive": false,
           "hidden": false,
+          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe. [default: False]",
           "aliases": [
             "-novs"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--parallel",
-          "required": false,
-          "description": "Use parallel processing for project evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Use parallel processing for project evaluation. [default: True]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--concurrency",
-          "required": false,
-          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "recursive": false,
           "hidden": false,
+          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "arguments": [
             {
               "name": "CONCURRENCY",
@@ -211,80 +285,85 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
           "name": "--delete",
-          "required": false,
-          "description": "Actually delete files.",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--confirm",
-          "required": false,
-          "description": "Confirmation Level for deletion. [default: Directory]",
           "recursive": false,
           "hidden": false,
+          "description": "Actually delete files. [default: False]",
           "arguments": [
             {
-              "name": "DIRECTORY|NONE|PROJECT|SLN",
-              "required": true,
+              "required": false,
               "arity": {
-                "minimum": 1,
+                "minimum": 0,
                 "maximum": 1
-              }
+              },
+              "type": "Boolean"
             }
           ]
         },
         {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
+          "name": "--confirm",
           "recursive": false,
           "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
+          "description": "Confirmation Level for deletion. [default: Directory]",
+          "arguments": [
+            {
+              "name": "CONFIRM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "ConfirmLevel"
+            }
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "root",
           "required": false,
-          "description": null,
-          "hidden": false,
           "arity": {
             "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
       "name": "stats",
       "description": "Compute statistics.",
-      "hidden": false,
       "options": [
         {
           "name": "--markdown",
-          "required": false,
-          "description": "Emit markdown table output where supported.",
           "recursive": false,
           "hidden": false,
+          "description": "Emit markdown table output where supported. [default: False]",
           "aliases": [
             "-md"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--root",
-          "required": false,
-          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "aliases": [
             "-r"
           ],
@@ -295,16 +374,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--depth",
-          "required": false,
-          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "recursive": false,
           "hidden": false,
+          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "aliases": [
             "-d"
           ],
@@ -315,62 +394,99 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
           "name": "--non-current",
-          "required": false,
-          "description": "Only clean directories for non-current target frameworks.",
           "recursive": false,
           "hidden": false,
+          "description": "Only clean directories for non-current target frameworks. [default: False]",
           "aliases": [
-            "-nc",
-            "--noncurrent"
-          ]
-        },
-        {
-          "name": "-obj",
-          "required": false,
-          "description": "Also clean BaseIntermediateOutputPath (obj folder).",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--keep-assets",
-          "required": false,
-          "description": "When cleaning obj, preserve NuGet restore artifacts (project.assets.json etc.) and only delete build output subdirectories.",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--verbosity",
-          "required": false,
-          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-v",
-            "--log"
+            "--noncurrent",
+            "-nc"
           ],
           "arguments": [
             {
-              "name": "DEBUG|ERROR|INFO|VERBOSE|WARNING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--obj",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also clean BaseIntermediateOutputPath (obj folder). [default: False]",
+          "aliases": [
+            "-obj"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--keep-assets",
+          "recursive": false,
+          "hidden": false,
+          "description": "When cleaning obj, preserve NuGet restore artifacts (project.assets.json etc.) and only delete build output subdirectories. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--log",
+          "recursive": false,
+          "hidden": false,
+          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
+          "aliases": [
+            "-v",
+            "--verbosity"
+          ],
+          "arguments": [
+            {
+              "name": "LOG",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "LogLevel",
+              "allowedValues": [
+                "Debug",
+                "Verbose",
+                "Info",
+                "Warning",
+                "Error"
+              ]
             }
           ]
         },
         {
           "name": "--vstoolspath",
-          "required": false,
-          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "aliases": [
             "-vs"
           ],
@@ -381,33 +497,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--novstoolspath",
-          "required": false,
-          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe.",
           "recursive": false,
           "hidden": false,
+          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe. [default: False]",
           "aliases": [
             "-novs"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--parallel",
-          "required": false,
-          "description": "Use parallel processing for project evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Use parallel processing for project evaluation. [default: True]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--concurrency",
-          "required": false,
-          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "recursive": false,
           "hidden": false,
+          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "arguments": [
             {
               "name": "CONCURRENCY",
@@ -415,56 +549,52 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
-          ]
-        },
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "root",
           "required": false,
-          "description": null,
-          "hidden": false,
           "arity": {
             "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
       "name": "nuget",
       "description": "Analyze and categorize NuGet package references in projects.",
-      "hidden": false,
       "options": [
         {
           "name": "--markdown",
-          "required": false,
-          "description": "Emit markdown table output where supported.",
           "recursive": false,
           "hidden": false,
+          "description": "Emit markdown table output where supported. [default: False]",
           "aliases": [
             "-md"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--root",
-          "required": false,
-          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "aliases": [
             "-r"
           ],
@@ -475,16 +605,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--depth",
-          "required": false,
-          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "recursive": false,
           "hidden": false,
+          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "aliases": [
             "-d"
           ],
@@ -495,37 +625,44 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
-          "name": "--verbosity",
-          "required": false,
-          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
+          "name": "--log",
           "recursive": false,
           "hidden": false,
+          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
           "aliases": [
             "-v",
-            "--log"
+            "--verbosity"
           ],
           "arguments": [
             {
-              "name": "DEBUG|ERROR|INFO|VERBOSE|WARNING",
+              "name": "LOG",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "LogLevel",
+              "allowedValues": [
+                "Debug",
+                "Verbose",
+                "Info",
+                "Warning",
+                "Error"
+              ]
             }
           ]
         },
         {
           "name": "--vstoolspath",
-          "required": false,
-          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "aliases": [
             "-vs"
           ],
@@ -536,33 +673,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--novstoolspath",
-          "required": false,
-          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe.",
           "recursive": false,
           "hidden": false,
+          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe. [default: False]",
           "aliases": [
             "-novs"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--parallel",
-          "required": false,
-          "description": "Use parallel processing for project evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Use parallel processing for project evaluation. [default: True]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--concurrency",
-          "required": false,
-          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "recursive": false,
           "hidden": false,
+          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "arguments": [
             {
               "name": "CONCURRENCY",
@@ -570,96 +725,110 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
           "name": "--whitelist-blacklist-file",
-          "required": false,
-          "description": "Path to the whitelist/blacklist file containing package filtering rules.",
           "recursive": false,
           "hidden": false,
+          "description": "Path to the whitelist/blacklist file containing package filtering rules.",
           "aliases": [
             "--wbf"
           ],
           "arguments": [
             {
-              "name": "WHITELIST-BLACKLIST-FILE",
+              "name": "WHITELIST_BLACKLIST_FILE",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--aggregate",
-          "required": false,
-          "description": "Display packages aggregated across all projects instead of per-project view.",
           "recursive": false,
           "hidden": false,
+          "description": "Display packages aggregated across all projects instead of per-project view. [default: True]",
           "aliases": [
             "--agg"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--show-projects",
-          "required": false,
-          "description": "In aggregate mode, show which projects reference each package (default: true).",
           "recursive": false,
           "hidden": false,
+          "description": "In aggregate mode, show which projects reference each package (default: true). [default: True]",
           "aliases": [
             "--sp"
-          ]
-        },
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "root",
           "required": false,
-          "description": null,
-          "hidden": false,
           "arity": {
             "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
       "name": "containerize",
       "description": "Analyze Dockerfiles and .NET projects with SDK container build properties (PublishProfile=DefaultContainer, ContainerBaseImage, or ContainerImage).",
-      "hidden": false,
       "options": [
         {
           "name": "--markdown",
-          "required": false,
-          "description": "Emit markdown table output where supported.",
           "recursive": false,
           "hidden": false,
+          "description": "Emit markdown table output where supported. [default: False]",
           "aliases": [
             "-md"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--root",
-          "required": false,
-          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "aliases": [
             "-r"
           ],
@@ -670,16 +839,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--depth",
-          "required": false,
-          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "recursive": false,
           "hidden": false,
+          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "aliases": [
             "-d"
           ],
@@ -690,67 +859,101 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
-          "name": "--verbosity",
-          "required": false,
-          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
+          "name": "--log",
           "recursive": false,
           "hidden": false,
+          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
           "aliases": [
             "-v",
-            "--log"
+            "--verbosity"
           ],
           "arguments": [
             {
-              "name": "DEBUG|ERROR|INFO|VERBOSE|WARNING",
+              "name": "LOG",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "LogLevel",
+              "allowedValues": [
+                "Debug",
+                "Verbose",
+                "Info",
+                "Warning",
+                "Error"
+              ]
             }
           ]
         },
         {
           "name": "--list",
-          "required": false,
-          "description": "Only list Dockerfiles without parsing details.",
           "recursive": false,
           "hidden": false,
+          "description": "Only list Dockerfiles without parsing details. [default: False]",
           "aliases": [
             "-l"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--projects",
-          "required": false,
-          "description": "Scan for .NET projects with container build properties.",
           "recursive": false,
           "hidden": false,
+          "description": "Scan for .NET projects with container build properties. [default: False]",
           "aliases": [
             "-p"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--all",
-          "required": false,
-          "description": "Scan for both Dockerfiles and .NET container projects.",
           "recursive": false,
           "hidden": false,
+          "description": "Scan for both Dockerfiles and .NET container projects. [default: False]",
           "aliases": [
             "-a"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--vstoolspath",
-          "required": false,
-          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "aliases": [
             "-vs"
           ],
@@ -761,33 +964,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--novstoolspath",
-          "required": false,
-          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe.",
           "recursive": false,
           "hidden": false,
+          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe. [default: False]",
           "aliases": [
             "-novs"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--parallel",
-          "required": false,
-          "description": "Use parallel processing for project evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Use parallel processing for project evaluation. [default: True]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--concurrency",
-          "required": false,
-          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "recursive": false,
           "hidden": false,
+          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "arguments": [
             {
               "name": "CONCURRENCY",
@@ -795,56 +1016,52 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
-          ]
-        },
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "root",
           "required": false,
-          "description": null,
-          "hidden": false,
           "arity": {
             "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
       "name": "cpm",
       "description": "Convert all projects in a solution to Central Package Management.",
-      "hidden": false,
       "options": [
         {
           "name": "--markdown",
-          "required": false,
-          "description": "Emit markdown table output where supported.",
           "recursive": false,
           "hidden": false,
+          "description": "Emit markdown table output where supported. [default: False]",
           "aliases": [
             "-md"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--root",
-          "required": false,
-          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "aliases": [
             "-r"
           ],
@@ -855,16 +1072,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--depth",
-          "required": false,
-          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "recursive": false,
           "hidden": false,
+          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "aliases": [
             "-d"
           ],
@@ -875,51 +1092,76 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
           "name": "--apply",
-          "required": false,
-          "description": "Apply changes to create Directory.Packages.props and update project files.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Apply changes to create Directory.Packages.props and update project files. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--overwrite",
-          "required": false,
-          "description": "Overwrite existing Directory.Packages.props if it exists.",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--verbosity",
-          "required": false,
-          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
           "recursive": false,
           "hidden": false,
+          "description": "Overwrite existing Directory.Packages.props if it exists. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--log",
+          "recursive": false,
+          "hidden": false,
+          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
           "aliases": [
             "-v",
-            "--log"
+            "--verbosity"
           ],
           "arguments": [
             {
-              "name": "DEBUG|ERROR|INFO|VERBOSE|WARNING",
+              "name": "LOG",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "LogLevel",
+              "allowedValues": [
+                "Debug",
+                "Verbose",
+                "Info",
+                "Warning",
+                "Error"
+              ]
             }
           ]
         },
         {
           "name": "--vstoolspath",
-          "required": false,
-          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "aliases": [
             "-vs"
           ],
@@ -930,33 +1172,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--novstoolspath",
-          "required": false,
-          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe.",
           "recursive": false,
           "hidden": false,
+          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe. [default: False]",
           "aliases": [
             "-novs"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--parallel",
-          "required": false,
-          "description": "Use parallel processing for project evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Use parallel processing for project evaluation. [default: True]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--concurrency",
-          "required": false,
-          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "recursive": false,
           "hidden": false,
+          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "arguments": [
             {
               "name": "CONCURRENCY",
@@ -964,56 +1224,52 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
-          ]
-        },
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "root",
           "required": false,
-          "description": null,
-          "hidden": false,
           "arity": {
             "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
       "name": "outdated",
       "description": "Check for outdated NuGet packages and optionally update them to latest versions.",
-      "hidden": false,
       "options": [
         {
           "name": "--markdown",
-          "required": false,
-          "description": "Emit markdown table output where supported.",
           "recursive": false,
           "hidden": false,
+          "description": "Emit markdown table output where supported. [default: False]",
           "aliases": [
             "-md"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--root",
-          "required": false,
-          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "aliases": [
             "-r"
           ],
@@ -1024,16 +1280,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--depth",
-          "required": false,
-          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "recursive": false,
           "hidden": false,
+          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "aliases": [
             "-d"
           ],
@@ -1044,61 +1300,95 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
           "name": "--apply",
-          "required": false,
-          "description": "Apply package updates instead of just checking.",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--skip-tfm-check",
-          "required": false,
-          "description": "Skip target framework compatibility checking when suggesting package updates.",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--prerelease",
-          "required": false,
-          "description": "Include prerelease versions of NuGet packages.",
           "recursive": false,
           "hidden": false,
-          "aliases": [
-            "--pre"
+          "description": "Apply package updates instead of just checking. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
-          "name": "--verbosity",
-          "required": false,
-          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
+          "name": "--skip-tfm-check",
           "recursive": false,
           "hidden": false,
+          "description": "Skip target framework compatibility checking when suggesting package updates. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--prerelease",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include prerelease versions of NuGet packages. [default: False]",
           "aliases": [
-            "-v",
-            "--log"
+            "--pre"
           ],
           "arguments": [
             {
-              "name": "DEBUG|ERROR|INFO|VERBOSE|WARNING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--log",
+          "recursive": false,
+          "hidden": false,
+          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
+          "aliases": [
+            "-v",
+            "--verbosity"
+          ],
+          "arguments": [
+            {
+              "name": "LOG",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "LogLevel",
+              "allowedValues": [
+                "Debug",
+                "Verbose",
+                "Info",
+                "Warning",
+                "Error"
+              ]
             }
           ]
         },
         {
           "name": "--vstoolspath",
-          "required": false,
-          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "aliases": [
             "-vs"
           ],
@@ -1109,33 +1399,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--novstoolspath",
-          "required": false,
-          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe.",
           "recursive": false,
           "hidden": false,
+          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe. [default: False]",
           "aliases": [
             "-novs"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--parallel",
-          "required": false,
-          "description": "Use parallel processing for project evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Use parallel processing for project evaluation. [default: True]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--concurrency",
-          "required": false,
-          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "recursive": false,
           "hidden": false,
+          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "arguments": [
             {
               "name": "CONCURRENCY",
@@ -1143,56 +1451,52 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
-          ]
-        },
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "root",
           "required": false,
-          "description": null,
-          "hidden": false,
           "arity": {
             "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
       "name": "tfm",
       "description": "Migrate TargetFramework/TargetFrameworks between versions.",
-      "hidden": false,
       "options": [
         {
           "name": "--markdown",
-          "required": false,
-          "description": "Emit markdown table output where supported.",
           "recursive": false,
           "hidden": false,
+          "description": "Emit markdown table output where supported. [default: False]",
           "aliases": [
             "-md"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--root",
-          "required": false,
-          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "aliases": [
             "-r"
           ],
@@ -1203,16 +1507,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--depth",
-          "required": false,
-          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "recursive": false,
           "hidden": false,
+          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "aliases": [
             "-d"
           ],
@@ -1223,16 +1527,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
           "name": "--from",
-          "required": false,
-          "description": "Source target framework(s) (e.g., net8.0 or net8.0,net9.0 for multiple). If not specified, will be auto-detected from project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Source target framework(s) (e.g., net8.0 or net8.0,net9.0 for multiple). If not specified, will be auto-detected from project files.",
           "arguments": [
             {
               "name": "FROM",
@@ -1240,16 +1544,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--to",
-          "required": false,
-          "description": "Target framework to migrate to (e.g., net9.0).",
           "recursive": false,
           "hidden": false,
+          "description": "Target framework to migrate to (e.g., net9.0).",
           "arguments": [
             {
               "name": "TO",
@@ -1257,44 +1561,60 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--apply",
-          "required": false,
-          "description": "Apply changes (default is dry-run).",
-          "recursive": false,
-          "hidden": false
-        },
-        {
-          "name": "--verbosity",
-          "required": false,
-          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
           "recursive": false,
           "hidden": false,
+          "description": "Apply changes (default is dry-run). [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--log",
+          "recursive": false,
+          "hidden": false,
+          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
           "aliases": [
             "-v",
-            "--log"
+            "--verbosity"
           ],
           "arguments": [
             {
-              "name": "DEBUG|ERROR|INFO|VERBOSE|WARNING",
+              "name": "LOG",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "LogLevel",
+              "allowedValues": [
+                "Debug",
+                "Verbose",
+                "Info",
+                "Warning",
+                "Error"
+              ]
             }
           ]
         },
         {
           "name": "--vstoolspath",
-          "required": false,
-          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "aliases": [
             "-vs"
           ],
@@ -1305,33 +1625,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--novstoolspath",
-          "required": false,
-          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe.",
           "recursive": false,
           "hidden": false,
+          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe. [default: False]",
           "aliases": [
             "-novs"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--parallel",
-          "required": false,
-          "description": "Use parallel processing for project evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Use parallel processing for project evaluation. [default: True]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--concurrency",
-          "required": false,
-          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "recursive": false,
           "hidden": false,
+          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "arguments": [
             {
               "name": "CONCURRENCY",
@@ -1339,56 +1677,52 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
-          ]
-        },
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "root",
           "required": false,
-          "description": null,
-          "hidden": false,
           "arity": {
             "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
       "name": "build-props",
       "description": "Analyze Directory.Build.props files and property provenance across projects. (BETA)",
-      "hidden": false,
       "options": [
         {
           "name": "--markdown",
-          "required": false,
-          "description": "Emit markdown table output where supported.",
           "recursive": false,
           "hidden": false,
+          "description": "Emit markdown table output where supported. [default: False]",
           "aliases": [
             "-md"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--root",
-          "required": false,
-          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory, .sln, or project file. Can also be specified as trailing argument.",
           "aliases": [
             "-r"
           ],
@@ -1399,16 +1733,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--depth",
-          "required": false,
-          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "recursive": false,
           "hidden": false,
+          "description": "If root is a directory, recursion depth to search for .sln or project files. [default: 3]",
           "aliases": [
             "-d"
           ],
@@ -1419,33 +1753,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
           ]
         },
         {
           "name": "--list",
-          "required": false,
-          "description": "Only list imported Directory.Build.props files in a tree structure, without showing property contents.",
           "recursive": false,
           "hidden": false,
+          "description": "Only list imported Directory.Build.props files in a tree structure, without showing property contents. [default: False]",
           "aliases": [
             "-l"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--no-overridden",
-          "required": false,
-          "description": "Hide properties that originate from Directory.Build.props but are overridden later in evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Hide properties that originate from Directory.Build.props but are overridden later in evaluation. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--properties",
-          "required": false,
-          "description": "Comma-separated list of properties to trace (e.g., TargetFramework,Nullable). When specified, only shows these properties.",
           "recursive": false,
           "hidden": false,
+          "description": "Comma-separated list of properties to trace (e.g., TargetFramework,Nullable). When specified, only shows these properties.",
           "arguments": [
             {
               "name": "PROPERTIES",
@@ -1453,37 +1805,44 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
-          "name": "--verbosity",
-          "required": false,
-          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
+          "name": "--log",
           "recursive": false,
           "hidden": false,
+          "description": "Log verbosity (Debug, Verbose, Info, Warning, Error). [default: Warning]",
           "aliases": [
             "-v",
-            "--log"
+            "--verbosity"
           ],
           "arguments": [
             {
-              "name": "DEBUG|ERROR|INFO|VERBOSE|WARNING",
+              "name": "LOG",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "LogLevel",
+              "allowedValues": [
+                "Debug",
+                "Verbose",
+                "Info",
+                "Warning",
+                "Error"
+              ]
             }
           ]
         },
         {
           "name": "--vstoolspath",
-          "required": false,
-          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "recursive": false,
           "hidden": false,
+          "description": "Explicit value for VSToolsPath. If not specified, the tool tries to resolve VSToolsPath either from environment variable or via vswhere.exe. VSToolsPath contains additional msbuild target files which may be required for evaluation of project files.",
           "aliases": [
             "-vs"
           ],
@@ -1494,33 +1853,51 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--novstoolspath",
-          "required": false,
-          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe.",
           "recursive": false,
           "hidden": false,
+          "description": "Do not try to resolve VSToolsPath from ENV or vswhere.exe. [default: False]",
           "aliases": [
             "-novs"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--parallel",
-          "required": false,
-          "description": "Use parallel processing for project evaluation.",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Use parallel processing for project evaluation. [default: True]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--concurrency",
-          "required": false,
-          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "recursive": false,
           "hidden": false,
+          "description": "Degree of parallelism for project evaluation. [default: 2]",
           "arguments": [
             {
               "name": "CONCURRENCY",
@@ -1528,32 +1905,21 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Int32"
             }
-          ]
-        },
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "root",
           "required": false,
-          "description": null,
-          "hidden": false,
           "arity": {
             "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     }
