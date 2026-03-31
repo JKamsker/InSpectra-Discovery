@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-31 18:06:32+00:00
+Generated: 2026-03-31 18:39:05+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -28,7 +28,7 @@ Incomplete: 9
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.1.1 | ok | xml-ready | 2/2 | 12/12 | 2/2 | 2/2 | PASS |
-| [claudomat](#pkg-claudomat) | 2026.3.30.9 | ok | xml-ready | 3/3 | 41/41 | 3/3 | 3/3 | PASS |
+| [claudomat](#pkg-claudomat) | 2026.3.31.9 | ok | xml-ready | 3/3 | 44/44 | 3/3 | 3/3 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
@@ -244,12 +244,12 @@ Incomplete: 9
 <a id="pkg-claudomat"></a>
 ### claudomat
 
-- Version: `2026.3.30.9`
+- Version: `2026.3.31.9`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
 - Command documentation: `3/3`
-- Option documentation: `41/41`
+- Option documentation: `44/44`
 - Argument documentation: `3/3`
 - Leaf command examples: `3/3`
 - Overall: `PASS`
