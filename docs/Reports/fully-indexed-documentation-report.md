@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-31 14:41:18+00:00
+Generated: 2026-03-31 15:39:32+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -27,7 +27,7 @@ Incomplete: 9
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
-| [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.1.0 | ok | xml-ready | 2/2 | 12/12 | 2/2 | 2/2 | PASS |
+| [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.1.1 | ok | xml-ready | 2/2 | 12/12 | 2/2 | 2/2 | PASS |
 | [claudomat](#pkg-claudomat) | 2026.3.30.9 | ok | xml-ready | 3/3 | 41/41 | 3/3 | 3/3 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
@@ -227,7 +227,7 @@ Incomplete: 9
 <a id="pkg-blazorlocalization-extractor"></a>
 ### BlazorLocalization.Extractor
 
-- Version: `10.1.0`
+- Version: `10.1.1`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
