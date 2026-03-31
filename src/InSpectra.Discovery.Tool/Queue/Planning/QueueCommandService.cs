@@ -162,6 +162,12 @@ internal sealed class QueueCommandService
 
             var catalogLeaf = await TryLoadCatalogLeafAsync(item, scope.Client, cancellationToken);
             var runnerSelection = await RunnerSelectionResolver.ResolveForPlanItemAsync(root, item, catalogLeaf, skipRunnerInspection, scope.Client, cancellationToken);
+            var dotnetSetup = await DotnetRuntimeSetupResolver.ResolveForPlanItemAsync(
+                item,
+                catalogLeaf,
+                runnerSelection.RunsOn,
+                scope.Client,
+                cancellationToken);
             ToolDescriptor? analysisDescriptor = null;
             string? analysisDescriptorError = null;
             try
@@ -196,6 +202,10 @@ internal sealed class QueueCommandService
                 ArtifactName: QueueCommandSupport.GetArtifactName(lowerId, lowerVersion),
                 RunsOn: runnerSelection.RunsOn,
                 RunnerReason: runnerSelection.Reason,
+                DotnetSetupMode: dotnetSetup.Mode,
+                DotnetSetupSource: dotnetSetup.Source,
+                DotnetSetupError: dotnetSetup.Error,
+                RequiredDotnetRuntimes: dotnetSetup.RequiredRuntimes,
                 RequiredFrameworks: runnerSelection.RequiredFrameworks,
                 ToolRids: runnerSelection.ToolRids,
                 RuntimeRids: runnerSelection.RuntimeRids,

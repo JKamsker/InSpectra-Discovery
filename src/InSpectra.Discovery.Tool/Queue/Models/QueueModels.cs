@@ -74,6 +74,10 @@ internal sealed record UntrustedBatchPlanItem(
     string ArtifactName,
     string RunsOn,
     string RunnerReason,
+    string DotnetSetupMode,
+    string DotnetSetupSource,
+    string? DotnetSetupError,
+    IReadOnlyList<DotnetRuntimeRequirement> RequiredDotnetRuntimes,
     IReadOnlyList<string> RequiredFrameworks,
     IReadOnlyList<string> ToolRids,
     IReadOnlyList<string> RuntimeRids,
@@ -114,4 +118,3 @@ internal sealed record CurrentAnalysisBackfillQueueComputation(
     int LegacyTerminalFailureCount,
     int RetryableCount,
     DotnetToolQueueSnapshot Queue);
-

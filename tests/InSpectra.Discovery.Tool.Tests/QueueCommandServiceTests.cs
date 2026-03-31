@@ -37,6 +37,9 @@ public sealed class QueueCommandServiceTests
                         ["packageUrl"] = "https://www.nuget.org/packages/Sample.Tool/1.2.3",
                         ["packageContentUrl"] = "https://nuget.test/sample.tool.1.2.3.nupkg",
                         ["catalogEntryUrl"] = "https://nuget.test/catalog/sample.tool.1.2.3.json",
+                        ["dotnetSetupMode"] = "legacy-multi-sdk",
+                        ["dotnetSetupSource"] = "test",
+                        ["requiredDotnetRuntimes"] = new JsonArray(),
                     },
                 },
             });
@@ -74,6 +77,7 @@ public sealed class QueueCommandServiceTests
         Assert.Equal("System.CommandLine", item["cliFramework"]?.GetValue<string>());
         Assert.Equal("help", item["analysisMode"]?.GetValue<string>());
         Assert.Equal("generic-help-crawl", item["analysisReason"]?.GetValue<string>());
+        Assert.Equal("legacy-multi-sdk", item["dotnetSetupMode"]?.GetValue<string>());
     }
 
     [Fact]
@@ -100,6 +104,9 @@ public sealed class QueueCommandServiceTests
                         ["packageUrl"] = "https://www.nuget.org/packages/Broken.Tool/0.1.0",
                         ["packageContentUrl"] = "https://nuget.test/broken.tool.0.1.0.nupkg",
                         ["catalogEntryUrl"] = "https://nuget.test/catalog/broken.tool.0.1.0.json",
+                        ["dotnetSetupMode"] = "legacy-multi-sdk",
+                        ["dotnetSetupSource"] = "test",
+                        ["requiredDotnetRuntimes"] = new JsonArray(),
                     },
                 },
             });
@@ -151,6 +158,9 @@ public sealed class QueueCommandServiceTests
                         ["packageUrl"] = "https://www.nuget.org/packages/Legacy.Tool/2.0.0",
                         ["packageContentUrl"] = "https://nuget.test/legacy.tool.2.0.0.nupkg",
                         ["catalogEntryUrl"] = "https://nuget.test/catalog/legacy.tool.2.0.0.json",
+                        ["dotnetSetupMode"] = "legacy-multi-sdk",
+                        ["dotnetSetupSource"] = "test",
+                        ["requiredDotnetRuntimes"] = new JsonArray(),
                     },
                 },
             });
@@ -335,5 +345,3 @@ public sealed class QueueCommandServiceTests
         }
     }
 }
-
-

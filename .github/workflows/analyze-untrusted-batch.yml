@@ -369,7 +369,8 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup .NET
+      - name: Setup legacy .NET SDKs
+        if: ${{ matrix.dotnetSetupMode == 'legacy-multi-sdk' }}
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: |
@@ -380,6 +381,21 @@ jobs:
             8.0.x
             9.0.x
             10.0.x
+
+      - name: Setup analysis .NET SDK
+        if: ${{ matrix.dotnetSetupMode != 'legacy-multi-sdk' }}
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install required shared runtimes
+        if: ${{ matrix.dotnetSetupMode == 'runtime-only' && toJson(matrix.requiredDotnetRuntimes) != '[]' }}
+        shell: pwsh
+        run: |
+          ./.github/scripts/install-required-dotnet-runtime.ps1 `
+            -RuntimeRequestsJson @'
+          ${{ toJson(matrix.requiredDotnetRuntimes) }}
+          '@
 
       - name: Show installed .NET runtimes
         shell: pwsh
