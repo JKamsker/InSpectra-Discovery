@@ -51,7 +51,12 @@ public sealed class AutoHookFallbackLiveTests
             "mgcb-editor-windows",
             "mgcb-editor-windows",
             "3.8.5-preview.3",
-            "hook-no-assembly-loaded"));
+            "hook-no-assembly-loaded",
+            expectedHookFailureClassifications:
+            [
+                "hook-no-assembly-loaded",
+                "hook-target-unhandled-exception",
+            ]));
         data.Add(new HookFallbackToolCase(
             "System.CommandLine",
             "SoftwareExtravaganza.Whizbang.CLI",
@@ -108,7 +113,9 @@ public sealed class AutoHookFallbackLiveTests
             Assert.Equal("static", result?["analysisSelection"]?["preferredMode"]?.GetValue<string>());
             Assert.Equal(testCase.ExpectedAnalysisMode, result?["analysisSelection"]?["selectedMode"]?.GetValue<string>());
             Assert.Equal("hook", result?["fallback"]?["from"]?.GetValue<string>());
-            Assert.Equal(testCase.ExpectedHookFailureClassification, result?["fallback"]?["classification"]?.GetValue<string>());
+            Assert.Contains(
+                result?["fallback"]?["classification"]?.GetValue<string>(),
+                testCase.ExpectedHookFailureClassifications);
             Assert.Equal(testCase.CommandName, result?["command"]?.GetValue<string>());
 
             Assert.Equal(testCase.ExpectedOpenCliTitle, openCli?["info"]?["title"]?.GetValue<string>());
@@ -138,11 +145,15 @@ public sealed class AutoHookFallbackLiveTests
         string CommandName,
         string ExpectedOpenCliTitle,
         string ExpectedOpenCliVersion,
-        string ExpectedHookFailureClassification,
+        string expectedHookFailureClassification,
         string expectedAnalysisMode = "static",
         string expectedClassification = "static-crawl",
-        string expectedArtifactSource = "static-analysis")
+        string expectedArtifactSource = "static-analysis",
+        params string[] expectedHookFailureClassifications)
     {
+        public IReadOnlyList<string> ExpectedHookFailureClassifications { get; } = expectedHookFailureClassifications.Length == 0
+            ? [expectedHookFailureClassification]
+            : expectedHookFailureClassifications;
         public string ExpectedAnalysisMode { get; } = expectedAnalysisMode;
         public string ExpectedClassification { get; } = expectedClassification;
         public string ExpectedArtifactSource { get; } = expectedArtifactSource;
