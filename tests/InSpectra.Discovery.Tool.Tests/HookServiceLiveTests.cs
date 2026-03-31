@@ -26,6 +26,7 @@ public sealed class HookServiceLiveTests
             "0.30.1-dev.165",
             "autosdk",
             "AutoSDK.CLI",
+            expectedOptions: ["--help", "--version"],
             expectedCommands: ["generate", "http", "cli", "docs", "simplify", "convert-to-openapi30", "init", "trim", "ai"]));
         data.Add(new HookLiveToolCase(
             "AMSMigrate",
@@ -52,6 +53,12 @@ public sealed class HookServiceLiveTests
             "ccpdf",
             "CCPDF",
             expectedCommands: ["compress", "resize", "rezip"]));
+        data.Add(new HookLiveToolCase(
+            "Cnct",
+            "0.5.0",
+            "cnct",
+            "Cnct",
+            expectedOptions: ["config", "quiet", "debug", "version", "help"]));
         data.Add(new HookLiveToolCase(
             "Duotify.MarkdownTranslator",
             "1.5.0",
@@ -83,6 +90,13 @@ public sealed class HookServiceLiveTests
             "3.2.1",
             "pywinrt",
             "PyWinRT"));
+        data.Add(new HookLiveToolCase(
+            "PatliteTool",
+            "1.4.0",
+            "patlite",
+            "PATLITE tool",
+            expectedCommands: ["clear", "write", "read"],
+            expectedOptions: ["--help", "--version"]));
         return data;
     }
 

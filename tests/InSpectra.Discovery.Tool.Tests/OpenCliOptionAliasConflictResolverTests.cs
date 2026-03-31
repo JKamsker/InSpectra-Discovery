@@ -75,4 +75,38 @@ public sealed class OpenCliOptionAliasConflictResolverTests
         var valid = OpenCliDocumentValidator.TryValidateDocument(document, out var reason);
         Assert.True(valid, reason);
     }
+
+    [Fact]
+    public void Sanitize_Removes_Duplicate_Aliases_From_Same_Option()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "help",
+                    ["description"] = "Show help and usage information",
+                    ["aliases"] = new JsonArray("h", "h", "?"),
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var helpOption = Assert.Single(document["options"]!.AsArray())!.AsObject();
+        var aliases = helpOption["aliases"]!.AsArray();
+        Assert.Equal(2, aliases.Count);
+        Assert.Equal("h", aliases[0]!.GetValue<string>());
+        Assert.Equal("?", aliases[1]!.GetValue<string>());
+
+        var valid = OpenCliDocumentValidator.TryValidateDocument(document, out var reason);
+        Assert.True(valid, reason);
+    }
 }
