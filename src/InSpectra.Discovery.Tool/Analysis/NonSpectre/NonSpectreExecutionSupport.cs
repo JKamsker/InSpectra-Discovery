@@ -7,6 +7,8 @@ using InSpectra.Discovery.Tool.Infrastructure.Paths;
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json.Nodes;
 
 internal static class NonSpectreExecutionSupport
@@ -107,7 +109,7 @@ internal static class NonSpectreExecutionSupport
         CancellationToken cancellationToken)
     {
         var generatedAt = DateTimeOffset.UtcNow;
-        var tempRoot = Path.Combine(Path.GetTempPath(), $"{definition.TempRootPrefix}-{packageId.ToLowerInvariant()}-{version.ToLowerInvariant()}-{Guid.NewGuid():N}");
+        var tempRoot = CreateTempRoot(definition, packageId, version);
         var outputDirectory = Path.GetFullPath(outputRoot);
         var resultPath = Path.Combine(outputDirectory, "result.json");
         var stopwatch = Stopwatch.StartNew();
@@ -238,6 +240,34 @@ internal static class NonSpectreExecutionSupport
     private static string? ResolveCliFramework(string? cliFramework, string? defaultCliFramework)
         => !string.IsNullOrWhiteSpace(cliFramework) ? cliFramework : defaultCliFramework;
 
+    private static string CreateTempRoot(
+        NonSpectreAnalysisExecutionDefinition definition,
+        string packageId,
+        string version)
+    {
+        var slug = CreatePackageSlug(packageId);
+        var stableHash = CreateStableHash(packageId, version);
+        var instanceToken = Guid.NewGuid().ToString("N")[..8];
+        return Path.Combine(Path.GetTempPath(), $"{definition.TempRootPrefix}-{slug}-{stableHash}-{instanceToken}");
+    }
+
+    private static string CreatePackageSlug(string packageId)
+    {
+        var characters = packageId
+            .Where(char.IsLetterOrDigit)
+            .Take(6)
+            .Select(char.ToLowerInvariant)
+            .ToArray();
+        return characters.Length == 0 ? "tool" : new string(characters);
+    }
+
+    private static string CreateStableHash(string packageId, string version)
+    {
+        var input = Encoding.UTF8.GetBytes($"{packageId.ToLowerInvariant()}|{version.ToLowerInvariant()}");
+        var hash = SHA256.HashData(input);
+        return Convert.ToHexString(hash[..4]).ToLowerInvariant();
+    }
+
     private static void CleanupTempRoot(CommandRuntime runtime, string tempRoot)
     {
         runtime.TerminateSandboxProcesses(tempRoot);
@@ -258,5 +288,3 @@ internal static class NonSpectreExecutionSupport
         }
     }
 }
-
-

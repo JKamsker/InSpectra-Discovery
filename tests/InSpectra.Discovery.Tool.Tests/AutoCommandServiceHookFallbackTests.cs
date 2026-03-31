@@ -128,12 +128,142 @@ public sealed class AutoCommandServiceHookFallbackTests
         Assert.Null(result["fallback"]);
     }
 
+    [Fact]
+    public async Task RunAsync_FallsBackToHelp_WhenStaticFallbackStillCannotPublish()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        var staticRunnerCalled = false;
+        var helpRunnerCalled = false;
+
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
+                "Hooked.Tool",
+                "3.4.7",
+                "hooked",
+                "System.CommandLine",
+                "static",
+                "confirmed-static-analysis-framework",
+                "https://www.nuget.org/packages/Hooked.Tool/3.4.7",
+                "https://nuget.test/hooked.tool.3.4.7.nupkg",
+                "https://nuget.test/catalog/hooked.tool.3.4.7.json")),
+            new ThrowingNativeRunner(),
+            new FakeHelpRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                helpRunnerCalled = true;
+                WriteResult(path, "success", "help-crawl", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+            }),
+            new ThrowingCliFxRunner(),
+            new FakeStaticRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                staticRunnerCalled = true;
+                WriteResult(path, "terminal-failure", "invalid-opencli-artifact", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }),
+            new FakeHookRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                WriteResult(path, "retryable-failure", "hook-no-assembly-loaded", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Hooked.Tool",
+            "3.4.7",
+            outputRoot,
+            "batch-008",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(staticRunnerCalled);
+        Assert.True(helpRunnerCalled);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("help", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("help-crawl", result["classification"]?.GetValue<string>());
+        Assert.Equal("System.CommandLine", result["cliFramework"]?.GetValue<string>());
+        Assert.Equal("static", result["analysisSelection"]?["preferredMode"]?.GetValue<string>());
+        Assert.Equal("help", result["analysisSelection"]?["selectedMode"]?.GetValue<string>());
+        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("hook-no-assembly-loaded", result["fallback"]?["classification"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RunAsync_FallsBackToHelp_WhenStaticFallbackEndsWithTerminalParserFailure()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        var staticRunnerCalled = false;
+        var helpRunnerCalled = false;
+
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
+                "Hooked.Tool",
+                "3.4.8",
+                "hooked",
+                "System.CommandLine",
+                "static",
+                "confirmed-static-analysis-framework",
+                "https://www.nuget.org/packages/Hooked.Tool/3.4.8",
+                "https://nuget.test/hooked.tool.3.4.8.nupkg",
+                "https://nuget.test/catalog/hooked.tool.3.4.8.json")),
+            new ThrowingNativeRunner(),
+            new FakeHelpRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                helpRunnerCalled = true;
+                WriteResult(path, "success", "help-crawl", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+            }),
+            new ThrowingCliFxRunner(),
+            new FakeStaticRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                staticRunnerCalled = true;
+                WriteResult(path, "terminal-failure", "custom-parser", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }),
+            new FakeHookRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                WriteResult(path, "retryable-failure", "hook-no-assembly-loaded", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Hooked.Tool",
+            "3.4.8",
+            outputRoot,
+            "batch-009",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(staticRunnerCalled);
+        Assert.True(helpRunnerCalled);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("help", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("help-crawl", result["classification"]?.GetValue<string>());
+        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("hook-no-assembly-loaded", result["fallback"]?["classification"]?.GetValue<string>());
+    }
+
     private static void WriteResult(
         string outputRoot,
         string disposition,
         string? classification = null,
         string? cliFramework = null,
-        bool? includeOpenCliArtifact = null)
+        bool? includeOpenCliArtifact = null,
+        string? command = null)
     {
         var hasOpenCliArtifact = includeOpenCliArtifact ?? string.Equals(disposition, "success", StringComparison.Ordinal);
         RepositoryPathResolver.WriteJsonFile(
@@ -150,6 +280,7 @@ public sealed class AutoCommandServiceHookFallbackTests
                 ["disposition"] = disposition,
                 ["classification"] = classification,
                 ["failureMessage"] = classification,
+                ["command"] = command,
                 ["cliFramework"] = cliFramework,
                 ["artifacts"] = new JsonObject
                 {
@@ -179,6 +310,15 @@ public sealed class AutoCommandServiceHookFallbackTests
     {
         public Task RunAsync(string packageId, string version, string? commandName, string outputRoot, string batchId, int attempt, string source, string? cliFramework, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
             => throw new InvalidOperationException("Help runner should not run.");
+    }
+
+    private sealed class FakeHelpRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoHelpRunner
+    {
+        public Task RunAsync(string packageId, string version, string? commandName, string outputRoot, string batchId, int attempt, string source, string? cliFramework, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+        {
+            handler(outputRoot, packageId, commandName, version, batchId, attempt, cliFramework, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, source);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class ThrowingCliFxRunner : IAutoCliFxRunner

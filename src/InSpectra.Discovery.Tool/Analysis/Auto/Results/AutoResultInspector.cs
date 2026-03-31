@@ -14,8 +14,16 @@ internal static class AutoResultInspector
             && string.Equals(preferredMode, "static", StringComparison.OrdinalIgnoreCase)
             && ShouldTryHelpFallback(result);
 
+    public static bool ShouldUseFallbackResult(JsonObject result)
+        => IsSuccessful(result)
+            && HasOpenCliArtifact(result);
+
+    public static bool ShouldTryHelpAfterStaticFallback(JsonObject result)
+        => (IsSuccessful(result) && !HasOpenCliArtifact(result))
+            || IsTerminalFailure(result);
+
     public static bool ShouldUseStaticFallback(JsonObject result)
-        => !ShouldTryHelpFallback(result);
+        => ShouldUseFallbackResult(result);
 
     public static bool ShouldPreserveNativeResult(JsonObject? nativeResult, JsonObject helpResult)
         => nativeResult is not null
@@ -28,5 +36,8 @@ internal static class AutoResultInspector
 
     private static bool HasOpenCliArtifact(JsonObject result)
         => !string.IsNullOrWhiteSpace(result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
+
+    private static bool IsTerminalFailure(JsonObject result)
+        => string.Equals(result["disposition"]?.GetValue<string>(), "terminal-failure", StringComparison.Ordinal);
 }
 

@@ -132,6 +132,47 @@ public sealed class NonSpectreExecutionSupportTests
         Assert.Contains("CliFx analysis exceeded the overall timeout", result["failureMessage"]?.GetValue<string>());
     }
 
+    [Fact]
+    public async Task RunQuietAsync_Uses_Shortened_TempRoot_Name()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        string? capturedTempRoot = null;
+
+        await NonSpectreExecutionSupport.RunQuietAsync(
+            runtime: new CommandRuntime(),
+            definition: new NonSpectreAnalysisExecutionDefinition("hook", "inspectra-hook", "Hook analysis"),
+            bootstrapAsync: (_, _, _, _, _) => Task.FromResult(
+                new NonSpectreAnalysisBootstrapResult(
+                    PackageContentUrl: "https://example.test/package.nupkg",
+                    CommandInfo: new ResolvedToolCommandInfo("demo", null, null))),
+            analyzeAsync: (request, _) =>
+            {
+                capturedTempRoot = request.TempRoot;
+                request.Result["disposition"] = "success";
+                request.Result["classification"] = "hook-crawl";
+                return Task.CompletedTask;
+            },
+            packageId: "SoftwareExtravaganza.Whizbang.CLI",
+            version: "0.54.2-alpha.76",
+            commandName: null,
+            cliFramework: null,
+            outputRoot: Path.Combine(tempDirectory.Path, "output"),
+            batchId: "batch-1",
+            attempt: 1,
+            source: "unit-test",
+            installTimeoutSeconds: 30,
+            analysisTimeoutSeconds: 60,
+            commandTimeoutSeconds: 10,
+            cancellationToken: CancellationToken.None);
+
+        Assert.NotNull(capturedTempRoot);
+        var directoryName = Path.GetFileName(capturedTempRoot);
+        Assert.StartsWith("inspectra-hook-", directoryName, StringComparison.Ordinal);
+        Assert.DoesNotContain("softwareextravaganza", directoryName, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("0.54.2-alpha.76", directoryName, StringComparison.OrdinalIgnoreCase);
+        Assert.True(directoryName.Length < 40, $"Temp root segment '{directoryName}' was not shortened enough.");
+    }
+
     private sealed class TemporaryDirectory : IDisposable
     {
         public TemporaryDirectory()
@@ -153,5 +194,4 @@ public sealed class NonSpectreExecutionSupportTests
         }
     }
 }
-
 
