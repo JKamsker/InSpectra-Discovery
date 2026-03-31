@@ -1,23 +1,44 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "typecontractor",
+    "title": "TypeContractor.Tool",
     "version": "0.20.0-rc.1",
-    "description": "Tool for generating TypeScript definitions from C# code"
+    "description": "Provides a dotnet tool for generating TypeScript\n\t\t\tdefinitions from an ASP.NET Core API."
   },
   "x-inspectra": {
-    "artifactSource": "crawled-from-help",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "helpDocumentCount": 1,
-    "cliFramework": "System.CommandLine"
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.3.0",
+      "patchTarget": "Parse-postfix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Tool for generating TypeScript definitions from C# code"
   },
-  "commands": [],
   "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
     {
       "name": "--assembly",
       "recursive": false,
       "hidden": false,
-      "description": "Path to the assembly to start with. Will be relative to the current directory",
+      "description": "Path to the assembly to start with. Will be relative to the current directory [default: ]",
       "arguments": [
         {
           "name": "ASSEMBLY",
@@ -25,7 +46,8 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
@@ -33,7 +55,7 @@
       "name": "--output",
       "recursive": false,
       "hidden": false,
-      "description": "Output path to write to. Will be relative to the current directory",
+      "description": "Output path to write to. Will be relative to the current directory [default: ]",
       "arguments": [
         {
           "name": "OUTPUT",
@@ -41,7 +63,8 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
@@ -49,7 +72,7 @@
       "name": "--root",
       "recursive": false,
       "hidden": false,
-      "description": "Relative root for generating cleaner imports. For example '~/api'",
+      "description": "Relative root for generating cleaner imports. For example '~/api' [default: ]",
       "arguments": [
         {
           "name": "ROOT",
@@ -57,7 +80,8 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
@@ -73,7 +97,13 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "CleanMethod",
+          "allowedValues": [
+            "None",
+            "Smart",
+            "Remove"
+          ]
         }
       ]
     },
@@ -81,15 +111,16 @@
       "name": "--replace",
       "recursive": false,
       "hidden": false,
-      "description": "Provide one replacement in the form '<search>:<replace>'. Can be repeated",
+      "description": "Provide one replacement in the form '<search>:<replace>'. Can be repeated [default: System.String[]]",
       "arguments": [
         {
           "name": "REPLACE",
           "required": true,
           "arity": {
             "minimum": 1,
-            "maximum": 1
-          }
+            "maximum": 100000
+          },
+          "type": "String[]"
         }
       ]
     },
@@ -97,15 +128,16 @@
       "name": "--strip",
       "recursive": false,
       "hidden": false,
-      "description": "Provide a prefix to strip out of types. Can be repeated",
+      "description": "Provide a prefix to strip out of types. Can be repeated [default: System.String[]]",
       "arguments": [
         {
           "name": "STRIP",
           "required": true,
           "arity": {
             "minimum": 1,
-            "maximum": 1
-          }
+            "maximum": 100000
+          },
+          "type": "String[]"
         }
       ]
     },
@@ -113,15 +145,16 @@
       "name": "--custom-map",
       "recursive": false,
       "hidden": false,
-      "description": "Provide a custom type map in the form '<from>:<to>'. Can be repeated",
+      "description": "Provide a custom type map in the form '<from>:<to>'. Can be repeated [default: System.String[]]",
       "arguments": [
         {
           "name": "CUSTOM_MAP",
           "required": true,
           "arity": {
             "minimum": 1,
-            "maximum": 1
-          }
+            "maximum": 100000
+          },
+          "type": "String[]"
         }
       ]
     },
@@ -137,7 +170,8 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
@@ -153,7 +187,8 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "Int32"
         }
       ]
     },
@@ -161,7 +196,6 @@
       "name": "--log-level",
       "recursive": false,
       "hidden": false,
-      "description": "[default: Info]",
       "arguments": [
         {
           "name": "LOG_LEVEL",
@@ -169,7 +203,14 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "LogLevel",
+          "allowedValues": [
+            "Debug",
+            "Info",
+            "Warning",
+            "Error"
+          ]
         }
       ]
     },
@@ -177,13 +218,33 @@
       "name": "--build-zod-schemas",
       "recursive": false,
       "hidden": false,
-      "description": "Enable experimental support for Zod schemas alongside generated types."
+      "description": "Enable experimental support for Zod schemas alongside generated types. [default: False]",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     },
     {
       "name": "--generate-api-clients",
       "recursive": false,
       "hidden": false,
-      "description": "Enable experimental support for auto-generating API clients for each endpoint."
+      "description": "Enable experimental support for auto-generating API clients for each endpoint. [default: False]",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     },
     {
       "name": "--api-client-template",
@@ -197,7 +258,8 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
@@ -213,25 +275,16 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "Casing",
+          "allowedValues": [
+            "Pascal",
+            "Camel",
+            "Kebab",
+            "Snake"
+          ]
         }
       ]
-    },
-    {
-      "name": "--help",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show help and usage information",
-      "aliases": [
-        "-?",
-        "-h"
-      ]
-    },
-    {
-      "name": "--version",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show version information"
     }
   ]
 }

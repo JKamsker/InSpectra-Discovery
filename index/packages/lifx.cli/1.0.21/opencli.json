@@ -1,33 +1,63 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "lifx",
+    "title": "Lifx.Cli",
     "version": "1.0.21",
-    "description": "LIFX CLI - Control your LIFX smart lights from the command line\nFeatures:\n- Cloud API: Control lights via internet (requires API token)\n- LAN Protocol: Control lights on local network (no API token needed)\n- Secure credential storage via Windows Credential Manager\nQuick Start (Cloud):\n1. Get API token: https://cloud.lifx.com/settings\n2. Store token: lifx cloud key set <token>\n3. Control lights: lifx cloud lights on all\nQuick Start (LAN - no token needed):\nlifx lan discover"
+    "description": "Command-line tool for controlling LIFX smart lights via Cloud API or LAN protocol. Features secure credential storage, comprehensive commands for lights/effects/scenes, and works with or without internet connection."
   },
   "x-inspectra": {
-    "artifactSource": "crawled-from-help",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "helpDocumentCount": 26,
-    "cliFramework": "System.CommandLine"
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "Parse-postfix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "LIFX CLI - Control your LIFX smart lights from the command line\n\nFeatures:\n  - Cloud API: Control lights via internet (requires API token)\n  - LAN Protocol: Control lights on local network (no API token needed)\n  - Secure credential storage via Windows Credential Manager\n\nQuick Start (Cloud):\n  1. Get API token: https://cloud.lifx.com/settings\n  2. Store token: lifx cloud key set <token>\n  3. Control lights: lifx cloud lights on all\n\nQuick Start (LAN - no token needed):\n  lifx lan discover\n\nExamples:\n  lifx cloud key set <token>         # Store API token (do this first!)\n  lifx cloud lights list             # List all lights\n  lifx cloud lights on all           # Turn on all lights\n  lifx cloud lights color all blue   # Set all lights to blue\n  lifx cloud effects breathe all     # Start breathe effect\n  lifx cloud scenes list             # List available scenes\n  lifx lan discover                  # Discover local devices\n\nGet help for any command:\n  lifx cloud --help\n  lifx lan --help\n  lifx cloud lights --help"
   },
   "options": [
     {
-      "name": "--verbose",
-      "required": false,
-      "description": "Enable verbose output with detailed information",
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
       "recursive": false,
       "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--verbose",
+      "recursive": true,
+      "hidden": false,
+      "description": "Enable verbose output with detailed information [default: False]",
       "aliases": [
         "-v"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
       ]
     },
     {
       "name": "--token",
-      "required": false,
-      "description": "LIFX Cloud API token (overrides stored credential)",
-      "recursive": false,
+      "recursive": true,
       "hidden": false,
+      "description": "LIFX Cloud API token (overrides stored credential)",
       "aliases": [
         "-t"
       ],
@@ -38,344 +68,60 @@
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
-    },
-    {
-      "name": "--help",
-      "required": false,
-      "description": "Show help and usage information",
-      "recursive": false,
-      "hidden": false,
-      "aliases": [
-        "-?",
-        "-h"
-      ]
-    },
-    {
-      "name": "--version",
-      "required": false,
-      "description": "Show version information",
-      "recursive": false,
-      "hidden": false
     }
   ],
-  "arguments": null,
   "commands": [
     {
       "name": "cloud",
-      "description": "Control LIFX lights via Cloud API (requires API token)\nThe Cloud API allows you to control your LIFX lights from anywhere with internet.\nRequires an API token from https://cloud.lifx.com/settings",
-      "hidden": false,
-      "options": [
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
-          ]
-        },
-        {
-          "name": "--verbose",
-          "required": false,
-          "description": "Enable verbose output with detailed information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-v"
-          ]
-        },
-        {
-          "name": "--token",
-          "required": false,
-          "description": "LIFX Cloud API token (overrides stored credential)",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-t"
-          ],
-          "arguments": [
-            {
-              "name": "TOKEN",
-              "required": true,
-              "arity": {
-                "minimum": 1,
-                "maximum": 1
-              }
-            }
-          ]
-        }
-      ],
+      "description": "Control LIFX lights via Cloud API (requires API token)\n\nThe Cloud API allows you to control your LIFX lights from anywhere with internet.\nRequires an API token from https://cloud.lifx.com/settings\n\nSubcommands:\n  key       - Manage API token (set/show/delete)\n  lights    - Control light power, color, and brightness\n  effects   - Run visual effects (breathe, pulse, etc.)\n  scenes    - List and activate scenes\n\nExamples:\n  lifx cloud key set <token>         # Store API token (REQUIRED)\n  lifx cloud lights list             # List all lights\n  lifx cloud lights on all           # Turn on all lights\n  lifx cloud lights color all blue   # Set color\n  lifx cloud effects breathe all     # Start breathe effect\n  lifx cloud scenes activate \"Movie Time\"  # Activate scene\n\nSetup:\n  1. Get token: https://cloud.lifx.com/settings\n  2. Store token: lifx cloud key set <token>\n  3. Run commands: lifx cloud lights on all",
       "commands": [
         {
           "name": "key",
-          "description": "Manage LIFX Cloud API token (securely stored)\nThe API token is required for all Cloud API features.\nStorage method depends on your platform:\n- Windows: Encrypted using Data Protection API (DPAPI)\n- Linux/macOS: Stored in ~/.lifx/credentials.json with 600 permissions\nGet your API token:\n1. Visit https://cloud.lifx.com/settings\n2. Log in to your LIFX account\n3. Click 'Generate New Token'\n4. Copy the token and store it using: lifx cloud key set <token>\nSecurity Note:\n- Never share your API token\n- Token is encrypted (Windows) or protected by file permissions (Unix)\n- Clear your command history after setting token",
-          "hidden": false,
-          "options": [
-            {
-              "name": "--help",
-              "required": false,
-              "description": "Show help and usage information",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-?",
-                "-h"
-              ]
-            },
-            {
-              "name": "--verbose",
-              "required": false,
-              "description": "Enable verbose output with detailed information",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-v"
-              ]
-            },
-            {
-              "name": "--token",
-              "required": false,
-              "description": "LIFX Cloud API token (overrides stored credential)",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-t"
-              ],
-              "arguments": [
-                {
-                  "name": "TOKEN",
-                  "required": true,
-                  "arity": {
-                    "minimum": 1,
-                    "maximum": 1
-                  }
-                }
-              ]
-            }
-          ],
+          "description": "Manage LIFX Cloud API token (securely stored)\n\nThe API token is required for all Cloud API features.\nStorage method depends on your platform:\n  - Windows: Encrypted using Data Protection API (DPAPI)\n  - Linux/macOS: Stored in ~/.lifx/credentials.json with 600 permissions\n\nGet your API token:\n  1. Visit https://cloud.lifx.com/settings\n  2. Log in to your LIFX account\n  3. Click 'Generate New Token'\n  4. Copy the token and store it using: lifx cloud key set <token>\n\nSecurity Note:\n  - Never share your API token\n  - Token is encrypted (Windows) or protected by file permissions (Unix)\n  - Clear your command history after setting token",
           "commands": [
             {
               "name": "set",
               "description": "Store API token securely using Windows DPAPI",
-              "hidden": false,
-              "options": [
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
-                    }
-                  ]
-                }
-              ],
               "arguments": [
                 {
-                  "name": "TOKEN",
-                  "required": false,
+                  "name": "token",
                   "description": "API token from https://cloud.lifx.com/settings",
-                  "hidden": false,
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "show",
-              "description": "Check if API token is configured (does not display token)",
-              "hidden": false,
-              "options": [
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
-                    }
-                  ]
-                }
-              ]
+              "description": "Check if API token is configured (does not display token)"
             },
             {
               "name": "delete",
-              "description": "Remove stored API token",
-              "hidden": false,
-              "options": [
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
-                    }
-                  ]
-                }
-              ]
+              "description": "Remove stored API token"
             }
           ]
         },
         {
           "name": "lights",
           "description": "Control LIFX lights",
-          "hidden": false,
-          "options": [
-            {
-              "name": "--help",
-              "required": false,
-              "description": "Show help and usage information",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-?",
-                "-h"
-              ]
-            },
-            {
-              "name": "--verbose",
-              "required": false,
-              "description": "Enable verbose output with detailed information",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-v"
-              ]
-            },
-            {
-              "name": "--token",
-              "required": false,
-              "description": "LIFX Cloud API token (overrides stored credential)",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-t"
-              ],
-              "arguments": [
-                {
-                  "name": "TOKEN",
-                  "required": true,
-                  "arity": {
-                    "minimum": 1,
-                    "maximum": 1
-                  }
-                }
-              ]
-            }
-          ],
           "commands": [
             {
               "name": "list",
               "description": "List all lights, groups, or locations",
-              "hidden": false,
               "options": [
                 {
                   "name": "--type",
-                  "required": false,
-                  "description": "Type to list (lights, groups, locations) [default: lights]",
                   "recursive": false,
                   "hidden": false,
+                  "description": "Type to list (lights, groups, locations) [default: lights]",
                   "aliases": [
                     "-t"
                   ],
@@ -386,16 +132,16 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "String"
                     }
                   ]
                 },
                 {
                   "name": "--selector",
-                  "required": false,
-                  "description": "Selector for filtering [default: all]",
                   "recursive": false,
                   "hidden": false,
+                  "description": "Selector for filtering [default: all]",
                   "aliases": [
                     "-s"
                   ],
@@ -406,48 +152,8 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "String"
                     }
                   ]
                 }
@@ -456,14 +162,12 @@
             {
               "name": "on",
               "description": "Turn lights on",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "Transition duration in seconds [default: 1]",
                   "recursive": false,
                   "hidden": false,
+                  "description": "Transition duration in seconds [default: 1]",
                   "aliases": [
                     "-d"
                   ],
@@ -474,76 +178,34 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
-                  "required": false,
+                  "name": "selector",
                   "description": "Which lights to turn on [default: all]",
-                  "hidden": false,
+                  "required": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "off",
               "description": "Turn lights off",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "Transition duration in seconds [default: 1]",
                   "recursive": false,
                   "hidden": false,
+                  "description": "Transition duration in seconds [default: 1]",
                   "aliases": [
                     "-d"
                   ],
@@ -554,76 +216,34 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
-                  "required": false,
+                  "name": "selector",
                   "description": "Which lights to turn off [default: all]",
-                  "hidden": false,
+                  "required": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "toggle",
               "description": "Toggle lights power",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "Transition duration in seconds [default: 1]",
                   "recursive": false,
                   "hidden": false,
+                  "description": "Transition duration in seconds [default: 1]",
                   "aliases": [
                     "-d"
                   ],
@@ -634,76 +254,34 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
-                  "required": false,
+                  "name": "selector",
                   "description": "Which lights to toggle [default: all]",
-                  "hidden": false,
+                  "required": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "color",
               "description": "Set light color",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "Transition duration in seconds [default: 1]",
                   "recursive": false,
                   "hidden": false,
+                  "description": "Transition duration in seconds [default: 1]",
                   "aliases": [
                     "-d"
                   ],
@@ -714,86 +292,44 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
-                  "required": false,
+                  "name": "selector",
                   "description": "Which lights to change [default: all]",
-                  "hidden": false,
+                  "required": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 },
                 {
-                  "name": "COLOR",
-                  "required": false,
+                  "name": "color",
                   "description": "Color (name, rgb:R,G,B, or hue:H saturation:S brightness:B)",
-                  "hidden": false,
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "brightness",
               "description": "Set light brightness",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "Transition duration in seconds [default: 1]",
                   "recursive": false,
                   "hidden": false,
+                  "description": "Transition duration in seconds [default: 1]",
                   "aliases": [
                     "-d"
                   ],
@@ -804,72 +340,32 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
-                  "required": false,
+                  "name": "selector",
                   "description": "Which lights to change [default: all]",
-                  "hidden": false,
+                  "required": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 },
                 {
-                  "name": "BRIGHTNESS",
-                  "required": false,
+                  "name": "brightness",
                   "description": "Brightness level (0.0 to 1.0)",
-                  "hidden": false,
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
-                  }
+                  },
+                  "type": "Double"
                 }
               ]
             }
@@ -878,60 +374,13 @@
         {
           "name": "effects",
           "description": "Run visual effects on lights",
-          "hidden": false,
-          "options": [
-            {
-              "name": "--help",
-              "required": false,
-              "description": "Show help and usage information",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-?",
-                "-h"
-              ]
-            },
-            {
-              "name": "--verbose",
-              "required": false,
-              "description": "Enable verbose output with detailed information",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-v"
-              ]
-            },
-            {
-              "name": "--token",
-              "required": false,
-              "description": "LIFX Cloud API token (overrides stored credential)",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-t"
-              ],
-              "arguments": [
-                {
-                  "name": "TOKEN",
-                  "required": true,
-                  "arity": {
-                    "minimum": 1,
-                    "maximum": 1
-                  }
-                }
-              ]
-            }
-          ],
           "commands": [
             {
               "name": "breathe",
               "description": "Breathe effect",
-              "hidden": false,
               "options": [
                 {
                   "name": "--color",
-                  "required": false,
-                  "description": "[default: blue]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -944,14 +393,13 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "String"
                     }
                   ]
                 },
                 {
                   "name": "--period",
-                  "required": false,
-                  "description": "[default: 2]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -964,14 +412,13 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 },
                 {
                   "name": "--cycles",
-                  "required": false,
-                  "description": "[default: 5]",
                   "recursive": false,
                   "hidden": false,
                   "arguments": [
@@ -981,74 +428,30 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "pulse",
               "description": "Pulse effect",
-              "hidden": false,
               "options": [
                 {
                   "name": "--color",
-                  "required": false,
-                  "description": "[default: red]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1061,14 +464,13 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "String"
                     }
                   ]
                 },
                 {
                   "name": "--period",
-                  "required": false,
-                  "description": "[default: 1]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1081,14 +483,13 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 },
                 {
                   "name": "--cycles",
-                  "required": false,
-                  "description": "[default: 5]",
                   "recursive": false,
                   "hidden": false,
                   "arguments": [
@@ -1098,74 +499,30 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "morph",
               "description": "Morph effect",
-              "hidden": false,
               "options": [
                 {
                   "name": "--period",
-                  "required": false,
-                  "description": "[default: 3]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1178,14 +535,13 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 },
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "[default: 30]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1198,74 +554,30 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "flame",
               "description": "Flame effect",
-              "hidden": false,
               "options": [
                 {
                   "name": "--period",
-                  "required": false,
-                  "description": "[default: 5]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1278,14 +590,13 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 },
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "[default: 60]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1298,74 +609,30 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "move",
               "description": "Move effect (multi-zone)",
-              "hidden": false,
               "options": [
                 {
                   "name": "--direction",
-                  "required": false,
-                  "description": "[default: forward]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1378,14 +645,13 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "String"
                     }
                   ]
                 },
                 {
                   "name": "--period",
-                  "required": false,
-                  "description": "[default: 2]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1398,74 +664,30 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "clouds",
               "description": "Clouds effect (multi-zone)",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "[default: 120]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1478,74 +700,30 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "sunrise",
               "description": "Sunrise effect",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "[default: 300]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1558,74 +736,30 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "sunset",
               "description": "Sunset effect",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "[default: 300]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1638,129 +772,53 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
-                    }
-                  ]
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             },
             {
               "name": "off",
               "description": "Stop all effects",
-              "hidden": false,
               "options": [
                 {
                   "name": "--power-off",
-                  "required": false,
-                  "description": null,
-                  "recursive": false,
-                  "hidden": false
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
                   "recursive": false,
                   "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
                   "arguments": [
                     {
-                      "name": "TOKEN",
-                      "required": true,
+                      "required": false,
                       "arity": {
-                        "minimum": 1,
+                        "minimum": 0,
                         "maximum": 1
-                      }
+                      },
+                      "type": "Boolean"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SELECTOR",
+                  "name": "selector",
                   "required": false,
-                  "description": "[default: all]",
-                  "hidden": false,
                   "arity": {
                     "minimum": 0,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             }
@@ -1769,108 +827,17 @@
         {
           "name": "scenes",
           "description": "Manage and activate scenes",
-          "hidden": false,
-          "options": [
-            {
-              "name": "--help",
-              "required": false,
-              "description": "Show help and usage information",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-?",
-                "-h"
-              ]
-            },
-            {
-              "name": "--verbose",
-              "required": false,
-              "description": "Enable verbose output with detailed information",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-v"
-              ]
-            },
-            {
-              "name": "--token",
-              "required": false,
-              "description": "LIFX Cloud API token (overrides stored credential)",
-              "recursive": false,
-              "hidden": false,
-              "aliases": [
-                "-t"
-              ],
-              "arguments": [
-                {
-                  "name": "TOKEN",
-                  "required": true,
-                  "arity": {
-                    "minimum": 1,
-                    "maximum": 1
-                  }
-                }
-              ]
-            }
-          ],
           "commands": [
             {
               "name": "list",
-              "description": "List all scenes",
-              "hidden": false,
-              "options": [
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
-                  "arguments": [
-                    {
-                      "name": "TOKEN",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      }
-                    }
-                  ]
-                }
-              ]
+              "description": "List all scenes"
             },
             {
               "name": "activate",
               "description": "Activate a scene",
-              "hidden": false,
               "options": [
                 {
                   "name": "--duration",
-                  "required": false,
-                  "description": "[default: 1]",
                   "recursive": false,
                   "hidden": false,
                   "aliases": [
@@ -1883,69 +850,37 @@
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
-                      }
+                      },
+                      "type": "Double"
                     }
                   ]
                 },
                 {
                   "name": "--fast",
-                  "required": false,
-                  "description": null,
-                  "recursive": false,
-                  "hidden": false
-                },
-                {
-                  "name": "--help",
-                  "required": false,
-                  "description": "Show help and usage information",
                   "recursive": false,
                   "hidden": false,
-                  "aliases": [
-                    "-?",
-                    "-h"
-                  ]
-                },
-                {
-                  "name": "--verbose",
-                  "required": false,
-                  "description": "Enable verbose output with detailed information",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-v"
-                  ]
-                },
-                {
-                  "name": "--token",
-                  "required": false,
-                  "description": "LIFX Cloud API token (overrides stored credential)",
-                  "recursive": false,
-                  "hidden": false,
-                  "aliases": [
-                    "-t"
-                  ],
                   "arguments": [
                     {
-                      "name": "TOKEN",
-                      "required": true,
+                      "required": false,
                       "arity": {
-                        "minimum": 1,
+                        "minimum": 0,
                         "maximum": 1
-                      }
+                      },
+                      "type": "Boolean"
                     }
                   ]
                 }
               ],
               "arguments": [
                 {
-                  "name": "SCENE",
-                  "required": false,
+                  "name": "scene",
                   "description": "Scene name or UUID",
-                  "hidden": false,
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
-                  }
+                  },
+                  "type": "String"
                 }
               ]
             }
@@ -1954,34 +889,294 @@
       ]
     },
     {
-      "name": "key",
-      "description": "- Manage API token (set/show/delete)",
-      "hidden": false
+      "name": "lan",
+      "description": "Control LIFX lights via LAN protocol (no API token needed)\n\nThe LAN protocol allows you to control lights on your local network.\nWorks without internet connection and without API token.\n\nSubcommands:\n  discover  - Discover LIFX devices on local network\n  list      - List cached discovered devices\n  lights    - Control discovered lights (on/off/color)\n\nExamples:\n  lifx lan discover --timeout 10    # Discover for 10 seconds\n  lifx lan list                     # Show discovered devices\n  lifx lan lights on D0:73:D5:XX:XX:XX   # Turn on a light\n  lifx lan lights color D0:73:D5:XX:XX:XX 2700  # Set to warm white\n\nNote: Devices must be on the same network as your computer.",
+      "commands": [
+        {
+          "name": "discover",
+          "description": "Discover LIFX devices on local network",
+          "options": [
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "Discovery timeout in seconds [default: 5]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List cached LAN devices from previous discovery"
+        },
+        {
+          "name": "lights",
+          "description": "Control LAN lights",
+          "commands": [
+            {
+              "name": "on",
+              "description": "Turn light on via LAN",
+              "options": [
+                {
+                  "name": "--duration",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Transition duration in seconds [default: 1]",
+                  "aliases": [
+                    "-d"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "DURATION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "mac-address",
+                  "description": "MAC address of the light (e.g., D0:73:D5:12:34:56)",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "off",
+              "description": "Turn light off via LAN",
+              "options": [
+                {
+                  "name": "--duration",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Transition duration in seconds [default: 1]",
+                  "aliases": [
+                    "-d"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "DURATION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "mac-address",
+                  "description": "MAC address of the light",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "color",
+              "description": "Set light color via LAN",
+              "options": [
+                {
+                  "name": "--duration",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Transition duration in seconds [default: 1]",
+                  "aliases": [
+                    "-d"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "DURATION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "mac-address",
+                  "description": "MAC address of the light",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                },
+                {
+                  "name": "kelvin",
+                  "description": "Color temperature in Kelvin (2500-9000, e.g., 2700 for warm white)",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "state",
+              "description": "Get light state via LAN",
+              "arguments": [
+                {
+                  "name": "mac-address",
+                  "description": "MAC address of the light",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "rename",
+              "description": "Rename a light via LAN",
+              "arguments": [
+                {
+                  "name": "mac-address",
+                  "description": "MAC address of the light",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                },
+                {
+                  "name": "new-name",
+                  "description": "New name for the light (max 32 characters)",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
-      "name": "lights",
-      "description": "- Control light power, color, and brightness",
-      "hidden": false
+      "name": "config",
+      "description": "Manage CLI configuration (non-sensitive settings)",
+      "commands": [
+        {
+          "name": "show",
+          "description": "Show current configuration"
+        },
+        {
+          "name": "reset",
+          "description": "Reset configuration to defaults (does not delete API token)"
+        }
+      ]
     },
     {
-      "name": "effects",
-      "description": "- Run visual effects (breathe, pulse, etc.)",
-      "hidden": false
+      "name": "products",
+      "description": "View LIFX product catalog",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List all LIFX products",
+          "options": [
+            {
+              "name": "--vendor",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by vendor name (default: LIFX)",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VENDOR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--color-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show only color-capable products [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--multizone-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show only multizone products [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
-      "name": "scenes",
-      "description": "- List and activate scenes",
-      "hidden": false
-    },
-    {
-      "name": "discover",
-      "description": "- Discover LIFX devices on local network",
-      "hidden": false
-    },
-    {
-      "name": "list",
-      "description": "- List cached discovered devices",
-      "hidden": false
+      "name": "version",
+      "description": "Show version information"
     }
   ]
 }

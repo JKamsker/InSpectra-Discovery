@@ -6,62 +6,56 @@
     "description": "A cli tool helps you to de-duplicate images in a folder."
   },
   "x-inspectra": {
-    "artifactSource": "static-analysis",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "metadataEnriched": true,
-    "helpDocumentCount": 6,
-    "staticAnalysis": {
-      "framework": "System.CommandLine",
-      "inspectorType": "dnlib",
-      "confidence": "high",
-      "verbCount": 1,
-      "optionCount": 0,
-      "valueCount": 0,
-      "limitations": [
-        "property-defaults-not-captured",
-        "fluent-api-configuration-not-visible"
-      ]
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "Parse-postfix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
     },
     "cliFramework": "System.CommandLine"
   },
-  "commands": [
+  "options": [
     {
-      "name": "compare",
+      "name": "--help",
+      "recursive": true,
       "hidden": false,
-      "description": "Compare two images to see their similarity.",
-      "options": [
-        {
-          "name": "--images",
-          "recursive": false,
-          "hidden": false,
-          "description": "Paths of the images to compare. You can pass this '-i' parameter multiple times to compare at least two images.",
-          "aliases": [
-            "-i"
-          ]
-        },
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
-          ]
-        },
-        {
-          "name": "--verbose",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show detailed log",
-          "aliases": [
-            "-v"
-          ]
-        }
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
       ]
     },
     {
-      "name": "dedup",
+      "name": "--version",
+      "recursive": false,
       "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--verbose",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show detailed log [default: False]",
+      "aliases": [
+        "-v"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "dedup",
       "description": "De-duplicate images in a folder.",
       "options": [
         {
@@ -71,30 +65,76 @@
           "description": "Path of the folder to de-duplicate. (Symbolic links will be ignored)",
           "aliases": [
             "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
           "name": "--duplicate-similar",
           "recursive": false,
           "hidden": false,
-          "description": "Similarity bar. This value means two image are considered as duplicates if their similarity is greater than it. Setting too small may cause different images to be considered as duplicates. Suggested values: [96-100] [default: 96]"
+          "description": "Similarity bar. This value means two image are considered as duplicates if their similarity is greater than it. Setting too small may cause different images to be considered as duplicates. Suggested values: [96-100] [default: 96]",
+          "aliases": [
+            "-ds"
+          ],
+          "arguments": [
+            {
+              "name": "DUPLICATE_SIMILAR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
         },
         {
           "name": "--recursive",
           "recursive": false,
           "hidden": false,
-          "description": "Recursively search for similar images in subdirectories. (.trash content will be ignored)",
+          "description": "Recursively search for similar images in subdirectories. (.trash content will be ignored) [default: False]",
           "aliases": [
             "-r"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--keep",
           "recursive": false,
           "hidden": false,
-          "description": "Preference for sorting images by quality to determine which to keep when duplicates are found. Available options: Colorful|GrayScale|Newest|Oldest|Smallest|Largest|HighestResolution|LowestResolution. [default: Colorful|HighestResolution|Largest|Newest]",
+          "description": "Preference for sorting images by quality to determine which to keep when duplicates are found. Available options: Colorful|GrayScale|Newest|Oldest|Smallest|Largest|HighestResolution|LowestResolution. [default: Aiursoft.NiBot.Core.Models.KeepPreference[]]",
           "aliases": [
             "-k"
+          ],
+          "arguments": [
+            {
+              "name": "KEEP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "KeepPreference[]"
+            }
           ]
         },
         {
@@ -104,24 +144,63 @@
           "description": "Action to take when duplicates are found. Available options: Nothing, Delete, MoveToTrash. [default: MoveToTrash]",
           "aliases": [
             "-a"
+          ],
+          "arguments": [
+            {
+              "name": "ACTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DuplicateAction",
+              "allowedValues": [
+                "Nothing",
+                "Delete",
+                "MoveToTrash",
+                "MoveToTrashAndCreateLink",
+                "DeleteAndCreateLink"
+              ]
+            }
           ]
         },
         {
           "name": "--yes",
           "recursive": false,
           "hidden": false,
-          "description": "No interactive mode. Taking action without asking for confirmation.",
+          "description": "No interactive mode. Taking action without asking for confirmation. [default: False]",
           "aliases": [
             "-y"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--extensions",
           "recursive": false,
           "hidden": false,
-          "description": "Extensions of files to dedup. [default: jpg|jpeg|png|jfif]",
+          "description": "Extensions of files to dedup. [default: System.String[]]",
           "aliases": [
             "-e"
+          ],
+          "arguments": [
+            {
+              "name": "EXTENSIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
           ]
         },
         {
@@ -131,31 +210,23 @@
           "description": "Number of threads to use for image indexing. Default is 4. [default: 4]",
           "aliases": [
             "-t"
-          ]
-        },
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
-          ]
-        },
-        {
-          "name": "--verbose",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show detailed log",
-          "aliases": [
-            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "THREADS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
           ]
         }
       ]
     },
     {
       "name": "dedup-copy",
-      "hidden": false,
       "description": "Copy images in a folder to another folder with de-duplication. (Duplicate images in destination folder will be ignored.)",
       "options": [
         {
@@ -165,6 +236,17 @@
           "description": "Path of the folder to de-duplicate. (Symbolic links will be ignored)",
           "aliases": [
             "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
@@ -174,48 +256,115 @@
           "description": "Path of the folder to copy de-duplicated images.",
           "aliases": [
             "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DESTINATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
           "name": "--duplicate-similar",
           "recursive": false,
           "hidden": false,
-          "description": "Similarity bar. This value means two image are considered as duplicates if their similarity is greater than it. Setting too small may cause different images to be considered as duplicates. Suggested values: [96-100] [default: 96]"
+          "description": "Similarity bar. This value means two image are considered as duplicates if their similarity is greater than it. Setting too small may cause different images to be considered as duplicates. Suggested values: [96-100] [default: 96]",
+          "aliases": [
+            "-ds"
+          ],
+          "arguments": [
+            {
+              "name": "DUPLICATE_SIMILAR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
         },
         {
           "name": "--recursive",
           "recursive": false,
           "hidden": false,
-          "description": "Recursively search for similar images in subdirectories. (.trash content will be ignored)",
+          "description": "Recursively search for similar images in subdirectories. (.trash content will be ignored) [default: False]",
           "aliases": [
             "-r"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--keep",
           "recursive": false,
           "hidden": false,
-          "description": "Preference for sorting images by quality to determine which to keep when duplicates are found. Available options: Colorful|GrayScale|Newest|Oldest|Smallest|Largest|HighestResolution|LowestResolution. [default: Colorful|HighestResolution|Largest|Newest]",
+          "description": "Preference for sorting images by quality to determine which to keep when duplicates are found. Available options: Colorful|GrayScale|Newest|Oldest|Smallest|Largest|HighestResolution|LowestResolution. [default: Aiursoft.NiBot.Core.Models.KeepPreference[]]",
           "aliases": [
             "-k"
+          ],
+          "arguments": [
+            {
+              "name": "KEEP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "KeepPreference[]"
+            }
           ]
         },
         {
           "name": "--yes",
           "recursive": false,
           "hidden": false,
-          "description": "No interactive mode. Taking action without asking for confirmation.",
+          "description": "No interactive mode. Taking action without asking for confirmation. [default: False]",
           "aliases": [
             "-y"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--extensions",
           "recursive": false,
           "hidden": false,
-          "description": "Extensions of files to dedup. [default: jpg|jpeg|png|jfif]",
+          "description": "Extensions of files to dedup. [default: System.String[]]",
           "aliases": [
             "-e"
+          ],
+          "arguments": [
+            {
+              "name": "EXTENSIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
           ]
         },
         {
@@ -225,31 +374,23 @@
           "description": "Number of threads to use for image indexing. Default is 4. [default: 4]",
           "aliases": [
             "-t"
-          ]
-        },
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
-          ]
-        },
-        {
-          "name": "--verbose",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show detailed log",
-          "aliases": [
-            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "THREADS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
           ]
         }
       ]
     },
     {
       "name": "dedup-patch",
-      "hidden": false,
       "description": "Dedup patch will fetch all files from source directory and destination directory, and if a picture in source directory is a duplicate of a picture in destination directory, and source picture has a higher quality, then the source picture will be patched to the destination picture.",
       "options": [
         {
@@ -259,6 +400,17 @@
           "description": "Path of the folder to de-duplicate. (Symbolic links will be ignored)",
           "aliases": [
             "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
@@ -268,39 +420,96 @@
           "description": "Path of the folder to copy de-duplicated images.",
           "aliases": [
             "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DESTINATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
           "name": "--duplicate-similar",
           "recursive": false,
           "hidden": false,
-          "description": "Similarity bar. This value means two image are considered as duplicates if their similarity is greater than it. Setting too small may cause different images to be considered as duplicates. Suggested values: [96-100] [default: 96]"
+          "description": "Similarity bar. This value means two image are considered as duplicates if their similarity is greater than it. Setting too small may cause different images to be considered as duplicates. Suggested values: [96-100] [default: 96]",
+          "aliases": [
+            "-ds"
+          ],
+          "arguments": [
+            {
+              "name": "DUPLICATE_SIMILAR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
         },
         {
           "name": "--recursive",
           "recursive": false,
           "hidden": false,
-          "description": "Recursively search for similar images in subdirectories. (.trash content will be ignored)",
+          "description": "Recursively search for similar images in subdirectories. (.trash content will be ignored) [default: False]",
           "aliases": [
             "-r"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--keep",
           "recursive": false,
           "hidden": false,
-          "description": "Preference for sorting images by quality to determine which to keep when duplicates are found. Available options: Colorful|GrayScale|Newest|Oldest|Smallest|Largest|HighestResolution|LowestResolution. [default: Colorful|HighestResolution|Largest|Newest]",
+          "description": "Preference for sorting images by quality to determine which to keep when duplicates are found. Available options: Colorful|GrayScale|Newest|Oldest|Smallest|Largest|HighestResolution|LowestResolution. [default: Aiursoft.NiBot.Core.Models.KeepPreference[]]",
           "aliases": [
             "-k"
+          ],
+          "arguments": [
+            {
+              "name": "KEEP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "KeepPreference[]"
+            }
           ]
         },
         {
           "name": "--extensions",
           "recursive": false,
           "hidden": false,
-          "description": "Extensions of files to dedup. [default: jpg|jpeg|png|jfif]",
+          "description": "Extensions of files to dedup. [default: System.String[]]",
           "aliases": [
             "-e"
+          ],
+          "arguments": [
+            {
+              "name": "EXTENSIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
           ]
         },
         {
@@ -310,31 +519,49 @@
           "description": "Number of threads to use for image indexing. Default is 4. [default: 4]",
           "aliases": [
             "-t"
+          ],
+          "arguments": [
+            {
+              "name": "THREADS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "name": "compare",
+      "description": "Compare two images to see their similarity.",
+      "options": [
         {
-          "name": "--help",
+          "name": "--images",
           "recursive": false,
           "hidden": false,
-          "description": "Show help and usage information",
+          "description": "Paths of the images to compare. You can pass this '-i' parameter multiple times to compare at least two images.",
           "aliases": [
-            "-h"
-          ]
-        },
-        {
-          "name": "--verbose",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show detailed log",
-          "aliases": [
-            "-v"
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "IMAGES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
           ]
         }
       ]
     },
     {
       "name": "dup-top",
-      "hidden": false,
       "description": "Find top similar images in a folder compared to a source image.",
       "options": [
         {
@@ -344,6 +571,17 @@
           "description": "Path to the source image for comparison.",
           "aliases": [
             "-i"
+          ],
+          "arguments": [
+            {
+              "name": "INPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
@@ -353,24 +591,56 @@
           "description": "Path of the folder to de-duplicate. (Symbolic links will be ignored)",
           "aliases": [
             "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
           "name": "--recursive",
           "recursive": false,
           "hidden": false,
-          "description": "Recursively search for similar images in subdirectories. (.trash content will be ignored)",
+          "description": "Recursively search for similar images in subdirectories. (.trash content will be ignored) [default: False]",
           "aliases": [
             "-r"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
           "name": "--extensions",
           "recursive": false,
           "hidden": false,
-          "description": "Extensions of files to dedup. [default: jpg|jpeg|png|jfif]",
+          "description": "Extensions of files to dedup. [default: System.String[]]",
           "aliases": [
             "-e"
+          ],
+          "arguments": [
+            {
+              "name": "EXTENSIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
           ]
         },
         {
@@ -380,63 +650,37 @@
           "description": "Number of threads to use for image indexing. Default is 4. [default: 4]",
           "aliases": [
             "-t"
+          ],
+          "arguments": [
+            {
+              "name": "THREADS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
           ]
         },
         {
           "name": "--top",
           "recursive": false,
           "hidden": false,
-          "description": "Number of top similar images to return. [default: 15]"
-        },
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
-          ]
-        },
-        {
-          "name": "--verbose",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show detailed log",
-          "aliases": [
-            "-v"
+          "description": "Number of top similar images to return. [default: 15]",
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
           ]
         }
       ]
-    },
-    {
-      "name": "root",
-      "hidden": false
-    }
-  ],
-  "options": [
-    {
-      "name": "--verbose",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show detailed log",
-      "aliases": [
-        "-v"
-      ]
-    },
-    {
-      "name": "--help",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show help and usage information",
-      "aliases": [
-        "-h"
-      ]
-    },
-    {
-      "name": "--version",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show version information"
     }
   ]
 }

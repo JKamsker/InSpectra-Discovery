@@ -1,1209 +1,260 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "repo",
+    "title": "Nerdbank.DotNetRepoTools",
     "version": "1.2.1",
     "description": "A CLI tool with commands to help maintain .NET codebases."
   },
   "x-inspectra": {
-    "artifactSource": "static-analysis",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "metadataEnriched": true,
-    "helpDocumentCount": 28,
-    "staticAnalysis": {
-      "framework": "System.CommandLine",
-      "inspectorType": "dnlib",
-      "confidence": "high",
-      "verbCount": 1,
-      "optionCount": 0,
-      "valueCount": 0,
-      "limitations": [
-        "property-defaults-not-captured",
-        "fluent-api-configuration-not-visible"
-      ]
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.3.0",
+      "patchTarget": "Parse-postfix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
     },
     "cliFramework": "System.CommandLine"
   },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
   "commands": [
     {
-      "name": "azdo",
-      "hidden": false,
-      "description": "Azure DevOps operations",
-      "options": [
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
-          ]
-        }
-      ],
+      "name": "nuget",
+      "description": "NuGet maintenance commands",
       "commands": [
         {
-          "name": "branch",
-          "hidden": false,
-          "description": "Branch commands",
+          "name": "reconcile-versions",
+          "description": "Resolves all package downgrade warnings.",
           "options": [
             {
-              "name": "--help",
+              "name": "--path",
               "recursive": false,
               "hidden": false,
-              "description": "Show help and usage information",
+              "description": "The path to the project or repo to resolve version issues with.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileSystemInfo"
+                }
+              ]
+            },
+            {
+              "name": "--framework",
+              "recursive": false,
+              "hidden": false,
+              "description": "The target framework used to evaluate package dependencies. [default: netstandard2.0]",
               "aliases": [
-                "-h"
-              ]
-            }
-          ],
-          "commands": [
-            {
-              "name": "favorite",
-              "hidden": false,
-              "description": "Marks a branch as a favorite.",
-              "options": [
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
+                "-f"
               ],
               "arguments": [
                 {
-                  "name": "branch-name",
-                  "required": false,
-                  "hidden": false,
+                  "name": "FRAMEWORK",
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
                   },
-                  "description": "The name of the branch to mark as a favorite."
+                  "type": "String"
                 }
               ]
             },
             {
-              "name": "pushes",
+              "name": "--disregard-version-properties",
+              "recursive": false,
               "hidden": false,
-              "description": "List recent pushes to a branch.",
-              "options": [
-                {
-                  "name": "--top",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The maximum number of pushes to return. Defaults to 100."
-                },
-                {
-                  "name": "--before",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Return only pushes that occurred before this timestamp (e.g. 2024-01-15T12:00:00Z)."
-                },
-                {
-                  "name": "--format",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The output format. Defaults to text."
-                },
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
+              "description": "Specifies one or more MSBuild properties that may be used to define a PackageVersion item's Version attribute that should no longer be referenced. This may be useful when properties have been used for multiple packages and their continued use is problematic because the packages now need their own distinct versions.",
               "arguments": [
                 {
-                  "name": "branch-name",
-                  "required": false,
-                  "hidden": false,
+                  "name": "DISREGARD_VERSION_PROPERTIES",
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
-                    "maximum": 1
+                    "minimum": 1,
+                    "maximum": 100000
                   },
-                  "description": "The name of the branch to list pushes for."
-                }
-              ]
-            },
-            {
-              "name": "unfavorite",
-              "hidden": false,
-              "description": "Removes a branch from favorites.",
-              "options": [
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
-              "arguments": [
-                {
-                  "name": "branch-name",
-                  "required": false,
-                  "hidden": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "description": "The name of the branch to remove from favorites."
+                  "type": "String[]"
                 }
               ]
             }
           ]
         },
         {
-          "name": "pr",
-          "hidden": false,
-          "description": "Pull request commands",
+          "name": "upgrade",
+          "description": "Upgrade a package dependency, and all transitive dependencies such that no package downgrade warnings occur.",
           "options": [
             {
-              "name": "--help",
+              "name": "--path",
               "recursive": false,
               "hidden": false,
-              "description": "Show help and usage information",
+              "description": "The path to the project or repo to upgrade.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileSystemInfo"
+                }
+              ]
+            },
+            {
+              "name": "--framework",
+              "recursive": false,
+              "hidden": false,
+              "description": "The target framework used to evaluate package dependencies. [default: netstandard2.0]",
               "aliases": [
-                "-h"
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FRAMEWORK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--explode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Add PackageVersion items for every transitive dependency, so that they can be added as direct project dependencies as versions are pre-specified. [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--disregard-version-properties",
+              "recursive": false,
+              "hidden": false,
+              "description": "Specifies one or more MSBuild properties that may be used to define a PackageVersion item's Version attribute that should no longer be referenced. This may be useful when properties have been used for multiple packages and their continued use is problematic because the packages now need their own distinct versions.",
+              "arguments": [
+                {
+                  "name": "DISREGARD_VERSION_PROPERTIES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
               ]
             }
           ],
-          "commands": [
+          "arguments": [
             {
-              "name": "comment",
+              "name": "id",
+              "description": "The ID of the root package to be upgraded.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "version",
+              "description": "The version to upgrade to.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "trim",
+          "description": "Removes PackageReference items that are redundant because they are to packages that already appear as transitive dependencies.",
+          "options": [
+            {
+              "name": "--path",
+              "recursive": false,
               "hidden": false,
-              "description": "Post a comment on a pull request.",
-              "options": [
-                {
-                  "name": "--state",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The state to set the new comment."
-                },
-                {
-                  "name": "--type",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The type of comment to post. [default: Text]"
-                },
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--pull-request",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The ID of the pull request."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
+              "description": "The path to the project file with the PackageReference items to trim.",
               "arguments": [
                 {
-                  "name": "comment",
-                  "required": false,
-                  "hidden": false,
+                  "name": "PATH",
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
                   },
-                  "description": "The comment to post. Markdown format. If not specified, STDIN will be used."
-                }
-              ]
-            },
-            {
-              "name": "create",
-              "hidden": false,
-              "description": "Creates a new pull request.",
-              "options": [
-                {
-                  "name": "--title",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The title of the pull request."
-                },
-                {
-                  "name": "--description",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The description of the pull request. If an argument for this option is not specified on the command line, it will be pulled in from STDIN."
-                },
-                {
-                  "name": "--source",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the branch to merge from. This should not include the refs/heads/ prefix."
-                },
-                {
-                  "name": "--target",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the branch to merge into. This should not include the refs/heads/ prefix."
-                },
-                {
-                  "name": "--draft",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Whether the pull request is a draft."
-                },
-                {
-                  "name": "--labels",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Labels to apply to the pull request."
-                },
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "get",
-              "hidden": false,
-              "description": "Get details about a pull request.",
-              "options": [
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
-              "arguments": [
-                {
-                  "name": "id",
-                  "required": false,
-                  "hidden": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "description": "The ID of the pull request."
-                }
-              ]
-            },
-            {
-              "name": "link",
-              "hidden": false,
-              "description": "Link a work item to a pull request.",
-              "options": [
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--pull-request",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The ID of the pull request."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
-              "arguments": [
-                {
-                  "name": "workitem-id",
-                  "required": false,
-                  "hidden": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "description": "The ID of the work item to link to the pull request."
-                }
-              ]
-            },
-            {
-              "name": "property",
-              "hidden": false,
-              "description": "Operates on pull request properties.",
-              "options": [
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
-              "commands": [
-                {
-                  "name": "add",
-                  "hidden": false,
-                  "description": "Set a property to a pull request.",
-                  "options": [
-                    {
-                      "name": "--what-if",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Prints what would be done without actually doing it."
-                    },
-                    {
-                      "name": "--verbose",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                    },
-                    {
-                      "name": "--access-token",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                    },
-                    {
-                      "name": "--account",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                    },
-                    {
-                      "name": "--project",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                    },
-                    {
-                      "name": "--repo",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                    },
-                    {
-                      "name": "--pull-request",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The ID of the pull request."
-                    },
-                    {
-                      "name": "--help",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Show help and usage information",
-                      "aliases": [
-                        "-h"
-                      ]
-                    }
-                  ],
-                  "arguments": [
-                    {
-                      "name": "path",
-                      "required": false,
-                      "hidden": false,
-                      "arity": {
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "description": "The path to the property to set. This should always start with a '/' character."
-                    },
-                    {
-                      "name": "value",
-                      "required": false,
-                      "hidden": false,
-                      "arity": {
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "description": "The value of the property to set. Should be a JSON token. If not specified, STDIN will be used."
-                    }
-                  ]
-                },
-                {
-                  "name": "remove",
-                  "hidden": false,
-                  "description": "Remove a property from a pull request.",
-                  "options": [
-                    {
-                      "name": "--what-if",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Prints what would be done without actually doing it."
-                    },
-                    {
-                      "name": "--verbose",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                    },
-                    {
-                      "name": "--access-token",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                    },
-                    {
-                      "name": "--account",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                    },
-                    {
-                      "name": "--project",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                    },
-                    {
-                      "name": "--repo",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                    },
-                    {
-                      "name": "--pull-request",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The ID of the pull request."
-                    },
-                    {
-                      "name": "--help",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Show help and usage information",
-                      "aliases": [
-                        "-h"
-                      ]
-                    }
-                  ],
-                  "arguments": [
-                    {
-                      "name": "path",
-                      "required": false,
-                      "hidden": false,
-                      "arity": {
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "description": "The path to the property to set. This should always start with a '/' character."
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "reviewer",
-              "hidden": false,
-              "description": "Reviewer changes and votes.",
-              "options": [
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
-              "commands": [
-                {
-                  "name": "add",
-                  "hidden": false,
-                  "description": "Adds reviewers to a pull request.",
-                  "options": [
-                    {
-                      "name": "--required",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The users to add as required reviewers to the pull request. These should take the form of user@domain.com. All users listed after this switch will be required."
-                    },
-                    {
-                      "name": "--what-if",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Prints what would be done without actually doing it."
-                    },
-                    {
-                      "name": "--verbose",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                    },
-                    {
-                      "name": "--access-token",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                    },
-                    {
-                      "name": "--account",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                    },
-                    {
-                      "name": "--project",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                    },
-                    {
-                      "name": "--repo",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                    },
-                    {
-                      "name": "--pull-request",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "The ID of the pull request."
-                    },
-                    {
-                      "name": "--help",
-                      "recursive": false,
-                      "hidden": false,
-                      "description": "Show help and usage information",
-                      "aliases": [
-                        "-h"
-                      ]
-                    }
-                  ],
-                  "arguments": [
-                    {
-                      "name": "optional-reviewers",
-                      "required": false,
-                      "hidden": false,
-                      "arity": {
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "description": "The users to add as reviewers to the pull request. These should take the form of user@domain.com."
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "search",
-              "hidden": false,
-              "description": "Search for pull requests.",
-              "options": [
-                {
-                  "name": "--source-branch",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The source branch of the pull request. MAY start with 'refs/heads/'."
-                },
-                {
-                  "name": "--target-branch",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The target branch of the pull request. MAY start with 'refs/heads/'."
-                },
-                {
-                  "name": "--status",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The status of the pull request."
-                },
-                {
-                  "name": "--top",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The maximum number of pull requests to return."
-                },
-                {
-                  "name": "--skip",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The number of pull requests to skip."
-                },
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "update",
-              "hidden": false,
-              "description": "Update a pull request.",
-              "options": [
-                {
-                  "name": "--title",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The title of the pull request."
-                },
-                {
-                  "name": "--description",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The description of the pull request. If an argument for this option is not specified on the command line, it will be pulled in from STDIN."
-                },
-                {
-                  "name": "--target-branch",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The target branch of the pull request. This MAY include the refs/heads/ prefix."
-                },
-                {
-                  "name": "--auto-complete",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Configures the pull request to be automatically completed when all policies are satisfied."
-                },
-                {
-                  "name": "--merge-strategy",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Specifies the merge strategy to use for auto-complete."
-                },
-                {
-                  "name": "--delete-source-branch",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Whether to delete the source branch after the pull request is completed."
-                },
-                {
-                  "name": "--status",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Activates or abandons the pull request."
-                },
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
-              "arguments": [
-                {
-                  "name": "id",
-                  "required": false,
-                  "hidden": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "description": "The ID of the pull request."
-                }
-              ]
-            },
-            {
-              "name": "vote",
-              "hidden": false,
-              "description": "Vote (approve or reject) a pull request.",
-              "options": [
-                {
-                  "name": "--id",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The ID of the account to cast a vote on behalf of. May be the account ID (guid) or user@domain.com."
-                },
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--repo",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set."
-                },
-                {
-                  "name": "--pull-request",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The ID of the pull request."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
+                  "type": "FileInfo"
                 }
               ]
             }
           ]
         },
         {
-          "name": "workitem",
-          "hidden": false,
-          "description": "Interact with work items in Azure DevOps.",
+          "name": "ManagePackageVersionsCentrally",
+          "description": "Migrates a repo to use centralized package versions.",
           "options": [
             {
-              "name": "--help",
+              "name": "--path",
               "recursive": false,
               "hidden": false,
-              "description": "Show help and usage information",
-              "aliases": [
-                "-h"
-              ]
-            }
-          ],
-          "commands": [
-            {
-              "name": "create",
-              "hidden": false,
-              "description": "Create a new work item.",
-              "options": [
-                {
-                  "name": "--area",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The area path for the work item."
-                },
-                {
-                  "name": "--iteration",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The iteration path for the work item."
-                },
-                {
-                  "name": "--assigned-to",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The identity to assign the work item to. This will typically be in the form user@domain.com."
-                },
-                {
-                  "name": "--what-if",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints what would be done without actually doing it."
-                },
-                {
-                  "name": "--verbose",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-                },
-                {
-                  "name": "--access-token",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials."
-                },
-                {
-                  "name": "--account",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set."
-                },
-                {
-                  "name": "--project",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set."
-                },
-                {
-                  "name": "--help",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Show help and usage information",
-                  "aliases": [
-                    "-h"
-                  ]
-                }
-              ],
+              "description": "The path to the project or repo to upgrade. [default: <path>]",
               "arguments": [
                 {
-                  "name": "type",
-                  "required": false,
-                  "hidden": false,
+                  "name": "PATH",
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
                   },
-                  "description": "The type of work item to create."
-                },
+                  "type": "FileSystemInfo"
+                }
+              ]
+            },
+            {
+              "name": "--repo-root",
+              "recursive": false,
+              "hidden": false,
+              "description": "The path to the directory where the Directory.Packages.props is to be created. Defaults to the git repo root above the location specified by --path.",
+              "arguments": [
                 {
-                  "name": "title",
-                  "required": false,
-                  "hidden": false,
+                  "name": "REPO_ROOT",
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
                   },
-                  "description": "The title for the work item."
+                  "type": "FileSystemInfo"
                 }
               ]
             }
@@ -1213,252 +264,2326 @@
     },
     {
       "name": "git",
-      "hidden": false,
       "description": "Git repo maintenance workflows",
-      "options": [
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
-          ]
-        }
-      ],
       "commands": [
         {
           "name": "trim",
-          "hidden": false,
           "description": "Removes local branches that have already been merged into some target ref. Squashed branches can sometimes also be detected.",
           "options": [
             {
               "name": "--what-if",
               "recursive": false,
               "hidden": false,
-              "description": "Prints what would be done without actually doing it."
+              "description": "Prints what would be done without actually doing it. [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             },
             {
               "name": "--verbose",
               "recursive": false,
               "hidden": false,
-              "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made."
-            },
-            {
-              "name": "--help",
-              "recursive": false,
-              "hidden": false,
-              "description": "Show help and usage information",
-              "aliases": [
-                "-h"
+              "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
               ]
             }
           ],
           "arguments": [
             {
               "name": "mergeTarget",
-              "required": false,
-              "hidden": false,
+              "description": "Branches become trimmable after they have been merged into this ref. Typically origin/main or similar.",
+              "required": true,
               "arity": {
-                "minimum": 0,
+                "minimum": 1,
                 "maximum": 1
               },
-              "description": "Branches become trimmable after they have been merged into this ref. Typically origin/main or similar."
+              "type": "String"
             }
           ]
         }
       ]
     },
     {
-      "name": "nuget",
-      "hidden": false,
-      "description": "NuGet maintenance commands",
-      "options": [
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
-          ]
-        }
-      ],
+      "name": "azdo",
+      "description": "Azure DevOps operations",
       "commands": [
         {
-          "name": "ManagePackageVersionsCentrally",
-          "hidden": false,
-          "description": "Migrates a repo to use centralized package versions.",
-          "options": [
+          "name": "pr",
+          "description": "Pull request commands",
+          "commands": [
             {
-              "name": "--path",
-              "recursive": false,
-              "hidden": false,
-              "description": "The path to the project or repo to upgrade. [default: <path>]"
+              "name": "comment",
+              "description": "Post a comment on a pull request.",
+              "options": [
+                {
+                  "name": "--state",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The state to set the new comment.",
+                  "arguments": [
+                    {
+                      "name": "STATE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "PullRequestCommentState",
+                      "allowedValues": [
+                        "Unknown",
+                        "Active",
+                        "Resolved",
+                        "WontFix",
+                        "Closed",
+                        "Pending"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "--type",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The type of comment to post. [default: Text]",
+                  "arguments": [
+                    {
+                      "name": "TYPE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "CommentType",
+                      "allowedValues": [
+                        "CodeChange",
+                        "System",
+                        "Text",
+                        "Unknown"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--pull-request",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The ID of the pull request.",
+                  "arguments": [
+                    {
+                      "name": "PULL_REQUEST",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "comment",
+                  "description": "The comment to post. Markdown format. If not specified, STDIN will be used.",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
             },
             {
-              "name": "--repo-root",
-              "recursive": false,
-              "hidden": false,
-              "description": "The path to the directory where the Directory.Packages.props is to be created. Defaults to the git repo root above the location specified by --path."
+              "name": "create",
+              "description": "Creates a new pull request.",
+              "options": [
+                {
+                  "name": "--title",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The title of the pull request.",
+                  "arguments": [
+                    {
+                      "name": "TITLE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--description",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The description of the pull request. If an argument for this option is not specified on the command line, it will be pulled in from STDIN.",
+                  "arguments": [
+                    {
+                      "name": "DESCRIPTION",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--source",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the branch to merge from. This should not include the refs/heads/ prefix.",
+                  "arguments": [
+                    {
+                      "name": "SOURCE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--target",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the branch to merge into. This should not include the refs/heads/ prefix.",
+                  "arguments": [
+                    {
+                      "name": "TARGET",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--draft",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether the pull request is a draft. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--labels",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Labels to apply to the pull request.",
+                  "arguments": [
+                    {
+                      "name": "LABELS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "String[]"
+                    }
+                  ]
+                },
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
             },
             {
-              "name": "--help",
-              "recursive": false,
-              "hidden": false,
-              "description": "Show help and usage information",
-              "aliases": [
-                "-h"
+              "name": "get",
+              "description": "Get details about a pull request.",
+              "options": [
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "id",
+                  "description": "The ID of the pull request.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "search",
+              "description": "Search for pull requests.",
+              "options": [
+                {
+                  "name": "--source-branch",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The source branch of the pull request. MAY start with 'refs/heads/'.",
+                  "arguments": [
+                    {
+                      "name": "SOURCE_BRANCH",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--target-branch",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The target branch of the pull request. MAY start with 'refs/heads/'.",
+                  "arguments": [
+                    {
+                      "name": "TARGET_BRANCH",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--status",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The status of the pull request.",
+                  "arguments": [
+                    {
+                      "name": "STATUS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "PullRequestStatus"
+                    }
+                  ]
+                },
+                {
+                  "name": "--top",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The maximum number of pull requests to return.",
+                  "arguments": [
+                    {
+                      "name": "TOP",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--skip",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The number of pull requests to skip.",
+                  "arguments": [
+                    {
+                      "name": "SKIP",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "update",
+              "description": "Update a pull request.",
+              "options": [
+                {
+                  "name": "--title",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The title of the pull request.",
+                  "arguments": [
+                    {
+                      "name": "TITLE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--description",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The description of the pull request. If an argument for this option is not specified on the command line, it will be pulled in from STDIN.",
+                  "arguments": [
+                    {
+                      "name": "DESCRIPTION",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--target-branch",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The target branch of the pull request. This MAY include the refs/heads/ prefix.",
+                  "arguments": [
+                    {
+                      "name": "TARGET_BRANCH",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--auto-complete",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Configures the pull request to be automatically completed when all policies are satisfied.",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--merge-strategy",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Specifies the merge strategy to use for auto-complete.",
+                  "arguments": [
+                    {
+                      "name": "MERGE_STRATEGY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "GitPullRequestMergeStrategy"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delete-source-branch",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether to delete the source branch after the pull request is completed.",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--status",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Activates or abandons the pull request.",
+                  "arguments": [
+                    {
+                      "name": "STATUS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "PullRequestStatus"
+                    }
+                  ]
+                },
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "id",
+                  "description": "The ID of the pull request.",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "link",
+              "description": "Link a work item to a pull request.",
+              "options": [
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--pull-request",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The ID of the pull request.",
+                  "arguments": [
+                    {
+                      "name": "PULL_REQUEST",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "workitem-id",
+                  "description": "The ID of the work item to link to the pull request.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "property",
+              "description": "Operates on pull request properties.",
+              "commands": [
+                {
+                  "name": "add",
+                  "description": "Set a property to a pull request.",
+                  "options": [
+                    {
+                      "name": "--what-if",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Prints what would be done without actually doing it. [default: False]",
+                      "arguments": [
+                        {
+                          "required": false,
+                          "arity": {
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "type": "Boolean"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--verbose",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                      "arguments": [
+                        {
+                          "required": false,
+                          "arity": {
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "type": "Boolean"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--access-token",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                      "arguments": [
+                        {
+                          "name": "ACCESS_TOKEN",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--account",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "ACCOUNT",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--project",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "PROJECT",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--repo",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "REPO",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--pull-request",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The ID of the pull request.",
+                      "arguments": [
+                        {
+                          "name": "PULL_REQUEST",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "Int32"
+                        }
+                      ]
+                    }
+                  ],
+                  "arguments": [
+                    {
+                      "name": "path",
+                      "description": "The path to the property to set. This should always start with a '/' character.",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    },
+                    {
+                      "name": "value",
+                      "description": "The value of the property to set. Should be a JSON token. If not specified, STDIN will be used.",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "remove",
+                  "description": "Remove a property from a pull request.",
+                  "options": [
+                    {
+                      "name": "--what-if",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Prints what would be done without actually doing it. [default: False]",
+                      "arguments": [
+                        {
+                          "required": false,
+                          "arity": {
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "type": "Boolean"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--verbose",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                      "arguments": [
+                        {
+                          "required": false,
+                          "arity": {
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "type": "Boolean"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--access-token",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                      "arguments": [
+                        {
+                          "name": "ACCESS_TOKEN",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--account",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "ACCOUNT",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--project",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "PROJECT",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--repo",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "REPO",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--pull-request",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The ID of the pull request.",
+                      "arguments": [
+                        {
+                          "name": "PULL_REQUEST",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "Int32"
+                        }
+                      ]
+                    }
+                  ],
+                  "arguments": [
+                    {
+                      "name": "path",
+                      "description": "The path to the property to set. This should always start with a '/' character.",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "reviewer",
+              "description": "Reviewer changes and votes.",
+              "commands": [
+                {
+                  "name": "add",
+                  "description": "Adds reviewers to a pull request.",
+                  "options": [
+                    {
+                      "name": "--required",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The users to add as required reviewers to the pull request. These should take the form of user@domain.com. All users listed after this switch will be required.",
+                      "arguments": [
+                        {
+                          "name": "REQUIRED",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 100000
+                          },
+                          "type": "String[]"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--what-if",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Prints what would be done without actually doing it. [default: False]",
+                      "arguments": [
+                        {
+                          "required": false,
+                          "arity": {
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "type": "Boolean"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--verbose",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                      "arguments": [
+                        {
+                          "required": false,
+                          "arity": {
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "type": "Boolean"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--access-token",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                      "arguments": [
+                        {
+                          "name": "ACCESS_TOKEN",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--account",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "ACCOUNT",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--project",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "PROJECT",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--repo",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                      "arguments": [
+                        {
+                          "name": "REPO",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "String"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--pull-request",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "The ID of the pull request.",
+                      "arguments": [
+                        {
+                          "name": "PULL_REQUEST",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          },
+                          "type": "Int32"
+                        }
+                      ]
+                    }
+                  ],
+                  "arguments": [
+                    {
+                      "name": "optional-reviewers",
+                      "description": "The users to add as reviewers to the pull request. These should take the form of user@domain.com.",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 100000
+                      },
+                      "type": "String[]"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "vote",
+              "description": "Vote (approve or reject) a pull request.",
+              "options": [
+                {
+                  "name": "--id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The ID of the account to cast a vote on behalf of. May be the account ID (guid) or user@domain.com.",
+                  "arguments": [
+                    {
+                      "name": "ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--pull-request",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The ID of the pull request.",
+                  "arguments": [
+                    {
+                      "name": "PULL_REQUEST",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "vote",
+                  "description": "The vote to cast on the specified pull request.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Vote",
+                  "allowedValues": [
+                    "NoVote",
+                    "ApprovedWithSuggestions",
+                    "Approved",
+                    "Rejected",
+                    "WaitingForAuthor"
+                  ]
+                }
               ]
             }
           ]
         },
         {
-          "name": "reconcile-versions",
-          "hidden": false,
-          "description": "Resolves all package downgrade warnings.",
-          "options": [
+          "name": "workitem",
+          "description": "Interact with work items in Azure DevOps.",
+          "commands": [
             {
-              "name": "--path",
-              "recursive": false,
-              "hidden": false,
-              "description": "The path to the project or repo to resolve version issues with."
-            },
-            {
-              "name": "--framework",
-              "recursive": false,
-              "hidden": false,
-              "description": "The target framework used to evaluate package dependencies. [default: netstandard2.0]",
-              "aliases": [
-                "-f"
-              ]
-            },
-            {
-              "name": "--disregard-version-properties",
-              "recursive": false,
-              "hidden": false,
-              "description": "Specifies one or more MSBuild properties that may be used to define a PackageVersion item's Version attribute that should no longer be referenced. This may be useful when properties have been used for multiple packages and their continued use is problematic because the packages now need their own distinct versions."
-            },
-            {
-              "name": "--help",
-              "recursive": false,
-              "hidden": false,
-              "description": "Show help and usage information",
-              "aliases": [
-                "-h"
+              "name": "create",
+              "description": "Create a new work item.",
+              "options": [
+                {
+                  "name": "--area",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The area path for the work item.",
+                  "arguments": [
+                    {
+                      "name": "AREA",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--iteration",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The iteration path for the work item.",
+                  "arguments": [
+                    {
+                      "name": "ITERATION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--assigned-to",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The identity to assign the work item to. This will typically be in the form user@domain.com.",
+                  "arguments": [
+                    {
+                      "name": "ASSIGNED_TO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "type",
+                  "description": "The type of work item to create.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                },
+                {
+                  "name": "title",
+                  "description": "The title for the work item.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
               ]
             }
           ]
         },
         {
-          "name": "trim",
-          "hidden": false,
-          "description": "Removes PackageReference items that are redundant because they are to packages that already appear as transitive dependencies.",
-          "options": [
+          "name": "branch",
+          "description": "Branch commands",
+          "commands": [
             {
-              "name": "--path",
-              "recursive": false,
-              "hidden": false,
-              "description": "The path to the project file with the PackageReference items to trim."
-            },
-            {
-              "name": "--help",
-              "recursive": false,
-              "hidden": false,
-              "description": "Show help and usage information",
-              "aliases": [
-                "-h"
+              "name": "favorite",
+              "description": "Marks a branch as a favorite.",
+              "options": [
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "branch-name",
+                  "description": "The name of the branch to mark as a favorite.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
               ]
-            }
-          ]
-        },
-        {
-          "name": "upgrade",
-          "hidden": false,
-          "description": "Upgrade a package dependency, and all transitive dependencies such that no package downgrade warnings occur.",
-          "options": [
-            {
-              "name": "--path",
-              "recursive": false,
-              "hidden": false,
-              "description": "The path to the project or repo to upgrade."
             },
             {
-              "name": "--framework",
-              "recursive": false,
-              "hidden": false,
-              "description": "The target framework used to evaluate package dependencies. [default: netstandard2.0]",
-              "aliases": [
-                "-f"
+              "name": "unfavorite",
+              "description": "Removes a branch from favorites.",
+              "options": [
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "branch-name",
+                  "description": "The name of the branch to remove from favorites.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
               ]
             },
             {
-              "name": "--explode",
-              "recursive": false,
-              "hidden": false,
-              "description": "Add PackageVersion items for every transitive dependency, so that they can be added as direct project dependencies as versions are pre-specified."
-            },
-            {
-              "name": "--disregard-version-properties",
-              "recursive": false,
-              "hidden": false,
-              "description": "Specifies one or more MSBuild properties that may be used to define a PackageVersion item's Version attribute that should no longer be referenced. This may be useful when properties have been used for multiple packages and their continued use is problematic because the packages now need their own distinct versions."
-            },
-            {
-              "name": "--help",
-              "recursive": false,
-              "hidden": false,
-              "description": "Show help and usage information",
-              "aliases": [
-                "-h"
+              "name": "pushes",
+              "description": "List recent pushes to a branch.",
+              "options": [
+                {
+                  "name": "--top",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The maximum number of pushes to return. Defaults to 100.",
+                  "arguments": [
+                    {
+                      "name": "TOP",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--before",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Return only pushes that occurred before this timestamp (e.g. 2024-01-15T12:00:00Z).",
+                  "arguments": [
+                    {
+                      "name": "BEFORE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "DateTimeOffset"
+                    }
+                  ]
+                },
+                {
+                  "name": "--format",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The output format. Defaults to text.",
+                  "arguments": [
+                    {
+                      "name": "FORMAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "OutputFormat",
+                      "allowedValues": [
+                        "Text",
+                        "Json"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "--what-if",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints what would be done without actually doing it. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prints the command lines of sub-processes spawned by the tool and HTTP requests made. [default: False]",
+                  "arguments": [
+                    {
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--access-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The access token to use to authenticate against the AzDO REST API. If not specified but the SYSTEM_ACCESSTOKEN environment variable is set, that value will be used. Otherwise the tool will attempt to acquire a token automatically from Visual Studio or Windows credentials.",
+                  "arguments": [
+                    {
+                      "name": "ACCESS_TOKEN",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--account",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO account (organization) or URI (e.g. \"fabrikamfiber\" or \"https://dev.azure.com/fabrikamfiber/\". Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_COLLECTIONURI environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "ACCOUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The AzDO project. Can also be inferred from the git origin remote URL. If not specified, the value of the SYSTEM_TEAMPROJECT environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name of the repo. Can also be inferred from the git origin remote URL. If not specified, the value of the BUILD_REPOSITORY_NAME environment variable will be used if set.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "branch-name",
+                  "description": "The name of the branch to list pushes for.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
               ]
-            }
-          ],
-          "arguments": [
-            {
-              "name": "id",
-              "required": false,
-              "hidden": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "description": "The ID of the root package to be upgraded."
-            },
-            {
-              "name": "version",
-              "required": false,
-              "hidden": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "description": "The version to upgrade to."
             }
           ]
         }
       ]
-    },
-    {
-      "name": "root",
-      "hidden": false
-    }
-  ],
-  "options": [
-    {
-      "name": "--help",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show help and usage information",
-      "aliases": [
-        "-h"
-      ]
-    },
-    {
-      "name": "--version",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show version information"
     }
   ]
 }
