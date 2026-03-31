@@ -10,9 +10,9 @@ using InSpectra.Discovery.Tool.Infrastructure.Paths;
 
 using InSpectra.Discovery.Tool.Analysis.Tools;
 
-using System.IO.Compression;
+using InSpectra.Discovery.Tool.NuGet;
+
 using System.Text.Json.Nodes;
-using InSpectra.Discovery.Tool.Analysis;
 
 internal sealed class QueueCommandService
 {
@@ -160,12 +160,21 @@ internal sealed class QueueCommandService
                 }
             }
 
-            var runnerSelection = await RunnerSelectionResolver.ResolveForPlanItemAsync(item, skipRunnerInspection, scope.Client, cancellationToken);
+            var catalogLeaf = await TryLoadCatalogLeafAsync(item, scope.Client, cancellationToken);
+            var runnerSelection = await RunnerSelectionResolver.ResolveForPlanItemAsync(root, item, catalogLeaf, skipRunnerInspection, scope.Client, cancellationToken);
             ToolDescriptor? analysisDescriptor = null;
             string? analysisDescriptorError = null;
             try
             {
-                analysisDescriptor = await _descriptorResolver.ResolveAsync(packageId, version, cancellationToken);
+                analysisDescriptor = catalogLeaf is not null
+                    ? ToolDescriptorResolver.ResolveFromCatalogLeaf(
+                        packageId,
+                        version,
+                        catalogLeaf,
+                        item["packageUrl"]?.GetValue<string>(),
+                        item["packageContentUrl"]?.GetValue<string>(),
+                        item["catalogEntryUrl"]?.GetValue<string>())
+                    : await _descriptorResolver.ResolveAsync(packageId, version, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -223,5 +232,24 @@ internal sealed class QueueCommandService
             cancellationToken);
     }
 
-}
+    private static async Task<CatalogLeaf?> TryLoadCatalogLeafAsync(
+        JsonObject item,
+        NuGetApiClient client,
+        CancellationToken cancellationToken)
+    {
+        var catalogEntryUrl = item["catalogEntryUrl"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(catalogEntryUrl))
+        {
+            return null;
+        }
 
+        try
+        {
+            return await client.GetCatalogLeafAsync(catalogEntryUrl, cancellationToken);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+}

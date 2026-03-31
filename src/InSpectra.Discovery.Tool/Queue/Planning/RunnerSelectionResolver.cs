@@ -54,13 +54,81 @@ internal static class RunnerSelectionResolver
     }
 
     public static async Task<RunnerSelection> ResolveForPlanItemAsync(
+        string repositoryRoot,
         JsonObject item,
+        CatalogLeaf? catalogLeaf,
         bool skipRunnerInspection,
         NuGetApiClient client,
         CancellationToken cancellationToken)
     {
         var precomputed = GetPrecomputed(item, skipRunnerInspection);
-        return precomputed ?? await InspectPackageAsync(client, item["packageContentUrl"]?.GetValue<string>(), cancellationToken);
+        if (precomputed is not null)
+        {
+            return precomputed;
+        }
+
+        var packageId = item["packageId"]?.GetValue<string>() ?? string.Empty;
+        var historicalHint = string.IsNullOrWhiteSpace(packageId)
+            ? null
+            : GetHistoricalHint(repositoryRoot, packageId);
+
+        var catalogSelection = TryResolveFromCatalog(catalogLeaf);
+        if (catalogSelection is not null)
+        {
+            return PreferHistoricalHint(catalogSelection, historicalHint);
+        }
+
+        if (skipRunnerInspection)
+        {
+            return historicalHint ?? new RunnerSelection("ubuntu-latest", "queue-skip-runner-inspection", [], [], [], null, "queue");
+        }
+
+        return await InspectPackageAsync(client, item["packageContentUrl"]?.GetValue<string>(), cancellationToken);
+    }
+
+    internal static RunnerSelection? TryResolveFromCatalog(CatalogLeaf? catalogLeaf)
+    {
+        if (catalogLeaf?.PackageEntries is null || catalogLeaf.PackageEntries.Count == 0)
+        {
+            return null;
+        }
+
+        var requiredFrameworks = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var toolRids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var runtimeRids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var entry in catalogLeaf.PackageEntries)
+        {
+            var entryPath = entry.FullName.Replace('\\', '/').Trim('/');
+            if (string.IsNullOrWhiteSpace(entryPath))
+            {
+                continue;
+            }
+
+            var segments = entryPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 4 && segments[0] == "tools")
+            {
+                AddRequiredFramework(requiredFrameworks, segments[1]);
+
+                var rid = segments[2];
+                if (!string.IsNullOrWhiteSpace(rid) && !string.Equals(rid, "any", StringComparison.OrdinalIgnoreCase))
+                {
+                    toolRids.Add(rid);
+                }
+            }
+
+            if (segments.Length >= 3 && segments[0] == "runtimes")
+            {
+                runtimeRids.Add(segments[1]);
+            }
+        }
+
+        return SelectRunner(
+            requiredFrameworks.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList(),
+            toolRids.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList(),
+            runtimeRids.OrderBy(value => value, StringComparer.OrdinalIgnoreCase).ToList(),
+            inspectionError: null,
+            hintSource: "catalog");
     }
 
     private static RunnerSelection? GetPrecomputed(JsonObject item, bool skipRunnerInspection)
@@ -183,6 +251,38 @@ internal static class RunnerSelectionResolver
         }
     }
 
+    private static void AddRequiredFramework(HashSet<string> frameworks, string targetFrameworkMoniker)
+    {
+        if (string.IsNullOrWhiteSpace(targetFrameworkMoniker))
+        {
+            return;
+        }
+
+        if (targetFrameworkMoniker.Contains("windows", StringComparison.OrdinalIgnoreCase))
+        {
+            frameworks.Add("Microsoft.WindowsDesktop.App");
+            return;
+        }
+
+        if (targetFrameworkMoniker.StartsWith("netcoreapp", StringComparison.OrdinalIgnoreCase)
+            || (targetFrameworkMoniker.StartsWith("net", StringComparison.OrdinalIgnoreCase)
+                && targetFrameworkMoniker.Length > 3
+                && char.IsDigit(targetFrameworkMoniker[3])))
+        {
+            frameworks.Add("Microsoft.NETCore.App");
+        }
+    }
+
+    private static RunnerSelection PreferHistoricalHint(RunnerSelection selection, RunnerSelection? historicalHint)
+    {
+        if (historicalHint is null || historicalHint.RunsOn == "ubuntu-latest" || selection.RunsOn != "ubuntu-latest")
+        {
+            return selection;
+        }
+
+        return historicalHint with { HintSource = "historical-state" };
+    }
+
     internal static RunnerSelection SelectRunner(
         IReadOnlyList<string> requiredFrameworks,
         IReadOnlyList<string> toolRids,
@@ -224,4 +324,3 @@ internal static class RunnerSelectionResolver
     private static bool IsMacOsRid(string rid)
         => rid.StartsWith("osx", StringComparison.OrdinalIgnoreCase) || rid.StartsWith("maccatalyst", StringComparison.OrdinalIgnoreCase);
 }
-

@@ -41,7 +41,32 @@ internal sealed class ToolDescriptorResolver : IToolDescriptorResolver
             PackageDescription: catalogLeaf.Description);
     }
 
-    private static string? DetectCliFramework(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection)
+    internal static ToolDescriptor ResolveFromCatalogLeaf(
+        string packageId,
+        string version,
+        CatalogLeaf catalogLeaf,
+        string? packageUrl,
+        string? packageContentUrl,
+        string? catalogEntryUrl)
+    {
+        var cliFramework = DetectCliFramework(catalogLeaf, packageInspection: null);
+        var (preferredMode, reason) = SelectMode(catalogLeaf, packageInspection: null, cliFramework);
+
+        return new ToolDescriptor(
+            packageId,
+            version,
+            CommandName: null,
+            cliFramework,
+            preferredMode,
+            reason,
+            packageUrl ?? $"https://www.nuget.org/packages/{packageId}/{version}",
+            packageContentUrl,
+            catalogEntryUrl,
+            PackageTitle: catalogLeaf.Title,
+            PackageDescription: catalogLeaf.Description);
+    }
+
+    private static string? DetectCliFramework(CatalogLeaf catalogLeaf, SpectrePackageInspection? packageInspection)
     {
         if (HasConfirmedSpectreCli(catalogLeaf, packageInspection))
         {
@@ -54,7 +79,7 @@ internal sealed class ToolDescriptorResolver : IToolDescriptorResolver
         return CliFrameworkProviderRegistry.Detect(catalogLeaf);
     }
 
-    private static (string PreferredMode, string Reason) SelectMode(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection, string? cliFramework)
+    private static (string PreferredMode, string Reason) SelectMode(CatalogLeaf catalogLeaf, SpectrePackageInspection? packageInspection, string? cliFramework)
         => HasConfirmedSpectreCli(catalogLeaf, packageInspection)
             ? ("native", "confirmed-spectre-console-cli")
             : CliFrameworkProviderRegistry.HasCliFxAnalysisSupport(cliFramework)
@@ -63,7 +88,7 @@ internal sealed class ToolDescriptorResolver : IToolDescriptorResolver
                     ? ("static", "confirmed-static-analysis-framework")
                     : ("help", "generic-help-crawl");
 
-    private static bool HasConfirmedSpectreCli(CatalogLeaf catalogLeaf, SpectrePackageInspection packageInspection)
+    private static bool HasConfirmedSpectreCli(CatalogLeaf catalogLeaf, SpectrePackageInspection? packageInspection)
     {
         var dependencyIds = (catalogLeaf.DependencyGroups ?? [])
             .SelectMany(group => group.Dependencies ?? [])
@@ -76,10 +101,9 @@ internal sealed class ToolDescriptorResolver : IToolDescriptorResolver
             .ToArray();
 
         return dependencyIds.Any(id => string.Equals(id, "Spectre.Console.Cli", StringComparison.OrdinalIgnoreCase))
-            || packageInspection.ToolAssembliesReferencingSpectreConsoleCli.Count > 0
-            || packageInspection.SpectreConsoleCliDependencyVersions.Count > 0
+            || packageInspection?.ToolAssembliesReferencingSpectreConsoleCli.Count > 0
+            || packageInspection?.SpectreConsoleCliDependencyVersions.Count > 0
             || packageEntryNames.Any(name => string.Equals(name, "Spectre.Console.Cli.dll", StringComparison.OrdinalIgnoreCase));
     }
 }
-
 
