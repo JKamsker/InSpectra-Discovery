@@ -41,15 +41,16 @@ function ConvertFrom-StringifiedHashtable
     )
 
     $trimmed = $Value.Trim()
-    if (-not $trimmed.StartsWith('@{', [StringComparison]::Ordinal)
-        -or -not $trimmed.EndsWith('}', [StringComparison]::Ordinal))
+    if ((-not $trimmed.StartsWith('@{', [StringComparison]::Ordinal)) -or
+        (-not $trimmed.EndsWith('}', [StringComparison]::Ordinal)))
     {
         throw "Unsupported runtime request string '$Value'."
     }
 
     $pairs = [ordered]@{}
     $content = $trimmed.Substring(2, $trimmed.Length - 3)
-    foreach ($segment in $content.Split(';', [StringSplitOptions]::RemoveEmptyEntries | [StringSplitOptions]::TrimEntries))
+    $splitOptions = [StringSplitOptions]::RemoveEmptyEntries -bor [StringSplitOptions]::TrimEntries
+    foreach ($segment in $content.Split(';', $splitOptions))
     {
         $parts = $segment.Split('=', 2, [StringSplitOptions]::TrimEntries)
         if ($parts.Length -ne 2)
