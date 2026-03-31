@@ -109,4 +109,49 @@ public sealed class OpenCliOptionAliasConflictResolverTests
         var valid = OpenCliDocumentValidator.TryValidateDocument(document, out var reason);
         Assert.True(valid, reason);
     }
+
+    [Fact]
+    public void Sanitize_Removes_BuiltIn_Help_Alias_When_A_Later_Primary_Uses_It()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--help",
+                    ["description"] = "Show help and usage information",
+                    ["aliases"] = new JsonArray("-h", "/h", "-?", "/?"),
+                },
+                new JsonObject
+                {
+                    ["name"] = "-h",
+                    ["description"] = "Output response headers only.",
+                    ["aliases"] = new JsonArray("--headers"),
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var options = document["options"]!.AsArray();
+        Assert.Equal(2, options.Count);
+
+        var help = options[0]!.AsObject();
+        var helpAliases = help["aliases"]!.AsArray().Select(static alias => alias!.GetValue<string>()).ToArray();
+        Assert.Equal(new[] { "/h", "-?", "/?" }, helpAliases);
+
+        var headers = options[1]!.AsObject();
+        Assert.Equal("-h", headers["name"]?.GetValue<string>());
+        Assert.Equal("--headers", Assert.Single(headers["aliases"]!.AsArray())!.GetValue<string>());
+
+        var valid = OpenCliDocumentValidator.TryValidateDocument(document, out var reason);
+        Assert.True(valid, reason);
+    }
 }

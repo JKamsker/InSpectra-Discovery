@@ -373,5 +373,53 @@ public sealed class OpenCliDocumentSanitizerTests
 
         Assert.Equal(2, document["options"]!.AsArray().Count);
     }
-}
 
+    [Fact]
+    public void Sanitize_Merges_Localized_Informational_Option_With_Optional_Boolean_Duplicate()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Versionsinformationen anzeigen",
+                },
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Show version information.",
+                    ["aliases"] = new JsonArray("-v"),
+                    ["arguments"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["required"] = false,
+                            ["arity"] = new JsonObject
+                            {
+                                ["minimum"] = 0,
+                                ["maximum"] = 1,
+                            },
+                            ["type"] = "Boolean",
+                        },
+                    },
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var version = Assert.Single(document["options"]!.AsArray())!.AsObject();
+        Assert.Equal("--version", version["name"]?.GetValue<string>());
+        Assert.Equal("Versionsinformationen anzeigen", version["description"]?.GetValue<string>());
+        Assert.Equal("-v", Assert.Single(version["aliases"]!.AsArray())!.GetValue<string>());
+        Assert.False(version.ContainsKey("arguments"));
+    }
+}

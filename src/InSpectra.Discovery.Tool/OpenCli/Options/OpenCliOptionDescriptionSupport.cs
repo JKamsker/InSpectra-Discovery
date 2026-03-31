@@ -37,9 +37,11 @@ internal static class OpenCliOptionDescriptionSupport
     {
         "Display this help screen.",
         "Display version information.",
+        "Hilfemeldung anzeigen",
         "Show version information.",
         "Show help information.",
         "Show help and usage information",
+        "Versionsinformationen anzeigen",
     };
 
     private static readonly HashSet<string> DescriptionStopWords = new(StringComparer.OrdinalIgnoreCase)
@@ -193,4 +195,3 @@ internal static class OpenCliOptionDescriptionSupport
         return lines;
     }
 }
-

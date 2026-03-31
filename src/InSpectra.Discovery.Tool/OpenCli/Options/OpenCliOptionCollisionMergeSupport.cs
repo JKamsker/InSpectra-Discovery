@@ -204,13 +204,23 @@ internal static class OpenCliOptionCollisionMergeSupport
         }
 
         var argument = arguments[0] as JsonObject;
-        var argumentName = argument?["name"]?.GetValue<string>();
-        if (string.IsNullOrWhiteSpace(argumentName))
+        if (argument is null)
         {
             return false;
         }
 
-        if (argument?["required"]?.GetValue<bool>() == true)
+        if (argument["required"]?.GetValue<bool>() == true)
+        {
+            return false;
+        }
+
+        if (LooksLikeOptionalBooleanNoise(argument))
+        {
+            return true;
+        }
+
+        var argumentName = argument["name"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(argumentName))
         {
             return false;
         }
@@ -220,5 +230,26 @@ internal static class OpenCliOptionCollisionMergeSupport
             OpenCliOptionSupport.DeriveSyntheticArgumentName(option["name"]?.GetValue<string>()),
             StringComparison.Ordinal);
     }
-}
 
+    private static bool LooksLikeOptionalBooleanNoise(JsonObject argument)
+    {
+        if (!string.IsNullOrWhiteSpace(argument["name"]?.GetValue<string>()))
+        {
+            return false;
+        }
+
+        if (!string.Equals(argument["type"]?.GetValue<string>(), "Boolean", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (argument["arity"] is not JsonObject arity)
+        {
+            return false;
+        }
+
+        var minimum = arity["minimum"]?.GetValue<int>();
+        var maximum = arity["maximum"]?.GetValue<int>();
+        return minimum == 0 && maximum == 1;
+    }
+}
