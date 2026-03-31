@@ -30,11 +30,19 @@ public sealed class AutoHookFallbackLiveTests
             "hook-no-assembly-loaded"));
         data.Add(new HookFallbackToolCase(
             "System.CommandLine",
+            "DotNetAnalyzer",
+            "1.5.0",
+            "dotnet-analyzer",
+            "DotNetAnalyzer - .NET MCP Server for Claude Code",
+            "1.5.0",
+            "hook-no-assembly-loaded"));
+        data.Add(new HookFallbackToolCase(
+            "System.CommandLine",
             "dotnet-mgcb",
             "3.8.5-preview.3",
             "mgcb",
             "MonoGame Content Builder:",
-            "v3.8.5.0",
+            "3.8.5-preview.3",
             "hook-no-assembly-loaded"));
         data.Add(new HookFallbackToolCase(
             "System.CommandLine",
@@ -43,7 +51,15 @@ public sealed class AutoHookFallbackLiveTests
             "mgcb-editor-windows",
             "mgcb-editor-windows",
             "3.8.5-preview.3",
-            "hook-target-unhandled-exception"));
+            "hook-no-assembly-loaded"));
+        data.Add(new HookFallbackToolCase(
+            "System.CommandLine",
+            "SoftwareExtravaganza.Whizbang.CLI",
+            "0.54.2-alpha.76",
+            "whizbang",
+            "Whizbang CLI - Command-line tool for Whizbang",
+            "0.54.2-alpha.76",
+            "hook-no-assembly-loaded"));
         return data;
     }
 
@@ -86,22 +102,22 @@ public sealed class AutoHookFallbackLiveTests
             var openCli = JsonNode.Parse(await File.ReadAllTextAsync(openCliPath));
 
             Assert.Equal("success", result?["disposition"]?.GetValue<string>());
-            Assert.Equal("static", result?["analysisMode"]?.GetValue<string>());
-            Assert.Equal("static-crawl", result?["classification"]?.GetValue<string>());
+            Assert.Equal(testCase.ExpectedAnalysisMode, result?["analysisMode"]?.GetValue<string>());
+            Assert.Equal(testCase.ExpectedClassification, result?["classification"]?.GetValue<string>());
             Assert.Equal(testCase.Framework, result?["cliFramework"]?.GetValue<string>());
             Assert.Equal("static", result?["analysisSelection"]?["preferredMode"]?.GetValue<string>());
-            Assert.Equal("static", result?["analysisSelection"]?["selectedMode"]?.GetValue<string>());
+            Assert.Equal(testCase.ExpectedAnalysisMode, result?["analysisSelection"]?["selectedMode"]?.GetValue<string>());
             Assert.Equal("hook", result?["fallback"]?["from"]?.GetValue<string>());
             Assert.Equal(testCase.ExpectedHookFailureClassification, result?["fallback"]?["classification"]?.GetValue<string>());
             Assert.Equal(testCase.CommandName, result?["command"]?.GetValue<string>());
 
             Assert.Equal(testCase.ExpectedOpenCliTitle, openCli?["info"]?["title"]?.GetValue<string>());
             Assert.Equal(testCase.ExpectedOpenCliVersion, openCli?["info"]?["version"]?.GetValue<string>());
-            Assert.Equal("static-analysis", openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal(testCase.ExpectedArtifactSource, openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>());
             Assert.Equal(testCase.Framework, openCli?["x-inspectra"]?["cliFramework"]?.GetValue<string>());
 
             HookOpenCliSnapshotSupport.AssertMatchesFixture(testCase.PackageId, testCase.Version, openCli);
-            _output.WriteLine($"{testCase.PackageId} {testCase.Version} succeeded via static fallback after hook failure.");
+            _output.WriteLine($"{testCase.PackageId} {testCase.Version} succeeded via {testCase.ExpectedAnalysisMode} fallback after hook failure.");
         }
         finally
         {
@@ -122,8 +138,15 @@ public sealed class AutoHookFallbackLiveTests
         string CommandName,
         string ExpectedOpenCliTitle,
         string ExpectedOpenCliVersion,
-        string ExpectedHookFailureClassification)
+        string ExpectedHookFailureClassification,
+        string expectedAnalysisMode = "static",
+        string expectedClassification = "static-crawl",
+        string expectedArtifactSource = "static-analysis")
     {
+        public string ExpectedAnalysisMode { get; } = expectedAnalysisMode;
+        public string ExpectedClassification { get; } = expectedClassification;
+        public string ExpectedArtifactSource { get; } = expectedArtifactSource;
+
         public override string ToString()
             => $"{PackageId} {Version}";
     }

@@ -237,7 +237,7 @@ internal static class HookOpenCliSnapshotSupport
     }
 
     private static readonly Regex BuildStartedRegex = new(
-        @"^Build started \d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$",
+        @"^Build started \d{2}[./]\d{2}[./]\d{4} \d{2}:\d{2}:\d{2}$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static readonly Regex BuildSummaryRegex = new(
@@ -245,7 +245,7 @@ internal static class HookOpenCliSnapshotSupport
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static readonly Regex TimeElapsedRegex = new(
-        @"^Time elapsed \d{2}:\d{2}:\d{2}\.\d{2}\.?$",
+        @"^Time elapsed \d{2}:\d{2}:\d{2}[.,]\d{2}\.?$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static void AddBooleanIfTrue(JsonObject target, string propertyName, bool? value)

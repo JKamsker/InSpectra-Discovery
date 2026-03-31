@@ -30,6 +30,18 @@ public sealed class HookOpenCliSnapshotSupportTests
     }
 
     [Fact]
+    public void SerializeForComparison_RemovesLocalizedVolatileBuildLines()
+    {
+        var withLocalizedBuildNoise = CreateDocument(
+            "Stable line\r\nBuild started 31.03.2026 22:34:33\r\nBuild 0 succeeded, 0 failed.\r\nTime elapsed 00:00:00.03.\r\nTrailing line");
+        var withoutBuildNoise = CreateDocument("Stable line\nTrailing line");
+
+        Assert.Equal(
+            HookOpenCliSnapshotSupport.SerializeForComparison(withoutBuildNoise),
+            HookOpenCliSnapshotSupport.SerializeForComparison(withLocalizedBuildNoise));
+    }
+
+    [Fact]
     public void SerializeForComparison_Canonicalizes_BuiltIn_Option_Descriptions()
     {
         var localized = CreateDocument(
