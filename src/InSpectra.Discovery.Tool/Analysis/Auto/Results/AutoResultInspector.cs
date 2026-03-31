@@ -9,6 +9,14 @@ internal static class AutoResultInspector
             || !IsSuccessful(nativeResult)
             || !HasOpenCliArtifact(nativeResult);
 
+    public static bool ShouldTryStaticFallback(string selectedMode, string? preferredMode, JsonObject result)
+        => string.Equals(selectedMode, "hook", StringComparison.Ordinal)
+            && string.Equals(preferredMode, "static", StringComparison.OrdinalIgnoreCase)
+            && ShouldTryHelpFallback(result);
+
+    public static bool ShouldUseStaticFallback(JsonObject result)
+        => !ShouldTryHelpFallback(result);
+
     public static bool ShouldPreserveNativeResult(JsonObject? nativeResult, JsonObject helpResult)
         => nativeResult is not null
             && IsSuccessful(nativeResult)
@@ -21,5 +29,4 @@ internal static class AutoResultInspector
     private static bool HasOpenCliArtifact(JsonObject result)
         => !string.IsNullOrWhiteSpace(result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
 }
-
 

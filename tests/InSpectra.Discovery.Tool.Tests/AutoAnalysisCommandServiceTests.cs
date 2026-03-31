@@ -434,5 +434,3 @@ public sealed class AutoCommandServiceTests
         }
     }
 }
-
-

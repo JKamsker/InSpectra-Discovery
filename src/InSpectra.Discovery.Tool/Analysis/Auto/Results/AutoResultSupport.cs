@@ -59,9 +59,14 @@ internal static class AutoResultSupport
             return;
         }
 
+        ApplyFallback(result, "native", fallbackResult);
+    }
+
+    public static void ApplyFallback(JsonObject result, string fallbackFrom, JsonObject fallbackResult)
+    {
         result["fallback"] = new JsonObject
         {
-            ["from"] = "native",
+            ["from"] = fallbackFrom,
             ["disposition"] = fallbackResult["disposition"]?.GetValue<string>(),
             ["classification"] = fallbackResult["classification"]?.GetValue<string>(),
             ["message"] = fallbackResult["failureMessage"]?.GetValue<string>(),
@@ -113,5 +118,4 @@ internal static class AutoResultSupport
             result["fallback"]?["from"]?.GetValue<string>());
     }
 }
-
 

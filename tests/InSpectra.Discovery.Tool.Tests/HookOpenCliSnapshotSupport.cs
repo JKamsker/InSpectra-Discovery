@@ -4,6 +4,7 @@ using InSpectra.Discovery.Tool.Infrastructure.Paths;
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 
 using Xunit;
 
@@ -57,7 +58,7 @@ internal static class HookOpenCliSnapshotSupport
             ["version"] = info["version"]?.GetValue<string>(),
         };
 
-        AddStringIfPresent(normalized, "description", info["description"]?.GetValue<string>());
+        AddStringIfPresent(normalized, "description", NormalizeDescription(info["description"]?.GetValue<string>()));
         return normalized;
     }
 
@@ -76,7 +77,7 @@ internal static class HookOpenCliSnapshotSupport
                 ["name"] = entry["name"]?.GetValue<string>(),
             };
 
-            AddStringIfPresent(command, "description", entry["description"]?.GetValue<string>());
+            AddStringIfPresent(command, "description", NormalizeDescription(entry["description"]?.GetValue<string>()));
             AddBooleanIfTrue(command, "hidden", entry["hidden"]?.GetValue<bool>());
             AddArrayIfNotEmpty(command, "aliases", NormalizeStringArray(entry["aliases"] as JsonArray));
             AddArrayIfNotEmpty(command, "options", NormalizeOptions(entry["options"] as JsonArray));
@@ -104,7 +105,7 @@ internal static class HookOpenCliSnapshotSupport
                 ["name"] = entry["name"]?.GetValue<string>(),
             };
 
-            AddStringIfPresent(option, "description", entry["description"]?.GetValue<string>());
+            AddStringIfPresent(option, "description", NormalizeDescription(entry["description"]?.GetValue<string>()));
             AddBooleanIfTrue(option, "hidden", entry["hidden"]?.GetValue<bool>());
             AddBooleanIfTrue(option, "recursive", entry["recursive"]?.GetValue<bool>());
             AddArrayIfNotEmpty(option, "aliases", NormalizeStringArray(entry["aliases"] as JsonArray));
@@ -131,7 +132,7 @@ internal static class HookOpenCliSnapshotSupport
                 ["name"] = entry["name"]?.GetValue<string>(),
             };
 
-            AddStringIfPresent(argument, "description", entry["description"]?.GetValue<string>());
+            AddStringIfPresent(argument, "description", NormalizeDescription(entry["description"]?.GetValue<string>()));
             AddBooleanIfTrue(argument, "hidden", entry["hidden"]?.GetValue<bool>());
             AddBooleanIfTrue(argument, "required", entry["required"]?.GetValue<bool>());
             AddStringIfPresent(argument, "type", entry["type"]?.GetValue<string>());
@@ -175,6 +176,52 @@ internal static class HookOpenCliSnapshotSupport
             target[propertyName] = value;
         }
     }
+
+    private static string? NormalizeDescription(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var lines = value
+            .Replace("\r\n", "\n", StringComparison.Ordinal)
+            .Split('\n')
+            .Where(line => !IsVolatileHelpLine(line))
+            .ToArray();
+        if (lines.Length == 0)
+        {
+            return null;
+        }
+
+        var normalized = string.Join('\n', lines).Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static bool IsVolatileHelpLine(string line)
+    {
+        var trimmed = line.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return false;
+        }
+
+        return BuildStartedRegex.IsMatch(trimmed)
+            || BuildSummaryRegex.IsMatch(trimmed)
+            || TimeElapsedRegex.IsMatch(trimmed);
+    }
+
+    private static readonly Regex BuildStartedRegex = new(
+        @"^Build started \d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex BuildSummaryRegex = new(
+        @"^Build \d+ succeeded, \d+ failed\.$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+    private static readonly Regex TimeElapsedRegex = new(
+        @"^Time elapsed \d{2}:\d{2}:\d{2}\.\d{2}\.?$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     private static void AddBooleanIfTrue(JsonObject target, string propertyName, bool? value)
     {

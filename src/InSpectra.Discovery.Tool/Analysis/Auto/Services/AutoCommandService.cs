@@ -146,6 +146,36 @@ internal sealed class AutoCommandService
             nativeOutcome.Result,
             cancellationToken);
 
+        if (AutoResultInspector.ShouldTryStaticFallback(selectedMode, descriptor.PreferredAnalysisMode, selectedResult))
+        {
+            var staticResult = await AutoExecutionSupport.RunSelectedAnalyzerAsync(
+                "static",
+                _helpRunner,
+                _cliFxRunner,
+                _staticRunner,
+                _hookRunner,
+                packageId,
+                version,
+                descriptor,
+                outputDirectory,
+                batchId,
+                attempt,
+                source,
+                installTimeoutSeconds,
+                analysisTimeoutSeconds,
+                commandTimeoutSeconds,
+                resultPath,
+                nativeResult: null,
+                cancellationToken);
+
+            if (AutoResultInspector.ShouldUseStaticFallback(staticResult))
+            {
+                AutoResultSupport.ApplyFallback(staticResult, "hook", selectedResult);
+                selectedResult = staticResult;
+                selectedMode = "static";
+            }
+        }
+
         if (string.Equals(selectedMode, "help", StringComparison.Ordinal)
             && AutoResultInspector.ShouldPreserveNativeResult(nativeOutcome.Result, selectedResult))
         {
@@ -158,5 +188,4 @@ internal sealed class AutoCommandService
         return await AutoResultSupport.WriteResultAsync(packageId, version, resultPath, selectedResult, json, suppressOutput, cancellationToken);
     }
 }
-
 

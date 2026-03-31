@@ -1,0 +1,130 @@
+namespace InSpectra.Discovery.Tool.Tests;
+
+using InSpectra.Discovery.Tool.Analysis.Auto.Services;
+
+using System.Text.Json.Nodes;
+using Xunit;
+using Xunit.Abstractions;
+
+[Collection("LiveToolAnalysis")]
+public sealed class AutoHookFallbackLiveTests
+{
+    private const string EnableEnvVar = "INSPECTRA_DISCOVERY_LIVE_AUTO_TESTS";
+    private readonly ITestOutputHelper _output;
+
+    public AutoHookFallbackLiveTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    public static TheoryData<HookFallbackToolCase> Cases()
+    {
+        var data = new TheoryData<HookFallbackToolCase>();
+        data.Add(new HookFallbackToolCase(
+            "System.CommandLine + Argu",
+            "csharp-ls",
+            "0.22.0",
+            "csharp-ls",
+            "csharp-ls",
+            "0.22.0",
+            "hook-no-assembly-loaded"));
+        data.Add(new HookFallbackToolCase(
+            "System.CommandLine",
+            "dotnet-mgcb",
+            "3.8.5-preview.3",
+            "mgcb",
+            "MonoGame Content Builder:",
+            "v3.8.5.0",
+            "hook-no-assembly-loaded"));
+        data.Add(new HookFallbackToolCase(
+            "System.CommandLine",
+            "dotnet-mgcb-editor-windows",
+            "3.8.5-preview.3",
+            "mgcb-editor-windows",
+            "mgcb-editor-windows",
+            "3.8.5-preview.3",
+            "hook-target-unhandled-exception"));
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(Cases))]
+    [Trait("Category", "Live")]
+    public async Task RunAsync_Falls_Back_To_Static_For_Real_World_Hook_Regressions(HookFallbackToolCase testCase)
+    {
+        if (!ShouldRun())
+        {
+            return;
+        }
+
+        var service = new AutoCommandService();
+        var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-auto-hook-fallback", Guid.NewGuid().ToString("N"));
+
+        try
+        {
+            var exitCode = await service.RunAsync(
+                testCase.PackageId,
+                testCase.Version,
+                outputRoot,
+                batchId: "live-auto-hook-fallback",
+                attempt: 1,
+                source: "live-auto-hook-fallback-test",
+                installTimeoutSeconds: 300,
+                analysisTimeoutSeconds: 600,
+                commandTimeoutSeconds: 60,
+                json: false,
+                cancellationToken: CancellationToken.None);
+
+            Assert.Equal(0, exitCode);
+
+            var resultPath = Path.Combine(outputRoot, "result.json");
+            var openCliPath = Path.Combine(outputRoot, "opencli.json");
+            Assert.True(File.Exists(resultPath), $"Missing result artifact for {testCase.PackageId}.");
+            Assert.True(File.Exists(openCliPath), $"Missing OpenCLI artifact for {testCase.PackageId}.");
+
+            var result = JsonNode.Parse(await File.ReadAllTextAsync(resultPath));
+            var openCli = JsonNode.Parse(await File.ReadAllTextAsync(openCliPath));
+
+            Assert.Equal("success", result?["disposition"]?.GetValue<string>());
+            Assert.Equal("static", result?["analysisMode"]?.GetValue<string>());
+            Assert.Equal("static-crawl", result?["classification"]?.GetValue<string>());
+            Assert.Equal(testCase.Framework, result?["cliFramework"]?.GetValue<string>());
+            Assert.Equal("static", result?["analysisSelection"]?["preferredMode"]?.GetValue<string>());
+            Assert.Equal("static", result?["analysisSelection"]?["selectedMode"]?.GetValue<string>());
+            Assert.Equal("hook", result?["fallback"]?["from"]?.GetValue<string>());
+            Assert.Equal(testCase.ExpectedHookFailureClassification, result?["fallback"]?["classification"]?.GetValue<string>());
+            Assert.Equal(testCase.CommandName, result?["command"]?.GetValue<string>());
+
+            Assert.Equal(testCase.ExpectedOpenCliTitle, openCli?["info"]?["title"]?.GetValue<string>());
+            Assert.Equal(testCase.ExpectedOpenCliVersion, openCli?["info"]?["version"]?.GetValue<string>());
+            Assert.Equal("static-analysis", openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+            Assert.Equal(testCase.Framework, openCli?["x-inspectra"]?["cliFramework"]?.GetValue<string>());
+
+            HookOpenCliSnapshotSupport.AssertMatchesFixture(testCase.PackageId, testCase.Version, openCli);
+            _output.WriteLine($"{testCase.PackageId} {testCase.Version} succeeded via static fallback after hook failure.");
+        }
+        finally
+        {
+            if (Directory.Exists(outputRoot))
+            {
+                Directory.Delete(outputRoot, recursive: true);
+            }
+        }
+    }
+
+    private static bool ShouldRun()
+        => string.Equals(Environment.GetEnvironmentVariable(EnableEnvVar), "1", StringComparison.Ordinal);
+
+    public sealed record HookFallbackToolCase(
+        string Framework,
+        string PackageId,
+        string Version,
+        string CommandName,
+        string ExpectedOpenCliTitle,
+        string ExpectedOpenCliVersion,
+        string ExpectedHookFailureClassification)
+    {
+        public override string ToString()
+            => $"{PackageId} {Version}";
+    }
+}

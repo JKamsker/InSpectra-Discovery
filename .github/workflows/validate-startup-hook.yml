@@ -83,3 +83,45 @@ jobs:
           -c Debug
           --no-build
           --filter "FullyQualifiedName~HookServiceLiveTests"
+
+  auto-fallback-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Show installed .NET runtimes
+        run: |
+          dotnet --list-sdks
+          dotnet --list-runtimes
+
+      - name: Build solution
+        run: dotnet build InSpectra.Discovery.sln -c Debug
+
+      - name: Run auto fallback unit tests
+        run: >
+          dotnet test tests/InSpectra.Discovery.Tool.Tests/InSpectra.Discovery.Tool.Tests.csproj
+          -c Debug
+          --no-build
+          --filter "FullyQualifiedName~AutoCommandService"
+
+      - name: Run live auto fallback tests
+        env:
+          INSPECTRA_DISCOVERY_LIVE_AUTO_TESTS: 1
+        run: >
+          dotnet test tests/InSpectra.Discovery.Tool.Tests/InSpectra.Discovery.Tool.Tests.csproj
+          -c Debug
+          --no-build
+          --filter "FullyQualifiedName~AutoHookFallbackLiveTests"
