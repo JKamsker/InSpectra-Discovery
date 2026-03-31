@@ -156,3 +156,68 @@ jobs:
           )
 
           docker "${docker_args[@]}"
+
+  commandlineutils-hook-linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Show installed .NET runtimes
+        run: |
+          dotnet --list-sdks
+          dotnet --list-runtimes
+
+      - name: Build solution
+        run: dotnet build InSpectra.Discovery.sln -c Debug
+
+      - name: Run live CommandLineUtils hook tests in Docker
+        env:
+          INSPECTRA_DISCOVERY_LIVE_HOOK_TESTS: 1
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker_args=(
+            run
+            --rm
+            --user "$(id -u):$(id -g)"
+            --volume "${GITHUB_WORKSPACE}:/workspace"
+            --workdir /workspace
+            --env INSPECTRA_DISCOVERY_LIVE_HOOK_TESTS=1
+            --env HOME=/tmp
+            --env DOTNET_CLI_HOME=/tmp/.dotnet
+            --env NUGET_PACKAGES=/tmp/.nuget/packages
+          )
+
+          if [[ -n "${DOTNET_ROOT:-}" && -d "${DOTNET_ROOT}" ]]; then
+            docker_args+=(
+              --volume "${DOTNET_ROOT}:/usr/share/dotnet:ro"
+              --env DOTNET_ROOT=/usr/share/dotnet
+              --env DOTNET_ROOT_X64=/usr/share/dotnet
+            )
+          fi
+
+          docker_args+=(
+            mcr.microsoft.com/dotnet/sdk:10.0
+            dotnet
+            test
+            tests/InSpectra.Discovery.Tool.Tests/InSpectra.Discovery.Tool.Tests.csproj
+            -c
+            Debug
+            --filter
+            FullyQualifiedName~CommandLineUtilsHookLiveTests
+          )
+
+          docker "${docker_args[@]}"

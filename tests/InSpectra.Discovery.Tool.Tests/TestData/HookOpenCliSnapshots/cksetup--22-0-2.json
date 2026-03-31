@@ -1,0 +1,803 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "CKSetup",
+    "version": "22.0.2",
+    "description": "Command line utility that setups (ie. run an Engine on) one or more binary paths: assemblies are unified and CKSetup.Runner is used to execute the specified Engine."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "Microsoft.Extensions.CommandLineUtils",
+      "frameworkVersion": "1.1.1.0",
+      "patchTarget": "Execute-postfix ()"
+    },
+    "cliFramework": "Microsoft.Extensions.CommandLineUtils",
+    "cliParsedDescription": "Runner utility for compound .Net assemblies."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help information",
+      "aliases": [
+        "-h"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "run",
+      "description": "Resolves Model/Setup dependencies across one or more directories, and runs a command in a consolidated folder.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help information",
+          "aliases": [
+            "-h"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version information",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbosity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sets a verbosity level for console and/or file output. Valid verbosity levels: \"Off\", \"Release\", \"Monitor\", \"Terse\", \"Verbose\", \"Debug\", or any \"{Group,Line}\" format where Group and Line can be: \"Debug\", \"Trace\", \"Info\", \"Warn\", \"Error\", \"Fatal\", or \"Off\".",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "V",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--logFile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path of a log file which will contain the log output. Defaults to none (console logging only or determined by the Setup configuration).",
+          "aliases": [
+            "-l"
+          ],
+          "arguments": [
+            {
+              "name": "L",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--store",
+          "recursive": false,
+          "hidden": false,
+          "description": "Full path of the runtime store directory to use. Defaults to '%CKSETUP_STORE%' and is the result of the following process:\n- The environment variable 'CKSETUP_STORE' like any other environment variables is expanded.\nIf the expansion of the environment variables of this string leads to a path with invalid characters in it this is an error,\nbut if the resuting path still contains a '%', this is just a warning (a referenced environment variable is missing).\n- When the step above failed to resolve a path, a 'CKSetupStore.txt' file (that must contain the final store path)\nis searched from the current directory up to the root. (Current directory is '<path>'.)\n- When the step above failed to resolve a path, then the same lookup of a 'CKSetupStore.txt' file is done from the\ncurrent AppContext.BaseDirectory up to the root. (AppContext.BaseDirectory is '<path>'.)\n- Ultimately, the shared local store is used (that is '<path>').",
+          "arguments": [
+            {
+              "name": "STORE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--remote",
+          "recursive": false,
+          "hidden": false,
+          "description": "Url of the remote store. This uses the ambient store if it exists: use \"no\" or \"none\" to skip ambient store lookup.",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "R",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--apiKey",
+          "recursive": false,
+          "hidden": false,
+          "description": "Api key for the remote.",
+          "aliases": [
+            "-k"
+          ],
+          "arguments": [
+            {
+              "name": "K",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--launchDebug",
+          "recursive": false,
+          "hidden": false,
+          "description": "Calls Debugger.Launch() at the very start of the runner process.",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Runs the full setup, regardless of the signature files that may exist in the configured BinPaths folders.",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--forceEngine",
+          "recursive": false,
+          "hidden": false,
+          "description": "Runs the engine, regardless of the signature files that may exist in the configured BinPaths folders.",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ConfigurationPath",
+          "description": "Xml configuration to use.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "store",
+      "description": "Manages the runtime store.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help information",
+          "aliases": [
+            "-h"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version information",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "add",
+          "description": "Adds components (Engine, Runtime or Model) to the store.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help information",
+              "aliases": [
+                "-h"
+              ],
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version information",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbosity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sets a verbosity level for console and/or file output. Valid verbosity levels: \"Off\", \"Release\", \"Monitor\", \"Terse\", \"Verbose\", \"Debug\", or any \"{Group,Line}\" format where Group and Line can be: \"Debug\", \"Trace\", \"Info\", \"Warn\", \"Error\", \"Fatal\", or \"Off\".",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "V",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--logFile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path of a log file which will contain the log output. Defaults to none (console logging only or determined by the Setup configuration).",
+              "aliases": [
+                "-l"
+              ],
+              "arguments": [
+                {
+                  "name": "L",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--store",
+              "recursive": false,
+              "hidden": false,
+              "description": "Full path of the runtime store directory to use. Defaults to '%CKSETUP_STORE%' and is the result of the following process:\n- The environment variable 'CKSETUP_STORE' like any other environment variables is expanded.\nIf the expansion of the environment variables of this string leads to a path with invalid characters in it this is an error,\nbut if the resuting path still contains a '%', this is just a warning (a referenced environment variable is missing).\n- When the step above failed to resolve a path, a 'CKSetupStore.txt' file (that must contain the final store path)\nis searched from the current directory up to the root. (Current directory is '<path>'.)\n- When the step above failed to resolve a path, then the same lookup of a 'CKSetupStore.txt' file is done from the\ncurrent AppContext.BaseDirectory up to the root. (AppContext.BaseDirectory is '<path>'.)\n- Ultimately, the shared local store is used (that is '<path>').",
+              "arguments": [
+                {
+                  "name": "STORE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--remote",
+              "recursive": false,
+              "hidden": false,
+              "description": "Url of the remote store. This uses the ambient store if it exists: use \"no\" or \"none\" to skip ambient store lookup.",
+              "aliases": [
+                "-r"
+              ],
+              "arguments": [
+                {
+                  "name": "R",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--apiKey",
+              "recursive": false,
+              "hidden": false,
+              "description": "Api key for the remote.",
+              "aliases": [
+                "-k"
+              ],
+              "arguments": [
+                {
+                  "name": "K",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "BinFolders",
+              "description": "Components to add to the store.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 2147483647
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "clear",
+          "description": "Clears the store.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help information",
+              "aliases": [
+                "-h"
+              ],
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version information",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbosity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sets a verbosity level for console and/or file output. Valid verbosity levels: \"Off\", \"Release\", \"Monitor\", \"Terse\", \"Verbose\", \"Debug\", or any \"{Group,Line}\" format where Group and Line can be: \"Debug\", \"Trace\", \"Info\", \"Warn\", \"Error\", \"Fatal\", or \"Off\".",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "V",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--logFile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path of a log file which will contain the log output. Defaults to none (console logging only or determined by the Setup configuration).",
+              "aliases": [
+                "-l"
+              ],
+              "arguments": [
+                {
+                  "name": "L",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--store",
+              "recursive": false,
+              "hidden": false,
+              "description": "Full path of the runtime store directory to use. Defaults to '%CKSETUP_STORE%' and is the result of the following process:\n- The environment variable 'CKSETUP_STORE' like any other environment variables is expanded.\nIf the expansion of the environment variables of this string leads to a path with invalid characters in it this is an error,\nbut if the resuting path still contains a '%', this is just a warning (a referenced environment variable is missing).\n- When the step above failed to resolve a path, a 'CKSetupStore.txt' file (that must contain the final store path)\nis searched from the current directory up to the root. (Current directory is '<path>'.)\n- When the step above failed to resolve a path, then the same lookup of a 'CKSetupStore.txt' file is done from the\ncurrent AppContext.BaseDirectory up to the root. (AppContext.BaseDirectory is '<path>'.)\n- Ultimately, the shared local store is used (that is '<path>').",
+              "arguments": [
+                {
+                  "name": "STORE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "push",
+          "description": "Push local components to a remote store.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help information",
+              "aliases": [
+                "-h"
+              ],
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version information",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbosity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sets a verbosity level for console and/or file output. Valid verbosity levels: \"Off\", \"Release\", \"Monitor\", \"Terse\", \"Verbose\", \"Debug\", or any \"{Group,Line}\" format where Group and Line can be: \"Debug\", \"Trace\", \"Info\", \"Warn\", \"Error\", \"Fatal\", or \"Off\".",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "V",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--logFile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path of a log file which will contain the log output. Defaults to none (console logging only or determined by the Setup configuration).",
+              "aliases": [
+                "-l"
+              ],
+              "arguments": [
+                {
+                  "name": "L",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--store",
+              "recursive": false,
+              "hidden": false,
+              "description": "Full path of the runtime store directory to use. Defaults to '%CKSETUP_STORE%' and is the result of the following process:\n- The environment variable 'CKSETUP_STORE' like any other environment variables is expanded.\nIf the expansion of the environment variables of this string leads to a path with invalid characters in it this is an error,\nbut if the resuting path still contains a '%', this is just a warning (a referenced environment variable is missing).\n- When the step above failed to resolve a path, a 'CKSetupStore.txt' file (that must contain the final store path)\nis searched from the current directory up to the root. (Current directory is '<path>'.)\n- When the step above failed to resolve a path, then the same lookup of a 'CKSetupStore.txt' file is done from the\ncurrent AppContext.BaseDirectory up to the root. (AppContext.BaseDirectory is '<path>'.)\n- Ultimately, the shared local store is used (that is '<path>').",
+              "arguments": [
+                {
+                  "name": "STORE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--remote",
+              "recursive": false,
+              "hidden": false,
+              "description": "The required target url.",
+              "aliases": [
+                "-r"
+              ],
+              "arguments": [
+                {
+                  "name": "R",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--apiKey",
+              "recursive": false,
+              "hidden": false,
+              "description": "Api key for the remote.",
+              "aliases": [
+                "-k"
+              ],
+              "arguments": [
+                {
+                  "name": "K",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "prototype",
+          "description": "Gets or sets the store prototype Url store.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help information",
+              "aliases": [
+                "-h"
+              ],
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version information",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbosity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sets a verbosity level for console and/or file output. Valid verbosity levels: \"Off\", \"Release\", \"Monitor\", \"Terse\", \"Verbose\", \"Debug\", or any \"{Group,Line}\" format where Group and Line can be: \"Debug\", \"Trace\", \"Info\", \"Warn\", \"Error\", \"Fatal\", or \"Off\".",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "V",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--logFile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path of a log file which will contain the log output. Defaults to none (console logging only or determined by the Setup configuration).",
+              "aliases": [
+                "-l"
+              ],
+              "arguments": [
+                {
+                  "name": "L",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--prototype",
+              "recursive": false,
+              "hidden": false,
+              "description": "Url of the prototype store. Use 'none' to remove current property store. Note that it can be a rooted file path to a local store.",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "P",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--store",
+              "recursive": false,
+              "hidden": false,
+              "description": "Full path of the runtime store directory to use. Defaults to '%CKSETUP_STORE%' and is the result of the following process:\n- The environment variable 'CKSETUP_STORE' like any other environment variables is expanded.\nIf the expansion of the environment variables of this string leads to a path with invalid characters in it this is an error,\nbut if the resuting path still contains a '%', this is just a warning (a referenced environment variable is missing).\n- When the step above failed to resolve a path, a 'CKSetupStore.txt' file (that must contain the final store path)\nis searched from the current directory up to the root. (Current directory is '<path>'.)\n- When the step above failed to resolve a path, then the same lookup of a 'CKSetupStore.txt' file is done from the\ncurrent AppContext.BaseDirectory up to the root. (AppContext.BaseDirectory is '<path>'.)\n- Ultimately, the shared local store is used (that is '<path>').",
+              "arguments": [
+                {
+                  "name": "STORE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
