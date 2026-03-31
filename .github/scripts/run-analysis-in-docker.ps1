@@ -39,7 +39,10 @@ $toolAssemblyPath = Join-Path $resolvedToolRoot 'InSpectra.Discovery.Tool.dll'
 
 $dockerArgs = @(
     'run',
-    '--rm'
+    '--rm',
+    '--env', 'HOME=/tmp',
+    '--env', 'DOTNET_CLI_HOME=/tmp/.dotnet',
+    '--env', 'NUGET_PACKAGES=/tmp/.nuget/packages'
 )
 
 if ($IsLinux -and -not [string]::IsNullOrWhiteSpace($env:DOTNET_ROOT) -and (Test-Path -LiteralPath $env:DOTNET_ROOT)) {
