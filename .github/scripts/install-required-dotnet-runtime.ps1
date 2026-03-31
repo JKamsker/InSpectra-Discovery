@@ -8,6 +8,101 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Get-RequestFieldValue
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        $Request,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    if ($Request -is [System.Collections.IDictionary])
+    {
+        return [string]$Request[$Name]
+    }
+
+    $property = $Request.PSObject.Properties[$Name]
+    if ($null -eq $property)
+    {
+        return $null
+    }
+
+    return [string]$property.Value
+}
+
+function ConvertFrom-StringifiedHashtable
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Value
+    )
+
+    $trimmed = $Value.Trim()
+    if (-not $trimmed.StartsWith('@{', [StringComparison]::Ordinal)
+        -or -not $trimmed.EndsWith('}', [StringComparison]::Ordinal))
+    {
+        throw "Unsupported runtime request string '$Value'."
+    }
+
+    $pairs = [ordered]@{}
+    $content = $trimmed.Substring(2, $trimmed.Length - 3)
+    foreach ($segment in $content.Split(';', [StringSplitOptions]::RemoveEmptyEntries | [StringSplitOptions]::TrimEntries))
+    {
+        $parts = $segment.Split('=', 2, [StringSplitOptions]::TrimEntries)
+        if ($parts.Length -ne 2)
+        {
+            throw "Could not parse runtime request segment '$segment'."
+        }
+
+        $pairs[$parts[0]] = $parts[1]
+    }
+
+    return [pscustomobject]$pairs
+}
+
+function ConvertTo-RuntimeRequest
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [AllowNull()]
+        $Request
+    )
+
+    $normalized = $Request
+    if ($Request -is [string])
+    {
+        $trimmed = $Request.Trim()
+        if ($trimmed.StartsWith('{', [StringComparison]::Ordinal))
+        {
+            $normalized = $trimmed | ConvertFrom-Json
+        }
+        else
+        {
+            $normalized = ConvertFrom-StringifiedHashtable -Value $trimmed
+        }
+    }
+
+    $runtime = Get-RequestFieldValue -Request $normalized -Name 'runtime'
+    $channel = Get-RequestFieldValue -Request $normalized -Name 'channel'
+    $name = Get-RequestFieldValue -Request $normalized -Name 'name'
+    $version = Get-RequestFieldValue -Request $normalized -Name 'version'
+
+    if ([string]::IsNullOrWhiteSpace($runtime) -or [string]::IsNullOrWhiteSpace($channel))
+    {
+        throw "Runtime request is missing required values: '$($Request | Out-String)'."
+    }
+
+    return [pscustomobject]@{
+        name = $name
+        version = $version
+        channel = $channel
+        runtime = $runtime
+    }
+}
+
 if ([string]::IsNullOrWhiteSpace($RuntimeRequestsJson) -or $RuntimeRequestsJson -eq '[]')
 {
     Write-Host 'No additional shared runtimes are required.'
@@ -19,7 +114,9 @@ if ([string]::IsNullOrWhiteSpace($InstallDir))
     throw 'DOTNET_ROOT is not set.'
 }
 
-$requests = @($RuntimeRequestsJson | ConvertFrom-Json)
+$rawRequests = @($RuntimeRequestsJson | ConvertFrom-Json)
+$requests = @($rawRequests | ForEach-Object { ConvertTo-RuntimeRequest -Request $_ }) |
+    Sort-Object runtime, channel -Unique
 if ($requests.Count -eq 0)
 {
     Write-Host 'No additional shared runtimes are required.'
