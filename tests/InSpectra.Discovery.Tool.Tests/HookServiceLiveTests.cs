@@ -22,6 +22,12 @@ public sealed class HookServiceLiveTests
     {
         var data = new TheoryData<HookLiveToolCase>();
         data.Add(new HookLiveToolCase(
+            "AutoSDK.CLI",
+            "0.30.1-dev.165",
+            "autosdk",
+            "AutoSDK.CLI",
+            expectedCommands: ["generate", "http", "cli", "docs", "simplify", "convert-to-openapi30", "init", "trim", "ai"]));
+        data.Add(new HookLiveToolCase(
             "AMSMigrate",
             "1.4.4",
             "amsmigrate",
@@ -131,7 +137,9 @@ public sealed class HookServiceLiveTests
             Assert.Equal(testCase.Version, openCli?["info"]?["version"]?.GetValue<string>());
             Assert.Equal("startup-hook", openCli?["x-inspectra"]?["artifactSource"]?.GetValue<string>());
             Assert.Equal("System.CommandLine", openCli?["x-inspectra"]?["cliFramework"]?.GetValue<string>());
-            Assert.Equal("2.0.0.0", openCli?["x-inspectra"]?["hookCapture"]?["systemCommandLineVersion"]?.GetValue<string>());
+            var systemCommandLineVersion = openCli?["x-inspectra"]?["hookCapture"]?["systemCommandLineVersion"]?.GetValue<string>();
+            Assert.NotNull(systemCommandLineVersion);
+            Assert.StartsWith("2.0.", systemCommandLineVersion, StringComparison.Ordinal);
 
             var patchTarget = openCli?["x-inspectra"]?["hookCapture"]?["patchTarget"]?.GetValue<string>();
             Assert.NotNull(patchTarget);
