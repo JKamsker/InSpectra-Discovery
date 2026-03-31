@@ -3,74 +3,64 @@
   "info": {
     "title": "wham",
     "version": "0.14.0",
-    "description": null
+    "description": ".NET Core Global Tool for managing, converting and publishing datafiles for WarHub.ArmouryModel (wham). .NET Core SDK v2.1+ required."
   },
   "x-inspectra": {
-    "artifactSource": "crawled-from-help",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "helpDocumentCount": 2,
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.3.0",
+      "patchTarget": "Parse-postfix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
+    },
     "cliFramework": "System.CommandLine"
   },
   "options": [
     {
-      "name": "--info",
-      "required": false,
-      "description": "Display product information: name, configuration, various versions",
-      "recursive": false,
-      "hidden": false
-    },
-    {
       "name": "--help",
-      "required": false,
-      "description": "Show help and usage information",
-      "recursive": false,
+      "recursive": true,
       "hidden": false,
+      "description": "Show help and usage information",
       "aliases": [
+        "-h",
+        "/h",
         "-?",
-        "-h"
+        "/?"
       ]
     },
     {
       "name": "--version",
-      "required": false,
-      "description": "Show version information",
       "recursive": false,
-      "hidden": false
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--info",
+      "recursive": false,
+      "hidden": false,
+      "description": "Display product information: name, configuration, various versions [default: False]",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     }
   ],
-  "arguments": null,
   "commands": [
     {
-      "name": "publish",
-      "description": "Publishes given workspace in selected formats, by default a .bsr file.",
-      "hidden": false,
+      "name": "convertxml",
+      "description": "[WIP] Converts BattleScribe XML files into Gitree directory structure.",
+      "hidden": true,
       "options": [
         {
-          "name": "--artifacts",
-          "required": false,
-          "description": "Kinds of artifacts to publish to output (multiple values allowed): XML - uncompressed cat/gst XML files; ZIP - zipped catz/gstz XML files; INDEX - index.xml datafile index for hosting on the web; BSI - index.bsi zipped datafile index for hosting on the web; BSR - zipped cat/gst datafile container with index. [default: bsr]",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-a"
-          ],
-          "arguments": [
-            {
-              "name": "BSI|BSR|INDEX|XML|ZIP",
-              "required": true,
-              "arity": {
-                "minimum": 1,
-                "maximum": 1
-              }
-            }
-          ]
-        },
-        {
           "name": "--source",
-          "required": false,
-          "description": "Directory in which to look for datafiles. [default: .]",
           "recursive": false,
           "hidden": false,
+          "description": "Directory in which to look for XML files. [default: .]",
           "aliases": [
             "-s"
           ],
@@ -81,16 +71,16 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "DirectoryInfo"
             }
           ]
         },
         {
           "name": "--output",
-          "required": false,
-          "description": "Directory to save artifacts to. [default: .]",
           "recursive": false,
           "hidden": false,
+          "description": "Root directory in which to save Gitree files and folders. [default: .]",
           "aliases": [
             "-o"
           ],
@@ -101,16 +91,169 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--verbosity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Set the verbosity level.",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "convertgitree",
+      "description": "[WIP] Converts Gitree directory structure into BattleScribe XML files.",
+      "hidden": true,
+      "options": [
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Root directory of Gitree to convert. [default: .]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory in which to save XML files. [default: .]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--verbosity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Set the verbosity level.",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "publish",
+      "description": "Publishes given workspace in selected formats, by default a .bsr file.",
+      "options": [
+        {
+          "name": "--artifacts",
+          "recursive": false,
+          "hidden": false,
+          "description": "Kinds of artifacts to publish to output (multiple values allowed): XML - uncompressed cat/gst XML files; ZIP - zipped catz/gstz XML files; INDEX - index.xml datafile index for hosting on the web; BSI - index.bsi zipped datafile index for hosting on the web; BSR - zipped cat/gst datafile container with index. [default: System.String[]]",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "ARTIFACTS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory in which to look for datafiles. [default: .]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to save artifacts to. [default: .]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
             }
           ]
         },
         {
           "name": "--url",
-          "required": false,
-          "description": "Url of the index that gets included in indexes and bsr.",
           "recursive": false,
           "hidden": false,
+          "description": "Url of the index that gets included in indexes and bsr.",
           "arguments": [
             {
               "name": "URL",
@@ -118,33 +261,33 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "Uri"
             }
           ]
         },
         {
           "name": "--repo-name",
-          "required": false,
-          "description": "Repository name used in published indexes (includes bsr). Default is name of the game system, or <source> folder name if no game system included.",
           "recursive": false,
           "hidden": false,
+          "description": "Repository name used in published indexes (includes bsr). Default is name of the game system, or <source> folder name if no game system included.",
           "arguments": [
             {
-              "name": "REPO-NAME",
+              "name": "REPO_NAME",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--filename",
-          "required": false,
-          "description": "Filename (without extension) of the output artifacts. Default is <source> folder name.",
           "recursive": false,
           "hidden": false,
+          "description": "Filename (without extension) of the output artifacts. Default is <source> folder name.",
           "aliases": [
             "-f"
           ],
@@ -155,63 +298,62 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
         {
           "name": "--url-only-index",
-          "required": false,
-          "description": "Don't include data index entries in published indexes (doesn't impact bsr index).",
           "recursive": false,
-          "hidden": false
+          "hidden": false,
+          "description": "Don't include data index entries in published indexes (doesn't impact bsr index). [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--additional-urls",
-          "required": false,
-          "description": "Additional urls of index/bsr included in published indexes (doesn't impact bsr index).",
           "recursive": false,
           "hidden": false,
+          "description": "Additional urls of index/bsr included in published indexes (doesn't impact bsr index).",
           "arguments": [
             {
-              "name": "ADDITIONAL-URLS",
+              "name": "ADDITIONAL_URLS",
               "required": true,
               "arity": {
                 "minimum": 1,
-                "maximum": 1
-              }
+                "maximum": 100000
+              },
+              "type": "Uri[]"
             }
           ]
         },
         {
           "name": "--verbosity",
-          "required": false,
-          "description": "Set the verbosity level.",
           "recursive": false,
           "hidden": false,
+          "description": "Set the verbosity level.",
           "aliases": [
             "-v"
           ],
           "arguments": [
             {
-              "name": "D|DETAILED|DIAG|DIAGNOSTIC|M|MINIMAL|N|NORMAL|Q|QUIET",
+              "name": "VERBOSITY",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
-          ]
-        },
-        {
-          "name": "--help",
-          "required": false,
-          "description": "Show help and usage information",
-          "recursive": false,
-          "hidden": false,
-          "aliases": [
-            "-?",
-            "-h"
           ]
         }
       ]

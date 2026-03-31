@@ -6,29 +6,39 @@
     "description": "A .NET library for creating, parsing, and manipulating Visual Studio test playlist files. Supports advanced playlist building and integration with test runners."
   },
   "x-inspectra": {
-    "artifactSource": "static-analysis",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "metadataEnriched": true,
-    "helpDocumentCount": 3,
-    "staticAnalysis": {
-      "framework": "System.CommandLine",
-      "inspectorType": "dnlib",
-      "confidence": "high",
-      "verbCount": 1,
-      "optionCount": 0,
-      "valueCount": 0,
-      "limitations": [
-        "property-defaults-not-captured",
-        "fluent-api-configuration-not-visible"
-      ]
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedTitle": "trx-to-vsplaylist"
+    "cliParsedTitle": "trx-to-vsplaylist",
+    "cliParsedDescription": "Convert TRX files to Visual Studio Test Playlists"
   },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
   "commands": [
     {
       "name": "convert",
-      "hidden": false,
       "description": "Convert TRX file(s) to a Visual Studio Test Playlist",
       "options": [
         {
@@ -38,6 +48,17 @@
           "description": "Path to the output playlist file or directory. If not specified, the playlist will be saved in the same directory as the first trx file with the same name but with .playlist extension.",
           "aliases": [
             "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
@@ -47,46 +68,67 @@
           "description": "Test outcomes to include (e.g. Passed Failed Skipped). Can be specified multiple times.",
           "aliases": [
             "-f"
+          ],
+          "arguments": [
+            {
+              "name": "OUTCOME",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
           ]
         },
         {
           "name": "--skip-empty",
           "recursive": false,
           "hidden": false,
-          "description": "Do not write a playlist file if there are no tests in the playlist."
+          "description": "Do not write a playlist file if there are no tests in the playlist. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--separate",
           "recursive": false,
           "hidden": false,
-          "description": "When multiple TRX files are provided, create separate playlist files for each instead of merging into one. Output path must be a directory."
-        },
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
+          "description": "When multiple TRX files are provided, create separate playlist files for each instead of merging into one. Output path must be a directory. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         }
       ],
       "arguments": [
         {
           "name": "trx-files",
-          "required": false,
-          "hidden": false,
+          "description": "Path(s) to the TRX file(s) to convert. Multiple files can be specified to merge into a single playlist.",
+          "required": true,
           "arity": {
-            "minimum": 0,
-            "maximum": 1
+            "minimum": 1,
+            "maximum": 100000
           },
-          "description": "Path(s) to the TRX file(s) to convert. Multiple files can be specified to merge into a single playlist."
+          "type": "String[]"
         }
       ]
     },
     {
       "name": "merge",
-      "hidden": false,
       "description": "Merge multiple playlist files into a single playlist with de-duplicated tests",
       "options": [
         {
@@ -96,57 +138,48 @@
           "description": "Path to the output merged playlist file. If not specified and all input files are in the same directory, the merged file will be created in that directory.",
           "aliases": [
             "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
           "name": "--skip-empty",
           "recursive": false,
           "hidden": false,
-          "description": "Do not write a playlist file if there are no tests in the merged playlist."
-        },
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help and usage information",
-          "aliases": [
-            "-h"
+          "description": "Do not write a playlist file if there are no tests in the merged playlist. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
           ]
         }
       ],
       "arguments": [
         {
           "name": "playlist-files",
-          "required": false,
-          "hidden": false,
+          "description": "Path(s) to the playlist file(s) to merge. Supports glob patterns (e.g., *.playlist, **/*.playlist). Tests will be automatically de-duplicated.",
+          "required": true,
           "arity": {
-            "minimum": 0,
-            "maximum": 1
+            "minimum": 1,
+            "maximum": 100000
           },
-          "description": "Path(s) to the playlist file(s) to merge. Supports glob patterns (e.g., *.playlist, **/*.playlist). Tests will be automatically de-duplicated."
+          "type": "String[]"
         }
       ]
-    },
-    {
-      "name": "root",
-      "hidden": false
-    }
-  ],
-  "options": [
-    {
-      "name": "--help",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show help and usage information",
-      "aliases": [
-        "-h"
-      ]
-    },
-    {
-      "name": "--version",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show version information"
     }
   ]
 }

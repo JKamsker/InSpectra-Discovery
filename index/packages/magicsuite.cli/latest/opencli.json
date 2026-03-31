@@ -1,33 +1,540 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "threw an exception.",
+    "title": "MagicSuite.Cli",
     "version": "4.3.55-g12c1bcebaa",
-    "description": "System.TypeInitializationException: The type initializer for 'MagicSuite.Cli.Services.EntityTypeDiscovery' threw an exception."
+    "description": "Command-line interface for Magic Suite operations. Provides full CRUD operations for schedules, connections, and tenants with beautiful console output."
   },
   "x-inspectra": {
-    "artifactSource": "static-analysis",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "metadataEnriched": true,
-    "helpDocumentCount": 1,
-    "staticAnalysis": {
-      "framework": "System.CommandLine",
-      "inspectorType": "dnlib",
-      "confidence": "high",
-      "verbCount": 1,
-      "optionCount": 0,
-      "valueCount": 0,
-      "limitations": [
-        "property-defaults-not-captured",
-        "fluent-api-configuration-not-visible"
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "ProcessExit-fallback (OK: Command.Parse, OK: Command.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "MagicSuite CLI - Command-line interface for Magic Suite operations\n\nVersion: 4.3.55+12c1bcebaa\n\nDocumentation: https://docs.magicsuite.net/AdvancedTopics/Cli"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
       ]
     },
-    "cliFramework": "System.CommandLine"
-  },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--profile",
+      "recursive": true,
+      "hidden": false,
+      "description": "Use named profile (e.g., production, alpha3, local)",
+      "arguments": [
+        {
+          "name": "PROFILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--api-url",
+      "recursive": true,
+      "hidden": false,
+      "description": "Override API URL from profile/config",
+      "arguments": [
+        {
+          "name": "API_URL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--token-name",
+      "recursive": true,
+      "hidden": false,
+      "description": "Override API token name",
+      "arguments": [
+        {
+          "name": "TOKEN_NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--token-key",
+      "recursive": true,
+      "hidden": false,
+      "description": "Override API token key",
+      "arguments": [
+        {
+          "name": "TOKEN_KEY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--tenant",
+      "recursive": true,
+      "hidden": false,
+      "description": "Tenant three-letter code, ID, or GUID (overrides default)",
+      "arguments": [
+        {
+          "name": "TENANT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--format",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output format (json or table) [default: Table]",
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "OutputFormat",
+          "allowedValues": [
+            "Table",
+            "Json"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": true,
+      "hidden": false,
+      "description": "Write output to file instead of console",
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "recursive": true,
+      "hidden": false,
+      "description": "Enable verbose logging [default: False]",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--quiet",
+      "recursive": true,
+      "hidden": false,
+      "description": "Suppress non-essential output [default: False]",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--include-all-tenants",
+      "recursive": true,
+      "hidden": false,
+      "description": "Include entities from all tenants (required for SuperAdmin users to see cross-tenant data) [default: False]",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
   "commands": [
     {
-      "name": "root",
-      "hidden": false
+      "name": "config",
+      "description": "Manage CLI configuration and profiles",
+      "commands": [
+        {
+          "name": "profiles",
+          "description": "Manage environment profiles",
+          "commands": [
+            {
+              "name": "list",
+              "description": "List all configured profiles"
+            },
+            {
+              "name": "add",
+              "description": "Add a new profile",
+              "options": [
+                {
+                  "name": "--api-url",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "API URL for this profile",
+                  "arguments": [
+                    {
+                      "name": "API_URL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--token-name",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "API token name",
+                  "arguments": [
+                    {
+                      "name": "TOKEN_NAME",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--token-key",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "API token key",
+                  "arguments": [
+                    {
+                      "name": "TOKEN_KEY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--default-tenant",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Default tenant code or ID",
+                  "arguments": [
+                    {
+                      "name": "DEFAULT_TENANT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": "Profile name (e.g., production, alpha3, local)",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "set-active",
+              "description": "Set the active profile",
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": "Profile name to activate",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "remove",
+              "description": "Remove a profile",
+              "arguments": [
+                {
+                  "name": "name",
+                  "description": "Profile name to remove",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "set",
+          "description": "Set a configuration value",
+          "options": [
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Profile to update (defaults to active profile)",
+              "arguments": [
+                {
+                  "name": "PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "key",
+              "description": "Configuration key (e.g., api-url, default-tenant, default-format, verbose-logging)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "value",
+              "description": "Configuration value",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "description": "Get a configuration value",
+          "arguments": [
+            {
+              "name": "key",
+              "description": "Configuration key",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List all configuration settings"
+        },
+        {
+          "name": "init",
+          "description": "Interactive configuration wizard"
+        }
+      ]
+    },
+    {
+      "name": "auth",
+      "description": "Manage authentication credentials",
+      "commands": [
+        {
+          "name": "token",
+          "description": "Set API token credentials",
+          "options": [
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "API token name",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--key",
+              "recursive": false,
+              "hidden": false,
+              "description": "API token key",
+              "arguments": [
+                {
+                  "name": "KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--api-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "API URL (e.g., https://alpha2.magicsuite.net)",
+              "arguments": [
+                {
+                  "name": "API_URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Profile to update (defaults to active profile)",
+              "arguments": [
+                {
+                  "name": "PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "description": "Show current authentication status",
+          "options": [
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Profile to check (defaults to active profile)",
+              "arguments": [
+                {
+                  "name": "PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "logout",
+          "description": "Clear authentication credentials",
+          "options": [
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Profile to clear (defaults to active profile)",
+              "arguments": [
+                {
+                  "name": "PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ]
 }
