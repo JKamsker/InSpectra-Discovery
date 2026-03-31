@@ -103,12 +103,13 @@ internal static class HookOpenCliSnapshotSupport
 
         foreach (var entry in options.OfType<JsonObject>())
         {
+            var optionName = entry["name"]?.GetValue<string>();
             var option = new JsonObject
             {
-                ["name"] = entry["name"]?.GetValue<string>(),
+                ["name"] = optionName,
             };
 
-            AddStringIfPresent(option, "description", NormalizeDescription(entry["description"]?.GetValue<string>()));
+            AddStringIfPresent(option, "description", NormalizeOptionDescription(optionName, entry["description"]?.GetValue<string>()));
             AddBooleanIfTrue(option, "hidden", entry["hidden"]?.GetValue<bool>());
             AddBooleanIfTrue(option, "recursive", entry["recursive"]?.GetValue<bool>());
             AddArrayIfNotEmpty(option, "aliases", NormalizeStringArray(entry["aliases"] as JsonArray));
@@ -200,6 +201,27 @@ internal static class HookOpenCliSnapshotSupport
         var normalized = string.Join('\n', lines).Trim();
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
+
+    private static string? NormalizeOptionDescription(string? optionName, string? description)
+    {
+        var normalizedDescription = NormalizeDescription(description);
+        if (string.IsNullOrWhiteSpace(normalizedDescription))
+        {
+            return null;
+        }
+
+        return NormalizeBuiltInOptionName(optionName) switch
+        {
+            "help" => "Show help and usage information",
+            "version" => "Show version information",
+            _ => normalizedDescription,
+        };
+    }
+
+    private static string NormalizeBuiltInOptionName(string? optionName)
+        => string.IsNullOrWhiteSpace(optionName)
+            ? string.Empty
+            : optionName.Trim().TrimStart('-', '/').ToLowerInvariant();
 
     private static bool IsVolatileHelpLine(string line)
     {

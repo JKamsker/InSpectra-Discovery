@@ -29,7 +29,27 @@ public sealed class HookOpenCliSnapshotSupportTests
             HookOpenCliSnapshotSupport.SerializeForComparison(withBuildNoise));
     }
 
-    private static JsonNode CreateDocument(string description)
+    [Fact]
+    public void SerializeForComparison_Canonicalizes_BuiltIn_Option_Descriptions()
+    {
+        var localized = CreateDocument(
+            "Stable line",
+            helpDescription: "Hilfemeldung anzeigen",
+            versionDescription: "Versionsinformationen anzeigen");
+        var canonical = CreateDocument(
+            "Stable line",
+            helpDescription: "Show help and usage information",
+            versionDescription: "Show version information");
+
+        Assert.Equal(
+            HookOpenCliSnapshotSupport.SerializeForComparison(canonical),
+            HookOpenCliSnapshotSupport.SerializeForComparison(localized));
+    }
+
+    private static JsonNode CreateDocument(
+        string description,
+        string helpDescription = "Show help and usage information",
+        string versionDescription = "Show version information")
         => new JsonObject
         {
             ["info"] = new JsonObject
@@ -37,6 +57,19 @@ public sealed class HookOpenCliSnapshotSupportTests
                 ["title"] = "Example CLI",
                 ["version"] = "1.2.3",
                 ["description"] = description,
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--help",
+                    ["description"] = helpDescription,
+                },
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = versionDescription,
+                },
             },
             ["commands"] = new JsonArray
             {
