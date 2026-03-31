@@ -21,11 +21,14 @@ internal static class HookOpenCliSnapshotSupport
         var fixturePath = ResolveFixturePath(packageId, version);
         Assert.True(File.Exists(fixturePath), $"Missing OpenCLI fixture for {packageId} {version}: {fixturePath}");
 
-        var expected = JsonNode.Parse(File.ReadAllText(fixturePath));
+        var expected = Normalize(JsonNode.Parse(File.ReadAllText(fixturePath)));
         Assert.NotNull(expected);
 
-        Assert.Equal(Serialize(expected!), Serialize(actual));
+        Assert.Equal(Serialize(expected), Serialize(actual));
     }
+
+    internal static string SerializeForComparison(JsonNode? openCli)
+        => Serialize(Normalize(openCli));
 
     private static JsonObject Normalize(JsonNode? openCli)
     {
