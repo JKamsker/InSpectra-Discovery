@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
 using InSpectra.Discovery.Tool.Frameworks;
+using InSpectra.Discovery.Tool.Help.Inference.Text;
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
 
 using InSpectra.Discovery.Tool.OpenCli.Documents;
@@ -86,13 +87,12 @@ internal sealed class HookInstalledToolAnalysisSupport
             installedTool.InstallDirectory,
             commandName,
             installedTool.CommandPath);
-        var processResult = await _runtime.InvokeProcessCaptureAsync(
-            invocation.FilePath,
-            invocation.ArgumentList,
+        var processResult = await InvokeWithHelpFallbackAsync(
+            invocation,
             tempRoot,
             hookEnvironment,
             commandTimeoutSeconds,
-            tempRoot,
+            capturePath,
             cancellationToken);
         hookStopwatch.Stop();
 
@@ -155,5 +155,94 @@ internal sealed class HookInstalledToolAnalysisSupport
 
         var hookPath = Path.Combine(toolDirectory, "hooks", "InSpectra.Discovery.StartupHook.dll");
         return File.Exists(hookPath) ? hookPath : null;
+    }
+
+    private async Task<CommandRuntime.ProcessResult> InvokeWithHelpFallbackAsync(
+        HookToolProcessInvocation invocation,
+        string workingDirectory,
+        IReadOnlyDictionary<string, string> environment,
+        int timeoutSeconds,
+        string capturePath,
+        CancellationToken cancellationToken)
+    {
+        var processResult = await InvokeHookProcessAsync(
+            invocation,
+            workingDirectory,
+            environment,
+            timeoutSeconds,
+            cancellationToken);
+        if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
+        {
+            return processResult;
+        }
+
+        foreach (var fallbackInvocation in HookToolProcessInvocationResolver.BuildHelpFallbackInvocations(invocation))
+        {
+            TryDeleteCaptureFile(capturePath);
+            processResult = await InvokeHookProcessAsync(
+                fallbackInvocation,
+                workingDirectory,
+                environment,
+                timeoutSeconds,
+                cancellationToken);
+            if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
+            {
+                return processResult;
+            }
+        }
+
+        return processResult;
+    }
+
+    private Task<CommandRuntime.ProcessResult> InvokeHookProcessAsync(
+        HookToolProcessInvocation invocation,
+        string workingDirectory,
+        IReadOnlyDictionary<string, string> environment,
+        int timeoutSeconds,
+        CancellationToken cancellationToken)
+        => _runtime.InvokeProcessCaptureAsync(
+            invocation.FilePath,
+            invocation.ArgumentList,
+            workingDirectory,
+            environment,
+            timeoutSeconds,
+            workingDirectory,
+            cancellationToken);
+
+    private static bool LooksLikeRejectedHelpInvocation(CommandRuntime.ProcessResult processResult)
+    {
+        var lines = SplitLines(processResult.Stderr)
+            .Concat(SplitLines(processResult.Stdout))
+            .ToArray();
+        for (var index = 0; index < lines.Length; index++)
+        {
+            var firstLine = lines[index];
+            var secondLine = index + 1 < lines.Length ? lines[index + 1] : null;
+            if (TextNoiseClassifier.LooksLikeRejectedHelpInvocation(firstLine, secondLine))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string?> SplitLines(string? value)
+        => string.IsNullOrWhiteSpace(value)
+            ? []
+            : value.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+
+    private static void TryDeleteCaptureFile(string capturePath)
+    {
+        try
+        {
+            if (File.Exists(capturePath))
+            {
+                File.Delete(capturePath);
+            }
+        }
+        catch
+        {
+        }
     }
 }

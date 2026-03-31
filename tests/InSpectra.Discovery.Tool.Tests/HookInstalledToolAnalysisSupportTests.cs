@@ -153,6 +153,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
                 var toolDirectory = Path.Combine(installDirectory, ".store", "demo.tool", "1.2.3", "demo.tool", "1.2.3", "tools", "net6.0", "any");
                 Directory.CreateDirectory(toolDirectory);
                 File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.dll"), string.Empty);
+                File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.runtimeconfig.json"), "{}");
                 File.WriteAllText(
                     Path.Combine(toolDirectory, "DotnetToolSettings.xml"),
                     """
@@ -212,6 +213,143 @@ public sealed class HookInstalledToolAnalysisSupportTests
         Assert.Equal("success", result["disposition"]?.GetValue<string>());
         Assert.Equal("startup-hook", result["classification"]?.GetValue<string>());
         Assert.Equal("opencli.json", result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task AnalyzeAsync_Falls_Back_To_CommandPath_When_Dotnet_Runner_Missing_RuntimeConfig()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var hookDllPath = CreateHookPlaceholder(tempDirectory.Path);
+        var runtime = new FakeHookCommandRuntime(
+            "demo",
+            installDirectoryInitializer: installDirectory =>
+            {
+                var toolDirectory = Path.Combine(installDirectory, ".store", "demo.tool", "1.2.3", "demo.tool", "1.2.3", "tools", "net6.0", "any");
+                Directory.CreateDirectory(toolDirectory);
+                File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.dll"), string.Empty);
+                File.WriteAllText(
+                    Path.Combine(toolDirectory, "DotnetToolSettings.xml"),
+                    """
+                    <?xml version="1.0" encoding="utf-8"?>
+                    <DotNetCliTool Version="1">
+                      <Commands>
+                        <Command Name="demo" EntryPoint="Demo.Tool.dll" Runner="dotnet" />
+                      </Commands>
+                    </DotNetCliTool>
+                    """);
+            },
+            hookHandler: invocation =>
+            {
+                Assert.Equal(Path.Combine(tempDirectory.Path, "tool", "demo.cmd"), invocation.FilePath);
+                Assert.Single(invocation.ArgumentList);
+                Assert.Equal("--help", invocation.ArgumentList[0]);
+
+                var capturePath = invocation.Environment["INSPECTRA_CAPTURE_PATH"];
+                File.WriteAllText(capturePath, JsonSerializer.Serialize(new HookCaptureResult
+                {
+                    CaptureVersion = 1,
+                    Status = "ok",
+                    CliFramework = "System.CommandLine",
+                    FrameworkVersion = "2.0.0",
+                    SystemCommandLineVersion = "2.0.0",
+                    PatchTarget = "Parse-postfix",
+                    Root = new HookCapturedCommand
+                    {
+                        Name = "demo",
+                        Description = "Demo CLI",
+                    },
+                }));
+
+                return new CommandRuntime.ProcessResult(
+                    Status: "ok",
+                    TimedOut: false,
+                    ExitCode: 0,
+                    DurationMs: 15,
+                    Stdout: string.Empty,
+                    Stderr: string.Empty);
+            });
+        var support = new HookInstalledToolAnalysisSupport(runtime, () => hookDllPath);
+        var result = CreateInitialResult();
+
+        await support.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("startup-hook", result["classification"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task AnalyzeAsync_Retries_With_Short_Help_Switch_When_Long_Help_Is_Rejected()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var hookDllPath = CreateHookPlaceholder(tempDirectory.Path);
+        var invocationCount = 0;
+        var runtime = new FakeHookCommandRuntime("demo", invocation =>
+        {
+            invocationCount++;
+            if (invocationCount == 1)
+            {
+                Assert.Equal("--help", invocation.ArgumentList[^1]);
+                return new CommandRuntime.ProcessResult(
+                    Status: "failed",
+                    TimedOut: false,
+                    ExitCode: 1,
+                    DurationMs: 15,
+                    Stdout: string.Empty,
+                    Stderr: "Unrecognized option '--help'");
+            }
+
+            Assert.Equal(2, invocationCount);
+            Assert.Equal("-h", invocation.ArgumentList[^1]);
+
+            var capturePath = invocation.Environment["INSPECTRA_CAPTURE_PATH"];
+            File.WriteAllText(capturePath, JsonSerializer.Serialize(new HookCaptureResult
+            {
+                CaptureVersion = 1,
+                Status = "ok",
+                CliFramework = "Microsoft.Extensions.CommandLineUtils",
+                FrameworkVersion = "2.2.0.0",
+                PatchTarget = "Execute-postfix",
+                Root = new HookCapturedCommand
+                {
+                    Name = "demo",
+                    Description = "Demo CLI",
+                },
+            }));
+
+            return new CommandRuntime.ProcessResult(
+                Status: "ok",
+                TimedOut: false,
+                ExitCode: 0,
+                DurationMs: 15,
+                Stdout: string.Empty,
+                Stderr: string.Empty);
+        });
+        var support = new HookInstalledToolAnalysisSupport(runtime, () => hookDllPath);
+        var result = CreateInitialResult("Microsoft.Extensions.CommandLineUtils");
+
+        await support.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(2, invocationCount);
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("startup-hook", result["classification"]?.GetValue<string>());
     }
 
     [Fact]

@@ -9,6 +9,24 @@ internal static class HookToolProcessInvocationResolver
         => TryResolveDotnetRunnerInvocation(installDirectory, commandName)
             ?? new HookToolProcessInvocation(commandPath, ["--help"]);
 
+    public static IReadOnlyList<HookToolProcessInvocation> BuildHelpFallbackInvocations(HookToolProcessInvocation invocation)
+    {
+        if (invocation.ArgumentList.Count == 0
+            || !string.Equals(invocation.ArgumentList[^1], "--help", StringComparison.Ordinal))
+        {
+            return [];
+        }
+
+        var baseArguments = invocation.ArgumentList
+            .Take(invocation.ArgumentList.Count - 1)
+            .ToArray();
+        return
+        [
+            new HookToolProcessInvocation(invocation.FilePath, [.. baseArguments, "-h"]),
+            new HookToolProcessInvocation(invocation.FilePath, [.. baseArguments, "-?"]),
+        ];
+    }
+
     private static HookToolProcessInvocation? TryResolveDotnetRunnerInvocation(string installDirectory, string commandName)
     {
         if (string.IsNullOrWhiteSpace(installDirectory) || string.IsNullOrWhiteSpace(commandName))
@@ -69,12 +87,28 @@ internal static class HookToolProcessInvocationResolver
                 return null;
             }
 
+            if (!HasRuntimeConfig(entryPointPath))
+            {
+                return null;
+            }
+
             return new HookToolProcessInvocation(ResolveDotnetHostPath(), [entryPointPath, "--help"]);
         }
         catch
         {
             return null;
         }
+    }
+
+    private static bool HasRuntimeConfig(string entryPointPath)
+    {
+        if (!string.Equals(Path.GetExtension(entryPointPath), ".dll", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var runtimeConfigPath = Path.ChangeExtension(entryPointPath, ".runtimeconfig.json");
+        return File.Exists(runtimeConfigPath);
     }
 
     private static string ResolveDotnetHostPath()
