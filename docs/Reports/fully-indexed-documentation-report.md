@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-03-31 07:10:43+00:00
+Generated: 2026-03-31 09:40:31+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 17
+Packages in scope: 18
 
 Fully documented: 9
 
-Incomplete: 8
+Incomplete: 9
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -20,11 +20,12 @@ Incomplete: 8
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
 | [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.45 | ok | xml-ready | 8/8 | 88/88 | 4/4 | 0/5 | FAIL |
+| [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
 | [Nexudus.Cli](#pkg-nexudus-cli) | 0.1.5 | ok | xml-ready | 253/253 | 2195/2348 | 58/163 | 0/211 | FAIL |
 | [PhoenixCode.Lens](#pkg-phoenixcode-lens) | 1.4.2 | ok | requires-configuration | 7/7 | 18/18 | 0/0 | 0/7 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
-| [atc-kusto](#pkg-atc-kusto) | 3.3.1 | ok | invalid-xml | 7/7 | 30/30 | 0/0 | 6/6 | PASS |
+| [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.1.0 | ok | xml-ready | 2/2 | 12/12 | 2/2 | 2/2 | PASS |
 | [claudomat](#pkg-claudomat) | 2026.3.30.9 | ok | xml-ready | 3/3 | 41/41 | 3/3 | 3/3 | PASS |
@@ -104,6 +105,23 @@ Incomplete: 8
 - Missing argument descriptions: None
 - Missing leaf command examples: render exec html, render exec markdown, render file html, render file markdown, render self
 
+<a id="pkg-karls-gitflow-tool"></a>
+### Karls.Gitflow.Tool
+
+- Version: `0.0.13`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `41/41`
+- Option documentation: `0/49`
+- Argument documentation: `2/31`
+- Leaf command examples: `0/35`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: bugfix delete --force, bugfix delete --remote, bugfix finish --fetch, bugfix finish --keep, bugfix finish --push, bugfix finish --quiet, bugfix finish --squash, config save --force, feature delete --force, feature delete --remote, feature finish --fetch, feature finish --keep, feature finish --push, feature finish --quiet, feature finish --squash, hotfix delete --force, hotfix delete --remote, hotfix finish --fetch, hotfix finish --keep, hotfix finish --message, hotfix finish --nobackmerge, hotfix finish --notag, hotfix finish --push, hotfix finish --quiet, hotfix finish --squash, init --bugfix, init --defaults, init --develop, init --feature, init --force, init --hotfix, init --main, init --release, init --save, init --support, init --tag, init --tagmessage, release delete --force, release delete --remote, release finish --fetch, release finish --keep, release finish --message, release finish --nobackmerge, release finish --notag, release finish --push, release finish --quiet, release finish --squash, support delete --force, support delete --remote
+- Missing argument descriptions: bugfix delete <name>, bugfix finish <name>, bugfix publish <name>, bugfix start <base>, bugfix start <name>, bugfix track <name>, config set <key>, config set <value>, feature delete <name>, feature finish <name>, feature publish <name>, feature start <base>, feature start <name>, feature track <name>, hotfix delete <name>, hotfix finish <name>, hotfix publish <name>, hotfix start <base>, hotfix start <name>, hotfix track <name>, release delete <name>, release finish <name>, release publish <name>, release start <base>, release start <name>, release track <name>, support delete <name>, support publish <name>, support track <name>
+- Missing leaf command examples: bugfix delete, bugfix finish, bugfix list, bugfix publish, bugfix start, bugfix track, config list, config save, config set, feature delete, feature finish, feature list, feature publish, feature start, feature track, hotfix delete, hotfix finish, hotfix list, hotfix publish, hotfix start, hotfix track, init, push, release delete, release finish, release list, release publish, release start, release track, support delete, support list, support publish, support start, support track, version
+
 <a id="pkg-nexudus-cli"></a>
 ### Nexudus.Cli
 
@@ -175,14 +193,14 @@ Incomplete: 8
 <a id="pkg-atc-kusto"></a>
 ### atc-kusto
 
-- Version: `3.3.1`
+- Version: `3.4.0`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
-- XMLDoc classification: `invalid-xml`
-- Command documentation: `7/7`
-- Option documentation: `30/30`
-- Argument documentation: `0/0`
-- Leaf command examples: `6/6`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `21/21`
+- Option documentation: `75/75`
+- Argument documentation: `9/9`
+- Leaf command examples: `17/17`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
