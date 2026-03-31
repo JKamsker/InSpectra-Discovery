@@ -25,7 +25,7 @@ internal static class StaticAnalysisOpenCliNodeSupport
         var parts = key.Split(',', '|', ' ');
         foreach (var raw in parts)
         {
-            var part = raw.Trim().TrimEnd(':');
+            var part = TrimOptionValueSuffix(raw.Trim());
             if (part.StartsWith("--", StringComparison.Ordinal) && part.Length > 2)
             {
                 longName = part[2..];
@@ -34,9 +34,34 @@ internal static class StaticAnalysisOpenCliNodeSupport
             {
                 shortName = part[1];
             }
+            else if (part.StartsWith("/", StringComparison.Ordinal) && part.Length > 1)
+            {
+                var slashToken = part[1..];
+                if (slashToken.Length == 1 && char.IsLetterOrDigit(slashToken[0]))
+                {
+                    shortName = slashToken[0];
+                }
+                else if (slashToken.All(char.IsLetterOrDigit))
+                {
+                    longName = slashToken;
+                }
+            }
         }
 
         return (longName, shortName);
+    }
+
+    private static string TrimOptionValueSuffix(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return string.Empty;
+        }
+
+        var separatorIndex = value.IndexOfAny([':', '=', '<']);
+        return separatorIndex >= 0
+            ? value[..separatorIndex].TrimEnd()
+            : value;
     }
 
     public static string NormalizeForLookup(string? value)
@@ -103,4 +128,3 @@ internal static class StaticAnalysisOpenCliNodeSupport
                 || string.Equals(longName, "version", StringComparison.OrdinalIgnoreCase));
     }
 }
-

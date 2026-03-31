@@ -187,13 +187,132 @@ public sealed class StaticAnalysisOpenCliBuilderTests
         Assert.Equal("--config", config!["name"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void Build_Prefers_Package_Version_And_Skips_Placeholder_Root_Command()
+    {
+        var builder = new StaticAnalysisOpenCliBuilder();
+        var staticCommands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["root"] = new(
+                Name: "root",
+                Description: null,
+                IsDefault: false,
+                IsHidden: false,
+                Values: [],
+                Options: []),
+        };
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = CreateHelpDocument(
+                title: "DotNetAnalyzer - .NET MCP Server for Claude Code",
+                version: "1.1.2",
+                commands:
+                [
+                    new Item("mcp serve", false, "Start MCP server (default)"),
+                ]),
+        };
+
+        var document = builder.Build(
+            "dotnet-analyzer",
+            "1.5.0",
+            "System.CommandLine",
+            staticCommands,
+            helpDocuments);
+
+        var info = Assert.IsType<JsonObject>(document["info"]);
+        Assert.Equal("1.5.0", info["version"]!.GetValue<string>());
+
+        var commands = Assert.IsType<JsonArray>(document["commands"]);
+        var rootCommand = Assert.IsType<JsonObject>(Assert.Single(commands));
+        Assert.Equal("mcp", rootCommand["name"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Build_Keeps_Lone_Placeholder_Root_Command_When_No_Other_Surface_Exists()
+    {
+        var builder = new StaticAnalysisOpenCliBuilder();
+        var staticCommands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["root"] = new(
+                Name: "root",
+                Description: null,
+                IsDefault: false,
+                IsHidden: false,
+                Values: [],
+                Options: []),
+        };
+
+        var document = builder.Build(
+            "mgcb-editor-windows",
+            "3.8.5-preview.3",
+            "System.CommandLine",
+            staticCommands,
+            new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase));
+
+        var commands = Assert.IsType<JsonArray>(document["commands"]);
+        var rootCommand = Assert.IsType<JsonObject>(Assert.Single(commands));
+        Assert.Equal("root", rootCommand["name"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Build_Maps_Slash_Style_Help_Options_Into_Publishable_Names()
+    {
+        var builder = new StaticAnalysisOpenCliBuilder();
+        var staticCommands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["root"] = new(
+                Name: "root",
+                Description: null,
+                IsDefault: false,
+                IsHidden: false,
+                Values: [],
+                Options: []),
+        };
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = CreateHelpDocument(
+                title: "MonoGame Content Builder:",
+                version: "v3.8.5.0",
+                options:
+                [
+                    new Item("/b, /build:<sourceFile>", false, "Build the content source file."),
+                    new Item("/c, /clean", false, "Delete all previously built content and intermediate files."),
+                    new Item("/compress", false, "Compress the XNB files for smaller file sizes."),
+                    new Item("/h, /help", false, "Displays this help."),
+                ]),
+        };
+
+        var document = builder.Build(
+            "mgcb",
+            "3.8.5-preview.3",
+            "System.CommandLine",
+            staticCommands,
+            helpDocuments);
+
+        var options = Assert.IsType<JsonArray>(document["options"]);
+        Assert.Equal(
+            new[]
+            {
+                "--build",
+                "--clean",
+                "--compress",
+                "--help",
+            },
+            options
+                .OfType<JsonObject>()
+                .Select(option => option["name"]!.GetValue<string>())
+                .ToArray());
+    }
+
     private static Document CreateHelpDocument(
+        string? title = null,
+        string? version = null,
         string? description = null,
         IReadOnlyList<Item>? options = null,
         IReadOnlyList<Item>? commands = null)
         => new(
-            Title: null,
-            Version: null,
+            Title: title,
+            Version: version,
             ApplicationDescription: null,
             CommandDescription: description,
             UsageLines: [],
@@ -201,4 +320,3 @@ public sealed class StaticAnalysisOpenCliBuilderTests
             Options: options ?? [],
             Commands: commands ?? []);
 }
-

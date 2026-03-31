@@ -55,7 +55,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
         var info = new JsonObject
         {
             ["title"] = rootHelp?.Title ?? commandName,
-            ["version"] = rootHelp?.Version ?? packageVersion,
+            ["version"] = string.IsNullOrWhiteSpace(packageVersion) ? rootHelp?.Version : packageVersion,
         };
         StaticAnalysisOpenCliNodeSupport.AddIfPresent(
             info,
@@ -114,6 +114,11 @@ internal sealed class StaticAnalysisOpenCliBuilder
     {
         foreach (var pair in staticCommands.Where(pair => !string.IsNullOrWhiteSpace(pair.Key)))
         {
+            if (IsPlaceholderStaticRootCommand(pair.Key, pair.Value, staticCommands, helpDocuments))
+            {
+                continue;
+            }
+
             yield return new OpenCliCommandDescriptor(pair.Key, pair.Value.Description);
         }
 
@@ -171,5 +176,16 @@ internal sealed class StaticAnalysisOpenCliBuilder
 
         return node;
     }
-}
 
+    private static bool IsPlaceholderStaticRootCommand(
+        string commandKey,
+        StaticCommandDefinition definition,
+        IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
+        IReadOnlyDictionary<string, Document> helpDocuments)
+        => string.Equals(commandKey, "root", StringComparison.OrdinalIgnoreCase)
+            && (staticCommands.Count > 1 || helpDocuments.Count > 0)
+            && !helpDocuments.ContainsKey(commandKey)
+            && string.IsNullOrWhiteSpace(definition.Description)
+            && definition.Options.Count == 0
+            && definition.Values.Count == 0;
+}
