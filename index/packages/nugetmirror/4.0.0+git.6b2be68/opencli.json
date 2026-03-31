@@ -1,38 +1,101 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "nuget mirror",
+    "title": "NuGetMirror",
     "version": "4.0.0+git.6b2be68",
-    "description": "Mirror a nuget v3 feed."
+    "description": "A dotnet tool for mirroring nuget.org and downloading packages to disk."
   },
   "x-inspectra": {
-    "artifactSource": "crawled-from-help",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Discovery",
-    "helpDocumentCount": 3,
-    "cliFramework": "McMaster.Extensions.CommandLineUtils"
+    "hookCapture": {
+      "cliFramework": "McMaster.Extensions.CommandLineUtils",
+      "frameworkVersion": "5.0.1.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "McMaster.Extensions.CommandLineUtils",
+    "cliParsedDescription": "Mirror a nuget v3 feed."
   },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help information.",
+      "aliases": [
+        "-h"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information.",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
   "commands": [
     {
       "name": "list",
-      "hidden": false,
       "description": "List packages from a v3 source.",
       "options": [
         {
           "name": "--start",
           "recursive": false,
           "hidden": false,
-          "description": "Beginning of the commit time range. Packages commited AFTER this\ntime will be included.",
+          "description": "Beginning of the commit time range. Packages commited AFTER this time will be included.",
           "aliases": [
             "-s"
+          ],
+          "arguments": [
+            {
+              "name": "START",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
           "name": "--end",
           "recursive": false,
           "hidden": false,
-          "description": "End of the commit time range. Packages commited at this time\nwill be included.",
+          "description": "End of the commit time range. Packages commited at this time will be included.",
           "aliases": [
             "-e"
+          ],
+          "arguments": [
+            {
+              "name": "END",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
           ]
         },
         {
@@ -42,6 +105,16 @@
           "description": "Write out additional network call information.",
           "aliases": [
             "-v"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
           ]
         },
         {
@@ -51,26 +124,35 @@
           "description": "Show help information.",
           "aliases": [
             "-h"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "[root]",
+          "description": "V3 feed index.json URI",
           "required": true,
-          "hidden": false,
           "arity": {
             "minimum": 1,
             "maximum": 1
           },
-          "description": "V3 feed index.json URI"
+          "type": "String"
         }
       ]
     },
     {
       "name": "nupkgs",
-      "hidden": false,
-      "description": "Mirror nupkgs to a folder.\nRun 'NuGetMirror [command] -h|--help' for more information about a command.",
+      "description": "Mirror nupkgs to a folder.",
       "options": [
         {
           "name": "--output",
@@ -83,11 +165,12 @@
           "arguments": [
             {
               "name": "OUTPUT",
-              "required": false,
+              "required": true,
               "arity": {
-                "minimum": 0,
+                "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
@@ -99,11 +182,12 @@
           "arguments": [
             {
               "name": "FOLDER_FORMAT",
-              "required": false,
+              "required": true,
               "arity": {
-                "minimum": 0,
+                "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
@@ -111,13 +195,34 @@
           "name": "--ignore-errors",
           "recursive": false,
           "hidden": false,
-          "description": "Continue on errors."
+          "description": "Continue on errors.",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--delay",
           "recursive": false,
           "hidden": false,
-          "description": "Avoid downloading the very latest packages on the feed to\navoid errors. This value is in minutes. Default: 10"
+          "description": "Avoid downloading the very latest packages on the feed to avoid errors. This value is in minutes. Default: 10",
+          "arguments": [
+            {
+              "name": "DELAY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         },
         {
           "name": "--max-threads",
@@ -127,11 +232,12 @@
           "arguments": [
             {
               "name": "MAX_THREADS",
-              "required": false,
+              "required": true,
               "arity": {
-                "minimum": 0,
+                "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "type": "String"
             }
           ]
         },
@@ -139,33 +245,55 @@
           "name": "--verbose",
           "recursive": false,
           "hidden": false,
-          "description": "Output additional network information."
+          "description": "Output additional network information.",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--include-id",
           "recursive": false,
           "hidden": false,
-          "description": "Include only these package ids or wildcards. May be\nprovided multiple times.",
+          "description": "Include only these package ids or wildcards. May be provided multiple times.",
           "aliases": [
             "-i"
+          ],
+          "arguments": [
+            {
+              "name": "INCLUDE_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 2147483647
+              },
+              "type": "String[]"
+            }
           ]
         },
         {
           "name": "--exclude-id",
           "recursive": false,
           "hidden": false,
-          "description": "Exclude these package ids or wildcards. May be provided\nmultiple times.",
+          "description": "Exclude these package ids or wildcards. May be provided multiple times.",
           "aliases": [
             "-e"
           ],
           "arguments": [
             {
               "name": "EXCLUDE_ID",
-              "required": false,
+              "required": true,
               "arity": {
-                "minimum": 0,
-                "maximum": 1
-              }
+                "minimum": 1,
+                "maximum": 2147483647
+              },
+              "type": "String[]"
             }
           ]
         },
@@ -173,15 +301,16 @@
           "name": "--additional-output",
           "recursive": false,
           "hidden": false,
-          "description": "Additional output directory for nupkgs. The output path\nwith the most free space will be used.",
+          "description": "Additional output directory for nupkgs. The output path with the most free space will be used.",
           "arguments": [
             {
               "name": "ADDITIONAL_OUTPUT",
-              "required": false,
+              "required": true,
               "arity": {
-                "minimum": 0,
-                "maximum": 1
-              }
+                "minimum": 1,
+                "maximum": 2147483647
+              },
+              "type": "String[]"
             }
           ]
         },
@@ -189,25 +318,67 @@
           "name": "--latest-only",
           "recursive": false,
           "hidden": false,
-          "description": "Include only the latest version of that package in the\nresult"
+          "description": "Include only the latest version of that package in the result",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--stable-only",
           "recursive": false,
           "hidden": false,
-          "description": "Include only stable versions of that package in the\nresult"
+          "description": "Include only stable versions of that package in the result",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
         },
         {
           "name": "--start",
           "recursive": false,
           "hidden": false,
-          "description": "Beginning of the commit time range. Packages commited\nAFTER this time will be included. (The cursor value will\nnot be used with this option.)"
+          "description": "Beginning of the commit time range. Packages commited AFTER this time will be included. (The cursor value will not be used with this option.)",
+          "arguments": [
+            {
+              "name": "START",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         },
         {
           "name": "--end",
           "recursive": false,
           "hidden": false,
-          "description": "End of the commit time range. Packages commited at this\ntime will be included."
+          "description": "End of the commit time range. Packages commited at this time will be included.",
+          "arguments": [
+            {
+              "name": "END",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         },
         {
           "name": "--help",
@@ -216,38 +387,31 @@
           "description": "Show help information.",
           "aliases": [
             "-h"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
           ]
         }
       ],
       "arguments": [
         {
-          "name": "ROOT",
+          "name": "[root]",
+          "description": "V3 feed index.json URI or a locally configured source name",
           "required": true,
-          "hidden": false,
           "arity": {
             "minimum": 1,
             "maximum": 1
           },
-          "description": "V3 feed index.json URI or a locally configured source\nname"
+          "type": "String"
         }
       ]
-    }
-  ],
-  "options": [
-    {
-      "name": "--help",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show help information.",
-      "aliases": [
-        "-h"
-      ]
-    },
-    {
-      "name": "--version",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show version information."
     }
   ]
 }
