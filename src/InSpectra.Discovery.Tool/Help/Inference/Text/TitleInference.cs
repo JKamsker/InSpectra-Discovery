@@ -9,6 +9,8 @@ internal static partial class TitleInference
         int? firstNonEmptyIndex = null;
         string? markdownTitle = null;
         string? usageDerivedTitle = null;
+        string? explicitVersion = null;
+        int? explicitVersionIndex = null;
 
         for (var index = 0; index < preamble.Count; index++)
         {
@@ -47,6 +49,12 @@ internal static partial class TitleInference
             {
                 return (NormalizeTitle(title), version, index + 1);
             }
+
+            if (explicitVersion is null && LooksLikeVersionLabel(title) && version.Count(char.IsDigit) > 1)
+            {
+                explicitVersion = version;
+                explicitVersionIndex = index;
+            }
         }
 
         if (firstNonEmptyIndex is null)
@@ -56,21 +64,21 @@ internal static partial class TitleInference
 
         if (!string.IsNullOrWhiteSpace(markdownTitle))
         {
-            return (markdownTitle, null, firstNonEmptyIndex.Value + 1);
+            return (markdownTitle, explicitVersion, ResolveDescriptionStartIndex(firstNonEmptyIndex.Value, explicitVersionIndex));
         }
 
         var firstLine = preamble[firstNonEmptyIndex.Value].Trim();
         if (LooksLikeUsagePrototype(firstLine) && !string.IsNullOrWhiteSpace(usageDerivedTitle))
         {
-            return (usageDerivedTitle, null, firstNonEmptyIndex.Value + 1);
+            return (usageDerivedTitle, explicitVersion, ResolveDescriptionStartIndex(firstNonEmptyIndex.Value, explicitVersionIndex));
         }
 
         if (LooksLikeStatusTitle(firstLine) && !string.IsNullOrWhiteSpace(usageDerivedTitle))
         {
-            return (usageDerivedTitle, null, firstNonEmptyIndex.Value + 1);
+            return (usageDerivedTitle, explicitVersion, ResolveDescriptionStartIndex(firstNonEmptyIndex.Value, explicitVersionIndex));
         }
 
-        return (firstLine, null, firstNonEmptyIndex.Value + 1);
+        return (firstLine, explicitVersion, ResolveDescriptionStartIndex(firstNonEmptyIndex.Value, explicitVersionIndex));
     }
 
     private static string? TryGetMarkdownTitle(string line)
@@ -115,6 +123,7 @@ internal static partial class TitleInference
     private static bool LooksLikeTitleVersionLine(string line, string title, string version)
         => !StackTraceLineRegex().IsMatch(line)
             && !LooksLikeTransientStatusLine(title, version)
+            && !LooksLikeVersionLabel(title)
             && !title.Contains(":line", StringComparison.OrdinalIgnoreCase)
             && !string.Equals(title, "Version", StringComparison.OrdinalIgnoreCase)
             && version.Count(char.IsDigit) > 1;
@@ -123,6 +132,8 @@ internal static partial class TitleInference
         => string.Equals(line, "HELP:", StringComparison.OrdinalIgnoreCase)
             || LooksLikeStatusTitle(line)
             || LooksLikeDecorativeBannerLine(line)
+            || LooksLikeBrandUrlBannerLine(line)
+            || LooksLikeVersionBannerLine(line)
             || LooksLikeMarketingTagline(line)
             || StandaloneHelpHeadingRegex().IsMatch(line)
             || TransientStatusLineRegex().IsMatch(line);
@@ -131,6 +142,16 @@ internal static partial class TitleInference
         => line.Length > 0
             && line.Any(ch => !char.IsWhiteSpace(ch))
             && !line.Any(char.IsLetterOrDigit);
+
+    private static bool LooksLikeBrandUrlBannerLine(string line)
+        => BrandUrlBannerRegex().IsMatch(line.Trim());
+
+    private static bool LooksLikeVersionBannerLine(string line)
+    {
+        var trimmed = line.Trim();
+        return trimmed.Contains('\uFFFD')
+            || BoxedVersionBannerRegex().IsMatch(trimmed);
+    }
 
     private static bool LooksLikeMarketingTagline(string line)
         => line.StartsWith("Made with ", StringComparison.OrdinalIgnoreCase)
@@ -141,6 +162,14 @@ internal static partial class TitleInference
     private static bool LooksLikeTransientStatusLine(string title, string version)
         => TransientStatusTitleRegex().IsMatch(title)
             && DurationLikeVersionRegex().IsMatch(version);
+
+    private static bool LooksLikeVersionLabel(string title)
+        => VersionLabelRegex().IsMatch(title.Trim());
+
+    private static int ResolveDescriptionStartIndex(int firstNonEmptyIndex, int? explicitVersionIndex)
+        => explicitVersionIndex is not null && explicitVersionIndex.Value >= firstNonEmptyIndex
+            ? explicitVersionIndex.Value + 1
+            : firstNonEmptyIndex + 1;
 
     private static string NormalizeTitle(string title)
     {
@@ -171,6 +200,15 @@ internal static partial class TitleInference
     [GeneratedRegex(@"^(?:help|usage):$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex StandaloneHelpHeadingRegex();
 
+    [GeneratedRegex(@"^(?:(?:app|cli|tool)\s+)?version:?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex VersionLabelRegex();
+
+    [GeneratedRegex(@"^\S+\s+-\s+https?://\S+$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex BrandUrlBannerRegex();
+
+    [GeneratedRegex(@"^[^\p{L}\p{N}].*\bv?\d[\w\.\-\+]*\b.*[^\p{L}\p{N}]$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex BoxedVersionBannerRegex();
+
     [GeneratedRegex(@"^(?:finished|completed|elapsed)\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex TransientStatusTitleRegex();
 
@@ -180,4 +218,3 @@ internal static partial class TitleInference
     [GeneratedRegex(@"^(?:finished|completed|elapsed)\s+\d+(?:\.\d+)?(?:ms|s|sec|secs|seconds?)$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex TransientStatusLineRegex();
 }
-

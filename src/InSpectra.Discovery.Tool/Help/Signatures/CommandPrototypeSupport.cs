@@ -52,9 +52,14 @@ internal static partial class CommandPrototypeSupport
             return false;
         }
 
-        var tokens = SplitTokens(key);
-        return tokens.Length > 1
-            && tokens.All(token => LooksLikeCommandSegment(token.TrimEnd(',', ':')));
+        var aliases = key
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(alias => alias.Trim().TrimEnd(':'))
+            .Where(alias => alias.Length > 0)
+            .ToArray();
+        return aliases.Length > 1
+            && aliases.All(alias => !alias.Contains(' ', StringComparison.Ordinal))
+            && aliases.All(LooksLikeCommandSegment);
     }
 
     private static bool LooksLikeBareCommandToken(string key)
@@ -95,4 +100,3 @@ internal static partial class CommandPrototypeSupport
     [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_.-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex BareShortLongAliasRowRegex();
 }
-

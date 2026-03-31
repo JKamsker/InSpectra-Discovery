@@ -22,6 +22,15 @@ internal static class ItemParser
         {
             if (string.IsNullOrWhiteSpace(rawLine))
             {
+                if (kind == ItemKind.Command && key is not null)
+                {
+                    FlushItem(items, key, isRequired, description);
+                    key = null;
+                    description = null;
+                    isRequired = false;
+                    indentation = -1;
+                }
+
                 continue;
             }
 
@@ -154,7 +163,7 @@ internal static class ItemParser
         var trimmed = rawLine.Trim();
         return TextNoiseClassifier.IsFrameworkNoiseLine(trimmed)
             || (kind == ItemKind.Argument && TextNoiseClassifier.IsArgumentNoiseLine(trimmed))
+            || (kind == ItemKind.Option && TextNoiseClassifier.LooksLikeHelpHintFooter(trimmed))
             || (kind == ItemKind.Command && TextNoiseClassifier.LooksLikeSubcommandHelpHint(trimmed));
     }
 }
-

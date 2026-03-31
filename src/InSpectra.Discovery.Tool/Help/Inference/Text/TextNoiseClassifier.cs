@@ -59,6 +59,11 @@ internal static partial class TextNoiseClassifier
         => line.StartsWith("Use '", StringComparison.OrdinalIgnoreCase)
             && line.Contains("--help", StringComparison.OrdinalIgnoreCase);
 
+    public static bool LooksLikeHelpHintFooter(string line)
+        => (line.StartsWith("Use '", StringComparison.OrdinalIgnoreCase)
+                || line.StartsWith("Run '", StringComparison.OrdinalIgnoreCase))
+            && line.Contains("--help", StringComparison.OrdinalIgnoreCase);
+
     public static bool LooksLikeInventoryHeaderLine(string line)
         => DotnetToolListHeaderRegex().IsMatch(line)
             || TemplateInstallHeaderRegex().IsMatch(line);
@@ -119,4 +124,3 @@ internal static partial class TextNoiseClassifier
     [GeneratedRegex(@"^Template Name\s{2,}Short Name\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex TemplateInstallHeaderRegex();
 }
-
