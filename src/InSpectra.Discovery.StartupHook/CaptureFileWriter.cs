@@ -8,7 +8,7 @@ internal static class CaptureFileWriter
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public static void Write(string path, CaptureResult result)
+    public static void Write(string path, CaptureResult result, bool overwrite = true)
     {
         try
         {
@@ -17,7 +17,13 @@ internal static class CaptureFileWriter
                 Directory.CreateDirectory(directory);
 
             var json = JsonSerializer.Serialize(result, JsonOptions);
-            File.WriteAllText(path, json);
+            using var stream = new FileStream(
+                path,
+                overwrite ? FileMode.Create : FileMode.CreateNew,
+                FileAccess.Write,
+                FileShare.Read);
+            using var writer = new StreamWriter(stream);
+            writer.Write(json);
         }
         catch
         {
@@ -25,12 +31,12 @@ internal static class CaptureFileWriter
         }
     }
 
-    public static void WriteError(string path, string status, string error)
+    public static void WriteError(string path, string status, string error, bool overwrite = true)
     {
         Write(path, new CaptureResult
         {
             Status = status,
             Error = error,
-        });
+        }, overwrite);
     }
 }

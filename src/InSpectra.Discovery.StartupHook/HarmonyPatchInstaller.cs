@@ -6,8 +6,8 @@ internal static class HarmonyPatchInstaller
     internal static Assembly? SystemCommandLineAssembly;
     internal static string? CapturePath;
     private static volatile bool _captured;
-    private static string? _patchTargetName;
     private static readonly List<string> _patchLog = [];
+    private static object? _capturedRootCommand;
 
     public static string GetPatchLog() => string.Join("\n", _patchLog);
 
@@ -18,19 +18,16 @@ internal static class HarmonyPatchInstaller
 
         var harmony = new Harmony("com.inspectra.discovery.startuphook");
 
-        // Patch as MANY methods as possible — some tools bypass InvokeAsync (e.g., --help
-        // is handled by middleware before Invoke reaches our patch). By patching both
-        // Parse and Invoke methods, we catch all code paths.
         var postfix = new HarmonyMethod(typeof(HarmonyPatchInstaller), nameof(ParsePostfix));
-        var prefix = new HarmonyMethod(typeof(HarmonyPatchInstaller), nameof(InvokePrefix));
+        var invokePostfix = new HarmonyMethod(typeof(HarmonyPatchInstaller), nameof(InvokePostfix));
         var patchCount = 0;
 
-        // Parse methods — postfix captures the ParseResult return value.
+        // Parse methods capture the ParseResult return value when the public API exposes it.
         patchCount += TryPatchAll(harmony, sclAssembly, "Parse", postfix: postfix);
 
-        // Invoke methods — prefix captures before execution starts.
-        patchCount += TryPatchAll(harmony, sclAssembly, "Invoke", prefix: prefix);
-        patchCount += TryPatchAll(harmony, sclAssembly, "InvokeAsync", prefix: prefix);
+        // Invoke methods are observed after they return so the hook never changes target control flow.
+        patchCount += TryPatchAll(harmony, sclAssembly, "Invoke", postfix: invokePostfix);
+        patchCount += TryPatchAll(harmony, sclAssembly, "InvokeAsync", postfix: invokePostfix);
 
         // Fallback: patch RootCommand constructors to capture the instance.
         // When Harmony patches on public API methods don't fire (e.g., R2R precompiled tools
@@ -55,7 +52,7 @@ internal static class HarmonyPatchInstaller
             }
         }
 
-        // Register ProcessExit to capture from stored RootCommand if nothing else worked.
+        // Register ProcessExit to capture from a stored RootCommand if earlier patches never resolved one.
         AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
 
         if (patchCount == 0)
@@ -119,8 +116,6 @@ internal static class HarmonyPatchInstaller
         return typeFullName.StartsWith("System.CommandLine", StringComparison.Ordinal);
     }
 
-    private static object? _capturedRootCommand;
-
     /// <summary>
     /// Postfix on RootCommand constructor — captures the instance when created.
     /// </summary>
@@ -139,7 +134,7 @@ internal static class HarmonyPatchInstaller
         var root = _capturedRootCommand ?? FindRootCommandFromLoadedTypes();
         if (root is not null)
         {
-            CaptureFromObject(root, "ProcessExit-fallback", exitAfter: false);
+            TryCaptureFromObject(root, "ProcessExit-fallback");
         }
     }
 
@@ -150,52 +145,45 @@ internal static class HarmonyPatchInstaller
     public static void ParsePostfix(object? __instance, object? __result)
     {
         if (_captured || __result is null) return;
-        CaptureFromObject(__result, "Parse-postfix");
+        TryCaptureFromObject(__result, "Parse-postfix");
     }
 
     /// <summary>
-    /// Prefix on Invoke/InvokeAsync — fires BEFORE invocation.
+    /// Postfix on Invoke/InvokeAsync — observes the command surface without short-circuiting the target.
     /// </summary>
-    public static bool InvokePrefix(object? __instance)
+    public static void InvokePostfix(object? __instance)
     {
-        if (_captured) return true;
-        CaptureFromObject(__instance, "Invoke-prefix");
-        return false; // Skip original method
+        if (_captured || __instance is null) return;
+        TryCaptureFromObject(__instance, "Invoke-postfix");
     }
 
-    private static void CaptureFromObject(object? target, string source, bool exitAfter = true)
+    private static bool TryCaptureFromObject(object? target, string source)
     {
         if (_captured || target is null || SystemCommandLineAssembly is null || CapturePath is null)
-            return;
-        _captured = true;
+            return false;
+
+        var rootCommand = ResolveRootCommand(target);
+        if (rootCommand is null)
+            return false;
 
         try
         {
-            var rootCommand = ResolveRootCommand(target);
-            if (rootCommand is not null)
+            var tree = CommandTreeWalker.Walk(rootCommand, SystemCommandLineAssembly);
+            CaptureFileWriter.Write(CapturePath, new CaptureResult
             {
-                var tree = CommandTreeWalker.Walk(rootCommand, SystemCommandLineAssembly);
-                CaptureFileWriter.Write(CapturePath, new CaptureResult
-                {
-                    Status = "ok",
-                    SystemCommandLineVersion = SystemCommandLineAssembly.GetName().Version?.ToString(),
-                    PatchTarget = $"{source} ({string.Join(", ", _patchLog.Where(l => l.StartsWith("OK")))})",
-                    Root = tree,
-                });
-            }
-            else
-            {
-                _captured = false; // Allow retry from a different hook
-                return;
-            }
+                Status = "ok",
+                SystemCommandLineVersion = SystemCommandLineAssembly.GetName().Version?.ToString(),
+                PatchTarget = $"{source} ({string.Join(", ", _patchLog.Where(l => l.StartsWith("OK")))})",
+                Root = tree,
+            });
+            _captured = true;
+            return true;
         }
         catch (Exception ex)
         {
             CaptureFileWriter.WriteError(CapturePath, "capture-failed", ex.ToString());
+            return false;
         }
-
-        if (exitAfter)
-            Environment.Exit(0);
     }
 
     private static object? ResolveRootCommand(object instance)

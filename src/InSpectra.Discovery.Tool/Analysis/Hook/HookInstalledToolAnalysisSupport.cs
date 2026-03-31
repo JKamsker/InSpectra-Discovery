@@ -14,6 +14,20 @@ using System.Text.Json.Nodes;
 
 internal sealed class HookInstalledToolAnalysisSupport
 {
+    private readonly CommandRuntime _runtime;
+    private readonly Func<string?> _hookDllPathResolver;
+
+    public HookInstalledToolAnalysisSupport()
+        : this(new CommandRuntime(), ResolveHookDllPath)
+    {
+    }
+
+    internal HookInstalledToolAnalysisSupport(CommandRuntime runtime, Func<string?> hookDllPathResolver)
+    {
+        _runtime = runtime;
+        _hookDllPathResolver = hookDllPathResolver;
+    }
+
     public async Task AnalyzeAsync(
         JsonObject result,
         string packageId,
@@ -25,10 +39,8 @@ internal sealed class HookInstalledToolAnalysisSupport
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        var runtime = new CommandRuntime();
-
         var installedTool = await CommandInstallationSupport.InstallToolAsync(
-            runtime,
+            _runtime,
             result,
             packageId,
             version,
@@ -40,7 +52,7 @@ internal sealed class HookInstalledToolAnalysisSupport
             return;
 
         // Resolve hook DLL path (deployed alongside the main tool assembly).
-        var hookDllPath = ResolveHookDllPath();
+        var hookDllPath = _hookDllPathResolver();
         if (hookDllPath is null)
         {
             NonSpectreResultSupport.ApplyTerminalFailure(
@@ -59,10 +71,10 @@ internal sealed class HookInstalledToolAnalysisSupport
             ["INSPECTRA_CAPTURE_PATH"] = capturePath,
         };
 
-        // Execute the tool — the hook will intercept System.CommandLine invocation,
-        // write the capture file, and exit before the tool actually runs.
+        // Execute the tool with the startup hook attached. The hook observes the command tree
+        // while the target processes `--help`, then writes a capture file for OpenCLI generation.
         var hookStopwatch = Stopwatch.StartNew();
-        var processResult = await runtime.InvokeProcessCaptureAsync(
+        var processResult = await _runtime.InvokeProcessCaptureAsync(
             installedTool.CommandPath,
             ["--help"],
             tempRoot,
@@ -81,7 +93,7 @@ internal sealed class HookInstalledToolAnalysisSupport
                 result,
                 phase: "hook-capture",
                 classification: "hook-no-capture-file",
-                $"Startup hook did not produce a capture file. Exit code: {processResult.ExitCode}");
+                HookFailureMessageSupport.BuildMissingCaptureMessage(processResult));
             return;
         }
 
@@ -133,5 +145,3 @@ internal sealed class HookInstalledToolAnalysisSupport
         return File.Exists(hookPath) ? hookPath : null;
     }
 }
-
-
