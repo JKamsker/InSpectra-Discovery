@@ -410,7 +410,24 @@ jobs:
           github-actor: ${{ github.actor }}
           github-owner: ${{ github.repository_owner }}
 
-      - name: Analyze package
+      - name: Analyze package in Docker
+        if: ${{ runner.os == 'Linux' }}
+        shell: pwsh
+        env:
+          RESULT_ROOT: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
+          INSPECTRA_TOOL_ROOT: ${{ runner.temp }}/inspectra-discovery
+        run: |
+          ./.github/scripts/run-analysis-in-docker.ps1 `
+            -ToolRoot $env:INSPECTRA_TOOL_ROOT `
+            -OutputRoot $env:RESULT_ROOT `
+            -PackageId '${{ matrix.packageId }}' `
+            -Version '${{ matrix.version }}' `
+            -BatchId '${{ needs.plan.outputs.batch_id }}' `
+            -Attempt ${{ matrix.attempt }} `
+            -Source 'analyze-untrusted-batch'
+
+      - name: Analyze package on host
+        if: ${{ runner.os != 'Linux' }}
         shell: pwsh
         env:
           RESULT_ROOT: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}

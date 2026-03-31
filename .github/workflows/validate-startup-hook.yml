@@ -117,11 +117,39 @@ jobs:
           --no-build
           --filter "FullyQualifiedName~AutoCommandService"
 
-      - name: Run live auto fallback tests
+      - name: Run live auto fallback tests in Docker
         env:
           INSPECTRA_DISCOVERY_LIVE_AUTO_TESTS: 1
-        run: >
-          dotnet test tests/InSpectra.Discovery.Tool.Tests/InSpectra.Discovery.Tool.Tests.csproj
-          -c Debug
-          --no-build
-          --filter "FullyQualifiedName~AutoHookFallbackLiveTests"
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker_args=(
+            run
+            --rm
+            --user "$(id -u):$(id -g)"
+            --volume "${GITHUB_WORKSPACE}:/workspace"
+            --workdir /workspace
+            --env INSPECTRA_DISCOVERY_LIVE_AUTO_TESTS=1
+          )
+
+          if [[ -n "${DOTNET_ROOT:-}" && -d "${DOTNET_ROOT}" ]]; then
+            docker_args+=(
+              --volume "${DOTNET_ROOT}:/usr/share/dotnet:ro"
+              --env DOTNET_ROOT=/usr/share/dotnet
+              --env DOTNET_ROOT_X64=/usr/share/dotnet
+            )
+          fi
+
+          docker_args+=(
+            mcr.microsoft.com/dotnet/sdk:10.0
+            dotnet
+            test
+            tests/InSpectra.Discovery.Tool.Tests/InSpectra.Discovery.Tool.Tests.csproj
+            -c
+            Debug
+            --no-build
+            --filter
+            FullyQualifiedName~AutoHookFallbackLiveTests
+          )
+
+          docker "${docker_args[@]}"
