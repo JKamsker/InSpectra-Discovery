@@ -1,4 +1,4 @@
-using System.Runtime.Loader;
+using System.Reflection;
 
 internal static class HookDependencyLoader
 {
@@ -27,6 +27,6 @@ internal static class HookDependencyLoader
         if (!File.Exists(assemblyPath))
             throw new FileNotFoundException($"Required startup hook dependency '{fileName}' was not found.", assemblyPath);
 
-        AssemblyLoadContext.Default.LoadFromAssemblyPath(assemblyPath);
+        Assembly.LoadFrom(assemblyPath);
     }
 }

@@ -134,6 +134,77 @@ public sealed class HookInstalledToolAnalysisSupportTests
         Assert.Contains(openCli["commands"]!.AsArray(), command => command?["name"]?.GetValue<string>() == "serve");
     }
 
+    [Fact]
+    public async Task AnalyzeAsync_Uses_Dotnet_Runner_From_Installed_Tool_Settings_When_Available()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var hookDllPath = CreateHookPlaceholder(tempDirectory.Path);
+        var runtime = new FakeHookCommandRuntime(
+            "demo",
+            installDirectoryInitializer: installDirectory =>
+            {
+                var toolDirectory = Path.Combine(installDirectory, ".store", "demo.tool", "1.2.3", "demo.tool", "1.2.3", "tools", "net6.0", "any");
+                Directory.CreateDirectory(toolDirectory);
+                File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.dll"), string.Empty);
+                File.WriteAllText(
+                    Path.Combine(toolDirectory, "DotnetToolSettings.xml"),
+                    """
+                    <?xml version="1.0" encoding="utf-8"?>
+                    <DotNetCliTool Version="1">
+                      <Commands>
+                        <Command Name="demo" EntryPoint="Demo.Tool.dll" Runner="dotnet" />
+                      </Commands>
+                    </DotNetCliTool>
+                    """);
+            },
+            hookHandler: invocation =>
+            {
+                Assert.Equal("dotnet", Path.GetFileNameWithoutExtension(invocation.FilePath));
+                Assert.Equal(2, invocation.ArgumentList.Length);
+                Assert.EndsWith(Path.Combine("tools", "net6.0", "any", "Demo.Tool.dll"), invocation.ArgumentList[0], StringComparison.OrdinalIgnoreCase);
+                Assert.Equal("--help", invocation.ArgumentList[1]);
+
+                var capturePath = invocation.Environment["INSPECTRA_CAPTURE_PATH"];
+                File.WriteAllText(capturePath, JsonSerializer.Serialize(new HookCaptureResult
+                {
+                    CaptureVersion = 1,
+                    Status = "ok",
+                    SystemCommandLineVersion = "2.0.0",
+                    PatchTarget = "Parse-postfix",
+                    Root = new HookCapturedCommand
+                    {
+                        Name = "demo",
+                        Description = "Demo CLI",
+                    },
+                }));
+
+                return new CommandRuntime.ProcessResult(
+                    Status: "ok",
+                    TimedOut: false,
+                    ExitCode: 0,
+                    DurationMs: 15,
+                    Stdout: string.Empty,
+                    Stderr: string.Empty);
+            });
+        var support = new HookInstalledToolAnalysisSupport(runtime, () => hookDllPath);
+        var result = CreateInitialResult();
+
+        await support.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("startup-hook", result["classification"]?.GetValue<string>());
+        Assert.Equal("opencli.json", result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
+    }
+
     private static JsonObject CreateInitialResult()
         => NonSpectreResultSupport.CreateInitialResult(
             packageId: "Demo.Tool",
@@ -156,7 +227,8 @@ public sealed class HookInstalledToolAnalysisSupportTests
 
     private sealed class FakeHookCommandRuntime(
         string commandName,
-        Func<HookInvocation, CommandRuntime.ProcessResult> hookHandler) : CommandRuntime
+        Func<HookInvocation, CommandRuntime.ProcessResult> hookHandler,
+        Action<string>? installDirectoryInitializer = null) : CommandRuntime
     {
         public override Task<ProcessResult> InvokeProcessCaptureAsync(
             string filePath,
@@ -167,11 +239,15 @@ public sealed class HookInstalledToolAnalysisSupportTests
             string? sandboxRoot,
             CancellationToken cancellationToken)
         {
-            if (string.Equals(filePath, "dotnet", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(filePath, "dotnet", StringComparison.OrdinalIgnoreCase)
+                && argumentList.Count >= 2
+                && string.Equals(argumentList[0], "tool", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(argumentList[1], "install", StringComparison.OrdinalIgnoreCase))
             {
                 var installDirectory = argumentList[^1];
                 Directory.CreateDirectory(installDirectory);
                 File.WriteAllText(Path.Combine(installDirectory, commandName + ".cmd"), "@echo off");
+                installDirectoryInitializer?.Invoke(installDirectory);
 
                 return Task.FromResult(new CommandRuntime.ProcessResult(
                     Status: "ok",

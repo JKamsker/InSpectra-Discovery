@@ -74,9 +74,13 @@ internal sealed class HookInstalledToolAnalysisSupport
         // Execute the tool with the startup hook attached. The hook observes the command tree
         // while the target processes `--help`, then writes a capture file for OpenCLI generation.
         var hookStopwatch = Stopwatch.StartNew();
+        var invocation = HookToolProcessInvocationResolver.Resolve(
+            installedTool.InstallDirectory,
+            commandName,
+            installedTool.CommandPath);
         var processResult = await _runtime.InvokeProcessCaptureAsync(
-            installedTool.CommandPath,
-            ["--help"],
+            invocation.FilePath,
+            invocation.ArgumentList,
             tempRoot,
             hookEnvironment,
             commandTimeoutSeconds,

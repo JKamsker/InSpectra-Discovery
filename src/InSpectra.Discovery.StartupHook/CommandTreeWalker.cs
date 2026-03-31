@@ -32,7 +32,7 @@ internal static class CommandTreeWalker
             var commandBaseType = sclAssembly.GetType("System.CommandLine.Command");
             foreach (var child in subcommands)
             {
-                if (commandBaseType is not null && commandBaseType.IsInstanceOfType(child))
+                if (child is not null && commandBaseType is not null && commandBaseType.IsInstanceOfType(child))
                     captured.Subcommands.Add(Walk(child, sclAssembly));
             }
         }

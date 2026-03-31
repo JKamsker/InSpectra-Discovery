@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 public sealed class HookServiceLiveTests
 {
     private const string EnableEnvVar = "INSPECTRA_DISCOVERY_LIVE_HOOK_TESTS";
+    private const string DotnetRootOverrideEnvVar = "INSPECTRA_DISCOVERY_LIVE_DOTNET_ROOT";
     private readonly ITestOutputHelper _output;
 
     public HookServiceLiveTests(ITestOutputHelper output)
@@ -21,11 +22,30 @@ public sealed class HookServiceLiveTests
     {
         var data = new TheoryData<HookLiveToolCase>();
         data.Add(new HookLiveToolCase(
+            "AMSMigrate",
+            "1.4.4",
+            "amsmigrate",
+            "Azure Media Services Asset Migration Tool",
+            expectedCommands: ["analyze", "assets", "storage", "keys", "liveevents", "transforms"]));
+        data.Add(new HookLiveToolCase(
             "CSharpier",
             "1.2.6",
             "csharpier",
             "CSharpier",
             expectedCommands: ["format", "check", "pipe-files", "server"]));
+        data.Add(new HookLiveToolCase(
+            "cassini.cli",
+            "1.0.18",
+            "cassini",
+            "cassini",
+            expectedCommands: ["login", "new", "update"],
+            expectedOptions: ["version", "help"]));
+        data.Add(new HookLiveToolCase(
+            "CCPDF",
+            "0.4.3",
+            "ccpdf",
+            "CCPDF",
+            expectedCommands: ["compress", "resize", "rezip"]));
         data.Add(new HookLiveToolCase(
             "Duotify.MarkdownTranslator",
             "1.5.0",
@@ -75,6 +95,7 @@ public sealed class HookServiceLiveTests
 
         try
         {
+            using var dotnetRootOverride = UseOptionalDotnetRootOverride();
             var exitCode = await service.RunAsync(
                 testCase.PackageId,
                 testCase.Version,
@@ -115,7 +136,6 @@ public sealed class HookServiceLiveTests
             var patchTarget = openCli?["x-inspectra"]?["hookCapture"]?["patchTarget"]?.GetValue<string>();
             Assert.NotNull(patchTarget);
             Assert.StartsWith("Parse-postfix", patchTarget, StringComparison.Ordinal);
-            Assert.Contains("RootCommand.ctor(String)", patchTarget, StringComparison.Ordinal);
 
             Assert.Equal("startup-hook", result?["steps"]?["opencli"]?["classification"]?.GetValue<string>());
             Assert.Equal("startup-hook", result?["steps"]?["opencli"]?["artifactSource"]?.GetValue<string>());
@@ -123,6 +143,7 @@ public sealed class HookServiceLiveTests
             Assert.Equal(testCase.ExpectedCommands, GetTopLevelNames(openCli, "commands"));
             Assert.Equal(testCase.ExpectedOptions, GetTopLevelNames(openCli, "options"));
             Assert.Equal(testCase.ExpectedArguments, GetTopLevelNames(openCli, "arguments"));
+            HookOpenCliSnapshotSupport.AssertMatchesFixture(testCase.PackageId, testCase.Version, openCli);
 
             _output.WriteLine($"{testCase.PackageId} {testCase.Version} succeeded via startup hook.");
         }
@@ -137,6 +158,14 @@ public sealed class HookServiceLiveTests
 
     private static bool ShouldRun()
         => string.Equals(Environment.GetEnvironmentVariable(EnableEnvVar), "1", StringComparison.Ordinal);
+
+    private static IDisposable UseOptionalDotnetRootOverride()
+    {
+        var overrideRoot = Environment.GetEnvironmentVariable(DotnetRootOverrideEnvVar);
+        return string.IsNullOrWhiteSpace(overrideRoot)
+            ? NoopDisposable.Instance
+            : new DotnetRootOverrideScope(overrideRoot);
+    }
 
     private static IReadOnlyList<string> GetTopLevelNames(JsonNode? document, string propertyName)
         => document?[propertyName]?.AsArray()
@@ -161,5 +190,41 @@ public sealed class HookServiceLiveTests
 
         public override string ToString()
             => $"{PackageId} {Version}";
+    }
+
+    private sealed class DotnetRootOverrideScope : IDisposable
+    {
+        private readonly string? _previousDotnetRoot;
+        private readonly string? _previousDotnetRootX64;
+
+        public DotnetRootOverrideScope(string dotnetRoot)
+        {
+            _previousDotnetRoot = Environment.GetEnvironmentVariable("DOTNET_ROOT");
+            _previousDotnetRootX64 = Environment.GetEnvironmentVariable("DOTNET_ROOT_X64");
+
+            Environment.SetEnvironmentVariable("DOTNET_ROOT", dotnetRoot);
+            if (OperatingSystem.IsWindows())
+            {
+                Environment.SetEnvironmentVariable("DOTNET_ROOT_X64", dotnetRoot);
+            }
+        }
+
+        public void Dispose()
+        {
+            Environment.SetEnvironmentVariable("DOTNET_ROOT", _previousDotnetRoot);
+            if (OperatingSystem.IsWindows())
+            {
+                Environment.SetEnvironmentVariable("DOTNET_ROOT_X64", _previousDotnetRootX64);
+            }
+        }
+    }
+
+    private sealed class NoopDisposable : IDisposable
+    {
+        public static NoopDisposable Instance { get; } = new();
+
+        public void Dispose()
+        {
+        }
     }
 }

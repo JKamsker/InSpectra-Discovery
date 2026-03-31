@@ -5,7 +5,7 @@ internal static class CaptureFileWriter
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
-        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        IgnoreNullValues = true,
     };
 
     public static void Write(string path, CaptureResult result, bool overwrite = true)
