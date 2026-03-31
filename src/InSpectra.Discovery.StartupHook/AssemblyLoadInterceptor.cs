@@ -19,6 +19,9 @@ internal static class AssemblyLoadInterceptor
         // Watch for future loads.
         AppDomain.CurrentDomain.AssemblyLoad += OnAssemblyLoad;
 
+        // Surface target crashes so the caller gets a concrete classification instead of a missing file.
+        AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
         // If the tool exits without ever loading System.CommandLine, write a sentinel.
         AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
     }
@@ -56,7 +59,18 @@ internal static class AssemblyLoadInterceptor
         if (!_patched && _capturePath is not null)
         {
             CaptureFileWriter.WriteError(_capturePath, "no-assembly-loaded",
-                "System.CommandLine assembly was never loaded by the target tool.");
+                "System.CommandLine assembly was never loaded by the target tool.",
+                overwrite: false);
         }
+    }
+
+    private static void OnUnhandledException(object? sender, UnhandledExceptionEventArgs args)
+    {
+        if (_capturePath is null)
+            return;
+
+        var error = args.ExceptionObject?.ToString()
+            ?? "The target tool terminated with an unhandled exception before startup hook capture completed.";
+        CaptureFileWriter.WriteError(_capturePath, "target-unhandled-exception", error, overwrite: false);
     }
 }

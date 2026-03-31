@@ -1,0 +1,75 @@
+name: Validate Startup Hook
+
+on:
+  push:
+    paths:
+      - .github/workflows/validate-startup-hook.yml
+      - src/InSpectra.Discovery.StartupHook/**
+      - src/InSpectra.Discovery.Tool/**
+      - tests/InSpectra.Discovery.Tool.Tests/**
+  pull_request:
+    paths:
+      - .github/workflows/validate-startup-hook.yml
+      - src/InSpectra.Discovery.StartupHook/**
+      - src/InSpectra.Discovery.Tool/**
+      - tests/InSpectra.Discovery.Tool.Tests/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-startup-hook-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            3.1.x
+            5.0.x
+            6.0.x
+            7.0.x
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Show installed .NET runtimes
+        shell: pwsh
+        run: |
+          dotnet --list-sdks
+          dotnet --list-runtimes
+
+      - name: Build solution
+        shell: pwsh
+        run: dotnet build InSpectra.Discovery.sln -c Debug
+
+      - name: Run hook regression unit tests
+        shell: pwsh
+        run: >
+          dotnet test tests/InSpectra.Discovery.Tool.Tests/InSpectra.Discovery.Tool.Tests.csproj
+          -c Debug
+          --no-build
+          --filter "FullyQualifiedName~HookInstalledToolAnalysisSupportTests"
+
+      - name: Run live startup-hook tests
+        shell: pwsh
+        env:
+          INSPECTRA_DISCOVERY_LIVE_HOOK_TESTS: 1
+        run: >
+          dotnet test tests/InSpectra.Discovery.Tool.Tests/InSpectra.Discovery.Tool.Tests.csproj
+          -c Debug
+          --no-build
+          --filter "FullyQualifiedName~HookServiceLiveTests"
