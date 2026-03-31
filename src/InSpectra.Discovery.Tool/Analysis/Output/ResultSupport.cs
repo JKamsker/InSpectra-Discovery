@@ -42,6 +42,7 @@ internal static class ResultSupport
             ["entryPoint"] = null,
             ["runner"] = null,
             ["toolSettingsPath"] = null,
+            ["opencliSource"] = null,
             ["detection"] = new JsonObject
             {
                 ["hasSpectreConsole"] = false,
@@ -159,5 +160,4 @@ internal sealed record DetectionInfo(
         return array;
     }
 }
-
 

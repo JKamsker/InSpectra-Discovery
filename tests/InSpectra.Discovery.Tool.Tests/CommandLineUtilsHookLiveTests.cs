@@ -13,6 +13,7 @@ public sealed class CommandLineUtilsHookLiveTests
     [
         "Parse-postfix",
         "Execute-postfix",
+        "Execute-finalizer",
         "ProcessExit-fallback",
     ];
 
@@ -73,6 +74,12 @@ public sealed class CommandLineUtilsHookLiveTests
             "weixin",
             expectedOptions: ["--help", "--Resource", "--QQGroup", "--keyword", "--platform", "--async", "--HostUrl"]));
         data.Add(new CommandLineUtilsHookToolCase(
+            "McMaster.Extensions.CommandLineUtils",
+            "Meadow.Cli",
+            "0.3.225",
+            "meadow",
+            "meadow"));
+        data.Add(new CommandLineUtilsHookToolCase(
             "Microsoft.Extensions.CommandLineUtils",
             "SignClient",
             "1.3.155",
@@ -112,6 +119,13 @@ public sealed class CommandLineUtilsHookLiveTests
             "CKSetup",
             expectedCommands: ["run", "store"],
             expectedOptions: ["--help", "--version"]));
+        data.Add(new CommandLineUtilsHookToolCase(
+            "Microsoft.Extensions.CommandLineUtils",
+            "MetaCode.TemplateSuite2.CLI",
+            "2.1.14",
+            "mcts2",
+            "mcts2",
+            expectedCommands: ["g2c"]));
         return data;
     }
 
@@ -159,6 +173,7 @@ public sealed class CommandLineUtilsHookLiveTests
             Assert.Equal("success", result?["disposition"]?.GetValue<string>());
             Assert.Equal("hook", result?["analysisMode"]?.GetValue<string>());
             Assert.Equal("startup-hook", result?["classification"]?.GetValue<string>());
+            Assert.Equal("startup-hook", result?["opencliSource"]?.GetValue<string>());
             Assert.Equal(testCase.Framework, result?["cliFramework"]?.GetValue<string>());
             Assert.Equal(testCase.CommandName, result?["command"]?.GetValue<string>());
 

@@ -44,6 +44,7 @@ internal static class OpenCliArtifactMetadataRepair
         }
 
         metadata["artifacts"] = artifacts;
+        metadata["opencliSource"] = artifactSource;
 
         var steps = metadata["steps"] as JsonObject ?? new JsonObject();
         var openCliStep = steps["opencli"] as JsonObject ?? new JsonObject();

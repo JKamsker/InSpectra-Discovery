@@ -1,6 +1,9 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
+using InSpectra.Discovery.Tool.Queue.Planning;
+
 using System.Runtime.InteropServices;
+using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
 internal static class HookToolProcessInvocationResolver
@@ -24,6 +27,7 @@ internal static class HookToolProcessInvocationResolver
         [
             new HookToolProcessInvocation(invocation.FilePath, [.. baseArguments, "-h"]),
             new HookToolProcessInvocation(invocation.FilePath, [.. baseArguments, "-?"]),
+            new HookToolProcessInvocation(invocation.FilePath, [.. baseArguments, "--h"]),
         ];
     }
 
@@ -87,7 +91,7 @@ internal static class HookToolProcessInvocationResolver
                 return null;
             }
 
-            if (!HasRuntimeConfig(entryPointPath))
+            if (!EnsureRuntimeConfig(entryPointPath, settingsPath))
             {
                 return null;
             }
@@ -100,7 +104,7 @@ internal static class HookToolProcessInvocationResolver
         }
     }
 
-    private static bool HasRuntimeConfig(string entryPointPath)
+    private static bool EnsureRuntimeConfig(string entryPointPath, string settingsPath)
     {
         if (!string.Equals(Path.GetExtension(entryPointPath), ".dll", StringComparison.OrdinalIgnoreCase))
         {
@@ -108,7 +112,68 @@ internal static class HookToolProcessInvocationResolver
         }
 
         var runtimeConfigPath = Path.ChangeExtension(entryPointPath, ".runtimeconfig.json");
-        return File.Exists(runtimeConfigPath);
+        if (File.Exists(runtimeConfigPath))
+        {
+            return true;
+        }
+
+        return TryWriteSyntheticRuntimeConfig(settingsPath, runtimeConfigPath);
+    }
+
+    private static bool TryWriteSyntheticRuntimeConfig(string settingsPath, string runtimeConfigPath)
+    {
+        try
+        {
+            if (!TryResolveTargetFrameworkMoniker(settingsPath, out var targetFrameworkMoniker))
+            {
+                return false;
+            }
+
+            var requirement = DotnetTargetFrameworkRuntimeSupport.TryResolveRequirement(targetFrameworkMoniker);
+            if (requirement is null)
+            {
+                return false;
+            }
+
+            var runtimeConfig = new JsonObject
+            {
+                ["runtimeOptions"] = new JsonObject
+                {
+                    ["tfm"] = targetFrameworkMoniker,
+                    ["framework"] = new JsonObject
+                    {
+                        ["name"] = requirement.Name,
+                        ["version"] = requirement.Version,
+                    },
+                },
+            };
+
+            File.WriteAllText(runtimeConfigPath, runtimeConfig.ToJsonString());
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool TryResolveTargetFrameworkMoniker(string settingsPath, out string targetFrameworkMoniker)
+    {
+        var normalized = settingsPath.Replace('\\', '/');
+        var segments = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        for (var index = 0; index < segments.Length - 2; index++)
+        {
+            if (!string.Equals(segments[index], "tools", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            targetFrameworkMoniker = segments[index + 1];
+            return !string.IsNullOrWhiteSpace(targetFrameworkMoniker);
+        }
+
+        targetFrameworkMoniker = string.Empty;
+        return false;
     }
 
     private static string ResolveDotnetHostPath()

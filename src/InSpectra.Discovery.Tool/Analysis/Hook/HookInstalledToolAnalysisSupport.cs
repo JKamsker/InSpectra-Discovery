@@ -18,6 +18,8 @@ internal sealed class HookInstalledToolAnalysisSupport
 {
     internal const string ExpectedCliFrameworkEnvironmentVariableName = "INSPECTRA_EXPECTED_CLI_FRAMEWORK";
     internal const string GlobalizationInvariantEnvironmentVariableName = "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT";
+    internal const string DotnetRollForwardEnvironmentVariableName = "DOTNET_ROLL_FORWARD";
+    internal const string DotnetRollForwardMajorValue = "Major";
     private readonly CommandRuntime _runtime;
     private readonly Func<string?> _hookDllPathResolver;
 
@@ -166,58 +168,38 @@ internal sealed class HookInstalledToolAnalysisSupport
         string capturePath,
         CancellationToken cancellationToken)
     {
-        var processResult = await InvokeHookProcessAsync(
-            invocation,
-            workingDirectory,
-            environment,
-            timeoutSeconds,
-            cancellationToken);
-        if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
-        {
-            return await RetryWithInvariantGlobalizationIfNeededAsync(
-                processResult,
-                invocation,
-                workingDirectory,
-                environment,
-                timeoutSeconds,
-                capturePath,
-                cancellationToken);
-        }
-
-        foreach (var fallbackInvocation in HookToolProcessInvocationResolver.BuildHelpFallbackInvocations(invocation))
-        {
-            TryDeleteCaptureFile(capturePath);
-            processResult = await InvokeHookProcessAsync(
-                fallbackInvocation,
-                workingDirectory,
-                environment,
-                timeoutSeconds,
-                cancellationToken);
-            if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
-            {
-                return await RetryWithInvariantGlobalizationIfNeededAsync(
-                    processResult,
-                    invocation,
-                    workingDirectory,
-                    environment,
-                    timeoutSeconds,
-                    capturePath,
-                    cancellationToken);
-            }
-        }
-
-        return await RetryWithInvariantGlobalizationIfNeededAsync(
-            processResult,
+        var processResult = await InvokeWithInvariantGlobalizationRetryAsync(
             invocation,
             workingDirectory,
             environment,
             timeoutSeconds,
             capturePath,
             cancellationToken);
+        if (!ShouldRetryWithAlternateHelp(processResult, capturePath))
+        {
+            return processResult;
+        }
+
+        foreach (var fallbackInvocation in HookToolProcessInvocationResolver.BuildHelpFallbackInvocations(invocation))
+        {
+            TryDeleteCaptureFile(capturePath);
+            processResult = await InvokeWithInvariantGlobalizationRetryAsync(
+                fallbackInvocation,
+                workingDirectory,
+                environment,
+                timeoutSeconds,
+                capturePath,
+                cancellationToken);
+            if (!ShouldRetryWithAlternateHelp(processResult, capturePath))
+            {
+                return processResult;
+            }
+        }
+
+        return processResult;
     }
 
-    private async Task<CommandRuntime.ProcessResult> RetryWithInvariantGlobalizationIfNeededAsync(
-        CommandRuntime.ProcessResult processResult,
+    private async Task<CommandRuntime.ProcessResult> InvokeWithInvariantGlobalizationRetryAsync(
         HookToolProcessInvocation invocation,
         string workingDirectory,
         IReadOnlyDictionary<string, string> environment,
@@ -225,23 +207,67 @@ internal sealed class HookInstalledToolAnalysisSupport
         string capturePath,
         CancellationToken cancellationToken)
     {
+        var effectiveEnvironment = environment;
+        var processResult = await InvokeHookProcessAsync(
+            invocation,
+            workingDirectory,
+            effectiveEnvironment,
+            timeoutSeconds,
+            cancellationToken);
+        if (!File.Exists(capturePath)
+            && LooksLikeMissingIcu(processResult)
+            && !effectiveEnvironment.ContainsKey(GlobalizationInvariantEnvironmentVariableName))
+        {
+            effectiveEnvironment = new Dictionary<string, string>(effectiveEnvironment, StringComparer.OrdinalIgnoreCase)
+            {
+                [GlobalizationInvariantEnvironmentVariableName] = "1",
+            };
+
+            TryDeleteCaptureFile(capturePath);
+            processResult = await InvokeHookProcessAsync(
+                invocation,
+                workingDirectory,
+                effectiveEnvironment,
+                timeoutSeconds,
+                cancellationToken);
+            if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
+            {
+                return processResult;
+            }
+
+            foreach (var fallbackInvocation in HookToolProcessInvocationResolver.BuildHelpFallbackInvocations(invocation))
+            {
+                TryDeleteCaptureFile(capturePath);
+                processResult = await InvokeHookProcessAsync(
+                    fallbackInvocation,
+                    workingDirectory,
+                    effectiveEnvironment,
+                    timeoutSeconds,
+                    cancellationToken);
+                if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
+                {
+                    return processResult;
+                }
+            }
+        }
+
         if (File.Exists(capturePath)
-            || !LooksLikeMissingIcu(processResult)
-            || environment.ContainsKey(GlobalizationInvariantEnvironmentVariableName))
+            || !LooksLikeMissingSharedRuntime(processResult)
+            || effectiveEnvironment.ContainsKey(DotnetRollForwardEnvironmentVariableName))
         {
             return processResult;
         }
 
-        var invariantEnvironment = new Dictionary<string, string>(environment, StringComparer.OrdinalIgnoreCase)
+        effectiveEnvironment = new Dictionary<string, string>(effectiveEnvironment, StringComparer.OrdinalIgnoreCase)
         {
-            [GlobalizationInvariantEnvironmentVariableName] = "1",
+            [DotnetRollForwardEnvironmentVariableName] = DotnetRollForwardMajorValue,
         };
 
         TryDeleteCaptureFile(capturePath);
         processResult = await InvokeHookProcessAsync(
             invocation,
             workingDirectory,
-            invariantEnvironment,
+            effectiveEnvironment,
             timeoutSeconds,
             cancellationToken);
         if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
@@ -255,7 +281,7 @@ internal sealed class HookInstalledToolAnalysisSupport
             processResult = await InvokeHookProcessAsync(
                 fallbackInvocation,
                 workingDirectory,
-                invariantEnvironment,
+                effectiveEnvironment,
                 timeoutSeconds,
                 cancellationToken);
             if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
@@ -265,6 +291,22 @@ internal sealed class HookInstalledToolAnalysisSupport
         }
 
         return processResult;
+    }
+
+    private static bool ShouldRetryWithAlternateHelp(CommandRuntime.ProcessResult processResult, string capturePath)
+    {
+        if (!File.Exists(capturePath))
+        {
+            return LooksLikeRejectedHelpInvocation(processResult);
+        }
+
+        var capture = HookCaptureDeserializer.Deserialize(capturePath);
+        if (capture is null || (capture.Status == "ok" && capture.Root is not null))
+        {
+            return false;
+        }
+
+        return LooksLikeRejectedHelpMessage(capture.Error);
     }
 
     private Task<CommandRuntime.ProcessResult> InvokeHookProcessAsync(
@@ -287,10 +329,20 @@ internal sealed class HookInstalledToolAnalysisSupport
         var lines = SplitLines(processResult.Stderr)
             .Concat(SplitLines(processResult.Stdout))
             .ToArray();
-        for (var index = 0; index < lines.Length; index++)
+        return LooksLikeRejectedHelpLines(lines);
+    }
+
+    private static bool LooksLikeRejectedHelpMessage(string? message)
+        => LooksLikeRejectedHelpLines(SplitLines(message).ToArray());
+
+    private static bool LooksLikeRejectedHelpLines(IReadOnlyList<string?> lines)
+    {
+        for (var index = 0; index < lines.Count; index++)
         {
-            var firstLine = lines[index];
-            var secondLine = index + 1 < lines.Length ? lines[index + 1] : null;
+            var firstLine = NormalizeRejectedHelpLine(lines[index]);
+            var secondLine = index + 1 < lines.Count
+                ? NormalizeRejectedHelpLine(lines[index + 1])
+                : null;
             if (TextNoiseClassifier.LooksLikeRejectedHelpInvocation(firstLine, secondLine))
             {
                 return true;
@@ -298,6 +350,30 @@ internal sealed class HookInstalledToolAnalysisSupport
         }
 
         return false;
+    }
+
+    private static string? NormalizeRejectedHelpLine(string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return line;
+        }
+
+        var trimmed = line.Trim();
+        var separatorIndex = trimmed.IndexOf(": ", StringComparison.Ordinal);
+        if (separatorIndex <= 0 || separatorIndex + 2 >= trimmed.Length)
+        {
+            return trimmed;
+        }
+
+        var prefix = trimmed[..separatorIndex];
+        if (!prefix.EndsWith("Exception", StringComparison.OrdinalIgnoreCase)
+            && !prefix.EndsWith("Error", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+
+        return trimmed[(separatorIndex + 2)..].TrimStart();
     }
 
     private static bool LooksLikeMissingIcu(CommandRuntime.ProcessResult processResult)
@@ -315,6 +391,23 @@ internal sealed class HookInstalledToolAnalysisSupport
         return combined.Contains("Couldn't find a valid ICU package installed on the system", StringComparison.OrdinalIgnoreCase)
             || combined.Contains("System.Globalization.Invariant", StringComparison.OrdinalIgnoreCase)
             || combined.Contains("libicu", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikeMissingSharedRuntime(CommandRuntime.ProcessResult processResult)
+    {
+        var combined = string.Join(
+            "\n",
+            SplitLines(processResult.Stderr)
+                .Concat(SplitLines(processResult.Stdout))
+                .Where(line => !string.IsNullOrWhiteSpace(line)));
+        if (string.IsNullOrWhiteSpace(combined))
+        {
+            return false;
+        }
+
+        return combined.Contains("You must install or update .NET to run this application.", StringComparison.OrdinalIgnoreCase)
+            || combined.Contains("Framework: 'Microsoft.NETCore.App'", StringComparison.OrdinalIgnoreCase)
+            || combined.Contains("The following frameworks were found:", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IEnumerable<string?> SplitLines(string? value)

@@ -46,6 +46,7 @@ public sealed class OpenCliArtifactMetadataRepairTests
         Assert.Equal("native", metadata["analysisMode"]?.GetValue<string>());
         Assert.Equal("native", metadata["analysisSelection"]?["selectedMode"]?.GetValue<string>());
         Assert.Equal("native", metadata["analysisSelection"]?["preferredMode"]?.GetValue<string>());
+        Assert.Equal("tool-output", metadata["opencliSource"]?.GetValue<string>());
     }
 
     [Fact]
@@ -88,6 +89,7 @@ public sealed class OpenCliArtifactMetadataRepairTests
         Assert.Equal("xmldoc", metadata["analysisMode"]?.GetValue<string>());
         Assert.Equal("xmldoc", metadata["analysisSelection"]?["selectedMode"]?.GetValue<string>());
         Assert.Equal("native", metadata["analysisSelection"]?["preferredMode"]?.GetValue<string>());
+        Assert.Equal("synthesized-from-xmldoc", metadata["opencliSource"]?.GetValue<string>());
     }
 
     private static JsonObject ParseJsonObject(string path)
@@ -115,4 +117,3 @@ public sealed class OpenCliArtifactMetadataRepairTests
         }
     }
 }
-

@@ -168,6 +168,7 @@ internal static class PromotionArtifactWriter
             ["entryPoint"] = result["entryPoint"]?.GetValue<string>(),
             ["runner"] = result["runner"]?.GetValue<string>(),
             ["toolSettingsPath"] = result["toolSettingsPath"]?.GetValue<string>(),
+            ["opencliSource"] = hasOpenCliOutput ? openCliSource : null,
             ["detection"] = result["detection"]?.DeepClone(),
             ["introspection"] = introspection,
             ["coverage"] = result["coverage"]?.DeepClone(),

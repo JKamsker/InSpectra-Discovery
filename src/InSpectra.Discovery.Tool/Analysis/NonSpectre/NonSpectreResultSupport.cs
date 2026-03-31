@@ -69,6 +69,7 @@ internal static class NonSpectreResultSupport
         result["classification"] = classification;
         result["failureMessage"] = null;
         result["failureSignature"] = null;
+        result["opencliSource"] = artifactSource;
 
         var openCliStep = new JsonObject
         {
@@ -96,5 +97,4 @@ internal static class NonSpectreResultSupport
         }
     }
 }
-
 

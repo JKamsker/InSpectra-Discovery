@@ -25,12 +25,13 @@ internal static class CommandLineUtilsPatchInstaller
         var harmony = new Harmony("com.inspectra.discovery.startuphook.commandlineutils");
         var parsePostfix = new HarmonyMethod(typeof(CommandLineUtilsPatchInstaller), nameof(ParsePostfix));
         var executePostfix = new HarmonyMethod(typeof(CommandLineUtilsPatchInstaller), nameof(ExecutePostfix));
+        var executeFinalizer = new HarmonyMethod(typeof(CommandLineUtilsPatchInstaller), nameof(ExecuteFinalizer));
         var constructorPostfix = new HarmonyMethod(typeof(CommandLineUtilsPatchInstaller), nameof(CommandLineApplicationConstructorPostfix));
 
         var patchCount = 0;
         patchCount += TryPatchNamedMethods(harmony, assembly, "Parse", parsePostfix);
-        patchCount += TryPatchNamedMethods(harmony, assembly, "Execute", executePostfix);
-        patchCount += TryPatchNamedMethods(harmony, assembly, "ExecuteAsync", executePostfix);
+        patchCount += TryPatchNamedMethods(harmony, assembly, "Execute", executePostfix, executeFinalizer);
+        patchCount += TryPatchNamedMethods(harmony, assembly, "ExecuteAsync", executePostfix, executeFinalizer);
         patchCount += TryPatchConstructors(harmony, assembly, constructorPostfix);
 
         AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
@@ -102,7 +103,27 @@ internal static class CommandLineUtilsPatchInstaller
         }
     }
 
-    private static int TryPatchNamedMethods(Harmony harmony, Assembly assembly, string methodName, HarmonyMethod postfix)
+    public static Exception? ExecuteFinalizer(object? __instance, Exception? __exception)
+    {
+        if (_captured)
+        {
+            return __exception;
+        }
+
+        if (__instance is not null && TryCaptureFromObject(__instance, "Execute-finalizer"))
+        {
+            return __exception;
+        }
+
+        if (_capturedRootApplication is not null)
+        {
+            TryCaptureFromObject(_capturedRootApplication, "Execute-finalizer");
+        }
+
+        return __exception;
+    }
+
+    private static int TryPatchNamedMethods(Harmony harmony, Assembly assembly, string methodName, HarmonyMethod postfix, HarmonyMethod? finalizer = null)
     {
         var count = 0;
         foreach (var type in assembly.GetExportedTypes().Where(IsCommandLineApplicationType))
@@ -117,7 +138,7 @@ internal static class CommandLineUtilsPatchInstaller
 
                 try
                 {
-                    harmony.Patch(method, postfix: postfix);
+                    harmony.Patch(method, postfix: postfix, finalizer: finalizer);
                     PatchLog.Add($"OK: {type.Name}.{method.Name}");
                     count++;
                 }
