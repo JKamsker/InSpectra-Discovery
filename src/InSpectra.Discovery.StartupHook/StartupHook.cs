@@ -5,13 +5,14 @@ internal class StartupHook
     public static void Initialize()
     {
         var capturePath = Environment.GetEnvironmentVariable("INSPECTRA_CAPTURE_PATH");
+        var expectedCliFramework = Environment.GetEnvironmentVariable("INSPECTRA_EXPECTED_CLI_FRAMEWORK");
         if (string.IsNullOrEmpty(capturePath))
             return;
 
         try
         {
             HookDependencyLoader.LoadRequiredAssemblies();
-            AssemblyLoadInterceptor.Start(capturePath);
+            AssemblyLoadInterceptor.Start(capturePath, expectedCliFramework);
         }
         catch (Exception ex)
         {

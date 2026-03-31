@@ -38,8 +38,13 @@ internal static class CliFrameworkProviderRegistry
         => ResolveStaticAnalysisAdapter(cliFramework) is not null;
 
     public static bool HasHookAnalysisSupport(string? cliFramework)
-        => ResolveProviders(cliFramework).Any(static provider =>
-            string.Equals(provider.Name, "System.CommandLine", StringComparison.OrdinalIgnoreCase));
+        => ResolveProviders(cliFramework).Any(static provider => provider.SupportsHookAnalysis);
+
+    public static string? ResolveHookAnalysisFramework(string? cliFramework)
+        => ResolveProviders(cliFramework)
+            .Where(static provider => provider.SupportsHookAnalysis)
+            .Select(static provider => provider.Name)
+            .FirstOrDefault();
 
     public static StaticAnalysisFrameworkAdapter? ResolveStaticAnalysisAdapter(string? cliFramework)
     {
@@ -139,6 +144,7 @@ internal static class CliFrameworkProviderRegistry
             DependencyIds: ["CliFx"],
             PackageAssemblyNames: ["CliFx.dll"],
             SupportsCliFxAnalysis: true,
+            SupportsHookAnalysis: false,
             StaticAnalysisAdapter: null);
 
     private static CliFrameworkProvider CreateCatalogOnlyProvider(
@@ -152,6 +158,7 @@ internal static class CliFrameworkProviderRegistry
             DependencyIds: dependencyIds,
             PackageAssemblyNames: packageAssemblyNames,
             SupportsCliFxAnalysis: false,
+            SupportsHookAnalysis: false,
             StaticAnalysisAdapter: null);
 
     private static CliFrameworkProvider CreateStaticAnalysisProvider(
@@ -167,6 +174,9 @@ internal static class CliFrameworkProviderRegistry
             DependencyIds: dependencyIds,
             PackageAssemblyNames: packageAssemblyNames,
             SupportsCliFxAnalysis: false,
+            SupportsHookAnalysis:
+                string.Equals(name, "System.CommandLine", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "McMaster.Extensions.CommandLineUtils", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "Microsoft.Extensions.CommandLineUtils", StringComparison.OrdinalIgnoreCase),
             StaticAnalysisAdapter: new StaticAnalysisFrameworkAdapter(name, staticAssemblyName, reader));
 }
-

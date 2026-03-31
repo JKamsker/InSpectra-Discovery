@@ -13,6 +13,12 @@ internal sealed class HookCaptureResult
     [JsonPropertyName("error")]
     public string? Error { get; set; }
 
+    [JsonPropertyName("cliFramework")]
+    public string? CliFramework { get; set; }
+
+    [JsonPropertyName("frameworkVersion")]
+    public string? FrameworkVersion { get; set; }
+
     [JsonPropertyName("systemCommandLineVersion")]
     public string? SystemCommandLineVersion { get; set; }
 

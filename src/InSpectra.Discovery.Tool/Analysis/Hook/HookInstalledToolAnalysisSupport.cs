@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
+using InSpectra.Discovery.Tool.Frameworks;
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
 
 using InSpectra.Discovery.Tool.OpenCli.Documents;
@@ -14,6 +15,7 @@ using System.Text.Json.Nodes;
 
 internal sealed class HookInstalledToolAnalysisSupport
 {
+    internal const string ExpectedCliFrameworkEnvironmentVariableName = "INSPECTRA_EXPECTED_CLI_FRAMEWORK";
     private readonly CommandRuntime _runtime;
     private readonly Func<string?> _hookDllPathResolver;
 
@@ -70,6 +72,12 @@ internal sealed class HookInstalledToolAnalysisSupport
             ["DOTNET_STARTUP_HOOKS"] = hookDllPath,
             ["INSPECTRA_CAPTURE_PATH"] = capturePath,
         };
+        var expectedHookCliFramework = CliFrameworkProviderRegistry.ResolveHookAnalysisFramework(
+            result["cliFramework"]?.GetValue<string>());
+        if (!string.IsNullOrWhiteSpace(expectedHookCliFramework))
+        {
+            hookEnvironment[ExpectedCliFrameworkEnvironmentVariableName] = expectedHookCliFramework;
+        }
 
         // Execute the tool with the startup hook attached. The hook observes the command tree
         // while the target processes `--help`, then writes a capture file for OpenCLI generation.

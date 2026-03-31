@@ -24,6 +24,9 @@ public sealed class HookInstalledToolAnalysisSupportTests
             Assert.Equal("--help", invocation.ArgumentList[0]);
             Assert.Equal(hookDllPath, invocation.Environment["DOTNET_STARTUP_HOOKS"]);
             Assert.Equal(capturePath, invocation.Environment["INSPECTRA_CAPTURE_PATH"]);
+            Assert.Equal(
+                "System.CommandLine",
+                invocation.Environment[HookInstalledToolAnalysisSupport.ExpectedCliFrameworkEnvironmentVariableName]);
 
             return new CommandRuntime.ProcessResult(
                 Status: "failed",
@@ -69,6 +72,8 @@ public sealed class HookInstalledToolAnalysisSupportTests
             {
                 CaptureVersion = 1,
                 Status = "ok",
+                CliFramework = "System.CommandLine",
+                FrameworkVersion = "2.0.0",
                 SystemCommandLineVersion = "2.0.0",
                 PatchTarget = "Parse-postfix",
                 Root = new HookCapturedCommand
@@ -130,6 +135,8 @@ public sealed class HookInstalledToolAnalysisSupportTests
         Assert.Equal("demo", openCli["info"]?["title"]?.GetValue<string>());
         Assert.Equal("1.2.3", openCli["info"]?["version"]?.GetValue<string>());
         Assert.Equal("startup-hook", openCli["x-inspectra"]?["artifactSource"]?.GetValue<string>());
+        Assert.Equal("System.CommandLine", openCli["x-inspectra"]?["hookCapture"]?["cliFramework"]?.GetValue<string>());
+        Assert.Equal("2.0.0", openCli["x-inspectra"]?["hookCapture"]?["frameworkVersion"]?.GetValue<string>());
         Assert.Contains(openCli["options"]!.AsArray(), option => option?["name"]?.GetValue<string>() == "--verbose");
         Assert.Contains(openCli["commands"]!.AsArray(), command => command?["name"]?.GetValue<string>() == "serve");
     }
@@ -169,6 +176,8 @@ public sealed class HookInstalledToolAnalysisSupportTests
                 {
                     CaptureVersion = 1,
                     Status = "ok",
+                    CliFramework = "System.CommandLine",
+                    FrameworkVersion = "2.0.0",
                     SystemCommandLineVersion = "2.0.0",
                     PatchTarget = "Parse-postfix",
                     Root = new HookCapturedCommand
@@ -205,7 +214,59 @@ public sealed class HookInstalledToolAnalysisSupportTests
         Assert.Equal("opencli.json", result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
     }
 
-    private static JsonObject CreateInitialResult()
+    [Fact]
+    public async Task AnalyzeAsync_Passes_Resolved_Hook_Framework_To_Startup_Hook()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var hookDllPath = CreateHookPlaceholder(tempDirectory.Path);
+        var runtime = new FakeHookCommandRuntime("demo", invocation =>
+        {
+            Assert.Equal(
+                "McMaster.Extensions.CommandLineUtils",
+                invocation.Environment[HookInstalledToolAnalysisSupport.ExpectedCliFrameworkEnvironmentVariableName]);
+
+            var capturePath = invocation.Environment["INSPECTRA_CAPTURE_PATH"];
+            File.WriteAllText(capturePath, JsonSerializer.Serialize(new HookCaptureResult
+            {
+                CaptureVersion = 1,
+                Status = "ok",
+                CliFramework = "McMaster.Extensions.CommandLineUtils",
+                FrameworkVersion = "4.0.0.0",
+                PatchTarget = "Execute-postfix",
+                Root = new HookCapturedCommand
+                {
+                    Name = "demo",
+                    Description = "Demo CLI",
+                },
+            }));
+
+            return new CommandRuntime.ProcessResult(
+                Status: "ok",
+                TimedOut: false,
+                ExitCode: 0,
+                DurationMs: 15,
+                Stdout: string.Empty,
+                Stderr: string.Empty);
+        });
+        var support = new HookInstalledToolAnalysisSupport(runtime, () => hookDllPath);
+        var result = CreateInitialResult("McMaster.Extensions.CommandLineUtils + Argu");
+
+        await support.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("startup-hook", result["classification"]?.GetValue<string>());
+    }
+
+    private static JsonObject CreateInitialResult(string cliFramework = "System.CommandLine")
         => NonSpectreResultSupport.CreateInitialResult(
             packageId: "Demo.Tool",
             version: "1.2.3",
@@ -213,7 +274,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
             batchId: "batch-001",
             attempt: 1,
             source: "unit-test",
-            cliFramework: "System.CommandLine",
+            cliFramework: cliFramework,
             analysisMode: "hook",
             analyzedAt: DateTimeOffset.Parse("2026-03-31T00:00:00Z"));
 

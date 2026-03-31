@@ -169,10 +169,13 @@ internal static class HarmonyPatchInstaller
         try
         {
             var tree = CommandTreeWalker.Walk(rootCommand, SystemCommandLineAssembly);
+            var version = SystemCommandLineAssembly.GetName().Version?.ToString();
             CaptureFileWriter.Write(CapturePath, new CaptureResult
             {
                 Status = "ok",
-                SystemCommandLineVersion = SystemCommandLineAssembly.GetName().Version?.ToString(),
+                CliFramework = HookCliFrameworkSupport.SystemCommandLine,
+                FrameworkVersion = version,
+                SystemCommandLineVersion = version,
                 PatchTarget = $"{source} ({string.Join(", ", _patchLog.Where(l => l.StartsWith("OK")))})",
                 Root = tree,
             });

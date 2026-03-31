@@ -9,6 +9,7 @@ internal sealed record CliFrameworkProvider(
     IReadOnlyList<string> DependencyIds,
     IReadOnlyList<string> PackageAssemblyNames,
     bool SupportsCliFxAnalysis,
+    bool SupportsHookAnalysis,
     StaticAnalysisFrameworkAdapter? StaticAnalysisAdapter)
 {
     public bool Matches(IReadOnlySet<string> dependencyIds, IReadOnlySet<string> assemblyNames)
@@ -32,4 +33,3 @@ internal sealed record StaticAnalysisFrameworkAdapter(
     string FrameworkName,
     string AssemblyName,
     IStaticAttributeReader Reader);
-

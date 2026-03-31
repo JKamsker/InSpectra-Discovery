@@ -3,11 +3,13 @@ using System.Reflection;
 internal static class AssemblyLoadInterceptor
 {
     private static string? _capturePath;
+    private static string _expectedCliFramework = HookCliFrameworkSupport.SystemCommandLine;
     private static bool _patched;
 
-    public static void Start(string capturePath)
+    public static void Start(string capturePath, string? expectedCliFramework)
     {
         _capturePath = capturePath;
+        _expectedCliFramework = HookCliFrameworkSupport.NormalizeExpectedFramework(expectedCliFramework);
 
         // Check assemblies already loaded.
         foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -36,7 +38,7 @@ internal static class AssemblyLoadInterceptor
         if (_patched)
             return true;
 
-        if (!string.Equals(assembly.GetName().Name, "System.CommandLine", StringComparison.OrdinalIgnoreCase))
+        if (!HookCliFrameworkSupport.MatchesExpectedAssembly(assembly, _expectedCliFramework))
             return false;
 
         _patched = true;
@@ -44,7 +46,7 @@ internal static class AssemblyLoadInterceptor
 
         try
         {
-            HarmonyPatchInstaller.Install(assembly, _capturePath!);
+            HookCliFrameworkSupport.InstallPatches(assembly, _expectedCliFramework, _capturePath!);
         }
         catch (Exception ex)
         {
@@ -59,7 +61,7 @@ internal static class AssemblyLoadInterceptor
         if (!_patched && _capturePath is not null)
         {
             CaptureFileWriter.WriteError(_capturePath, "no-assembly-loaded",
-                "System.CommandLine assembly was never loaded by the target tool.",
+                $"{HookCliFrameworkSupport.GetExpectedAssemblyName(_expectedCliFramework)} assembly was never loaded by the target tool.",
                 overwrite: false);
         }
     }

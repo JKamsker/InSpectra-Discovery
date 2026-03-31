@@ -24,6 +24,8 @@ internal static class HookOpenCliBuilder
                 ["generator"] = "InSpectra.Discovery",
                 ["hookCapture"] = new JsonObject
                 {
+                    ["cliFramework"] = capture.CliFramework,
+                    ["frameworkVersion"] = capture.FrameworkVersion,
                     ["systemCommandLineVersion"] = capture.SystemCommandLineVersion,
                     ["patchTarget"] = capture.PatchTarget,
                 },
@@ -212,5 +214,4 @@ internal static class HookOpenCliBuilder
         return array;
     }
 }
-
 
