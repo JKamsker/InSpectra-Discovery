@@ -2,6 +2,7 @@ namespace InSpectra.Discovery.Tool.Queue.Planning;
 
 using InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
 using InSpectra.Discovery.Tool.NuGet;
+using InSpectra.Discovery.Tool.Packages;
 using InSpectra.Discovery.Tool.Queue.Models;
 
 using System.IO.Compression;
@@ -100,10 +101,7 @@ internal static class DotnetRuntimeSetupResolver
                 return CreateLegacyFallback("archive-no-tool-target");
             }
 
-            var runtimeConfigEntries = archive.Entries
-                .Where(entry => entry.FullName.Replace('\\', '/').StartsWith(target.DirectoryPath + "/", StringComparison.OrdinalIgnoreCase))
-                .Where(entry => entry.FullName.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase))
-                .ToArray();
+            var runtimeConfigEntries = GetRuntimeConfigEntries(archive, target);
 
             if (runtimeConfigEntries.Length == 0)
             {
@@ -199,6 +197,61 @@ internal static class DotnetRuntimeSetupResolver
                 value["version"]?.GetValue<string>() ?? string.Empty,
                 value["channel"]?.GetValue<string>() ?? string.Empty,
                 value["runtime"]?.GetValue<string>() ?? string.Empty);
+
+    private static ZipArchiveEntry[] GetRuntimeConfigEntries(ZipArchive archive, ToolAssetTarget target)
+    {
+        var layout = DotnetToolPackageLayoutReader.Read(archive);
+        var targetPrefix = target.DirectoryPath + "/";
+
+        var toolRuntimeConfigEntries = layout.ToolEntryPointPaths
+            .Where(path => path.StartsWith(targetPrefix, StringComparison.OrdinalIgnoreCase))
+            .Select(GetRuntimeConfigPathForEntryPoint)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(archive.GetEntry)
+            .Where(entry => entry is not null)
+            .Cast<ZipArchiveEntry>()
+            .ToArray();
+        if (toolRuntimeConfigEntries.Length > 0)
+        {
+            return toolRuntimeConfigEntries;
+        }
+
+        var targetSegmentCount = target.DirectoryPath.Split('/', StringSplitOptions.RemoveEmptyEntries).Length;
+        return archive.Entries
+            .Where(entry => IsDirectRuntimeConfigEntry(entry.FullName, targetPrefix, targetSegmentCount))
+            .ToArray();
+    }
+
+    private static string GetRuntimeConfigPathForEntryPoint(string entryPointPath)
+    {
+        var normalized = entryPointPath.Replace('\\', '/').Trim('/');
+        var lastSlashIndex = normalized.LastIndexOf('/');
+        var directoryPath = lastSlashIndex >= 0
+            ? normalized[..(lastSlashIndex + 1)]
+            : string.Empty;
+        var fileName = lastSlashIndex >= 0
+            ? normalized[(lastSlashIndex + 1)..]
+            : normalized;
+        var extensionIndex = fileName.LastIndexOf('.');
+        var baseName = extensionIndex > 0
+            ? fileName[..extensionIndex]
+            : fileName;
+
+        return directoryPath + baseName + ".runtimeconfig.json";
+    }
+
+    private static bool IsDirectRuntimeConfigEntry(string entryPath, string targetPrefix, int targetSegmentCount)
+    {
+        var normalized = entryPath.Replace('\\', '/').Trim('/');
+        if (!normalized.StartsWith(targetPrefix, StringComparison.OrdinalIgnoreCase) ||
+            !normalized.EndsWith(".runtimeconfig.json", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var segmentCount = normalized.Split('/', StringSplitOptions.RemoveEmptyEntries).Length;
+        return segmentCount == targetSegmentCount + 1;
+    }
 
     private static ToolAssetTarget? TryCreateToolAssetTarget(string? entryPath)
     {

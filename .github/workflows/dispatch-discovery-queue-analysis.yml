@@ -147,6 +147,49 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          function Invoke-GhJson {
+            param(
+              [Parameter(Mandatory = $true)]
+              [string[]]$Arguments,
+
+              [int]$MaxAttempts = 6,
+
+              [int]$DelaySeconds = 5
+            )
+
+            $lastErrorMessage = $null
+            for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+              $output = & gh @Arguments 2>&1 | Out-String
+              if ($LASTEXITCODE -eq 0) {
+                try {
+                  if ([string]::IsNullOrWhiteSpace($output)) {
+                    throw 'gh returned no JSON output.'
+                  }
+
+                  return $output | ConvertFrom-Json -Depth 100
+                }
+                catch {
+                  $lastErrorMessage = $_.Exception.Message
+                }
+              }
+              else {
+                $lastErrorMessage = $output.Trim()
+              }
+
+              if ($attempt -lt $MaxAttempts) {
+                $delay = [Math]::Min($DelaySeconds * $attempt, 30)
+                Write-Warning "gh $($Arguments -join ' ') failed on attempt $attempt/$MaxAttempts. Retrying in $delay seconds."
+                if (-not [string]::IsNullOrWhiteSpace($lastErrorMessage)) {
+                  Write-Warning $lastErrorMessage
+                }
+
+                Start-Sleep -Seconds $delay
+              }
+            }
+
+            throw "gh $($Arguments -join ' ') failed after $MaxAttempts attempts. Last error: $lastErrorMessage"
+          }
+
           function Wait-ForWorkflowRun {
             param(
               [Parameter(Mandatory = $true)]
@@ -169,12 +212,13 @@ jobs:
 
             $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
             while ([DateTimeOffset]::UtcNow -lt $deadline) {
-              $runs = gh run list `
-                --repo $Repository `
-                --workflow $WorkflowFile `
-                --branch $Branch `
-                --limit 20 `
-                --json databaseId,displayTitle,createdAt,status,url | ConvertFrom-Json
+              $runs = @(Invoke-GhJson -Arguments @(
+                  'run', 'list',
+                  '--repo', $Repository,
+                  '--workflow', $WorkflowFile,
+                  '--branch', $Branch,
+                  '--limit', '50',
+                  '--json', 'databaseId,displayTitle,createdAt,status,url'))
 
               $match = @(
                 $runs |
@@ -196,7 +240,85 @@ jobs:
             throw "Timed out waiting for workflow '$WorkflowFile' run '$DisplayTitle' on branch '$Branch'."
           }
 
-          function Get-CompletedWorkflowRunSummary {
+          function Resolve-WorkflowRunConclusion {
+            param(
+              [Parameter(Mandatory = $true)]
+              [object[]]$Jobs
+            )
+
+            $conclusions = @(
+              $Jobs |
+                ForEach-Object { [string]$_.conclusion } |
+                Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+
+            if ($conclusions.Count -eq 0) {
+              return $null
+            }
+
+            if ($conclusions -contains 'failure' -or
+                $conclusions -contains 'timed_out' -or
+                $conclusions -contains 'startup_failure' -or
+                $conclusions -contains 'action_required') {
+              return 'failure'
+            }
+
+            if ($conclusions -contains 'cancelled') {
+              return 'cancelled'
+            }
+
+            if ($conclusions -contains 'neutral') {
+              return 'neutral'
+            }
+
+            return 'success'
+          }
+
+          function Get-WorkflowRunSnapshot {
+            param(
+              [Parameter(Mandatory = $true)]
+              [string]$Repository,
+
+              [Parameter(Mandatory = $true)]
+              [string]$RunId
+            )
+
+            $view = Invoke-GhJson -Arguments @(
+              'run', 'view', $RunId,
+              '--repo', $Repository,
+              '--json', 'conclusion,status,url,jobs')
+
+            $jobs = @($view.jobs)
+            $allJobsCompleted = $jobs.Count -gt 0 -and @($jobs | Where-Object { $_.status -ne 'completed' }).Count -eq 0
+            $derivedConclusion = if ($allJobsCompleted) {
+              Resolve-WorkflowRunConclusion -Jobs $jobs
+            }
+            else {
+              $null
+            }
+
+            $isFinal = (
+              ($view.status -eq 'completed' -and -not [string]::IsNullOrWhiteSpace([string]$view.conclusion)) -or
+              ($allJobsCompleted -and -not [string]::IsNullOrWhiteSpace($derivedConclusion)))
+
+            return [pscustomobject]@{
+              status = if ($isFinal) { 'completed' } else { [string]$view.status }
+              conclusion = if ($isFinal -and -not [string]::IsNullOrWhiteSpace([string]$view.conclusion)) {
+                [string]$view.conclusion
+              }
+              elseif ($isFinal) {
+                $derivedConclusion
+              }
+              else {
+                [string]$view.conclusion
+              }
+              url = [string]$view.url
+              jobCount = $jobs.Count
+              completedJobCount = @($jobs | Where-Object { $_.status -eq 'completed' }).Count
+              isFinal = $isFinal
+            }
+          }
+
+          function Wait-ForWorkflowRunCompletion {
             param(
               [Parameter(Mandatory = $true)]
               [string]$Repository,
@@ -204,26 +326,35 @@ jobs:
               [Parameter(Mandatory = $true)]
               [string]$RunId,
 
-              [int]$TimeoutSeconds = 120
+              [Parameter(Mandatory = $true)]
+              [string]$DisplayName,
+
+              [int]$TimeoutSeconds = 120,
+
+              [int]$PollSeconds = 10
             )
 
             $deadline = [DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
+            $lastProgressMessage = $null
             while ([DateTimeOffset]::UtcNow -lt $deadline) {
-              $summary = gh run view $RunId `
-                --repo $Repository `
-                --json conclusion,status,url | ConvertFrom-Json
+              $summary = Get-WorkflowRunSnapshot `
+                -Repository $Repository `
+                -RunId $RunId
 
-              if (
-                $summary.status -eq 'completed' -and
-                -not [string]::IsNullOrWhiteSpace([string]$summary.conclusion)
-              ) {
+              if ($summary.isFinal) {
                 return $summary
               }
 
-              Start-Sleep -Seconds 5
+              $progressMessage = "$DisplayName is $($summary.status) ($($summary.completedJobCount)/$($summary.jobCount) jobs completed)."
+              if ($progressMessage -ne $lastProgressMessage) {
+                Write-Host $progressMessage
+                $lastProgressMessage = $progressMessage
+              }
+
+              Start-Sleep -Seconds $PollSeconds
             }
 
-            throw "Timed out waiting for run '$RunId' to report a final conclusion."
+            throw "Timed out waiting for $DisplayName run '$RunId'. Last observed status '$($summary.status)' with conclusion '$($summary.conclusion)' at '$($summary.url)'."
           }
 
           $repository = '${{ github.repository }}'
@@ -255,15 +386,14 @@ jobs:
             -DisplayTitle $analysisRunName `
             -NotBefore $dispatchStartedAt
 
-          Write-Host "Watching analysis run $($analysisRun.databaseId): $($analysisRun.url)"
-          gh run watch $analysisRun.databaseId --repo $repository --exit-status
-          $analysisWatchExitCode = $LASTEXITCODE
-
-          $analysisSummary = Get-CompletedWorkflowRunSummary `
+          Write-Host "Tracking analysis run $($analysisRun.databaseId): $($analysisRun.url)"
+          $analysisSummary = Wait-ForWorkflowRunCompletion `
             -Repository $repository `
-            -RunId $analysisRun.databaseId
+            -RunId $analysisRun.databaseId `
+            -DisplayName 'analysis' `
+            -TimeoutSeconds 10800
 
-          if ($analysisWatchExitCode -ne 0 -or $analysisSummary.conclusion -ne 'success') {
+          if ($analysisSummary.conclusion -ne 'success') {
             throw "Analysis run '$($analysisRun.databaseId)' completed with conclusion '$($analysisSummary.conclusion)'."
           }
 
@@ -282,15 +412,14 @@ jobs:
             -DisplayTitle $promotionRunName `
             -NotBefore $promotionDispatchStartedAt
 
-          Write-Host "Watching promotion run $($promotionRun.databaseId): $($promotionRun.url)"
-          gh run watch $promotionRun.databaseId --repo $repository --exit-status
-          $promotionWatchExitCode = $LASTEXITCODE
-
-          $promotionSummary = Get-CompletedWorkflowRunSummary `
+          Write-Host "Tracking promotion run $($promotionRun.databaseId): $($promotionRun.url)"
+          $promotionSummary = Wait-ForWorkflowRunCompletion `
             -Repository $repository `
-            -RunId $promotionRun.databaseId
+            -RunId $promotionRun.databaseId `
+            -DisplayName 'promotion' `
+            -TimeoutSeconds 3600
 
-          if ($promotionWatchExitCode -ne 0 -or $promotionSummary.conclusion -ne 'success') {
+          if ($promotionSummary.conclusion -ne 'success') {
             throw "Promotion run '$($promotionRun.databaseId)' completed with conclusion '$($promotionSummary.conclusion)'."
           }
 

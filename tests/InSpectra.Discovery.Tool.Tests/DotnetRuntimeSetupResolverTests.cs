@@ -136,6 +136,83 @@ public sealed class DotnetRuntimeSetupResolverTests
         Assert.Contains(plan.RequiredRuntimes, requirement => requirement.Runtime == "aspnetcore" && requirement.Channel == "7.0");
     }
 
+    [Fact]
+    public async Task ResolveForPlanItemAsync_IgnoresNestedPlatformSpecificRuntimeConfigs()
+    {
+        var item = new JsonObject
+        {
+            ["packageContentUrl"] = "https://nuget.test/sample.editor.1.0.0.nupkg",
+        };
+
+        var catalogLeaf = CreateCatalogLeaf(
+            "tools/net6.0/any/DotnetToolSettings.xml",
+            "tools/net6.0/any/sample-editor.dll",
+            "tools/net6.0/any/sample-editor.runtimeconfig.json",
+            "tools/net6.0/any/sample-editor-windows/sample-editor-windows.runtimeconfig.json");
+
+        using var httpClient = new HttpClient(new BinaryStubHttpMessageHandler(
+            new Dictionary<string, byte[]>(StringComparer.Ordinal)
+            {
+                [item["packageContentUrl"]!.GetValue<string>()] = CreatePackageArchiveBytes(
+                    (
+                        "tools/net6.0/any/DotnetToolSettings.xml",
+                        """
+                        <?xml version="1.0" encoding="utf-8"?>
+                        <DotNetCliTool Version="1">
+                          <Commands>
+                            <Command Name="sample-editor" EntryPoint="sample-editor.dll" Runner="dotnet" />
+                          </Commands>
+                        </DotNetCliTool>
+                        """),
+                    ("tools/net6.0/any/sample-editor.dll", string.Empty),
+                    (
+                        "tools/net6.0/any/sample-editor.runtimeconfig.json",
+                        """
+                        {
+                          "runtimeOptions": {
+                            "framework": {
+                              "name": "Microsoft.NETCore.App",
+                              "version": "6.0.0"
+                            }
+                          }
+                        }
+                        """),
+                    (
+                        "tools/net6.0/any/sample-editor-windows/sample-editor-windows.runtimeconfig.json",
+                        """
+                        {
+                          "runtimeOptions": {
+                            "frameworks": [
+                              {
+                                "name": "Microsoft.NETCore.App",
+                                "version": "6.0.0"
+                              },
+                              {
+                                "name": "Microsoft.WindowsDesktop.App",
+                                "version": "6.0.0"
+                              }
+                            ]
+                          }
+                        }
+                        """)),
+            }));
+        var client = new NuGetApiClient(httpClient);
+
+        var plan = await DotnetRuntimeSetupResolver.ResolveForPlanItemAsync(
+            item,
+            catalogLeaf,
+            "ubuntu-latest",
+            client,
+            CancellationToken.None);
+
+        Assert.Equal("runtime-only", plan.Mode);
+        Assert.Equal("archive-runtimeconfig", plan.Source);
+        var requirement = Assert.Single(plan.RequiredRuntimes);
+        Assert.Equal("Microsoft.NETCore.App", requirement.Name);
+        Assert.Equal("dotnet", requirement.Runtime);
+        Assert.Equal("6.0", requirement.Channel);
+    }
+
     private static CatalogLeaf CreateCatalogLeaf(params string[] paths)
         => new(
             "https://nuget.test/catalog/sample.tool.1.0.0.json",
