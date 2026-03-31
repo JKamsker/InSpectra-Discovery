@@ -1,0 +1,628 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Zakira.Exchange.Cli",
+    "version": "0.1.0",
+    "description": "An MCP server and CLI tool for AI agent memory storage and semantic search. Enables agents to save, share, and search memories using hybrid search (BM25 + vector embeddings via all-MiniLM-L6-v2), merged with Reciprocal Rank Fusion. Built with .NET 10 and SQLite -- standalone with no external service dependencies."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix (OK: Command.Parse, OK: Command.Parse, OK: CommandLineConfiguration.Parse, OK: CommandLineConfiguration.Parse, OK: CommandLineParser.Parse, OK: CommandLineParser.Parse, OK: CommandLineConfiguration.Invoke, OK: CommandLineConfiguration.Invoke, OK: ParseResult.Invoke, OK: ParseErrorAction.Invoke, OK: HelpAction.Invoke, OK: CommandLineConfiguration.InvokeAsync, OK: CommandLineConfiguration.InvokeAsync, OK: ParseResult.InvokeAsync, OK: RootCommand.ctor(String))"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Zakira.Exchange - AI Agent Memory Storage & Semantic Search"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--database-path",
+      "recursive": true,
+      "hidden": false,
+      "description": "SQLite database file path [default: zakira.db]",
+      "aliases": [
+        "--db",
+        "-d"
+      ],
+      "arguments": [
+        {
+          "name": "DATABASE_PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--access-mode",
+      "recursive": true,
+      "hidden": false,
+      "description": "Access mode: full, read-only, append-only, no-delete [default: full]",
+      "aliases": [
+        "--mode",
+        "-m"
+      ],
+      "arguments": [
+        {
+          "name": "ACCESS_MODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--category",
+      "recursive": true,
+      "hidden": false,
+      "description": "Lock all operations to this category",
+      "aliases": [
+        "-c"
+      ],
+      "arguments": [
+        {
+          "name": "CATEGORY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--model-path",
+      "recursive": true,
+      "hidden": false,
+      "description": "Path to the ONNX model file",
+      "aliases": [
+        "--model"
+      ],
+      "arguments": [
+        {
+          "name": "MODEL_PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "create",
+      "description": "Create a new memory entry",
+      "options": [
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "The memory content (text)",
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--author",
+          "recursive": false,
+          "hidden": false,
+          "description": "Who/what created this",
+          "arguments": [
+            {
+              "name": "AUTHOR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--reason",
+          "recursive": false,
+          "hidden": false,
+          "description": "Why this was created",
+          "arguments": [
+            {
+              "name": "REASON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tags",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated tags",
+          "arguments": [
+            {
+              "name": "TAGS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--custom",
+          "recursive": false,
+          "hidden": false,
+          "description": "JSON object of custom key-value metadata",
+          "arguments": [
+            {
+              "name": "CUSTOM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "category",
+          "description": "Category/table for the memory",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "key",
+          "description": "Unique key within the category",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "edit",
+      "description": "Edit an existing memory entry",
+      "options": [
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "Updated content",
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--author",
+          "recursive": false,
+          "hidden": false,
+          "description": "Updated author",
+          "arguments": [
+            {
+              "name": "AUTHOR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--reason",
+          "recursive": false,
+          "hidden": false,
+          "description": "Updated reason",
+          "arguments": [
+            {
+              "name": "REASON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tags",
+          "recursive": false,
+          "hidden": false,
+          "description": "Updated comma-separated tags",
+          "arguments": [
+            {
+              "name": "TAGS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--custom",
+          "recursive": false,
+          "hidden": false,
+          "description": "Updated JSON object of custom metadata",
+          "arguments": [
+            {
+              "name": "CUSTOM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "category",
+          "description": "Category of the entry to edit",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "key",
+          "description": "Key of the entry to edit",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "delete",
+      "description": "Delete a memory entry",
+      "arguments": [
+        {
+          "name": "category",
+          "description": "Category of the entry to delete",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "key",
+          "description": "Key of the entry to delete",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "get",
+      "description": "Get a specific memory entry",
+      "arguments": [
+        {
+          "name": "category",
+          "description": "Category of the entry",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "key",
+          "description": "Key of the entry",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List memory entries with filtering",
+      "options": [
+        {
+          "name": "--cat",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by category",
+          "arguments": [
+            {
+              "name": "CAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Max results [default: 50]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--author",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by author",
+          "arguments": [
+            {
+              "name": "AUTHOR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tags",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by tags (comma-separated)",
+          "arguments": [
+            {
+              "name": "TAGS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--before",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only entries before this ISO 8601 timestamp",
+          "arguments": [
+            {
+              "name": "BEFORE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--after",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only entries after this ISO 8601 timestamp",
+          "arguments": [
+            {
+              "name": "AFTER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "description": "Search memories using hybrid semantic + keyword search",
+      "options": [
+        {
+          "name": "--cat",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by category",
+          "arguments": [
+            {
+              "name": "CAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Max results [default: 10]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--author",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by author",
+          "arguments": [
+            {
+              "name": "AUTHOR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tags",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by tags (comma-separated)",
+          "arguments": [
+            {
+              "name": "TAGS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "query",
+          "description": "Search query (natural language)",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "categories",
+      "description": "List all categories"
+    },
+    {
+      "name": "mcp",
+      "description": "Start as an MCP server (stdio transport) for AI agent integration"
+    }
+  ]
+}
