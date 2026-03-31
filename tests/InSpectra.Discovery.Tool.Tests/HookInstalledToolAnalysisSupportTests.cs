@@ -353,6 +353,74 @@ public sealed class HookInstalledToolAnalysisSupportTests
     }
 
     [Fact]
+    public async Task AnalyzeAsync_Retries_With_Invariant_Globalization_When_Icu_Is_Missing()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var hookDllPath = CreateHookPlaceholder(tempDirectory.Path);
+        var invocationCount = 0;
+        var runtime = new FakeHookCommandRuntime("demo", invocation =>
+        {
+            invocationCount++;
+            if (invocationCount == 1)
+            {
+                Assert.False(invocation.Environment.ContainsKey(HookInstalledToolAnalysisSupport.GlobalizationInvariantEnvironmentVariableName));
+                return new CommandRuntime.ProcessResult(
+                    Status: "failed",
+                    TimedOut: false,
+                    ExitCode: 134,
+                    DurationMs: 15,
+                    Stdout: string.Empty,
+                    Stderr: "Couldn't find a valid ICU package installed on the system. Set the configuration flag System.Globalization.Invariant to true if you want to run with no globalization support.");
+            }
+
+            Assert.Equal(2, invocationCount);
+            Assert.Equal(
+                "1",
+                invocation.Environment[HookInstalledToolAnalysisSupport.GlobalizationInvariantEnvironmentVariableName]);
+
+            var capturePath = invocation.Environment["INSPECTRA_CAPTURE_PATH"];
+            File.WriteAllText(capturePath, JsonSerializer.Serialize(new HookCaptureResult
+            {
+                CaptureVersion = 1,
+                Status = "ok",
+                CliFramework = "Microsoft.Extensions.CommandLineUtils",
+                FrameworkVersion = "2.2.0.0",
+                PatchTarget = "Execute-postfix",
+                Root = new HookCapturedCommand
+                {
+                    Name = "demo",
+                    Description = "Demo CLI",
+                },
+            }));
+
+            return new CommandRuntime.ProcessResult(
+                Status: "ok",
+                TimedOut: false,
+                ExitCode: 0,
+                DurationMs: 15,
+                Stdout: string.Empty,
+                Stderr: string.Empty);
+        });
+        var support = new HookInstalledToolAnalysisSupport(runtime, () => hookDllPath);
+        var result = CreateInitialResult("Microsoft.Extensions.CommandLineUtils");
+
+        await support.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(2, invocationCount);
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("startup-hook", result["classification"]?.GetValue<string>());
+    }
+
+    [Fact]
     public async Task AnalyzeAsync_Passes_Resolved_Hook_Framework_To_Startup_Hook()
     {
         using var tempDirectory = new TestTemporaryDirectory();

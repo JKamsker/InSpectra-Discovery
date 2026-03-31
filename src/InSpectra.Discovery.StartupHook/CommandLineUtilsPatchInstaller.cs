@@ -10,6 +10,7 @@ internal static class CommandLineUtilsPatchInstaller
     private static readonly List<string> PatchLog = [];
     private static volatile bool _captured;
     private static object? _capturedRootApplication;
+    private static string? _noPatchableMethodDiagnostic;
 
     public static void Install(Assembly assembly, string cliFramework, string capturePath)
     {
@@ -19,6 +20,7 @@ internal static class CommandLineUtilsPatchInstaller
         PatchLog.Clear();
         _captured = false;
         _capturedRootApplication = null;
+        _noPatchableMethodDiagnostic = null;
 
         var harmony = new Harmony("com.inspectra.discovery.startuphook.commandlineutils");
         var parsePostfix = new HarmonyMethod(typeof(CommandLineUtilsPatchInstaller), nameof(ParsePostfix));
@@ -39,7 +41,7 @@ internal static class CommandLineUtilsPatchInstaller
             diagnostic.AppendLine($"Framework: {cliFramework}");
             diagnostic.AppendLine($"Assembly: {assembly.FullName}");
             diagnostic.AppendLine($"Patch log: {string.Join("; ", PatchLog)}");
-            CaptureFileWriter.WriteError(capturePath, "no-patchable-method", diagnostic.ToString());
+            _noPatchableMethodDiagnostic = diagnostic.ToString();
         }
     }
 
@@ -83,12 +85,21 @@ internal static class CommandLineUtilsPatchInstaller
 
     private static void OnProcessExit(object? sender, EventArgs e)
     {
-        if (_captured || _capturedRootApplication is null)
+        if (_captured)
         {
             return;
         }
 
-        TryCaptureFromObject(_capturedRootApplication, "ProcessExit-fallback");
+        var rootApplication = _capturedRootApplication ?? FindRootApplicationFromLoadedTypes();
+        if (rootApplication is not null && TryCaptureFromObject(rootApplication, "ProcessExit-fallback"))
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_noPatchableMethodDiagnostic) && CapturePath is not null)
+        {
+            CaptureFileWriter.WriteError(CapturePath, "no-patchable-method", _noPatchableMethodDiagnostic);
+        }
     }
 
     private static int TryPatchNamedMethods(Harmony harmony, Assembly assembly, string methodName, HarmonyMethod postfix)

@@ -42,8 +42,7 @@ $dockerArgs = @(
     '--rm',
     '--env', 'HOME=/tmp',
     '--env', 'DOTNET_CLI_HOME=/tmp/.dotnet',
-    '--env', 'NUGET_PACKAGES=/tmp/.nuget/packages',
-    '--env', 'DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1'
+    '--env', 'NUGET_PACKAGES=/tmp/.nuget/packages'
 )
 
 if ($IsLinux -and -not [string]::IsNullOrWhiteSpace($env:DOTNET_ROOT) -and (Test-Path -LiteralPath $env:DOTNET_ROOT)) {

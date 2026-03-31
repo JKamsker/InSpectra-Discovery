@@ -17,6 +17,7 @@ using System.Text.Json.Nodes;
 internal sealed class HookInstalledToolAnalysisSupport
 {
     internal const string ExpectedCliFrameworkEnvironmentVariableName = "INSPECTRA_EXPECTED_CLI_FRAMEWORK";
+    internal const string GlobalizationInvariantEnvironmentVariableName = "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT";
     private readonly CommandRuntime _runtime;
     private readonly Func<string?> _hookDllPathResolver;
 
@@ -173,7 +174,14 @@ internal sealed class HookInstalledToolAnalysisSupport
             cancellationToken);
         if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
         {
-            return processResult;
+            return await RetryWithInvariantGlobalizationIfNeededAsync(
+                processResult,
+                invocation,
+                workingDirectory,
+                environment,
+                timeoutSeconds,
+                capturePath,
+                cancellationToken);
         }
 
         foreach (var fallbackInvocation in HookToolProcessInvocationResolver.BuildHelpFallbackInvocations(invocation))
@@ -183,6 +191,71 @@ internal sealed class HookInstalledToolAnalysisSupport
                 fallbackInvocation,
                 workingDirectory,
                 environment,
+                timeoutSeconds,
+                cancellationToken);
+            if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
+            {
+                return await RetryWithInvariantGlobalizationIfNeededAsync(
+                    processResult,
+                    invocation,
+                    workingDirectory,
+                    environment,
+                    timeoutSeconds,
+                    capturePath,
+                    cancellationToken);
+            }
+        }
+
+        return await RetryWithInvariantGlobalizationIfNeededAsync(
+            processResult,
+            invocation,
+            workingDirectory,
+            environment,
+            timeoutSeconds,
+            capturePath,
+            cancellationToken);
+    }
+
+    private async Task<CommandRuntime.ProcessResult> RetryWithInvariantGlobalizationIfNeededAsync(
+        CommandRuntime.ProcessResult processResult,
+        HookToolProcessInvocation invocation,
+        string workingDirectory,
+        IReadOnlyDictionary<string, string> environment,
+        int timeoutSeconds,
+        string capturePath,
+        CancellationToken cancellationToken)
+    {
+        if (File.Exists(capturePath)
+            || !LooksLikeMissingIcu(processResult)
+            || environment.ContainsKey(GlobalizationInvariantEnvironmentVariableName))
+        {
+            return processResult;
+        }
+
+        var invariantEnvironment = new Dictionary<string, string>(environment, StringComparer.OrdinalIgnoreCase)
+        {
+            [GlobalizationInvariantEnvironmentVariableName] = "1",
+        };
+
+        TryDeleteCaptureFile(capturePath);
+        processResult = await InvokeHookProcessAsync(
+            invocation,
+            workingDirectory,
+            invariantEnvironment,
+            timeoutSeconds,
+            cancellationToken);
+        if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
+        {
+            return processResult;
+        }
+
+        foreach (var fallbackInvocation in HookToolProcessInvocationResolver.BuildHelpFallbackInvocations(invocation))
+        {
+            TryDeleteCaptureFile(capturePath);
+            processResult = await InvokeHookProcessAsync(
+                fallbackInvocation,
+                workingDirectory,
+                invariantEnvironment,
                 timeoutSeconds,
                 cancellationToken);
             if (File.Exists(capturePath) || !LooksLikeRejectedHelpInvocation(processResult))
@@ -225,6 +298,23 @@ internal sealed class HookInstalledToolAnalysisSupport
         }
 
         return false;
+    }
+
+    private static bool LooksLikeMissingIcu(CommandRuntime.ProcessResult processResult)
+    {
+        var combined = string.Join(
+            "\n",
+            SplitLines(processResult.Stderr)
+                .Concat(SplitLines(processResult.Stdout))
+                .Where(line => !string.IsNullOrWhiteSpace(line)));
+        if (string.IsNullOrWhiteSpace(combined))
+        {
+            return false;
+        }
+
+        return combined.Contains("Couldn't find a valid ICU package installed on the system", StringComparison.OrdinalIgnoreCase)
+            || combined.Contains("System.Globalization.Invariant", StringComparison.OrdinalIgnoreCase)
+            || combined.Contains("libicu", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IEnumerable<string?> SplitLines(string? value)
