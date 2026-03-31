@@ -18,9 +18,3 @@ internal sealed record Document(
             || !string.IsNullOrWhiteSpace(CommandDescription)
             || !string.IsNullOrWhiteSpace(ApplicationDescription);
 }
-
-internal sealed record Item(
-    string Key,
-    bool IsRequired,
-    string? Description);
-

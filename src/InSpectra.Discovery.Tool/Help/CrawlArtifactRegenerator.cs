@@ -123,24 +123,3 @@ internal sealed class CrawlArtifactRegenerator
     }
 }
 
-internal sealed record HelpCrawlArtifactRegenerationResult(
-    int ScannedCount,
-    int CandidateCount,
-    int RewrittenCount,
-    int UnchangedCount,
-    int FailedCount,
-    IReadOnlyList<string> RewrittenItems,
-    IReadOnlyList<string> FailedItems);
-
-internal sealed record HelpCrawlArtifactCandidate(
-    string PackageId,
-    string Version,
-    string CommandName,
-    string? CliFramework,
-    string MetadataPath,
-    string CrawlPath,
-    string OpenCliPath)
-{
-    public string DisplayName => $"{PackageId} {Version}";
-}
-

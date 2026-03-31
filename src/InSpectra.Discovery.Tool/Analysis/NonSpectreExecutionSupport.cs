@@ -253,22 +253,4 @@ internal static class NonSpectreExecutionSupport
     }
 }
 
-internal sealed record NonSpectreAnalysisExecutionDefinition(
-    string AnalysisMode,
-    string TempRootPrefix,
-    string TimeoutLabel,
-    string? DefaultCliFramework = null,
-    bool InitializeCoverage = false);
-
-internal sealed record NonSpectreInstalledToolAnalysisRequest(
-    JsonObject Result,
-    string PackageId,
-    string Version,
-    string CommandName,
-    string? CliFramework,
-    string OutputDirectory,
-    string TempRoot,
-    int InstallTimeoutSeconds,
-    int CommandTimeoutSeconds);
-
 

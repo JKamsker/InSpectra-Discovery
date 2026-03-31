@@ -32,17 +32,3 @@ internal abstract class PackageAnalysisSettingsBase : GlobalSettings
             ? ValidationResult.Error("`--package-id`, `--version`, `--output-root`, `--batch-id`, and positive timeout/attempt values are required.")
             : ValidationResult.Success();
 }
-
-internal abstract class NonSpectrePackageAnalysisSettingsBase : PackageAnalysisSettingsBase
-{
-    [CommandOption("--command|--tool-command <NAME>")]
-    public string? Command { get; set; }
-}
-
-internal abstract class CliFrameworkPackageAnalysisSettingsBase : NonSpectrePackageAnalysisSettingsBase
-{
-    [CommandOption("--cli-framework|--framework <NAME>")]
-    public string? CliFramework { get; set; }
-}
-
-

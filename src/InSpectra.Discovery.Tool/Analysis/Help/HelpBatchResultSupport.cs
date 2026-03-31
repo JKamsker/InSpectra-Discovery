@@ -140,7 +140,4 @@ internal static class HelpBatchResultSupport
     }
 }
 
-internal sealed record HelpBatchItemOutcome(bool Success, string FailureSummary, JsonObject ExpectedItem);
-internal sealed record HelpBatchSnapshotItem(string PackageId, long? TotalDownloads, string? PackageUrl, string? PackageContentUrl, string? CatalogEntryUrl);
-
 

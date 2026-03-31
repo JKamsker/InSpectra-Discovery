@@ -155,11 +155,6 @@ internal sealed class Crawler
         return capture.ProcessResult?.ExitCode is 0 ? 1 : 2;
     }
 
-    internal sealed record CrawlResult(
-        IReadOnlyDictionary<string, Document> Documents,
-        IReadOnlyDictionary<string, JsonObject> Captures,
-        IReadOnlyDictionary<string, CaptureSummary> CaptureSummaries);
-
     private sealed record Capture(
         string? HelpInvocation,
         CommandRuntime.ProcessResult? ProcessResult,
@@ -195,16 +190,5 @@ internal sealed class Crawler
                 Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
         }
     }
-
 }
-
-internal sealed record CaptureSummary(
-    string Command,
-    string? HelpInvocation,
-    bool Parsed,
-    bool TerminalNonHelp,
-    bool TimedOut,
-    int? ExitCode,
-    string? Stdout,
-    string? Stderr);
 

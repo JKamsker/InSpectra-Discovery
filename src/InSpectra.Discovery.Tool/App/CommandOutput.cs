@@ -82,17 +82,3 @@ internal sealed class CommandOutput
     }
 }
 
-internal sealed record SummaryRow(string Key, string Value);
-
-internal sealed record MachineEnvelope<T>(
-    bool Ok,
-    T? Data,
-    MachineError? Error,
-    MachineMeta Meta);
-
-internal sealed record MachineError(
-    string Kind,
-    string Message);
-
-internal sealed record MachineMeta(int SchemaVersion);
-

@@ -45,26 +45,3 @@ internal sealed record HelpBatchPlan(string? BatchId, IReadOnlyList<HelpBatchIte
                 .Where(value => !string.IsNullOrWhiteSpace(value))
                 .ToArray();
 }
-
-internal sealed record HelpBatchItem(
-    string PackageId,
-    string Version,
-    string? CommandName,
-    string? CliFramework,
-    string AnalysisMode,
-    IReadOnlyList<string> ExpectedCommands,
-    IReadOnlyList<string> ExpectedOptions,
-    IReadOnlyList<string> ExpectedArguments,
-    int Attempt,
-    string? ArtifactName,
-    string? PackageUrl,
-    string? PackageContentUrl,
-    string? CatalogEntryUrl,
-    long? TotalDownloads);
-
-internal sealed record HelpBatchTimeouts(
-    int InstallTimeoutSeconds,
-    int AnalysisTimeoutSeconds,
-    int CommandTimeoutSeconds);
-
-

@@ -184,7 +184,3 @@ internal sealed partial class ArgumentNodeBuilder
     private static partial Regex TrailingDigitsRegex();
 }
 
-internal sealed record ArgumentSignature(
-    string Name,
-    bool IsSequence);
-

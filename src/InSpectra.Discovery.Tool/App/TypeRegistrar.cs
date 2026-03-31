@@ -18,13 +18,4 @@ internal sealed class TypeRegistrar(IServiceCollection services) : ITypeRegistra
         => services.AddSingleton(service, _ => factory());
 }
 
-internal sealed class TypeResolver(ServiceProvider provider) : ITypeResolver, IDisposable
-{
-    public object? Resolve(Type? type)
-        => type is null ? null : provider.GetService(type);
-
-    public void Dispose()
-        => provider.Dispose();
-}
-
 

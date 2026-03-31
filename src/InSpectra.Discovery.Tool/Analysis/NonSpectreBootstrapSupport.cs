@@ -57,20 +57,4 @@ internal static class NonSpectreBootstrapSupport
     }
 }
 
-internal sealed record NonSpectreAnalysisBootstrapResult(
-    string PackageContentUrl,
-    ResolvedToolCommandInfo CommandInfo)
-{
-    public string? CommandName => CommandInfo.CommandName;
-
-    public string? EntryPointPath => CommandInfo.EntryPointPath;
-
-    public string? ToolSettingsPath => CommandInfo.ToolSettingsPath;
-}
-
-internal sealed record ResolvedToolCommandInfo(
-    string? CommandName,
-    string? EntryPointPath,
-    string? ToolSettingsPath);
-
 

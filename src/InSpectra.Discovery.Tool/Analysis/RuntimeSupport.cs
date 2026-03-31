@@ -2,7 +2,6 @@ namespace InSpectra.Discovery.Tool.Analysis;
 
 using System.Diagnostics;
 using System.Text;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 internal static class RuntimeSupport
@@ -175,45 +174,6 @@ internal static class RuntimeSupport
         normalized = AnsiEscapeRegex.Replace(normalized, string.Empty);
         normalized = normalized.Trim();
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
-    }
-}
-
-internal sealed record SandboxEnvironment(
-    IReadOnlyDictionary<string, string> Values,
-    IReadOnlyList<string> Directories);
-
-internal sealed record ProcessResult(
-    string Status,
-    bool TimedOut,
-    int? ExitCode,
-    int DurationMs,
-    string Stdout,
-    string Stderr)
-{
-    public JsonObject ToStepMetadata(bool includeStdout)
-    {
-        var metadata = new JsonObject
-        {
-            ["status"] = Status,
-            ["timedOut"] = TimedOut,
-            ["exitCode"] = ExitCode,
-            ["durationMs"] = DurationMs,
-            ["stdoutLength"] = Encoding.UTF8.GetByteCount(Stdout ?? string.Empty),
-            ["stderrLength"] = Encoding.UTF8.GetByteCount(Stderr ?? string.Empty),
-        };
-
-        if (includeStdout)
-        {
-            metadata["stdout"] = RuntimeSupport.NormalizeConsoleText(Stdout);
-        }
-
-        var normalizedStderr = RuntimeSupport.NormalizeConsoleText(Stderr);
-        if (!string.IsNullOrWhiteSpace(normalizedStderr))
-        {
-            metadata["stderr"] = normalizedStderr;
-        }
-
-        return metadata;
     }
 }
 

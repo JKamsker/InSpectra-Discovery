@@ -177,6 +177,3 @@ internal static class CapturePayloadSupport
     }
 }
 
-internal sealed record SelectedCapture(string CommandKey, Document Document);
-internal sealed record SelectedPayload(Document? Document, string? Payload, bool IsTerminalNonHelp);
-
