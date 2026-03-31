@@ -9,27 +9,36 @@ internal static class HookOpenCliBuilder
     public static JsonObject Build(string commandName, string version, HookCaptureResult capture)
     {
         var root = capture.Root!;
+        var title = ResolveInfoTitle(root.Name, commandName);
+        var inspectra = new JsonObject
+        {
+            ["artifactSource"] = "startup-hook",
+            ["generator"] = "InSpectra.Discovery",
+            ["hookCapture"] = new JsonObject
+            {
+                ["cliFramework"] = capture.CliFramework,
+                ["frameworkVersion"] = capture.FrameworkVersion,
+                ["systemCommandLineVersion"] = capture.SystemCommandLineVersion,
+                ["patchTarget"] = capture.PatchTarget,
+            },
+        };
+
+        if (!string.IsNullOrWhiteSpace(root.Name)
+            && !string.Equals(root.Name, title, StringComparison.Ordinal))
+        {
+            inspectra["cliParsedTitle"] = root.Name;
+        }
+
         var document = new JsonObject
         {
             ["opencli"] = "0.1-draft",
             ["info"] = new JsonObject
             {
-                ["title"] = root.Name ?? commandName,
+                ["title"] = title,
                 ["version"] = version,
                 ["description"] = root.Description,
             },
-            ["x-inspectra"] = new JsonObject
-            {
-                ["artifactSource"] = "startup-hook",
-                ["generator"] = "InSpectra.Discovery",
-                ["hookCapture"] = new JsonObject
-                {
-                    ["cliFramework"] = capture.CliFramework,
-                    ["frameworkVersion"] = capture.FrameworkVersion,
-                    ["systemCommandLineVersion"] = capture.SystemCommandLineVersion,
-                    ["patchTarget"] = capture.PatchTarget,
-                },
-            },
+            ["x-inspectra"] = inspectra,
         };
 
         // Root-level options.
@@ -48,6 +57,25 @@ internal static class HookOpenCliBuilder
             document["commands"] = commands;
 
         return OpenCliDocumentSanitizer.Sanitize(document);
+    }
+
+    private static string ResolveInfoTitle(string? parsedTitle, string commandName)
+    {
+        var cleanedParsedTitle = OpenCliDocumentTitleCleaner.CleanTitle(parsedTitle ?? string.Empty);
+        if (!string.IsNullOrWhiteSpace(cleanedParsedTitle)
+            && !OpenCliDocumentPublishabilityInspector.LooksLikeNonPublishableTitle(cleanedParsedTitle))
+        {
+            return cleanedParsedTitle;
+        }
+
+        var cleanedCommandName = OpenCliDocumentTitleCleaner.CleanTitle(commandName);
+        if (!string.IsNullOrWhiteSpace(cleanedCommandName)
+            && !OpenCliDocumentPublishabilityInspector.LooksLikeNonPublishableTitle(cleanedCommandName))
+        {
+            return cleanedCommandName;
+        }
+
+        return commandName;
     }
 
     private static JsonArray BuildCommands(List<HookCapturedCommand> subcommands)

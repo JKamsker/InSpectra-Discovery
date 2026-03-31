@@ -38,7 +38,8 @@ internal static partial class OpenCliDocumentSanitizer
         if (!string.IsNullOrWhiteSpace(nugetTitle))
         {
             var cleaned = OpenCliDocumentTitleCleaner.CleanTitle(nugetTitle);
-            if (!string.IsNullOrWhiteSpace(cleaned))
+            if (!string.IsNullOrWhiteSpace(cleaned)
+                && !OpenCliDocumentPublishabilityInspector.LooksLikeNonPublishableTitle(cleaned))
             {
                 info["title"] = cleaned;
             }
@@ -227,4 +228,3 @@ internal static partial class OpenCliDocumentSanitizer
     [GeneratedRegex(@"/tmp/inspectra-[^\s""'\]}>)]+", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex SandboxPathRegex();
 }
-

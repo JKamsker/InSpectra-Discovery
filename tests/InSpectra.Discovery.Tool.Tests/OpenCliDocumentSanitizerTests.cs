@@ -8,6 +8,24 @@ using Xunit;
 public sealed class OpenCliDocumentSanitizerTests
 {
     [Fact]
+    public void ApplyNuGetMetadata_Ignores_NonPublishable_NuGet_Title()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "weixin",
+                ["version"] = "0.1.1",
+            },
+        };
+
+        OpenCliDocumentSanitizer.ApplyNuGetMetadata(document, "Senparc.WebSocket.dll", null);
+
+        Assert.Equal("weixin", document["info"]?["title"]?.GetValue<string>());
+    }
+
+    [Fact]
     public void Sanitize_Removes_Null_Optional_Fields_Empty_Examples_And_Option_Required()
     {
         var document = new JsonObject

@@ -55,7 +55,7 @@ public sealed class CommandLineUtilsHookLiveTests
             "Microsoft.Quantum.IQSharp",
             "0.28.302812",
             "dotnet-iqsharp",
-            "/usr/share/dotnet/dotnet",
+            "dotnet-iqsharp",
             expectedCommands: ["server", "install", "kernel"],
             expectedOptions: ["--help", "--version", "--cacheFolder", "--workspace", "--skipAutoLoadProject"]));
         data.Add(new CommandLineUtilsHookToolCase(
@@ -65,6 +65,13 @@ public sealed class CommandLineUtilsHookLiveTests
             "vbamc",
             "vbamc",
             expectedOptions: ["--module", "--class", "--name", "--company", "--file", "--output", "--user-profile-path", "--property", "--help"]));
+        data.Add(new CommandLineUtilsHookToolCase(
+            "McMaster.Extensions.CommandLineUtils",
+            "Weixin.CLI",
+            "0.1.1",
+            "weixin",
+            "weixin",
+            expectedOptions: ["--help", "--Resource", "--QQGroup", "--keyword", "--platform", "--async", "--HostUrl"]));
         data.Add(new CommandLineUtilsHookToolCase(
             "Microsoft.Extensions.CommandLineUtils",
             "SignClient",
