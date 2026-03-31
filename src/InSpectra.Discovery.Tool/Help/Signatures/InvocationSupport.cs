@@ -11,6 +11,7 @@ internal static class InvocationSupport
             commandSegments.Concat(new[] { "--help" }).ToArray(),
             commandSegments.Concat(new[] { "-h" }).ToArray(),
             commandSegments.Concat(new[] { "-?" }).ToArray(),
+            commandSegments.Concat(new[] { "--h" }).ToArray(),
             commandSegments.Concat(new[] { "/help" }).ToArray(),
             commandSegments.Concat(new[] { "/?" }).ToArray(),
         };
@@ -47,4 +48,3 @@ internal static class InvocationSupport
         yield return commandSegments.Concat(new[] { "help" }).ToArray();
     }
 }
-

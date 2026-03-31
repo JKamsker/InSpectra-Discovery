@@ -22,6 +22,7 @@ public sealed class CrawlerTests
                 "config set --help",
                 "config set -h",
                 "config set -?",
+                "config set --h",
                 "config set /help",
                 "config set /?",
                 "help config set",
@@ -137,6 +138,44 @@ public sealed class CrawlerTests
         Assert.Equal(new[] { "--help", "-h", "-?" }, runtime.Invocations.Select(args => string.Join(' ', args)).ToArray());
         Assert.True(result.Documents.ContainsKey(string.Empty));
         Assert.Equal("-?", result.CaptureSummaries[string.Empty].HelpInvocation);
+    }
+
+    [Fact]
+    public async Task CrawlAsync_Continues_To_DoubleDashShortHelp_When_RequiredValue_Prompts_Are_Returned()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            return key switch
+            {
+                "--help" or "-h" or "-?" => Result(
+                    stdout:
+                    """
+                    Need to insert a value for the option
+                    """),
+                "--h" => Result(
+                    stdout:
+                    """
+                    sqlite-tool
+
+                    Options:
+                      -db  Sqlite Database Path
+                    """),
+                _ => throw new InvalidOperationException($"Unexpected invocation: '{key}'."),
+            };
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "demo",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(new[] { "--help", "-h", "-?", "--h" }, runtime.Invocations.Select(args => string.Join(' ', args)).ToArray());
+        Assert.True(result.Documents.ContainsKey(string.Empty));
+        Assert.Equal("--h", result.CaptureSummaries[string.Empty].HelpInvocation);
     }
 
     [Fact]
@@ -353,5 +392,4 @@ public sealed class CrawlerTests
         }
     }
 }
-
 

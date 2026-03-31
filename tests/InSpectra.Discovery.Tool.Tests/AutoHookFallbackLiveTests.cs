@@ -65,6 +65,17 @@ public sealed class AutoHookFallbackLiveTests
             "Whizbang CLI - Command-line tool for Whizbang",
             "0.54.2-alpha.76",
             "hook-no-assembly-loaded"));
+        data.Add(new HookFallbackToolCase(
+            "McMaster.Extensions.CommandLineUtils",
+            "sqlite-global-tool",
+            "1.2.2",
+            "sqlite-tool",
+            "=> Welcome to sqlite .net core global tool version",
+            "1.2.2",
+            "hook-no-assembly-loaded",
+            expectedAnalysisMode: "help",
+            expectedClassification: "help-crawl",
+            expectedArtifactSource: "crawled-from-help"));
         return data;
     }
 
@@ -109,6 +120,7 @@ public sealed class AutoHookFallbackLiveTests
             Assert.Equal("success", result?["disposition"]?.GetValue<string>());
             Assert.Equal(testCase.ExpectedAnalysisMode, result?["analysisMode"]?.GetValue<string>());
             Assert.Equal(testCase.ExpectedClassification, result?["classification"]?.GetValue<string>());
+            Assert.Equal(testCase.ExpectedArtifactSource, result?["opencliSource"]?.GetValue<string>());
             Assert.Equal(testCase.Framework, result?["cliFramework"]?.GetValue<string>());
             Assert.Equal("static", result?["analysisSelection"]?["preferredMode"]?.GetValue<string>());
             Assert.Equal(testCase.ExpectedAnalysisMode, result?["analysisSelection"]?["selectedMode"]?.GetValue<string>());
