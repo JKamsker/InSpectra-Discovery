@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
 
+
 internal sealed record CliFxCommandDefinition(
     string? Name,
     string? Description,

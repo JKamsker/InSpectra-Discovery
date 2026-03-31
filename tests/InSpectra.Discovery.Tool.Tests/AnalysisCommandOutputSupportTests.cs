@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Analysis.Output;
+
 using Xunit;
 
 public sealed class CommandOutputSupportTests

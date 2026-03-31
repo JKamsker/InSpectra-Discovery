@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
+
 using Xunit;
 
 public sealed class CliFxHelpParserTests

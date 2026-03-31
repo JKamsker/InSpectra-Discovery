@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Packages;
 
+
 internal sealed record DotnetToolPackageLayout(
     IReadOnlyList<string> ToolSettingsPaths,
     IReadOnlyList<string> ToolCommandNames,

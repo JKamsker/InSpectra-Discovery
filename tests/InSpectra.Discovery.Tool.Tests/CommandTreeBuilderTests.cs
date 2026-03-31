@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Help.Documents;
+using InSpectra.Discovery.Tool.Help.OpenCli;
+
 using Xunit;
 
 public sealed class CommandTreeBuilderTests

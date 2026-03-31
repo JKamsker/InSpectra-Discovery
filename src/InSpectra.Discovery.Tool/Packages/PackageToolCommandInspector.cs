@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Packages;
 
+using InSpectra.Discovery.Tool.NuGet;
+
 internal sealed class PackageToolCommandInspector
 {
     private readonly NuGetApiClient _apiClient;

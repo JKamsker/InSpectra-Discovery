@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.OpenCli;
+
 using System.Reflection;
 
 internal sealed class CliFxMetadataInspector

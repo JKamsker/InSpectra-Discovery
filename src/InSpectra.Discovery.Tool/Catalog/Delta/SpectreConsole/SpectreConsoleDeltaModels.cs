@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Catalog.Delta.SpectreConsole;
 
+using InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
+
+
 internal sealed record SpectreConsoleCliDeltaSnapshot(
     DateTimeOffset GeneratedAtUtc,
     string Filter,

@@ -1,5 +1,10 @@
 namespace InSpectra.Discovery.Tool.Packages;
 
+using InSpectra.Discovery.Tool.NuGet;
+
+using InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
+
+
 using System.IO.Compression;
 using System.Text.Json;
 

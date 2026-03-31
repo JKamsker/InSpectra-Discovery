@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Catalog.Indexing;
 
+using InSpectra.Discovery.Tool.NuGet;
+
 using System.Collections.Concurrent;
 
 internal sealed class CurrentDotnetToolIndexBootstrapper

@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
+
 using Xunit;
 
 public sealed class CommandRuntimeTests

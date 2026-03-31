@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Indexing;
 
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
+
 using System.Text.Json.Nodes;
 
 internal static class RepositoryLatestArtifactSupport

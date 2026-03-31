@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Docs;
 
+using InSpectra.Discovery.Tool.Docs.Commands;
+
+using InSpectra.Discovery.Tool.Docs.Services;
+
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
 

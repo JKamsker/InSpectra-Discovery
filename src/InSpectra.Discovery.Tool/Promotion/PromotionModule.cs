@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Promotion;
 
+using InSpectra.Discovery.Tool.Promotion.Commands;
+
+using InSpectra.Discovery.Tool.Promotion.Services;
+
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
 

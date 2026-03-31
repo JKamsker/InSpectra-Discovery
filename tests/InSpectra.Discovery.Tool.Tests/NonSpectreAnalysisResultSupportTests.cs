@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+
 using System.Text.Json.Nodes;
 using Xunit;
 

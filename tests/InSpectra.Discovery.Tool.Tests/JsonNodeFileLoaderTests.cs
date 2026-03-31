@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Json;
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
 using System.Text.Json.Nodes;
 using Xunit;
 

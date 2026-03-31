@@ -1,5 +1,11 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
+using InSpectra.Discovery.Tool.Infrastructure.Host;
+
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
+
+using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+
 using System.Text.Json.Nodes;
 
 internal sealed class HookService

@@ -1,5 +1,13 @@
 namespace InSpectra.Discovery.Tool.Analysis.Static;
 
+using InSpectra.Discovery.Tool.Infrastructure.Host;
+
+using InSpectra.Discovery.Tool.StaticAnalysis.OpenCli;
+
+using InSpectra.Discovery.Tool.StaticAnalysis.Inspection;
+
+using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+
 internal sealed class StaticService
 {
     private static readonly NonSpectreAnalysisExecutionDefinition Definition = new(

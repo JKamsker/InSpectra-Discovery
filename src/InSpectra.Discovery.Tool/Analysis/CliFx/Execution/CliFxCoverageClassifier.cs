@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
+
+
 using System.Text.Json.Nodes;
 
 internal sealed class CliFxCoverageClassifier

@@ -1,5 +1,11 @@
 namespace InSpectra.Discovery.Tool.Queue;
 
+using InSpectra.Discovery.Tool.Queue.Commands;
+
+using InSpectra.Discovery.Tool.Queue.Backfill;
+
+using InSpectra.Discovery.Tool.Queue.Planning;
+
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
 

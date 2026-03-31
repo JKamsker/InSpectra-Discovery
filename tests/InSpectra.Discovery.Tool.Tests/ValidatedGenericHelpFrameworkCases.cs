@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
+using InSpectra.Discovery.Tool.Analysis.Help.Models;
+
 using Xunit;
 
 internal static class ValidatedGenericHelpFrameworkCases

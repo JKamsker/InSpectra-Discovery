@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+using InSpectra.Discovery.Tool.NuGet;
+
 using System.Text.Json;
 using Xunit;
 

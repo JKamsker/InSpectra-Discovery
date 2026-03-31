@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Analysis;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -8,18 +10,17 @@ public sealed class JsonPayloadRepairTests
     [Fact]
     public void ExpandCandidates_Repairs_ControlCharacters_Inside_Json_Strings()
     {
-        const string malformed = """
-            {
-              "opencli": "0.1-draft",
-              "options": [
-                {
-                  "name": "--verbosity",
-                  "description": "Line one
-            Line two	with tab"
-                }
-              ]
-            }
-            """;
+        var malformed =
+            "{\n" +
+            "  \"opencli\": \"0.1-draft\",\n" +
+            "  \"options\": [\n" +
+            "    {\n" +
+            "      \"name\": \"--verbosity\",\n" +
+            "      \"description\": \"Line one\n" +
+            "Line two\twith tab\"\n" +
+            "    }\n" +
+            "  ]\n" +
+            "}";
 
         Assert.ThrowsAny<Exception>(() => JsonNode.Parse(malformed));
 

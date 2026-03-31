@@ -1,5 +1,12 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Host;
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+using InSpectra.Discovery.Tool.Queue.Backfill;
+using InSpectra.Discovery.Tool.Queue.Planning;
+
+using InSpectra.Discovery.Tool.Analysis.Tools;
+
 using System.Text.Json.Nodes;
 using Xunit;
 

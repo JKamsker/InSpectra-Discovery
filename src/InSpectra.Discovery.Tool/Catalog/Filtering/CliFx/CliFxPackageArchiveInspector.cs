@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Catalog.Filtering.CliFx;
 
+using InSpectra.Discovery.Tool.NuGet;
+
+using InSpectra.Discovery.Tool.Packages;
+
 using System.IO.Compression;
 using System.Text.Json;
 

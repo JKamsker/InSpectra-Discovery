@@ -1,5 +1,10 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+
+using InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
+
+
 using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 

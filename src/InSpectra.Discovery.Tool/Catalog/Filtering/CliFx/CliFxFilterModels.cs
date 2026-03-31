@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Catalog.Filtering.CliFx;
 
+
 internal sealed record CliFxFilterSnapshot(
     DateTimeOffset GeneratedAtUtc,
     string Filter,

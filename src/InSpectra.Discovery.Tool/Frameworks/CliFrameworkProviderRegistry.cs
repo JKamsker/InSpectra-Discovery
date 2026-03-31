@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Frameworks;
 
+using InSpectra.Discovery.Tool.StaticAnalysis.Attributes;
+
+using InSpectra.Discovery.Tool.NuGet;
+
 internal static class CliFrameworkProviderRegistry
 {
     private static readonly IReadOnlyList<CliFrameworkProvider> Providers = CreateProviders();

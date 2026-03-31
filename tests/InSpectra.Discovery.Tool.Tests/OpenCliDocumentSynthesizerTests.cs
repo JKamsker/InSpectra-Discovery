@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.OpenCli.Documents;
+
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using Xunit;

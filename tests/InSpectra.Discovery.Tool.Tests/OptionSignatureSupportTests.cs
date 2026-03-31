@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Help.Signatures;
+
 using System.Linq;
 using System.Text.RegularExpressions;
 using Xunit;

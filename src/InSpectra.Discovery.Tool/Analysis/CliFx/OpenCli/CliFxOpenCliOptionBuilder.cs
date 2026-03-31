@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.OpenCli;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 

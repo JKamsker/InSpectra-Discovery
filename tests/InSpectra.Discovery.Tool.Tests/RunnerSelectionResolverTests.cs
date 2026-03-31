@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Queue.Planning;
+
 using Xunit;
 
 public sealed class RunnerSelectionResolverTests

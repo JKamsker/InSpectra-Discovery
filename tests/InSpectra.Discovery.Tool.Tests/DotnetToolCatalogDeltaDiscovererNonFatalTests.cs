@@ -1,5 +1,11 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Json;
+using InSpectra.Discovery.Tool.NuGet;
+
+using InSpectra.Discovery.Tool.Catalog.Delta;
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;

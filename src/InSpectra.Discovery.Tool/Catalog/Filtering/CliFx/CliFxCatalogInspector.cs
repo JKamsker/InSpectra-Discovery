@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Catalog.Filtering.CliFx;
 
+using InSpectra.Discovery.Tool.NuGet;
+
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+
 internal sealed class CliFxCatalogInspector
 {
     private readonly NuGetApiClient _apiClient;

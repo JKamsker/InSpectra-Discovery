@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Catalog.Indexing;
 
+using InSpectra.Discovery.Tool.NuGet;
+
 internal sealed class DotnetToolIndexEntryResolver
 {
     private readonly NuGetApiClient _apiClient;

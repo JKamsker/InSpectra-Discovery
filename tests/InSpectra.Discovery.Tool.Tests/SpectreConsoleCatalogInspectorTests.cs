@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
+
 using Xunit;
 
 public sealed class SpectreConsoleCatalogInspectorTests

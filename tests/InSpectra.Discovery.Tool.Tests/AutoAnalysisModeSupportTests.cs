@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Analysis.Auto.Selection;
+using InSpectra.Discovery.Tool.Analysis.Tools;
+
 using Xunit;
 
 public sealed class AutoModeSupportTests

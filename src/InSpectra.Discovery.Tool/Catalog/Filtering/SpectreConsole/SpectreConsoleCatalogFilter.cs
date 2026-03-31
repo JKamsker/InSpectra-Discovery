@@ -1,5 +1,11 @@
 namespace InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
 
+using InSpectra.Discovery.Tool.Infrastructure.Json;
+
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+
+using InSpectra.Discovery.Tool.NuGet;
+
 using System.Collections.Concurrent;
 using System.Text.Json;
 

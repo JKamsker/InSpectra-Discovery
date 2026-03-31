@@ -1,5 +1,11 @@
 namespace InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
 
+using InSpectra.Discovery.Tool.Packages;
+
+using InSpectra.Discovery.Tool.NuGet;
+
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+
 internal sealed class SpectreConsoleCatalogInspector
 {
     private readonly NuGetApiClient _apiClient;

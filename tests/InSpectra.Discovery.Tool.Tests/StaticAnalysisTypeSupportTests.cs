@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.StaticAnalysis.Inspection;
+
 using dnlib.DotNet;
 using Xunit;
 

@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+
 using System.Reflection;
 using Xunit;
 

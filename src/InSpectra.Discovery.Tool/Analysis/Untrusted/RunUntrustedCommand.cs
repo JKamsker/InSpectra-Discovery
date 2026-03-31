@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.Untrusted;
 
+using InSpectra.Discovery.Tool.Analysis.Settings;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;

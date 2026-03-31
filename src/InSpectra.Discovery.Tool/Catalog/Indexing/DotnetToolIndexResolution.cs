@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Catalog.Indexing;
 
+
 internal sealed record DotnetToolIndexResolution(
     DotnetToolIndexEntry? Entry,
     bool IsSkipped,

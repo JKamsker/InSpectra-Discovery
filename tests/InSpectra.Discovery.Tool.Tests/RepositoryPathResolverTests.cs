@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
 using Xunit;
 
 public sealed class RepositoryPathResolverTests

@@ -1,5 +1,13 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
+using InSpectra.Discovery.Tool.OpenCli.Documents;
+
+using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
+
 using System.Diagnostics;
 using System.Reflection;
 using System.Text.Json.Nodes;

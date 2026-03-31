@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.App.Composition;
+
 using InSpectra.Discovery.Tool.App;
 using Xunit;
 

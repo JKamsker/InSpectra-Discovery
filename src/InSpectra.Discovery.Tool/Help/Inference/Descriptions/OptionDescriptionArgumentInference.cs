@@ -1,0 +1,65 @@
+namespace InSpectra.Discovery.Tool.Help.Inference.Descriptions;
+
+using InSpectra.Discovery.Tool.Help.Documents;
+
+using System.Text.RegularExpressions;
+
+internal static partial class OptionDescriptionArgumentInference
+{
+    public static IReadOnlyList<Item> Infer(IReadOnlyList<Item> options)
+    {
+        var arguments = new List<Item>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var option in options)
+        {
+            if (string.IsNullOrWhiteSpace(option.Description))
+            {
+                continue;
+            }
+
+            var lines = option.Description
+                .Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace('\r', '\n')
+                .Split('\n');
+            for (var index = 0; index < lines.Length; index++)
+            {
+                var trimmed = lines[index].Trim();
+                var match = PositionalArgumentRowRegex().Match(trimmed);
+                if (!match.Success)
+                {
+                    continue;
+                }
+
+                var key = match.Groups["key"].Value.Trim();
+                var description = match.Groups["description"].Success ? match.Groups["description"].Value.Trim() : null;
+                var isRequired = false;
+                if (RequiredDescriptionSupport.StartsWithRequiredPrefix(description))
+                {
+                    isRequired = true;
+                    description = RequiredDescriptionSupport.TrimLeadingRequiredPrefix(description);
+                }
+
+                while (index + 1 < lines.Length && lines[index + 1].Length > 0 && char.IsWhiteSpace(lines[index + 1], 0))
+                {
+                    index++;
+                    var continuation = lines[index].Trim();
+                    description = string.IsNullOrWhiteSpace(description)
+                        ? continuation
+                        : $"{description}\n{continuation}";
+                }
+
+                if (seen.Add(key))
+                {
+                    arguments.Add(new Item(key, isRequired, description));
+                }
+            }
+        }
+
+        return arguments;
+    }
+
+    [GeneratedRegex(@"^(?<key>\S(?:.*?\S)?)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex PositionalArgumentRowRegex();
+}
+

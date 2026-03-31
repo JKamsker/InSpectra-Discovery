@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
+
+
 using System.Text.RegularExpressions;
 
 internal sealed class CliFxRuntimeCompatibilityDetector

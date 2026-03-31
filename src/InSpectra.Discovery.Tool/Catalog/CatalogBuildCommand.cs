@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Catalog;
 
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+
+using InSpectra.Discovery.Tool.Infrastructure.Settings;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;

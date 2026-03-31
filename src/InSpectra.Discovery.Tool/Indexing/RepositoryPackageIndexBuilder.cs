@@ -1,5 +1,12 @@
 namespace InSpectra.Discovery.Tool.Indexing;
 
+using InSpectra.Discovery.Tool.OpenCli.Documents;
+
+using InSpectra.Discovery.Tool.Docs.Indexing;
+
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
+
 using System.Text.Json.Nodes;
 
 internal static class RepositoryPackageIndexBuilder

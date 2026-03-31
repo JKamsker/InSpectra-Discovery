@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+
 using System.Text.RegularExpressions;
 
 internal sealed partial class CliFxHelpTextParser

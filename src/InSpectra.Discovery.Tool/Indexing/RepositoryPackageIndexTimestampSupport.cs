@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Indexing;
 
+
 using System.Text.Json.Nodes;
 
 internal static class RepositoryPackageIndexTimestampSupport

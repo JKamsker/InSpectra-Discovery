@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.OpenCli;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+
 internal sealed class CliFxOptionDefinitionMatcher
 {
     private readonly IReadOnlyList<CliFxOptionDefinition> _definitions;

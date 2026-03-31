@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+using InSpectra.Discovery.Tool.NuGet;
+
 using Xunit;
 
 public sealed class PackageVersionResolverTests

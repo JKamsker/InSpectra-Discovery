@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
 
+
 internal sealed record SpectreConsoleFilterSnapshot(
     DateTimeOffset GeneratedAtUtc,
     string Filter,

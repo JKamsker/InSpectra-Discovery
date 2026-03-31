@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Catalog.Delta;
 
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+
+
 internal sealed record DotnetToolCatalogCursorState(
     int SchemaVersion,
     string ServiceIndexUrl,

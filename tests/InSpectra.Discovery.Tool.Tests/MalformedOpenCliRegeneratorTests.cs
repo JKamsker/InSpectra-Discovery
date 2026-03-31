@@ -1,5 +1,12 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Artifacts;
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+using InSpectra.Discovery.Tool.Help.Artifacts;
+using InSpectra.Discovery.Tool.Infrastructure.Host;
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+using InSpectra.Discovery.Tool.OpenCli.Artifacts;
+
 using System.Text.Json.Nodes;
 using Xunit;
 

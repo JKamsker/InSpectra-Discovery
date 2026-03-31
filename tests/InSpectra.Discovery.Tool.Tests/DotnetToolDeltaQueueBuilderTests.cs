@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Json;
+
+using InSpectra.Discovery.Tool.Catalog.Delta;
+
 using System.Text.Json;
 using Xunit;
 

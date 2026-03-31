@@ -1,5 +1,15 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx;
 
+using InSpectra.Discovery.Tool.Infrastructure.Host;
+
+using InSpectra.Discovery.Tool.Analysis.CliFx.OpenCli;
+
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+
+using InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
+
+using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+
 internal sealed class CliFxService
 {
     private static readonly NonSpectreAnalysisExecutionDefinition Definition = new(

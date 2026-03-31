@@ -1,5 +1,9 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Frameworks;
+using InSpectra.Discovery.Tool.NuGet;
+using InSpectra.Discovery.Tool.StaticAnalysis.Attributes;
+
 using Xunit;
 
 public sealed class CliFrameworkProviderRegistryTests

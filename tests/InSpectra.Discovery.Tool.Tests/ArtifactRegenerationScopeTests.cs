@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Docs.Commands;
+using InSpectra.Discovery.Tool.OpenCli.Artifacts;
+
 using Xunit;
 
 public sealed class ArtifactRegenerationScopeTests

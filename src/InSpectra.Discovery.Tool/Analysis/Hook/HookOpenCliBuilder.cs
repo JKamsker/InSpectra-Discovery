@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
+using InSpectra.Discovery.Tool.OpenCli.Documents;
+
 using System.Text.Json.Nodes;
 
 internal static class HookOpenCliBuilder

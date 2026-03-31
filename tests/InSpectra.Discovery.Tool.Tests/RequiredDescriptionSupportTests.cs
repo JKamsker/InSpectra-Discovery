@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Help.Inference.Descriptions;
+
 using Xunit;
 
 public sealed class RequiredDescriptionSupportTests

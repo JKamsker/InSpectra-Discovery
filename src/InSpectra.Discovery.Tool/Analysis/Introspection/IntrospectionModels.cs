@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.Introspection;
 
+using InSpectra.Discovery.Tool.Analysis.Execution;
+
 using System.Text.Json.Nodes;
 
 internal sealed record JsonParseResult(

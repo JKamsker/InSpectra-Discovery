@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+
 internal static class CliFxReachableDocumentSupport
 {
     public static Dictionary<string, CliFxHelpDocument> BuildReachableDocuments(

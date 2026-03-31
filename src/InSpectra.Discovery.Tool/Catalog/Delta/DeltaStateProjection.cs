@@ -1,5 +1,11 @@
 namespace InSpectra.Discovery.Tool.Catalog.Delta;
 
+using InSpectra.Discovery.Tool.Catalog.Delta.SpectreConsole;
+
+using InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
+
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+
 internal static class DeltaStateProjection
 {
     public static DotnetToolDeltaState Project(DotnetToolIndexEntry entry)

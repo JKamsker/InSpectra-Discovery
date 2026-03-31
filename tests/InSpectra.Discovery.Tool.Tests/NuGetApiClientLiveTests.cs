@@ -1,5 +1,10 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Json;
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
+using InSpectra.Discovery.Tool.NuGet;
+
 using System.Net;
 using System.Collections.Concurrent;
 using System.Text.Json;

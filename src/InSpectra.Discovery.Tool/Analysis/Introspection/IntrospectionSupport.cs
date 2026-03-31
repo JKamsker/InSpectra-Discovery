@@ -1,5 +1,11 @@
 namespace InSpectra.Discovery.Tool.Analysis.Introspection;
 
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
+using InSpectra.Discovery.Tool.OpenCli.Documents;
+
+using InSpectra.Discovery.Tool.Analysis.Execution;
+
 using System.Text.Json.Nodes;
 
 internal static class IntrospectionSupport

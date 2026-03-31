@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Catalog.Indexing;
 
+using InSpectra.Discovery.Tool.NuGet;
+
 using System.Text.Json;
 
 internal static class DotnetToolPackageType

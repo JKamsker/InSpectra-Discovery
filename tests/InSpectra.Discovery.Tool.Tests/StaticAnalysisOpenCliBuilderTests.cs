@@ -1,5 +1,10 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.StaticAnalysis.Models;
+using InSpectra.Discovery.Tool.StaticAnalysis.OpenCli;
+
+using InSpectra.Discovery.Tool.Help.Documents;
+
 using System.Text.Json.Nodes;
 using Xunit;
 

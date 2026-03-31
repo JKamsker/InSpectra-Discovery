@@ -1,5 +1,23 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
 
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+
+using InSpectra.Discovery.Tool.OpenCli.Documents;
+
+using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+
+using InSpectra.Discovery.Tool.Analysis.CliFx.Artifacts;
+
+using InSpectra.Discovery.Tool.Infrastructure.Artifacts;
+
+using InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
+
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
+
+using InSpectra.Discovery.Tool.Analysis.CliFx.OpenCli;
+
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+
 using InSpectra.Discovery.Tool.Analysis;
 using System.Diagnostics;
 using System.Text.Json.Nodes;

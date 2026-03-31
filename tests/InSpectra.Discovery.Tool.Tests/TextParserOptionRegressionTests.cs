@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Help.Parsing;
+
 using Xunit;
 
 public sealed class TextParserOptionRegressionTests

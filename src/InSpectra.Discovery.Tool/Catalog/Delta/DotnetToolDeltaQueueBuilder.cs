@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Catalog.Delta;
 
+using InSpectra.Discovery.Tool.Infrastructure.Json;
+
 using System.Text.Json;
 
 internal sealed class DotnetToolDeltaQueueBuilder

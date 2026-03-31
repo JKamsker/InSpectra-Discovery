@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Packages;
 
+
 using System.Xml.Linq;
 
 internal static class DotnetToolSettingsReader

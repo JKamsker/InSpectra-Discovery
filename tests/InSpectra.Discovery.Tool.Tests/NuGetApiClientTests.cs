@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.NuGet;
+
 using System.Collections.Concurrent;
 using System.Net;
 using System.Text;

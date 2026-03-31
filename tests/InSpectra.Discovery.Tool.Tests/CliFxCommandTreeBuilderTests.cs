@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+using InSpectra.Discovery.Tool.Analysis.CliFx.OpenCli;
+
 using Xunit;
 
 public sealed class CliFxCommandTreeBuilderTests

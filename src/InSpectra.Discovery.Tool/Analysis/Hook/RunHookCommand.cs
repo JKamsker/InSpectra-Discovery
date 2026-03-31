@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
+using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System.ComponentModel;

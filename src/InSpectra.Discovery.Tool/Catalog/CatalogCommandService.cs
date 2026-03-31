@@ -1,5 +1,23 @@
 namespace InSpectra.Discovery.Tool.Catalog;
 
+using InSpectra.Discovery.Tool.Catalog.Delta.SpectreConsole;
+
+using InSpectra.Discovery.Tool.App.Machine;
+
+using InSpectra.Discovery.Tool.App.Summaries;
+
+using InSpectra.Discovery.Tool.Infrastructure.Json;
+
+using InSpectra.Discovery.Tool.Infrastructure.Host;
+
+using InSpectra.Discovery.Tool.Catalog.Filtering.CliFx;
+
+using InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
+
+using InSpectra.Discovery.Tool.Catalog.Delta;
+
+using InSpectra.Discovery.Tool.Catalog.Indexing;
+
 using System.Text.Json;
 
 internal sealed class CatalogCommandService

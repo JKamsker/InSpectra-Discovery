@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Catalog.Indexing;
 
+
 internal sealed record DotnetToolIndexSnapshot(
     DateTimeOffset GeneratedAtUtc,
     string PackageType,

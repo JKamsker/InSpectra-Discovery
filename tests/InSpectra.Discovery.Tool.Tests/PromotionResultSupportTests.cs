@@ -1,5 +1,8 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Promotion.Planning;
+using InSpectra.Discovery.Tool.Promotion.State;
+
 using System.Text.Json.Nodes;
 using Xunit;
 
