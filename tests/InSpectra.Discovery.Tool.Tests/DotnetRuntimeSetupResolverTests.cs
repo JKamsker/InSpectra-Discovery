@@ -213,6 +213,59 @@ public sealed class DotnetRuntimeSetupResolverTests
         Assert.Equal("6.0", requirement.Channel);
     }
 
+    [Fact]
+    public async Task ResolveForPlanItemAsync_FiltersWindowsDesktopRequirementsOnUbuntu()
+    {
+        var item = new JsonObject
+        {
+            ["packageContentUrl"] = "https://nuget.test/sample.windows.tool.1.0.0.nupkg",
+        };
+
+        var catalogLeaf = CreateCatalogLeaf(
+            "tools/net8.0/any/Sample.Windows.Tool.dll",
+            "tools/net8.0/any/Sample.Windows.Tool.runtimeconfig.json");
+
+        using var httpClient = new HttpClient(new BinaryStubHttpMessageHandler(
+            new Dictionary<string, byte[]>(StringComparer.Ordinal)
+            {
+                [item["packageContentUrl"]!.GetValue<string>()] = CreatePackageArchiveBytes(
+                    ("tools/net8.0/any/Sample.Windows.Tool.dll", string.Empty),
+                    (
+                        "tools/net8.0/any/Sample.Windows.Tool.runtimeconfig.json",
+                        """
+                        {
+                          "runtimeOptions": {
+                            "frameworks": [
+                              {
+                                "name": "Microsoft.NETCore.App",
+                                "version": "8.0.0"
+                              },
+                              {
+                                "name": "Microsoft.WindowsDesktop.App",
+                                "version": "8.0.0"
+                              }
+                            ]
+                          }
+                        }
+                        """)),
+            }));
+        var client = new NuGetApiClient(httpClient);
+
+        var plan = await DotnetRuntimeSetupResolver.ResolveForPlanItemAsync(
+            item,
+            catalogLeaf,
+            "ubuntu-latest",
+            client,
+            CancellationToken.None);
+
+        Assert.Equal("runtime-only", plan.Mode);
+        Assert.Equal("archive-runtimeconfig", plan.Source);
+        var requirement = Assert.Single(plan.RequiredRuntimes);
+        Assert.Equal("Microsoft.NETCore.App", requirement.Name);
+        Assert.Equal("dotnet", requirement.Runtime);
+        Assert.Equal("8.0", requirement.Channel);
+    }
+
     private static CatalogLeaf CreateCatalogLeaf(params string[] paths)
         => new(
             "https://nuget.test/catalog/sample.tool.1.0.0.json",

@@ -104,6 +104,21 @@ function ConvertTo-RuntimeRequest
     }
 }
 
+function Test-IsRuntimeSupportedOnCurrentPlatform
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        $Request
+    )
+
+    if ($Request.runtime -eq 'windowsdesktop' -and -not $IsWindows)
+    {
+        return $false
+    }
+
+    return $true
+}
+
 if ([string]::IsNullOrWhiteSpace($RuntimeRequestsJson) -or $RuntimeRequestsJson -eq '[]')
 {
     Write-Host 'No additional shared runtimes are required.'
@@ -159,6 +174,12 @@ if (-not (Test-Path $installerPath))
 
 foreach ($request in $requests)
 {
+    if (-not (Test-IsRuntimeSupportedOnCurrentPlatform -Request $request))
+    {
+        Write-Warning "Skipping shared runtime '$($request.runtime)' for '$($request.name)' on this platform."
+        continue
+    }
+
     Write-Host "Installing shared runtime '$($request.runtime)' on channel '$($request.channel)' for '$($request.name)'."
     & bash $installerPath `
         --runtime $request.runtime `

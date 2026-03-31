@@ -22,6 +22,12 @@ public sealed class DotnetRuntimeSetupLiveTests
     {
         var data = new TheoryData<LiveRuntimeSetupCase>();
         data.Add(new LiveRuntimeSetupCase(
+            "AutoTyper",
+            "0.0.5",
+            [
+                "Microsoft.NETCore.App|8.0|dotnet",
+            ]));
+        data.Add(new LiveRuntimeSetupCase(
             "dotnet-mgcb-editor-windows",
             "3.8.5-preview.3",
             [

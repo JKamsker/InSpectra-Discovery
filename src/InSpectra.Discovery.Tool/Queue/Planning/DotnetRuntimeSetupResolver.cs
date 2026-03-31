@@ -126,10 +126,18 @@ internal static class DotnetRuntimeSetupResolver
 
             if (requirements.Count == 0)
             {
-                return CreateRuntimeOnlyPlan([target.Requirement], "archive-target-framework");
+                return CreateRuntimeOnlyPlan(
+                    FilterSupportedRequirements([target.Requirement], runsOn),
+                    "archive-target-framework");
             }
 
-            return CreateRuntimeOnlyPlan(requirements.ToArray(), "archive-runtimeconfig");
+            var resolvedRequirements = requirements
+                .Append(target.Requirement)
+                .Distinct()
+                .ToArray();
+            return CreateRuntimeOnlyPlan(
+                FilterSupportedRequirements(resolvedRequirements, runsOn),
+                "archive-runtimeconfig");
         }
         catch (Exception ex)
         {
@@ -178,7 +186,10 @@ internal static class DotnetRuntimeSetupResolver
     {
         var extraRuntimes = requirements
             .Where(requirement => !string.Equals(requirement.Channel, BaseSdkChannel, StringComparison.OrdinalIgnoreCase))
-            .Distinct()
+            .GroupBy(
+                requirement => $"{requirement.Name}|{requirement.Channel}|{requirement.Runtime}",
+                StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
             .OrderBy(requirement => new Version(requirement.Channel + ".0"))
             .ThenBy(requirement => requirement.Runtime, StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -197,6 +208,24 @@ internal static class DotnetRuntimeSetupResolver
                 value["version"]?.GetValue<string>() ?? string.Empty,
                 value["channel"]?.GetValue<string>() ?? string.Empty,
                 value["runtime"]?.GetValue<string>() ?? string.Empty);
+
+    private static IReadOnlyList<DotnetRuntimeRequirement> FilterSupportedRequirements(
+        IEnumerable<DotnetRuntimeRequirement> requirements,
+        string runsOn)
+        => requirements
+            .Where(requirement => IsSupportedOnRunner(requirement, runsOn))
+            .Distinct()
+            .ToArray();
+
+    private static bool IsSupportedOnRunner(DotnetRuntimeRequirement requirement, string runsOn)
+    {
+        if (!string.Equals(requirement.Runtime, "windowsdesktop", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return string.Equals(runsOn, "windows-latest", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static ZipArchiveEntry[] GetRuntimeConfigEntries(ZipArchive archive, ToolAssetTarget target)
     {
