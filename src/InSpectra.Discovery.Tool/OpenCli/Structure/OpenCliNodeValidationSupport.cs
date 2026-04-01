@@ -147,6 +147,11 @@ internal static class OpenCliNodeValidationSupport
             return null;
         }
 
+        if (!OpenCliNameValidationSupport.TryValidateCommandName(commandName, path, out reason))
+        {
+            return null;
+        }
+
         var recurrenceCount = CountCommandNameOccurrences(ancestorCommandNames, commandName) + 1;
         if (recurrenceCount <= MaxCommandPathRecurrence)
         {
@@ -247,6 +252,14 @@ internal static class OpenCliNodeValidationSupport
     private static bool TryValidateArgumentNode(JsonObject node, string path, out string? reason)
     {
         reason = null;
+
+        if (!OpenCliNameValidationSupport.TryValidateArgumentName(
+                OpenCliValidationSupport.GetString(node["name"]),
+                path,
+                out reason))
+        {
+            return false;
+        }
 
         foreach (var arrayProperty in ArgumentArrayProperties)
         {

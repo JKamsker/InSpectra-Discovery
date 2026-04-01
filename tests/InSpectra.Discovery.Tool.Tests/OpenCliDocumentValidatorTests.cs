@@ -185,6 +185,112 @@ public sealed class OpenCliDocumentValidatorTests
     }
 
     [Fact]
+    public void TryLoadValidDocument_Rejects_NonPublishable_Command_Names()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray
+                {
+                    CreateLeafCommand("."),
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact has a non-publishable command name '.' at '$.commands[0]'.", reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Rejects_NonPublishable_Argument_Names()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "serve",
+                        ["options"] = new JsonArray
+                        {
+                            new JsonObject
+                            {
+                                ["name"] = "--project",
+                                ["arguments"] = new JsonArray
+                                {
+                                    new JsonObject
+                                    {
+                                        ["name"] = "#=ZFSB8$OO=",
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact has a non-publishable argument name '#=ZFSB8$OO=' at '$.commands[0].options[0].arguments[0]'.", reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Rejects_Environment_Snippet_Command_Names()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray
+                {
+                    CreateLeafCommand("\"UV_PYTHON_DOWNLOADS=never\"]"),
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact has a non-publishable command name '\"UV_PYTHON_DOWNLOADS=never\"]' at '$.commands[0]'.", reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Accepts_Directive_Style_Command_Names()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray
+                {
+                    CreateLeafCommand("#!who"),
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out var document, out var reason);
+
+        Assert.True(valid);
+        Assert.NotNull(document);
+        Assert.Null(reason);
+    }
+
+    [Fact]
     public void TryLoadValidDocument_Accepts_Command_Name_Repeated_Up_To_Three_Times_In_One_Path()
     {
         using var tempDirectory = new TemporaryDirectory();
