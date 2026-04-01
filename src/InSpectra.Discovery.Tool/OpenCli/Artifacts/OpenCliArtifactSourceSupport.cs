@@ -6,6 +6,7 @@ internal static class OpenCliArtifactSourceSupport
         => artifactSource switch
         {
             "tool-output" => "json-ready",
+            "startup-hook" => "startup-hook",
             "crawled-from-help" => "help-crawl",
             "crawled-from-clifx-help" => "clifx-crawl",
             "static-analysis" => "static-crawl",
@@ -17,6 +18,7 @@ internal static class OpenCliArtifactSourceSupport
         => analysisMode switch
         {
             "native" => "tool-output",
+            "hook" => "startup-hook",
             "help" => "crawled-from-help",
             "clifx" => "crawled-from-clifx-help",
             "static" => "static-analysis",
@@ -28,6 +30,7 @@ internal static class OpenCliArtifactSourceSupport
         => artifactSource switch
         {
             "tool-output" => "native",
+            "startup-hook" => "hook",
             "crawled-from-help" => "help",
             "crawled-from-clifx-help" => "clifx",
             "static-analysis" => "static",
@@ -40,6 +43,7 @@ internal static class OpenCliArtifactSourceSupport
         {
             "json-ready" => "native",
             "json-ready-with-nonzero-exit" => "native",
+            "startup-hook" => "hook",
             "help-crawl" => "help",
             "clifx-crawl" => "clifx",
             "static-crawl" => "static",

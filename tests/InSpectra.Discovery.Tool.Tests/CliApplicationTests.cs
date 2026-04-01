@@ -44,6 +44,7 @@ public sealed class CliApplicationTests
             new[] { "analysis", "run-hook", "--help" },
             new[] { "docs", "rebuild-indexes", "--help" },
             new[] { "docs", "regenerate-native-opencli", "--help" },
+            new[] { "docs", "regenerate-startup-hook-opencli", "--help" },
             new[] { "docs", "regenerate-static-crawls", "--help" },
             new[] { "docs", "regenerate-clifx-crawls", "--help" },
             new[] { "docs", "regenerate-help-crawls", "--help" },

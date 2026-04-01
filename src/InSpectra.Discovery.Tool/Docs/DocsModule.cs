@@ -14,6 +14,7 @@ internal static class DocsModule
         services.AddTransient<DocsCommandService>();
         services.AddTransient<DocsRebuildIndexesCommand>();
         services.AddTransient<DocsRegenerateNativeOpenCliCommand>();
+        services.AddTransient<DocsRegenerateStartupHookOpenCliCommand>();
         services.AddTransient<DocsRegenerateStaticCrawlsCommand>();
         services.AddTransient<DocsRegenerateCliFxCrawlsCommand>();
         services.AddTransient<DocsRegenerateHelpCrawlsCommand>();
@@ -31,6 +32,7 @@ internal static class DocsModule
             docs.SetDescription("Generate derived discovery documentation artifacts.");
             docs.AddCommand<DocsRebuildIndexesCommand>("rebuild-indexes").WithDescription("Rebuild package summaries, index/all.json, and index/index.json from indexed metadata.");
             docs.AddCommand<DocsRegenerateNativeOpenCliCommand>("regenerate-native-opencli").WithDescription("Resanitize native OpenCLI artifacts from stored opencli.json files.");
+            docs.AddCommand<DocsRegenerateStartupHookOpenCliCommand>("regenerate-startup-hook-opencli").WithDescription("Resanitize startup-hook OpenCLI artifacts from stored opencli.json files.");
             docs.AddCommand<DocsRegenerateStaticCrawlsCommand>("regenerate-static-crawls").WithDescription("Regenerate static-analysis OpenCLI artifacts from stored crawl.json captures.");
             docs.AddCommand<DocsRegenerateCliFxCrawlsCommand>("regenerate-clifx-crawls").WithDescription("Regenerate CliFx OpenCLI artifacts from stored crawl.json captures.");
             docs.AddCommand<DocsRegenerateHelpCrawlsCommand>("regenerate-help-crawls").WithDescription("Regenerate generic help OpenCLI artifacts from stored crawl.json captures.");
@@ -40,5 +42,4 @@ internal static class DocsModule
         });
     }
 }
-
 

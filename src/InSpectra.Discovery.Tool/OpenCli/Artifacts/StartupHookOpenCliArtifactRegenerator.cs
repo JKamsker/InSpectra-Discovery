@@ -1,8 +1,8 @@
 namespace InSpectra.Discovery.Tool.OpenCli.Artifacts;
 
-internal sealed class NativeOpenCliArtifactRegenerator
+internal sealed class StartupHookOpenCliArtifactRegenerator
 {
-    public NativeOpenCliArtifactRegenerationResult RegenerateRepository(
+    public StartupHookOpenCliArtifactRegenerationResult RegenerateRepository(
         string repositoryRoot,
         ArtifactRegenerationScope? scope = null,
         bool rebuildIndexes = true)
@@ -15,7 +15,7 @@ internal sealed class NativeOpenCliArtifactRegenerator
             ProcessCandidate,
             static candidate => candidate.DisplayName);
 
-        return new NativeOpenCliArtifactRegenerationResult(
+        return new StartupHookOpenCliArtifactRegenerationResult(
             result.ScannedCount,
             result.CandidateCount,
             result.RewrittenCount,
@@ -26,17 +26,13 @@ internal sealed class NativeOpenCliArtifactRegenerator
     }
 
     private static StoredOpenCliArtifactCandidate? TryCreateCandidate(string repositoryRoot, string metadataPath)
-        => StoredOpenCliArtifactCandidateFactory.TryCreateCandidate(
-            repositoryRoot,
-            metadataPath,
-            "tool-output",
-            allowMissingArtifactSource: true);
+        => StoredOpenCliArtifactCandidateFactory.TryCreateCandidate(repositoryRoot, metadataPath, "startup-hook");
 
     private static bool ProcessCandidate(string repositoryRoot, StoredOpenCliArtifactCandidate candidate)
         => StoredOpenCliArtifactRegenerationSupport.ProcessCandidate(repositoryRoot, candidate);
 }
 
-internal sealed record NativeOpenCliArtifactRegenerationResult(
+internal sealed record StartupHookOpenCliArtifactRegenerationResult(
     int ScannedCount,
     int CandidateCount,
     int RewrittenCount,
@@ -44,4 +40,3 @@ internal sealed record NativeOpenCliArtifactRegenerationResult(
     int FailedCount,
     IReadOnlyList<string> RewrittenItems,
     IReadOnlyList<string> FailedItems);
-

@@ -300,5 +300,3 @@ public sealed class NativeOpenCliArtifactRegeneratorTests
         }
     }
 }
-
-
