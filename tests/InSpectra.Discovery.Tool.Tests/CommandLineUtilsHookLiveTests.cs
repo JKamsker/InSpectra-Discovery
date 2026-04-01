@@ -165,7 +165,9 @@ public sealed class CommandLineUtilsHookLiveTests
             var resultPath = Path.Combine(outputRoot, "result.json");
             var openCliPath = Path.Combine(outputRoot, "opencli.json");
             Assert.True(File.Exists(resultPath), $"Missing result artifact for {testCase.PackageId}.");
-            Assert.True(File.Exists(openCliPath), $"Missing OpenCLI artifact for {testCase.PackageId}.");
+            Assert.True(
+                File.Exists(openCliPath),
+                await LiveArtifactDiagnosticsSupport.BuildMissingArtifactMessageAsync(testCase.PackageId, outputRoot, resultPath, openCliPath));
 
             var result = JsonNode.Parse(await File.ReadAllTextAsync(resultPath));
             var openCli = JsonNode.Parse(await File.ReadAllTextAsync(openCliPath));
