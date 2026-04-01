@@ -353,11 +353,37 @@ public sealed class AutoCommandServiceTests
                     ["xmldocArtifact"] = includeXmlDocArtifact ? "xmldoc.xml" : null,
                 },
             });
+
+        if (hasOpenCliArtifact && !File.Exists(Path.Combine(outputRoot, "opencli.json")))
+        {
+            WriteOpenCli(outputRoot, CreateValidOpenCliDocument("sample", "1.2.3"));
+        }
     }
 
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
+
+    private static void WriteOpenCli(string outputRoot, JsonObject document)
+        => RepositoryPathResolver.WriteJsonFile(Path.Combine(outputRoot, "opencli.json"), document);
+
+    private static JsonObject CreateValidOpenCliDocument(string commandName, string version)
+        => new()
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = commandName,
+                ["version"] = version,
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--help",
+                },
+            },
+        };
 
     private sealed class FakeDescriptorResolver(ToolDescriptor descriptor) : IToolDescriptorResolver
     {
