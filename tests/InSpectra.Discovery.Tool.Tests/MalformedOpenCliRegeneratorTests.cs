@@ -6,6 +6,7 @@ using InSpectra.Discovery.Tool.Help.Artifacts;
 using InSpectra.Discovery.Tool.Infrastructure.Host;
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
 using InSpectra.Discovery.Tool.OpenCli.Artifacts;
+using InSpectra.Discovery.Tool.StaticAnalysis.Artifacts;
 
 using System.Text.Json.Nodes;
 using Xunit;
@@ -213,6 +214,91 @@ public sealed class MalformedOpenCliRegeneratorTests
         Assert.Equal("invalid-opencli-artifact", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void StaticRegenerator_Rejects_Invalid_Regenerated_OpenCli_Without_Aborting_The_Run()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = InitializeRepository(tempDirectory.Path);
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "static.tool", "1.0.0");
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Static.Tool",
+                ["version"] = "1.0.0",
+                ["command"] = "static-tool",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "static-analysis",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["opencliPath"] = "index/packages/static.tool/1.0.0/opencli.json",
+                    ["opencliSource"] = "static-analysis",
+                    ["crawlPath"] = "index/packages/static.tool/1.0.0/crawl.json",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            dotnet
+
+                            Usage:
+                              dotnet [command]
+
+                            SDK commands:
+                              add      Add a package.
+                              build    Build a project.
+                            """,
+                    },
+                },
+                ["staticCommands"] = new JsonArray(),
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "static-tool",
+                    ["version"] = "1.0.0",
+                },
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "static-analysis",
+                },
+            });
+
+        var regenerator = new StaticAnalysisCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+        Assert.Equal(0, result.FailedCount);
+        Assert.False(File.Exists(Path.Combine(versionRoot, "opencli.json")));
+
+        var metadata = ParseJsonObject(Path.Combine(versionRoot, "metadata.json"));
+        Assert.Null(metadata["artifacts"]?["opencliPath"]);
+        Assert.Null(metadata["artifacts"]?["opencliSource"]);
+        Assert.Equal("invalid-opencli-artifact", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
+    }
+
     private static string InitializeRepository(string root)
     {
         RepositoryPathResolver.WriteTextFile(Path.Combine(root, "InSpectra.Discovery.sln"), string.Empty);
@@ -244,5 +330,3 @@ public sealed class MalformedOpenCliRegeneratorTests
         }
     }
 }
-
-

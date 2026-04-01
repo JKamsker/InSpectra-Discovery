@@ -7,6 +7,7 @@ using InSpectra.Discovery.Tool.Infrastructure.Json;
 using InSpectra.Discovery.Tool.StaticAnalysis.OpenCli;
 
 using InSpectra.Discovery.Tool.OpenCli.Artifacts;
+using InSpectra.Discovery.Tool.OpenCli.Documents;
 
 
 using System.Text.Json.Nodes;
@@ -41,6 +42,18 @@ internal sealed class StaticAnalysisCrawlArtifactRegenerator
     private bool ProcessCandidate(string repositoryRoot, StaticAnalysisCrawlArtifactCandidate candidate)
     {
         var regenerated = _openCliSupport.RegenerateOpenCli(candidate);
+        if (!OpenCliDocumentValidator.TryValidateDocument(regenerated, out var validationError))
+        {
+            var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
+                repositoryRoot,
+                candidate.MetadataPath,
+                candidate.OpenCliPath,
+                validationError ?? "Generated OpenCLI artifact is not publishable.",
+                crawlPath: candidate.CrawlPath);
+            var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(repositoryRoot, candidate.MetadataPath);
+            return rejectedMetadataChanged || rejectedStateChanged;
+        }
+
         var existing = JsonNodeFileLoader.TryLoadJsonNode(candidate.OpenCliPath);
         var openCliChanged = !JsonNode.DeepEquals(existing, regenerated);
         if (openCliChanged)
