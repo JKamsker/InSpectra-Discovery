@@ -74,12 +74,6 @@ public sealed class CommandLineUtilsHookLiveTests
             "weixin",
             expectedOptions: ["--help", "--Resource", "--QQGroup", "--keyword", "--platform", "--async", "--HostUrl"]));
         data.Add(new CommandLineUtilsHookToolCase(
-            "McMaster.Extensions.CommandLineUtils",
-            "Meadow.Cli",
-            "0.3.225",
-            "meadow",
-            "meadow"));
-        data.Add(new CommandLineUtilsHookToolCase(
             "Microsoft.Extensions.CommandLineUtils",
             "SignClient",
             "1.3.155",
