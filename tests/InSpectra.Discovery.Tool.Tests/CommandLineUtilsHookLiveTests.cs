@@ -74,6 +74,14 @@ public sealed class CommandLineUtilsHookLiveTests
             "weixin",
             expectedOptions: ["--help", "--Resource", "--QQGroup", "--keyword", "--platform", "--async", "--HostUrl"]));
         data.Add(new CommandLineUtilsHookToolCase(
+            "McMaster.Extensions.CommandLineUtils",
+            "dotnet-tcloud",
+            "1.0.1",
+            "dotnet-tcloud",
+            "dotnet-tcloud",
+            expectedOptions: ["--help", "--cookie", "--uin", "--csrf"],
+            expectedArguments: ["MarkdownFilePath"]));
+        data.Add(new CommandLineUtilsHookToolCase(
             "Microsoft.Extensions.CommandLineUtils",
             "SignClient",
             "1.3.155",
