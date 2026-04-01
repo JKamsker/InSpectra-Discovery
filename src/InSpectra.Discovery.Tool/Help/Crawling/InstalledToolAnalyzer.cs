@@ -54,7 +54,7 @@ internal sealed class InstalledToolAnalyzer
 
         var crawlStopwatch = Stopwatch.StartNew();
         var crawler = new Crawler(_runtime);
-        var crawl = await crawler.CrawlAsync(installedTool.CommandPath, tempRoot, installedTool.Environment, commandTimeoutSeconds, cancellationToken);
+        var crawl = await crawler.CrawlAsync(installedTool.CommandPath, commandName, tempRoot, installedTool.Environment, commandTimeoutSeconds, cancellationToken);
         crawlStopwatch.Stop();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
@@ -68,6 +68,30 @@ internal sealed class InstalledToolAnalyzer
 
         if (crawl.Documents.Count == 0)
         {
+            var runtimeIssues = crawl.CaptureSummaries.Values
+                .Select(summary => DotnetRuntimeCompatibilitySupport.DetectMissingFramework(
+                    summary.Command,
+                    summary.Stdout,
+                    summary.Stderr))
+                .Where(issue => issue is not null)
+                .Cast<DotnetRuntimeIssue>()
+                .ToArray();
+            if (runtimeIssues.Length > 0)
+            {
+                NonSpectreResultSupport.ApplyTerminalFailure(
+                    result,
+                    phase: "crawl",
+                    classification: "help-crawl-runtime-blocked",
+                    DotnetRuntimeCompatibilitySupport.BuildMissingFrameworkFailureMessage(
+                        runtimeIssues.Select(issue => issue.Command).ToArray(),
+                        runtimeIssues
+                            .Where(issue => issue.Requirement is not null)
+                            .Select(issue => issue.Requirement!)
+                            .Distinct()
+                            .ToArray()));
+                return;
+            }
+
             NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "crawl",

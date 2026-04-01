@@ -3,6 +3,7 @@ namespace InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
 using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
 
 using InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 
 using System.Collections.Concurrent;
@@ -11,9 +12,9 @@ using System.Text.Json.Nodes;
 internal sealed class CliFxHelpCrawler
 {
     private readonly CliFxHelpTextParser _parser = new();
-    private readonly CliFxRuntime _runtime;
+    private readonly CommandRuntime _runtime;
 
-    public CliFxHelpCrawler(CliFxRuntime runtime)
+    public CliFxHelpCrawler(CommandRuntime runtime)
     {
         _runtime = runtime;
     }
@@ -79,7 +80,8 @@ internal sealed class CliFxHelpCrawler
         foreach (var helpSwitch in new[] { "--help", "-h" })
         {
             var arguments = commandSegments.Concat([helpSwitch]).ToArray();
-            var processResult = await _runtime.InvokeProcessCaptureAsync(
+            var processResult = await DotnetRuntimeCompatibilitySupport.InvokeWithCompatibilityRetriesAsync(
+                _runtime,
                 commandPath,
                 arguments,
                 workingDirectory,
@@ -109,8 +111,8 @@ internal sealed class CliFxHelpCrawler
 
     private static string? SelectBestPayload(CliFxRuntime.ProcessResult processResult)
     {
-        var stdout = CliFxRuntime.NormalizeConsoleText(processResult.Stdout);
-        var stderr = CliFxRuntime.NormalizeConsoleText(processResult.Stderr);
+        var stdout = CommandRuntime.NormalizeConsoleText(processResult.Stdout);
+        var stderr = CommandRuntime.NormalizeConsoleText(processResult.Stderr);
 
         if (LooksLikeHelp(stdout))
         {
@@ -163,8 +165,8 @@ internal sealed class CliFxHelpCrawler
             return 2;
         }
 
-        return string.IsNullOrWhiteSpace(CliFxRuntime.NormalizeConsoleText(result.Stdout))
-            && string.IsNullOrWhiteSpace(CliFxRuntime.NormalizeConsoleText(result.Stderr))
+        return string.IsNullOrWhiteSpace(CommandRuntime.NormalizeConsoleText(result.Stdout))
+            && string.IsNullOrWhiteSpace(CommandRuntime.NormalizeConsoleText(result.Stderr))
             ? 0
             : 1;
     }
@@ -204,8 +206,8 @@ internal sealed class CliFxHelpCrawler
                 Parsed: Document is not null && (Document.UsageLines.Count > 0 || Document.Options.Count > 0 || Document.Commands.Count > 0),
                 TimedOut: ProcessResult?.TimedOut ?? false,
                 ExitCode: ProcessResult?.ExitCode,
-                Stdout: CliFxRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
-                Stderr: CliFxRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
+                Stdout: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
+                Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
         }
     }
 }
@@ -218,4 +220,3 @@ internal sealed record CliFxCaptureSummary(
     int? ExitCode,
     string? Stdout,
     string? Stderr);
-

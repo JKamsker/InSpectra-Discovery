@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
 
 using InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 
 using System.Text.Json.Nodes;
@@ -15,7 +16,7 @@ internal sealed class CliFxCoverageClassifier
         var runtimeIssues = captures
             .Select(capture => _runtimeCompatibilityDetector.Detect(capture))
             .Where(issue => issue is not null)
-            .Cast<CliFxRuntimeIssue>()
+            .Cast<DotnetRuntimeIssue>()
             .ToArray();
         var parsedCommands = captures.Where(capture => capture.Parsed).Select(capture => ToDisplayCommand(capture.Command)).ToArray();
         var unparsedCommands = captures.Where(capture => !capture.Parsed).Select(capture => ToDisplayCommand(capture.Command)).ToArray();
@@ -24,6 +25,7 @@ internal sealed class CliFxCoverageClassifier
         var requiredFrameworks = runtimeIssues
             .Where(issue => issue.Requirement is not null)
             .Select(issue => issue.Requirement!)
+            .Cast<DotnetRuntimeRequirement>()
             .Distinct()
             .ToArray();
 
@@ -76,11 +78,8 @@ internal sealed class CliFxCoverageClassifier
             : "partial-help";
     }
 
-    private static bool IsRuntimeBlocked(string? text)
-        => false;
-
     private static string ToDisplayCommand(string command)
-        => CliFxRuntimeCompatibilityDetector.ToDisplayCommand(command);
+        => DotnetRuntimeCompatibilitySupport.ToDisplayCommand(command);
 }
 
 internal sealed record CliFxCoverageSummary(
@@ -94,7 +93,7 @@ internal sealed record CliFxCoverageSummary(
     int UnparsedCommandCount,
     int TimedOutCommandCount,
     int RuntimeBlockedCommandCount,
-    IReadOnlyList<CliFxRuntimeRequirement> RequiredFrameworks,
+    IReadOnlyList<DotnetRuntimeRequirement> RequiredFrameworks,
     IReadOnlyList<string> ParsedCommands,
     IReadOnlyList<string> UnparsedCommands,
     IReadOnlyList<string> TimedOutCommands,
@@ -123,12 +122,10 @@ internal sealed record CliFxCoverageSummary(
     private static JsonArray ToJsonArray(IReadOnlyList<string> values)
         => new(values.Select(value => JsonValue.Create(value)).ToArray());
 
-    private static JsonArray ToJsonArray(IReadOnlyList<CliFxRuntimeRequirement> values)
+    private static JsonArray ToJsonArray(IReadOnlyList<DotnetRuntimeRequirement> values)
         => new(values.Select(value => new JsonObject
         {
             ["name"] = value.Name,
             ["version"] = value.Version,
         }).ToArray());
 }
-
-

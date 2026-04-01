@@ -26,6 +26,7 @@ internal sealed class Crawler
 
     public async Task<CrawlResult> CrawlAsync(
         string commandPath,
+        string rootCommandName,
         string workingDirectory,
         IReadOnlyDictionary<string, string> environment,
         int timeoutSeconds,
@@ -51,7 +52,7 @@ internal sealed class Crawler
                 continue;
             }
 
-            var capture = await CaptureHelpAsync(commandPath, commandSegments, workingDirectory, environment, timeoutSeconds, cancellationToken);
+            var capture = await CaptureHelpAsync(commandPath, rootCommandName, commandSegments, workingDirectory, environment, timeoutSeconds, cancellationToken);
             captures[key] = capture.ToJsonObject(commandSegments);
             captureSummaries[key] = capture.ToSummary(commandSegments);
 
@@ -89,6 +90,7 @@ internal sealed class Crawler
 
     private async Task<Capture> CaptureHelpAsync(
         string commandPath,
+        string rootCommandName,
         IReadOnlyList<string> commandSegments,
         string workingDirectory,
         IReadOnlyDictionary<string, string> environment,
@@ -98,7 +100,8 @@ internal sealed class Crawler
         Capture? bestCapture = null;
         foreach (var candidate in InvocationSupport.BuildHelpInvocations(commandSegments))
         {
-            var processResult = await _runtime.InvokeProcessCaptureAsync(
+            var processResult = await DotnetRuntimeCompatibilitySupport.InvokeWithCompatibilityRetriesAsync(
+                _runtime,
                 commandPath,
                 candidate,
                 workingDirectory,
@@ -107,7 +110,7 @@ internal sealed class Crawler
                 workingDirectory,
                 cancellationToken);
 
-            var capture = BuildCapture(commandSegments, candidate, processResult);
+            var capture = BuildCapture(rootCommandName, commandSegments, candidate, processResult);
             if (bestCapture is null || Score(capture) > Score(bestCapture))
             {
                 bestCapture = capture;
@@ -128,6 +131,7 @@ internal sealed class Crawler
     }
 
     private Capture BuildCapture(
+        string rootCommandName,
         IReadOnlyList<string> commandSegments,
         IReadOnlyList<string> invokedArguments,
         CommandRuntime.ProcessResult processResult)
@@ -137,6 +141,7 @@ internal sealed class Crawler
             : string.Join(' ', invokedArguments);
         var selection = CapturePayloadSupport.SelectBestProcessCapture(
             _parser,
+            rootCommandName,
             commandSegments,
             invokedArguments,
             processResult);
@@ -202,4 +207,3 @@ internal sealed class Crawler
         }
     }
 }
-

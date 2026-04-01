@@ -24,13 +24,13 @@ using System.Text.Json.Nodes;
 
 internal sealed class CliFxInstalledToolAnalysisSupport
 {
-    private readonly CliFxRuntime _runtime;
+    private readonly CommandRuntime _runtime;
     private readonly CliFxMetadataInspector _metadataInspector;
     private readonly CliFxOpenCliBuilder _openCliBuilder;
     private readonly CliFxCoverageClassifier _coverageClassifier;
 
     public CliFxInstalledToolAnalysisSupport(
-        CliFxRuntime runtime,
+        CommandRuntime runtime,
         CliFxMetadataInspector metadataInspector,
         CliFxOpenCliBuilder openCliBuilder,
         CliFxCoverageClassifier coverageClassifier)
@@ -89,6 +89,18 @@ internal sealed class CliFxInstalledToolAnalysisSupport
 
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
+            if (string.Equals(coverage.RuntimeCompatibilityMode, "missing-framework", StringComparison.Ordinal))
+            {
+                NonSpectreResultSupport.ApplyTerminalFailure(
+                    result,
+                    phase: "crawl",
+                    classification: "clifx-runtime-blocked",
+                    DotnetRuntimeCompatibilitySupport.BuildMissingFrameworkFailureMessage(
+                        coverage.RuntimeBlockedCommands,
+                        coverage.RequiredFrameworks));
+                return;
+            }
+
             NonSpectreResultSupport.ApplyTerminalFailure(
                 result,
                 phase: "crawl",
@@ -116,4 +128,3 @@ internal sealed class CliFxInstalledToolAnalysisSupport
     private static Dictionary<string, CliFxCommandDefinition> NormalizeCommandLookup(IReadOnlyDictionary<string, CliFxCommandDefinition> commands)
         => new(commands, StringComparer.OrdinalIgnoreCase);
 }
-

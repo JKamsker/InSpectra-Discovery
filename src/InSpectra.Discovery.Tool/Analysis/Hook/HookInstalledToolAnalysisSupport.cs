@@ -17,9 +17,9 @@ using System.Text.Json.Nodes;
 internal sealed class HookInstalledToolAnalysisSupport
 {
     internal const string ExpectedCliFrameworkEnvironmentVariableName = "INSPECTRA_EXPECTED_CLI_FRAMEWORK";
-    internal const string GlobalizationInvariantEnvironmentVariableName = "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT";
-    internal const string DotnetRollForwardEnvironmentVariableName = "DOTNET_ROLL_FORWARD";
-    internal const string DotnetRollForwardMajorValue = "Major";
+    internal const string GlobalizationInvariantEnvironmentVariableName = DotnetRuntimeCompatibilitySupport.GlobalizationInvariantEnvironmentVariableName;
+    internal const string DotnetRollForwardEnvironmentVariableName = DotnetRuntimeCompatibilitySupport.DotnetRollForwardEnvironmentVariableName;
+    internal const string DotnetRollForwardMajorValue = DotnetRuntimeCompatibilitySupport.DotnetRollForwardMajorValue;
     private readonly CommandRuntime _runtime;
     private readonly Func<string?> _hookDllPathResolver;
 
@@ -226,7 +226,7 @@ internal sealed class HookInstalledToolAnalysisSupport
             timeoutSeconds,
             cancellationToken);
         if (!File.Exists(capturePath)
-            && LooksLikeMissingIcu(processResult)
+            && DotnetRuntimeCompatibilitySupport.LooksLikeMissingIcu(processResult)
             && !effectiveEnvironment.ContainsKey(GlobalizationInvariantEnvironmentVariableName))
         {
             effectiveEnvironment = new Dictionary<string, string>(effectiveEnvironment, StringComparer.OrdinalIgnoreCase)
@@ -263,7 +263,7 @@ internal sealed class HookInstalledToolAnalysisSupport
         }
 
         if (File.Exists(capturePath)
-            || !LooksLikeMissingSharedRuntime(processResult)
+            || !DotnetRuntimeCompatibilitySupport.LooksLikeMissingSharedRuntime(processResult)
             || effectiveEnvironment.ContainsKey(DotnetRollForwardEnvironmentVariableName))
         {
             return processResult;
@@ -385,40 +385,6 @@ internal sealed class HookInstalledToolAnalysisSupport
         }
 
         return trimmed[(separatorIndex + 2)..].TrimStart();
-    }
-
-    private static bool LooksLikeMissingIcu(CommandRuntime.ProcessResult processResult)
-    {
-        var combined = string.Join(
-            "\n",
-            SplitLines(processResult.Stderr)
-                .Concat(SplitLines(processResult.Stdout))
-                .Where(line => !string.IsNullOrWhiteSpace(line)));
-        if (string.IsNullOrWhiteSpace(combined))
-        {
-            return false;
-        }
-
-        return combined.Contains("Couldn't find a valid ICU package installed on the system", StringComparison.OrdinalIgnoreCase)
-            || combined.Contains("System.Globalization.Invariant", StringComparison.OrdinalIgnoreCase)
-            || combined.Contains("libicu", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static bool LooksLikeMissingSharedRuntime(CommandRuntime.ProcessResult processResult)
-    {
-        var combined = string.Join(
-            "\n",
-            SplitLines(processResult.Stderr)
-                .Concat(SplitLines(processResult.Stdout))
-                .Where(line => !string.IsNullOrWhiteSpace(line)));
-        if (string.IsNullOrWhiteSpace(combined))
-        {
-            return false;
-        }
-
-        return combined.Contains("You must install or update .NET to run this application.", StringComparison.OrdinalIgnoreCase)
-            || combined.Contains("Framework: 'Microsoft.NETCore.App'", StringComparison.OrdinalIgnoreCase)
-            || combined.Contains("The following frameworks were found:", StringComparison.OrdinalIgnoreCase);
     }
 
     private static IEnumerable<string?> SplitLines(string? value)
