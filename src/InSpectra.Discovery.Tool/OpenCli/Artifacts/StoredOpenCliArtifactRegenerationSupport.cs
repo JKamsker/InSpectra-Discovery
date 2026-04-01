@@ -21,11 +21,37 @@ internal static class StoredOpenCliArtifactCandidateFactory
 {
     private const long InlineArtifactSizeLimitBytes = 2 * 1024 * 1024;
 
+    public static StoredOpenCliArtifactCandidate? TryCreateAnyCandidate(
+        string repositoryRoot,
+        string metadataPath)
+        => TryCreateCandidate(
+            repositoryRoot,
+            metadataPath,
+            static _ => true,
+            expectedArtifactSource: null,
+            allowMissingArtifactSource: false);
+
     public static StoredOpenCliArtifactCandidate? TryCreateCandidate(
         string repositoryRoot,
         string metadataPath,
         string expectedArtifactSource,
         bool allowMissingArtifactSource = false)
+        => TryCreateCandidate(
+            repositoryRoot,
+            metadataPath,
+            artifactSource => string.Equals(
+                artifactSource,
+                expectedArtifactSource,
+                StringComparison.OrdinalIgnoreCase),
+            expectedArtifactSource,
+            allowMissingArtifactSource);
+
+    private static StoredOpenCliArtifactCandidate? TryCreateCandidate(
+        string repositoryRoot,
+        string metadataPath,
+        Func<string, bool> shouldAcceptArtifactSource,
+        string? expectedArtifactSource,
+        bool allowMissingArtifactSource)
     {
         if (JsonNode.Parse(File.ReadAllText(metadataPath)) is not JsonObject metadata)
         {
@@ -61,7 +87,9 @@ internal static class StoredOpenCliArtifactCandidateFactory
         var artifactSource = ResolveArtifactSource(openCli, metadata, artifacts, openCliStep);
         if (string.IsNullOrWhiteSpace(artifactSource))
         {
-            if (!allowMissingArtifactSource || HasDerivedArtifacts(repositoryRoot, artifacts))
+            if (!allowMissingArtifactSource
+                || string.IsNullOrWhiteSpace(expectedArtifactSource)
+                || HasDerivedArtifacts(repositoryRoot, artifacts))
             {
                 return null;
             }
@@ -69,7 +97,7 @@ internal static class StoredOpenCliArtifactCandidateFactory
             artifactSource = expectedArtifactSource;
         }
 
-        if (!string.Equals(artifactSource, expectedArtifactSource, StringComparison.OrdinalIgnoreCase))
+        if (!shouldAcceptArtifactSource(artifactSource))
         {
             return null;
         }
@@ -89,7 +117,7 @@ internal static class StoredOpenCliArtifactCandidateFactory
             metadataPath,
             openCliPath,
             xmlDocPath,
-            expectedArtifactSource);
+            artifactSource!);
     }
 
     private static JsonObject? TryLoadInspectableOpenCli(string openCliPath)
