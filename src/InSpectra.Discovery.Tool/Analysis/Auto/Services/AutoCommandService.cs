@@ -127,9 +127,8 @@ internal sealed class AutoCommandService
             return nativeOutcome.ExitCode;
         }
 
-        var selectedMode = AutoModeSupport.ResolveFallbackMode(descriptor);
-        var selectedResult = await AutoExecutionSupport.RunSelectedAnalyzerAsync(
-            selectedMode,
+        var selectedResult = await AutoAttemptSequenceSupport.RunAsync(
+            AutoModeSupport.BuildAttemptPlan(descriptor),
             _helpRunner,
             _cliFxRunner,
             _staticRunner,
@@ -147,82 +146,7 @@ internal sealed class AutoCommandService
             resultPath,
             nativeOutcome.Result,
             cancellationToken);
-
-        if (AutoResultInspector.ShouldTryStaticFallback(selectedMode, descriptor.PreferredAnalysisMode, selectedResult))
-        {
-            var hookFailureResult = selectedResult;
-            var staticResult = await AutoExecutionSupport.RunSelectedAnalyzerAsync(
-                "static",
-                _helpRunner,
-                _cliFxRunner,
-                _staticRunner,
-                _hookRunner,
-                packageId,
-                version,
-                descriptor,
-                outputDirectory,
-                batchId,
-                attempt,
-                source,
-                installTimeoutSeconds,
-                analysisTimeoutSeconds,
-                commandTimeoutSeconds,
-                resultPath,
-                nativeResult: null,
-                cancellationToken);
-            JsonObject? failedFallbackResult = AutoResultInspector.ShouldUseFailedFallbackResult(hookFailureResult, staticResult)
-                ? staticResult
-                : null;
-
-            if (AutoResultInspector.ShouldUseFallbackResult(staticResult))
-            {
-                AutoResultSupport.ApplyFallback(staticResult, "hook", hookFailureResult);
-                selectedResult = staticResult;
-                selectedMode = "static";
-            }
-            else if (AutoResultInspector.ShouldTryHelpAfterStaticFallback(staticResult))
-            {
-                var helpResult = await AutoExecutionSupport.RunSelectedAnalyzerAsync(
-                    "help",
-                    _helpRunner,
-                    _cliFxRunner,
-                    _staticRunner,
-                    _hookRunner,
-                    packageId,
-                    version,
-                    descriptor,
-                    outputDirectory,
-                    batchId,
-                    attempt,
-                    source,
-                    installTimeoutSeconds,
-                    analysisTimeoutSeconds,
-                    commandTimeoutSeconds,
-                    resultPath,
-                    nativeResult: null,
-                    cancellationToken);
-
-                if (AutoResultInspector.ShouldUseFallbackResult(helpResult))
-                {
-                    AutoResultSupport.ApplyFallback(helpResult, "hook", hookFailureResult);
-                    selectedResult = helpResult;
-                    selectedMode = "help";
-                }
-                else if (failedFallbackResult is null
-                    && AutoResultInspector.ShouldUseFailedFallbackResult(hookFailureResult, helpResult))
-                {
-                    failedFallbackResult = helpResult;
-                }
-            }
-
-            if (failedFallbackResult is JsonObject finalFailedFallbackResult
-                && ReferenceEquals(selectedResult, hookFailureResult))
-            {
-                AutoResultSupport.ApplyFallback(finalFailedFallbackResult, "hook", hookFailureResult);
-                selectedResult = finalFailedFallbackResult;
-                selectedMode = finalFailedFallbackResult["analysisMode"]?.GetValue<string>() ?? selectedMode;
-            }
-        }
+        var selectedMode = selectedResult["analysisMode"]?.GetValue<string>() ?? AutoModeSupport.ResolveFallbackMode(descriptor);
 
         if (string.Equals(selectedMode, "help", StringComparison.Ordinal)
             && AutoResultInspector.ShouldPreserveNativeResult(nativeOutcome.Result, selectedResult))

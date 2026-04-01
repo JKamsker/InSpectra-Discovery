@@ -80,6 +80,7 @@ public sealed class AutoCommandServiceHookFallbackTests
         using var tempDirectory = new TemporaryDirectory();
         var outputRoot = tempDirectory.GetPath("analysis");
         var staticRunnerCalled = false;
+        var helpRunnerCalled = false;
 
         var service = new AutoCommandService(
             new FakeDescriptorResolver(new ToolDescriptor(
@@ -93,7 +94,11 @@ public sealed class AutoCommandServiceHookFallbackTests
                 "https://nuget.test/hooked.tool.3.4.6.nupkg",
                 "https://nuget.test/catalog/hooked.tool.3.4.6.json")),
             new ThrowingNativeRunner(),
-            new ThrowingHelpRunner(),
+            new FakeHelpRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                helpRunnerCalled = true;
+                WriteResult(path, "retryable-failure", "help-crawl-empty", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }),
             new ThrowingCliFxRunner(),
             new FakeStaticRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
             {
@@ -120,6 +125,7 @@ public sealed class AutoCommandServiceHookFallbackTests
 
         Assert.Equal(0, exitCode);
         Assert.True(staticRunnerCalled);
+        Assert.True(helpRunnerCalled);
 
         var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
         Assert.Equal("retryable-failure", result["disposition"]?.GetValue<string>());
@@ -189,9 +195,10 @@ public sealed class AutoCommandServiceHookFallbackTests
         Assert.Equal("help-crawl", result["classification"]?.GetValue<string>());
         Assert.Equal("System.CommandLine", result["cliFramework"]?.GetValue<string>());
         Assert.Equal("static", result["analysisSelection"]?["preferredMode"]?.GetValue<string>());
+        Assert.Null(result["analysisSelection"]?["selectedFramework"]);
         Assert.Equal("help", result["analysisSelection"]?["selectedMode"]?.GetValue<string>());
-        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
-        Assert.Equal("hook-no-assembly-loaded", result["fallback"]?["classification"]?.GetValue<string>());
+        Assert.Equal("static", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("invalid-opencli-artifact", result["fallback"]?["classification"]?.GetValue<string>());
     }
 
     [Fact]
@@ -253,8 +260,9 @@ public sealed class AutoCommandServiceHookFallbackTests
         Assert.Equal("success", result["disposition"]?.GetValue<string>());
         Assert.Equal("help", result["analysisMode"]?.GetValue<string>());
         Assert.Equal("help-crawl", result["classification"]?.GetValue<string>());
-        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
-        Assert.Equal("hook-no-assembly-loaded", result["fallback"]?["classification"]?.GetValue<string>());
+        Assert.Null(result["analysisSelection"]?["selectedFramework"]);
+        Assert.Equal("static", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("custom-parser", result["fallback"]?["classification"]?.GetValue<string>());
     }
 
     [Fact]
@@ -378,6 +386,148 @@ public sealed class AutoCommandServiceHookFallbackTests
         Assert.Equal("custom-parser-no-attributes", result["classification"]?.GetValue<string>());
         Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
         Assert.Equal("invalid-success-artifact", result["fallback"]?["classification"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RunAsync_FallsBackToLaterStaticProvider_WhenEarlierFrameworkAttemptsFail()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        var seenAttempts = new List<string>();
+
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
+                "Mixed.Tool",
+                "3.5.1",
+                "mixed",
+                "System.CommandLine + CommandLineParser",
+                "static",
+                "confirmed-static-analysis-framework",
+                "https://www.nuget.org/packages/Mixed.Tool/3.5.1",
+                "https://nuget.test/mixed.tool.3.5.1.nupkg",
+                "https://nuget.test/catalog/mixed.tool.3.5.1.json")),
+            new ThrowingNativeRunner(),
+            new ThrowingHelpRunner(),
+            new ThrowingCliFxRunner(),
+            new FakeStaticRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                seenAttempts.Add($"static:{cliFramework}");
+                if (string.Equals(cliFramework, "System.CommandLine", StringComparison.Ordinal))
+                {
+                    WriteResult(path, "retryable-failure", "static-scl-failed", cliFramework: cliFramework, includeOpenCliArtifact: false);
+                    return;
+                }
+
+                WriteResult(path, "success", "static-crawl", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+            }),
+            new FakeHookRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                seenAttempts.Add($"hook:{cliFramework}");
+                WriteResult(path, "retryable-failure", "hook-scl-failed", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Mixed.Tool",
+            "3.5.1",
+            outputRoot,
+            "batch-012",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(
+            ["hook:System.CommandLine", "static:System.CommandLine", "static:CommandLineParser"],
+            seenAttempts);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("static", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("CommandLineParser", result["cliFramework"]?.GetValue<string>());
+        Assert.Equal("CommandLineParser", result["analysisSelection"]?["selectedFramework"]?.GetValue<string>());
+        Assert.Equal("static", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("static-scl-failed", result["fallback"]?["classification"]?.GetValue<string>());
+
+        var attempts = result["analysisSelection"]?["attempts"]?.AsArray();
+        Assert.NotNull(attempts);
+        Assert.Equal(3, attempts!.Count);
+    }
+
+    [Fact]
+    public async Task RunAsync_FallsBackToLaterHookProvider_WhenEarlierCommandLineUtilsProviderFails()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        var seenAttempts = new List<string>();
+
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
+                "Hooked.Tool",
+                "3.5.2",
+                "hooked",
+                "Microsoft.Extensions.CommandLineUtils + McMaster.Extensions.CommandLineUtils",
+                "static",
+                "confirmed-static-analysis-framework",
+                "https://www.nuget.org/packages/Hooked.Tool/3.5.2",
+                "https://nuget.test/hooked.tool.3.5.2.nupkg",
+                "https://nuget.test/catalog/hooked.tool.3.5.2.json")),
+            new ThrowingNativeRunner(),
+            new ThrowingHelpRunner(),
+            new ThrowingCliFxRunner(),
+            new FakeStaticRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                seenAttempts.Add($"static:{cliFramework}");
+                WriteResult(path, "retryable-failure", $"static-{cliFramework}-failed", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }),
+            new FakeHookRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                seenAttempts.Add($"hook:{cliFramework}");
+                if (string.Equals(cliFramework, "McMaster.Extensions.CommandLineUtils", StringComparison.Ordinal))
+                {
+                    WriteResult(path, "retryable-failure", "hook-mcmaster-failed", cliFramework: cliFramework, includeOpenCliArtifact: false);
+                    return;
+                }
+
+                WriteResult(path, "success", "startup-hook", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Hooked.Tool",
+            "3.5.2",
+            outputRoot,
+            "batch-013",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(
+            [
+                "hook:McMaster.Extensions.CommandLineUtils",
+                "static:McMaster.Extensions.CommandLineUtils",
+                "hook:Microsoft.Extensions.CommandLineUtils",
+            ],
+            seenAttempts);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("hook", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("Microsoft.Extensions.CommandLineUtils", result["cliFramework"]?.GetValue<string>());
+        Assert.Equal("Microsoft.Extensions.CommandLineUtils", result["analysisSelection"]?["selectedFramework"]?.GetValue<string>());
+        Assert.Equal("static", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("static-McMaster.Extensions.CommandLineUtils-failed", result["fallback"]?["classification"]?.GetValue<string>());
     }
 
     private static void WriteResult(

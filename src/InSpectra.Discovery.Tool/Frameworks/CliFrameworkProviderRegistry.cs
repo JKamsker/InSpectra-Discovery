@@ -32,23 +32,23 @@ internal static class CliFrameworkProviderRegistry
     }
 
     public static bool HasCliFxAnalysisSupport(string? cliFramework)
-        => ResolveProviders(cliFramework).Any(static provider => provider.SupportsCliFxAnalysis);
+        => ResolveAnalysisProviders(cliFramework).Any(static provider => provider.SupportsCliFxAnalysis);
 
     public static bool HasStaticAnalysisSupport(string? cliFramework)
         => ResolveStaticAnalysisAdapter(cliFramework) is not null;
 
     public static bool HasHookAnalysisSupport(string? cliFramework)
-        => ResolveProviders(cliFramework).Any(static provider => provider.SupportsHookAnalysis);
+        => ResolveAnalysisProviders(cliFramework).Any(static provider => provider.SupportsHookAnalysis);
 
     public static string? ResolveHookAnalysisFramework(string? cliFramework)
-        => ResolveProviders(cliFramework)
+        => ResolveAnalysisProviders(cliFramework)
             .Where(static provider => provider.SupportsHookAnalysis)
             .Select(static provider => provider.Name)
             .FirstOrDefault();
 
     public static StaticAnalysisFrameworkAdapter? ResolveStaticAnalysisAdapter(string? cliFramework)
     {
-        foreach (var provider in ResolveProviders(cliFramework))
+        foreach (var provider in ResolveAnalysisProviders(cliFramework))
         {
             if (provider.StaticAnalysisAdapter is not null)
             {
@@ -85,21 +85,40 @@ internal static class CliFrameworkProviderRegistry
             || string.Equals(existingCliFramework, "CliFx", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static IEnumerable<CliFrameworkProvider> ResolveProviders(string? cliFramework)
+    public static IReadOnlyList<CliFrameworkProvider> ResolveAnalysisProviders(string? cliFramework)
     {
         if (string.IsNullOrWhiteSpace(cliFramework))
         {
-            yield break;
+            return [];
         }
 
+        var matchedProviders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var part in cliFramework.Split('+', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
         {
             if (ProvidersByLabel.TryGetValue(part, out var provider))
             {
-                yield return provider;
+                matchedProviders.Add(provider.Name);
             }
         }
+
+        var providers = new List<CliFrameworkProvider>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var provider in Providers)
+        {
+            if (matchedProviders.Contains(provider.Name)
+                && seen.Add(provider.Name))
+            {
+                providers.Add(provider);
+            }
+        }
+
+        return providers;
     }
+
+    public static IReadOnlyList<string> ResolveFrameworkNames(string? cliFramework)
+        => ResolveAnalysisProviders(cliFramework)
+            .Select(static provider => provider.Name)
+            .ToArray();
 
     private static IReadOnlyList<CliFrameworkProvider> CreateProviders()
     {

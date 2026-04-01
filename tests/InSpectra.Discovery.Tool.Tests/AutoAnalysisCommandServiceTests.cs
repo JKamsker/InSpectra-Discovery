@@ -59,13 +59,14 @@ public sealed class AutoCommandServiceTests
     }
 
     [Fact]
-    public async Task RunAsync_FallsBackToHelp_WhenNativeResultIsNotSuccessful()
+    public async Task RunAsync_FallsBackToHookThenStatic_WhenNativeResultIsNotSuccessful()
     {
         Runtime.Initialize();
 
         using var tempDirectory = new TemporaryDirectory();
         var outputRoot = tempDirectory.GetPath("analysis");
         string? capturedCommandName = null;
+        var hookRunnerCalled = false;
 
         var service = new AutoCommandService(
             new FakeDescriptorResolver(new ToolDescriptor(
@@ -86,7 +87,13 @@ public sealed class AutoCommandServiceTests
                 capturedCommandName = commandName;
                 WriteResult(path, "success", cliFramework: cliFramework);
             }),
-            new NoOpHookRunner());
+            new FakeHookRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                hookRunnerCalled = true;
+                Assert.Equal("broken", commandName);
+                Assert.Equal("System.CommandLine", cliFramework);
+                WriteResult(path, "retryable-failure", "hook-no-assembly-loaded", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }));
 
         var exitCode = await service.RunAsync(
             "Broken.Tool",
@@ -103,13 +110,15 @@ public sealed class AutoCommandServiceTests
 
         Assert.Equal(0, exitCode);
         Assert.Equal("broken", capturedCommandName);
+        Assert.True(hookRunnerCalled);
 
         var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
         Assert.Equal("success", result["disposition"]?.GetValue<string>());
         Assert.Equal("static", result["analysisMode"]?.GetValue<string>());
         Assert.Equal("System.CommandLine", result["cliFramework"]?.GetValue<string>());
-        Assert.Equal("native", result["fallback"]?["from"]?.GetValue<string>());
-        Assert.Equal("unsupported-command", result["fallback"]?["classification"]?.GetValue<string>());
+        Assert.Equal("System.CommandLine", result["analysisSelection"]?["selectedFramework"]?.GetValue<string>());
+        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("hook-no-assembly-loaded", result["fallback"]?["classification"]?.GetValue<string>());
     }
 
     [Fact]
@@ -137,7 +146,7 @@ public sealed class AutoCommandServiceTests
             new FakeCliFxRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
             {
                 capturedCommandName = commandName;
-                Assert.Equal("System.CommandLine + CliFx", cliFramework);
+                Assert.Equal("CliFx", cliFramework);
                 WriteResult(path, "success", cliFramework: "CliFx");
             }),
             new NoOpStaticRunner(),
@@ -163,6 +172,7 @@ public sealed class AutoCommandServiceTests
         Assert.Equal("success", result["disposition"]?.GetValue<string>());
         Assert.Equal("clifx", result["analysisMode"]?.GetValue<string>());
         Assert.Equal("System.CommandLine + CliFx", result["cliFramework"]?.GetValue<string>());
+        Assert.Equal("CliFx", result["analysisSelection"]?["selectedFramework"]?.GetValue<string>());
         Assert.Equal("native", result["fallback"]?["from"]?.GetValue<string>());
         Assert.Equal("unsupported-command", result["fallback"]?["classification"]?.GetValue<string>());
     }
@@ -295,7 +305,7 @@ public sealed class AutoCommandServiceTests
             {
                 capturedCommandName = commandName;
                 WriteResult(path, "success", cliFramework: "CliFx");
-                Assert.Equal("CliFx + System.CommandLine", cliFramework);
+                Assert.Equal("CliFx", cliFramework);
             }),
             new NoOpStaticRunner(),
             new NoOpHookRunner());
@@ -320,6 +330,7 @@ public sealed class AutoCommandServiceTests
         Assert.Equal("success", result["disposition"]?.GetValue<string>());
         Assert.Equal("clifx", result["analysisMode"]?.GetValue<string>());
         Assert.Equal("CliFx + System.CommandLine", result["cliFramework"]?.GetValue<string>());
+        Assert.Equal("CliFx", result["analysisSelection"]?["selectedFramework"]?.GetValue<string>());
         Assert.Null(result["fallback"]);
     }
 
@@ -428,6 +439,15 @@ public sealed class AutoCommandServiceTests
     {
         public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
             => throw new InvalidOperationException("Hook runner should not run.");
+    }
+
+    private sealed class FakeHookRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoHookRunner
+    {
+        public Task RunAsync(string packageId, string version, string? commandName, string? cliFramework, string outputRoot, string batchId, int attempt, string source, int installTimeoutSeconds, int analysisTimeoutSeconds, int commandTimeoutSeconds, CancellationToken cancellationToken)
+        {
+            handler(outputRoot, packageId, commandName, version, batchId, attempt, cliFramework, installTimeoutSeconds, analysisTimeoutSeconds, commandTimeoutSeconds, source);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeStaticRunner(Action<string, string, string?, string, string, int, string?, int, int, int, string> handler) : IAutoStaticRunner

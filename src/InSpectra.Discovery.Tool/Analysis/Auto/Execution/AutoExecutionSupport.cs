@@ -43,7 +43,7 @@ internal static class AutoExecutionSupport
             cancellationToken);
 
     public static Task<JsonObject> RunSelectedAnalyzerAsync(
-        string selectedMode,
+        AutoAnalysisAttempt selectedAttempt,
         IAutoHelpRunner helpRunner,
         IAutoCliFxRunner cliFxRunner,
         IAutoStaticRunner staticRunner,
@@ -61,9 +61,10 @@ internal static class AutoExecutionSupport
         string resultPath,
         JsonObject? nativeResult,
         CancellationToken cancellationToken)
-        => selectedMode switch
+        => selectedAttempt.Mode switch
         {
             "hook" => RunHookAsync(
+                selectedAttempt,
                 hookRunner,
                 packageId,
                 version,
@@ -79,6 +80,7 @@ internal static class AutoExecutionSupport
                 nativeResult,
                 cancellationToken),
             "clifx" => RunCliFxAsync(
+                selectedAttempt,
                 cliFxRunner,
                 packageId,
                 version,
@@ -94,6 +96,7 @@ internal static class AutoExecutionSupport
                 nativeResult,
                 cancellationToken),
             "static" => RunStaticAsync(
+                selectedAttempt,
                 staticRunner,
                 packageId,
                 version,
@@ -109,6 +112,7 @@ internal static class AutoExecutionSupport
                 nativeResult,
                 cancellationToken),
             _ => RunHelpAsync(
+                selectedAttempt,
                 helpRunner,
                 packageId,
                 version,
@@ -126,6 +130,7 @@ internal static class AutoExecutionSupport
         };
 
     private static Task<JsonObject> RunCliFxAsync(
+        AutoAnalysisAttempt selectedAttempt,
         IAutoCliFxRunner cliFxRunner,
         string packageId,
         string version,
@@ -147,7 +152,7 @@ internal static class AutoExecutionSupport
                     packageId,
                     version,
                     descriptor.CommandName,
-                    descriptor.CliFramework,
+                    selectedAttempt.Framework ?? descriptor.CliFramework,
                     outputDirectory,
                     batchId,
                     attempt,
@@ -165,10 +170,12 @@ internal static class AutoExecutionSupport
             source,
             resultPath,
             nativeResult,
-            selectedMode: "clifx",
+            selectedMode: selectedAttempt.Mode,
+            selectedFramework: selectedAttempt.Framework,
             cancellationToken);
 
     private static Task<JsonObject> RunStaticAsync(
+        AutoAnalysisAttempt selectedAttempt,
         IAutoStaticRunner staticRunner,
         string packageId,
         string version,
@@ -190,7 +197,7 @@ internal static class AutoExecutionSupport
                     packageId,
                     version,
                     descriptor.CommandName,
-                    descriptor.CliFramework,
+                    selectedAttempt.Framework ?? descriptor.CliFramework,
                     outputDirectory,
                     batchId,
                     attempt,
@@ -208,10 +215,12 @@ internal static class AutoExecutionSupport
             source,
             resultPath,
             nativeResult,
-            selectedMode: "static",
+            selectedMode: selectedAttempt.Mode,
+            selectedFramework: selectedAttempt.Framework,
             cancellationToken);
 
     private static Task<JsonObject> RunHookAsync(
+        AutoAnalysisAttempt selectedAttempt,
         IAutoHookRunner hookRunner,
         string packageId,
         string version,
@@ -233,7 +242,7 @@ internal static class AutoExecutionSupport
                     packageId,
                     version,
                     descriptor.CommandName,
-                    descriptor.CliFramework,
+                    selectedAttempt.Framework ?? descriptor.CliFramework,
                     outputDirectory,
                     batchId,
                     attempt,
@@ -251,10 +260,12 @@ internal static class AutoExecutionSupport
             source,
             resultPath,
             nativeResult,
-            selectedMode: "hook",
+            selectedMode: selectedAttempt.Mode,
+            selectedFramework: selectedAttempt.Framework,
             cancellationToken);
 
     private static Task<JsonObject> RunHelpAsync(
+        AutoAnalysisAttempt selectedAttempt,
         IAutoHelpRunner helpRunner,
         string packageId,
         string version,
@@ -294,7 +305,8 @@ internal static class AutoExecutionSupport
             source,
             resultPath,
             nativeResult,
-            selectedMode: "help",
+            selectedMode: selectedAttempt.Mode,
+            selectedFramework: selectedAttempt.Framework,
             cancellationToken);
 }
 
@@ -306,5 +318,4 @@ internal sealed record NativeAnalysisOutcome(bool ShouldReturnImmediately, int E
     public static NativeAnalysisOutcome Return(int exitCode)
         => new(true, exitCode, null);
 }
-
 

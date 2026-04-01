@@ -50,7 +50,7 @@ internal static class AutoNativeExecutionSupport
             return NativeAnalysisOutcome.Continue(null);
         }
 
-        AutoResultSupport.ApplyDescriptor(nativeResult, descriptor, "native", null);
+        AutoResultSupport.ApplyDescriptor(nativeResult, descriptor, "native", null, descriptor.CliFramework);
         RepositoryPathResolver.WriteJsonFile(resultPath, nativeResult);
         if (!AutoResultInspector.ShouldTryHelpFallback(nativeResult))
         {
@@ -68,5 +68,4 @@ internal static class AutoNativeExecutionSupport
         return NativeAnalysisOutcome.Continue(nativeResult);
     }
 }
-
 

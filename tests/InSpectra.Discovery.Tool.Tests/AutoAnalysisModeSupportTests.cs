@@ -7,17 +7,123 @@ using Xunit;
 
 public sealed class AutoModeSupportTests
 {
-    [Theory]
-    [InlineData("clifx", "System.CommandLine", "clifx")]
-    [InlineData("static", "CliFx", "static")]
-    [InlineData("help", "CliFx", "help")]
-    [InlineData("native", "CliFx", "clifx")]
-    [InlineData("native", "System.CommandLine", "static")]
-    [InlineData("native", null, "help")]
-    [InlineData("unexpected", "DocoptNet", "help")]
-    public void ResolveFallbackMode_Returns_Expected_Mode(string preferredMode, string? cliFramework, string expectedMode)
+    [Fact]
+    public void BuildAttemptPlan_TriesAllEligibleProviders_BeforeHelp()
     {
-        var descriptor = new ToolDescriptor(
+        var descriptor = CreateDescriptor("System.CommandLine + CommandLineParser", preferredMode: "static");
+
+        var plan = AutoModeSupport.BuildAttemptPlan(descriptor);
+
+        Assert.Collection(
+            plan,
+            attempt =>
+            {
+                Assert.Equal("hook", attempt.Mode);
+                Assert.Equal("System.CommandLine", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("static", attempt.Mode);
+                Assert.Equal("System.CommandLine", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("static", attempt.Mode);
+                Assert.Equal("CommandLineParser", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("help", attempt.Mode);
+                Assert.Null(attempt.Framework);
+            });
+    }
+
+    [Fact]
+    public void BuildAttemptPlan_PrefersCliFx_BeforeLaterFrameworkSpecificFallbacks()
+    {
+        var descriptor = CreateDescriptor("System.CommandLine + CliFx", preferredMode: "native");
+
+        var plan = AutoModeSupport.BuildAttemptPlan(descriptor);
+
+        Assert.Collection(
+            plan,
+            attempt =>
+            {
+                Assert.Equal("clifx", attempt.Mode);
+                Assert.Equal("CliFx", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("hook", attempt.Mode);
+                Assert.Equal("System.CommandLine", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("static", attempt.Mode);
+                Assert.Equal("System.CommandLine", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("help", attempt.Mode);
+                Assert.Null(attempt.Framework);
+            });
+    }
+
+    [Fact]
+    public void BuildAttemptPlan_TreatsBothCommandLineUtilsProviders_AsEligible()
+    {
+        var descriptor = CreateDescriptor(
+            "Microsoft.Extensions.CommandLineUtils + McMaster.Extensions.CommandLineUtils",
+            preferredMode: "static");
+
+        var plan = AutoModeSupport.BuildAttemptPlan(descriptor);
+
+        Assert.Collection(
+            plan,
+            attempt =>
+            {
+                Assert.Equal("hook", attempt.Mode);
+                Assert.Equal("McMaster.Extensions.CommandLineUtils", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("static", attempt.Mode);
+                Assert.Equal("McMaster.Extensions.CommandLineUtils", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("hook", attempt.Mode);
+                Assert.Equal("Microsoft.Extensions.CommandLineUtils", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("static", attempt.Mode);
+                Assert.Equal("Microsoft.Extensions.CommandLineUtils", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("help", attempt.Mode);
+                Assert.Null(attempt.Framework);
+            });
+    }
+
+    [Theory]
+    [InlineData("System.CommandLine", "hook")]
+    [InlineData("System.CommandLine + CommandLineParser", "hook")]
+    [InlineData("CliFx + System.CommandLine", "clifx")]
+    [InlineData("CommandLineParser", "static")]
+    [InlineData(null, "help")]
+    public void ResolveFallbackMode_ReturnsFirstAttemptMode(string? cliFramework, string expectedMode)
+    {
+        var descriptor = CreateDescriptor(cliFramework, preferredMode: "native");
+
+        var mode = AutoModeSupport.ResolveFallbackMode(descriptor);
+
+        Assert.Equal(expectedMode, mode);
+    }
+
+    private static ToolDescriptor CreateDescriptor(string? cliFramework, string preferredMode)
+        => new(
             "Sample.Tool",
             "1.2.3",
             "sample",
@@ -27,11 +133,4 @@ public sealed class AutoModeSupportTests
             "https://www.nuget.org/packages/Sample.Tool/1.2.3",
             "https://nuget.test/sample.tool.1.2.3.nupkg",
             "https://nuget.test/catalog/sample.tool.1.2.3.json");
-
-        var mode = AutoModeSupport.ResolveFallbackMode(descriptor);
-
-        Assert.Equal(expectedMode, mode);
-    }
 }
-
-

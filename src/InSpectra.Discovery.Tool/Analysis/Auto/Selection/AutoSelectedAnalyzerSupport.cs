@@ -21,6 +21,7 @@ internal static class AutoSelectedAnalyzerSupport
         string resultPath,
         JsonObject? nativeResult,
         string selectedMode,
+        string? selectedFramework,
         CancellationToken cancellationToken)
     {
         await runAnalyzerAsync(cancellationToken);
@@ -33,7 +34,7 @@ internal static class AutoSelectedAnalyzerSupport
                 attempt,
                 source,
                 "The selected analyzer did not write result.json.");
-        AutoResultSupport.ApplyDescriptor(selectedResult, descriptor, selectedMode, nativeResult);
+        AutoResultSupport.ApplyDescriptor(selectedResult, descriptor, selectedMode, nativeResult, selectedFramework);
         ValidateSuccessfulOpenCliArtifact(selectedResult, resultPath);
         return selectedResult;
     }

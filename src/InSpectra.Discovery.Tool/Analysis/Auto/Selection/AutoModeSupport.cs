@@ -6,47 +6,44 @@ using InSpectra.Discovery.Tool.Analysis.Tools;
 
 internal static class AutoModeSupport
 {
-    public static string ResolveFallbackMode(ToolDescriptor descriptor)
+    public static IReadOnlyList<AutoAnalysisAttempt> BuildAttemptPlan(ToolDescriptor descriptor)
     {
-        // Hook analysis is strictly better than static for System.CommandLine tools,
-        // so upgrade "static" to "hook" when the framework supports it.
-        if (CliFrameworkProviderRegistry.HasHookAnalysisSupport(descriptor.CliFramework))
+        if (string.Equals(descriptor.PreferredAnalysisMode, "help", StringComparison.OrdinalIgnoreCase))
         {
-            if (string.IsNullOrWhiteSpace(descriptor.PreferredAnalysisMode)
-                || string.Equals(descriptor.PreferredAnalysisMode, "static", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(descriptor.PreferredAnalysisMode, "hook", StringComparison.OrdinalIgnoreCase))
+            return [new AutoAnalysisAttempt("help", null)];
+        }
+
+        var attempts = new List<AutoAnalysisAttempt>();
+        foreach (var provider in CliFrameworkProviderRegistry.ResolveAnalysisProviders(descriptor.CliFramework))
+        {
+            if (provider.SupportsCliFxAnalysis)
             {
-                return "hook";
+                attempts.Add(new AutoAnalysisAttempt("clifx", provider.Name));
+            }
+
+            if (provider.SupportsHookAnalysis)
+            {
+                attempts.Add(new AutoAnalysisAttempt("hook", provider.Name));
+            }
+
+            if (provider.StaticAnalysisAdapter is not null)
+            {
+                attempts.Add(new AutoAnalysisAttempt("static", provider.Name));
             }
         }
 
-        if (string.Equals(descriptor.PreferredAnalysisMode, "clifx", StringComparison.OrdinalIgnoreCase))
+        if (attempts.Count == 0)
         {
-            return "clifx";
+            return [new AutoAnalysisAttempt("help", null)];
         }
 
-        if (string.Equals(descriptor.PreferredAnalysisMode, "static", StringComparison.OrdinalIgnoreCase))
-        {
-            return "static";
-        }
+        attempts.Add(new AutoAnalysisAttempt("help", null));
+        return attempts;
+    }
 
-        if (string.Equals(descriptor.PreferredAnalysisMode, "help", StringComparison.OrdinalIgnoreCase))
-        {
-            return "help";
-        }
-
-        if (CliFrameworkProviderRegistry.HasCliFxAnalysisSupport(descriptor.CliFramework))
-        {
-            return "clifx";
-        }
-
-        if (CliFrameworkProviderRegistry.HasStaticAnalysisSupport(descriptor.CliFramework))
-        {
-            return "static";
-        }
-
-        return "help";
+    public static string ResolveFallbackMode(ToolDescriptor descriptor)
+    {
+        var attempts = BuildAttemptPlan(descriptor);
+        return attempts.Count == 0 ? "help" : attempts[0].Mode;
     }
 }
-
-

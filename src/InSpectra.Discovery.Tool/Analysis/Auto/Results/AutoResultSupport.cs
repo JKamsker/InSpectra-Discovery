@@ -15,15 +15,29 @@ internal static class AutoResultSupport
     public static JsonObject? LoadResult(string resultPath)
         => JsonNodeFileLoader.TryLoadJsonObject(resultPath);
 
-    public static void ApplyDescriptor(JsonObject result, ToolDescriptor descriptor, string analysisMode, JsonObject? fallbackResult)
+    public static void ApplyDescriptor(
+        JsonObject result,
+        ToolDescriptor descriptor,
+        string analysisMode,
+        JsonObject? fallbackResult,
+        string? selectedFramework = null)
     {
-        result["analysisMode"] = analysisMode;
-        result["analysisSelection"] = new JsonObject
+        var analysisSelection = new JsonObject
         {
             ["preferredMode"] = descriptor.PreferredAnalysisMode,
             ["selectedMode"] = analysisMode,
+            ["selectedFramework"] = selectedFramework,
             ["reason"] = descriptor.SelectionReason,
         };
+        var candidateFrameworks = new JsonArray();
+        foreach (var framework in CliFrameworkProviderRegistry.ResolveFrameworkNames(descriptor.CliFramework))
+        {
+            candidateFrameworks.Add(framework);
+        }
+
+        analysisSelection["candidateFrameworks"] = candidateFrameworks;
+        result["analysisMode"] = analysisMode;
+        result["analysisSelection"] = analysisSelection;
 
         if (CliFrameworkProviderRegistry.ShouldReplace(result["cliFramework"]?.GetValue<string>(), descriptor.CliFramework))
         {
@@ -60,6 +74,17 @@ internal static class AutoResultSupport
         }
 
         ApplyFallback(result, "native", fallbackResult);
+    }
+
+    public static void ApplyAttemptLog(JsonObject result, JsonArray attemptLog)
+    {
+        if (result["analysisSelection"] is not JsonObject selection)
+        {
+            selection = new JsonObject();
+            result["analysisSelection"] = selection;
+        }
+
+        selection["attempts"] = attemptLog;
     }
 
     public static void ApplyFallback(JsonObject result, string fallbackFrom, JsonObject fallbackResult)

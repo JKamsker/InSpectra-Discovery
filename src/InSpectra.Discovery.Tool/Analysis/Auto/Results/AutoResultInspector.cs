@@ -9,25 +9,13 @@ internal static class AutoResultInspector
             || !IsSuccessful(nativeResult)
             || !HasOpenCliArtifact(nativeResult);
 
-    public static bool ShouldTryStaticFallback(string selectedMode, string? preferredMode, JsonObject result)
-        => string.Equals(selectedMode, "hook", StringComparison.Ordinal)
-            && string.Equals(preferredMode, "static", StringComparison.OrdinalIgnoreCase)
-            && ShouldTryHelpFallback(result);
-
     public static bool ShouldUseFallbackResult(JsonObject result)
         => IsSuccessful(result)
             && HasOpenCliArtifact(result);
 
-    public static bool ShouldTryHelpAfterStaticFallback(JsonObject result)
-        => (IsSuccessful(result) && !HasOpenCliArtifact(result))
-            || IsTerminalFailure(result);
-
     public static bool ShouldUseFailedFallbackResult(JsonObject initialResult, JsonObject fallbackResult)
         => !IsTerminalFailure(initialResult)
             && IsTerminalFailure(fallbackResult);
-
-    public static bool ShouldUseStaticFallback(JsonObject result)
-        => ShouldUseFallbackResult(result);
 
     public static bool ShouldPreserveNativeResult(JsonObject? nativeResult, JsonObject helpResult)
         => nativeResult is not null

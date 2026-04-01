@@ -79,6 +79,18 @@ public sealed class CliFrameworkProviderRegistryTests
         Assert.IsType<SystemCommandLineAttributeReader>(adapter.Reader);
     }
 
+    [Fact]
+    public void ResolveAnalysisProviders_NormalizesCompositeLabels_ToRegistryPriority()
+    {
+        var providers = CliFrameworkProviderRegistry.ResolveAnalysisProviders("System.CommandLine + CliFx + CommandLineParser");
+
+        Assert.Collection(
+            providers,
+            provider => Assert.Equal("CliFx", provider.Name),
+            provider => Assert.Equal("System.CommandLine", provider.Name),
+            provider => Assert.Equal("CommandLineParser", provider.Name));
+    }
+
     [Theory]
     [InlineData(null, "CliFx + System.CommandLine", true)]
     [InlineData("CliFx", "CliFx + System.CommandLine", true)]
@@ -94,4 +106,3 @@ public sealed class CliFrameworkProviderRegistryTests
         Assert.Equal(expected, CliFrameworkProviderRegistry.ShouldReplace(existingCliFramework, candidateCliFramework));
     }
 }
-
