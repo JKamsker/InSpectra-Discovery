@@ -25,6 +25,18 @@ internal sealed partial class ArgumentNodeBuilder
         "VALUE",
     };
 
+    private static readonly HashSet<string> GenericDispatcherArgumentNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "ARG",
+        "ARGS",
+        "COMMAND",
+        "FILE",
+        "PATH",
+        "SUBCOMMAND",
+        "TARGET",
+        "VALUE",
+    };
+
     public JsonArray? Build(string commandName, string commandPath, Document? helpDocument)
     {
         if (helpDocument is null)
@@ -47,6 +59,11 @@ internal sealed partial class ArgumentNodeBuilder
             helpDocument.Commands.Count > 0);
         var arguments = UsageArgumentSupport.SelectArguments(explicitArguments, usageArguments);
         if (ShouldSuppressOptionShadowArguments(arguments, helpDocument.Options))
+        {
+            arguments = [];
+        }
+
+        if (ShouldSuppressDispatcherPlaceholderArguments(arguments, helpDocument))
         {
             arguments = [];
         }
@@ -143,6 +160,23 @@ internal sealed partial class ArgumentNodeBuilder
             && GenericArgumentNames.Contains(signature.Name)
             && string.IsNullOrWhiteSpace(argument.Description);
 
+    private static bool ShouldSuppressDispatcherPlaceholderArguments(
+        IReadOnlyList<Item> arguments,
+        Document helpDocument)
+    {
+        if (helpDocument.Commands.Count == 0
+            || arguments.Count == 0
+            || !LooksLikeDispatcherUsage(helpDocument.UsageLines))
+        {
+            return false;
+        }
+
+        return arguments.All(argument =>
+            TryParseArgumentSignature(argument.Key, out var signature)
+            && GenericDispatcherArgumentNames.Contains(signature.Name)
+            && string.IsNullOrWhiteSpace(argument.Description));
+    }
+
     private static bool ShouldSuppressOptionShadowArguments(
         IReadOnlyList<Item> arguments,
         IReadOnlyList<Item> options)
@@ -172,6 +206,22 @@ internal sealed partial class ArgumentNodeBuilder
         }
 
         return true;
+    }
+
+    private static bool LooksLikeDispatcherUsage(IReadOnlyList<string> usageLines)
+    {
+        foreach (var line in usageLines)
+        {
+            foreach (Match match in UsagePlaceholderRegex().Matches(line))
+            {
+                if (UsageArgumentPatternSupport.IsDispatcherPlaceholder(match.Groups["name"].Value))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static JsonObject BuildArity(int minimum, bool isSequence = false)
@@ -232,4 +282,7 @@ internal sealed partial class ArgumentNodeBuilder
 
     [GeneratedRegex(@"\d+$", RegexOptions.Compiled)]
     private static partial Regex TrailingDigitsRegex();
+
+    [GeneratedRegex(@"[\[<](?<name>[^\]>]+)[\]>]", RegexOptions.Compiled)]
+    private static partial Regex UsagePlaceholderRegex();
 }

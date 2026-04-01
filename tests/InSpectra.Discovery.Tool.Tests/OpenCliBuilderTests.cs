@@ -597,6 +597,62 @@ public sealed class OpenCliBuilderTests
     }
 
     [Fact]
+    public void Does_Not_Emit_Generic_File_Argument_For_Intermediate_Dispatchers_With_Child_Commands()
+    {
+        var parser = new TextParser();
+        var builder = new OpenCliBuilder();
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = parser.Parse(
+                """
+                Usage: ncp [command]
+
+                NetCorePal.Cloud.CLI.Toolkit
+
+                Commands:
+                  new    ??????
+
+                Options:
+                  --completion    Generate a shell completion code
+                  -h, --help      Show help message
+                  --version       Show version
+                """),
+            ["new"] = parser.Parse(
+                """
+                Usage: ncp new [command]
+
+                NetCorePal.Cloud.CLI.Toolkit
+
+                Commands:
+                  ar      ?????`{name}.cs`??
+                  cmd     ????`{name}Command.cs`??,?????????
+                  repo    ????`{name}Repository.cs`??
+                  de      ??????`{name}DomainEvent.cs`??
+                  deh     ?????????`{name}.cs`??
+
+                Options:
+                  -h, --help    Show help message
+                """),
+        };
+
+        var document = builder.Build("ncp", "0.1.1", helpDocuments);
+        var rootCommands = Assert.IsType<JsonArray>(document["commands"]);
+        var newCommand = Assert.IsType<JsonObject>(Assert.Single(rootCommands));
+
+        Assert.Equal("new", newCommand["name"]!.GetValue<string>());
+        Assert.Null(newCommand["arguments"]);
+
+        var childCommands = Assert.IsType<JsonArray>(newCommand["commands"]);
+        Assert.Equal(
+            new[] { "ar", "cmd", "de", "deh", "repo" },
+            childCommands
+                .OfType<JsonObject>()
+                .Select(command => command["name"]!.GetValue<string>())
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToArray());
+    }
+
+    [Fact]
     public void Builds_CommandScoped_Subcommand_Surfaces_From_A_Single_Root_Help_Page()
     {
         var rootHelp = new TextParser().Parse(

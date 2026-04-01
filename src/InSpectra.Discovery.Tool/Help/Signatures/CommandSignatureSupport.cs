@@ -39,19 +39,21 @@ internal static partial class CommandSignatureSupport
 
     public static bool LooksLikeCommandDescription(string description)
     {
-        var trimmed = description.TrimStart();
-        while (trimmed.StartsWith("(", StringComparison.Ordinal))
-        {
-            var closingIndex = trimmed.IndexOf(')');
-            if (closingIndex < 0)
-            {
-                break;
-            }
-
-            trimmed = trimmed[(closingIndex + 1)..].TrimStart();
-        }
-
+        var trimmed = TrimDescriptionPrefix(description);
         return trimmed.Length > 0 && char.IsLetter(trimmed[0]);
+    }
+
+    public static bool LooksLikeOpaqueCommandDescription(string description)
+    {
+        var trimmed = TrimDescriptionPrefix(description);
+        var stripped = OpaqueDescriptionCodeSpanRegex().Replace(trimmed, " ");
+        stripped = OpaqueDescriptionPlaceholderRegex().Replace(stripped, " ");
+        return stripped.Length > 0
+            && stripped.All(ch => ch == '?'
+                || ch == '\uFFFD'
+                || char.IsWhiteSpace(ch)
+                || char.IsPunctuation(ch)
+                || char.IsSymbol(ch));
     }
 
     public static bool IsBuiltinAuxiliaryCommand(string key)
@@ -90,6 +92,23 @@ internal static partial class CommandSignatureSupport
             && line.EndsWith("|", StringComparison.Ordinal)
             && line.Count(ch => ch == '|') >= 2;
 
+    private static string TrimDescriptionPrefix(string description)
+    {
+        var trimmed = description.TrimStart();
+        while (trimmed.StartsWith("(", StringComparison.Ordinal))
+        {
+            var closingIndex = trimmed.IndexOf(')');
+            if (closingIndex < 0)
+            {
+                break;
+            }
+
+            trimmed = trimmed[(closingIndex + 1)..].TrimStart();
+        }
+
+        return trimmed;
+    }
+
     private static bool LooksLikeCommandSegment(string segment)
         => segment.Length > 0
             && char.IsLetter(segment[0])
@@ -123,4 +142,10 @@ internal static partial class CommandSignatureSupport
 
     [GeneratedRegex(@"^(?<left>[A-Za-z][A-Za-z0-9_.:+-]*)\s*\|\s*(?<right>[A-Za-z][A-Za-z0-9_.:+-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex PipeSeparatedAliasInventoryRowRegex();
+
+    [GeneratedRegex(@"`[^`]+`", RegexOptions.Compiled)]
+    private static partial Regex OpaqueDescriptionCodeSpanRegex();
+
+    [GeneratedRegex(@"\{[^}]+\}", RegexOptions.Compiled)]
+    private static partial Regex OpaqueDescriptionPlaceholderRegex();
 }

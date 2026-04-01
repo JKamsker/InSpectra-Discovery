@@ -1088,4 +1088,62 @@ public sealed class TextParserTests
         Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "Only).", StringComparison.Ordinal));
         Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "Use", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Parses_Command_Rows_With_Opaque_Garbled_Descriptions_Without_Inventing_Usage_Arguments()
+    {
+        var parser = new TextParser();
+
+        var document = parser.Parse(
+            """
+            Usage: ncp [command]
+
+            NetCorePal.Cloud.CLI.Toolkit
+
+            Commands:
+              new    ??????
+
+            Options:
+              --completion    Generate a shell completion code
+              -h, --help      Show help message
+              --version       Show version
+            """);
+
+        var command = Assert.Single(document.Commands);
+        Assert.Equal("new", command.Key);
+        Assert.Null(command.Description);
+        Assert.Empty(document.Arguments);
+    }
+
+    [Fact]
+    public void Parses_Command_Rows_With_Garbled_Code_Placeholder_Descriptions()
+    {
+        var parser = new TextParser();
+
+        var document = parser.Parse(
+            """
+            Usage: ncp new [command]
+
+            NetCorePal.Cloud.CLI.Toolkit
+
+            Commands:
+              ar      ?????`{name}.cs`??
+              cmd     ????`{name}Command.cs`??,?????????
+              repo    ????`{name}Repository.cs`??
+              de      ??????`{name}DomainEvent.cs`??
+              deh     ?????????`{name}.cs`??
+
+            Options:
+              -h, --help    Show help message
+            """);
+
+        Assert.Equal(
+            new[] { "ar", "cmd", "de", "deh", "repo" },
+            document.Commands
+                .Select(command => command.Key)
+                .OrderBy(key => key, StringComparer.Ordinal)
+                .ToArray());
+        Assert.All(document.Commands, command => Assert.Null(command.Description));
+        Assert.Empty(document.Arguments);
+    }
 }

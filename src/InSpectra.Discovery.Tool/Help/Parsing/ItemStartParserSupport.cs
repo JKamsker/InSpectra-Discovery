@@ -89,7 +89,14 @@ internal static partial class ItemStartParserSupport
             if (!string.IsNullOrWhiteSpace(description)
                 && !SignatureNormalizer.LooksLikeCommandDescription(description))
             {
-                return false;
+                if (SignatureNormalizer.LooksLikeOpaqueCommandDescription(description))
+                {
+                    description = null;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             key = SignatureNormalizer.NormalizeCommandKey(key);
@@ -159,4 +166,3 @@ internal static partial class ItemStartParserSupport
     [GeneratedRegex(@"^(?<key>\S(?:.*?\S)?)\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+(?<description>\S.*))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 }
-

@@ -20,6 +20,9 @@ internal static class SignatureNormalizer
     public static bool LooksLikeCommandDescription(string description)
         => CommandSignatureSupport.LooksLikeCommandDescription(description);
 
+    public static bool LooksLikeOpaqueCommandDescription(string description)
+        => CommandSignatureSupport.LooksLikeOpaqueCommandDescription(description);
+
     public static bool IsBuiltinAuxiliaryCommand(string key)
         => CommandSignatureSupport.IsBuiltinAuxiliaryCommand(key);
 
@@ -29,4 +32,3 @@ internal static class SignatureNormalizer
     public static bool LooksLikeMarkdownTableLine(string line)
         => CommandSignatureSupport.LooksLikeMarkdownTableLine(line);
 }
-
