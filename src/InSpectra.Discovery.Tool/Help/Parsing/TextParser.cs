@@ -14,36 +14,6 @@ internal sealed class TextParser
 {
     private const string IgnoredSectionName = "__ignored__";
 
-    private static readonly Dictionary<string, string> SectionAliases = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["ARGUMENT"] = "arguments",
-        ["ARGUMENTE"] = "arguments",
-        ["ARGUMENTS"] = "arguments",
-        ["BEFEHL"] = "commands",
-        ["BEFEHLE"] = "commands",
-        ["COMMAND"] = "commands",
-        ["COMMAND LIST"] = "commands",
-        ["COMMANDS"] = "commands",
-        ["DESCRIPTION"] = "description",
-        ["EXAMPLES"] = "examples",
-        ["OPTION"] = "options",
-        ["OPTIONEN"] = "options",
-        ["OPTIONS"] = "options",
-        ["PARAMETER"] = "arguments",
-        ["PARAMETERS"] = "arguments",
-        ["SUBCOMMANDS"] = "commands",
-        ["SYNOPSIS"] = "usage",
-        ["USAGE"] = "usage",
-        ["VERBS"] = "commands",
-        ["VERWENDUNG"] = "usage",
-    };
-
-    private static readonly HashSet<string> IgnoredSectionHeaders = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "RAW OUTPUT",
-        "REDIRECTION WARNING",
-    };
-
     public Document Parse(string text)
     {
         var lines = Normalize(text);
@@ -78,14 +48,21 @@ internal sealed class TextParser
                 return new Document(null, null, null, null, [], [], [], []);
             }
 
+            if (currentSection is not null
+                && !string.Equals(currentSection, IgnoredSectionName, StringComparison.Ordinal)
+                && TextNoiseClassifier.ShouldIgnoreSectionLine(line))
+            {
+                continue;
+            }
+
             sawInventoryHeader |= TextNoiseClassifier.LooksLikeInventoryHeaderLine(line.Trim());
-            if (SectionHeaderSupport.TryParseIgnoredSectionHeader(line, IgnoredSectionHeaders))
+            if (SectionHeaderSupport.TryParseIgnoredSectionHeader(line, HelpSectionCatalog.IgnoredHeaders))
             {
                 currentSection = IgnoredSectionName;
                 continue;
             }
 
-            if (SectionHeaderSupport.TryParseSectionHeader(line, SectionAliases, out var sectionName, out var inlineValue, out var matchedHeader))
+            if (SectionHeaderSupport.TryParseSectionHeader(line, HelpSectionCatalog.Aliases, out var sectionName, out var inlineValue, out var matchedHeader))
             {
                 if (string.Equals(matchedHeader, "COMMAND", StringComparison.OrdinalIgnoreCase)
                     && !string.IsNullOrWhiteSpace(inlineValue))
@@ -123,7 +100,7 @@ internal sealed class TextParser
 
             if (currentSection is not null
                 && !string.Equals(currentSection, IgnoredSectionName, StringComparison.Ordinal)
-                && SectionHeaderSupport.LooksLikeUnrecognizedMarkdownSectionHeader(line, SectionAliases, IgnoredSectionHeaders))
+                && SectionHeaderSupport.LooksLikeUnrecognizedMarkdownSectionHeader(line, HelpSectionCatalog.Aliases, HelpSectionCatalog.IgnoredHeaders))
             {
                 currentSection = IgnoredSectionName;
                 continue;
@@ -164,12 +141,22 @@ internal sealed class TextParser
             trailingStructuredBlock);
         ItemParser.SplitArgumentSectionLines(rawArgumentLines, out var parsedArgumentLines, out var optionStyleArgumentLines);
 
+        var commands = ItemParser.ParseItems(commandLines ?? [], ItemKind.Command);
+        if (commands.Count == 0)
+        {
+            commands = ItemParser.InferCommands(preamble, sawInventoryHeader);
+        }
+
+        var embeddedCommandSections = CommandScopedSectionSupport.Extract(lines, commands);
+        var filteredAllLines = lines
+            .Where((_, index) => !embeddedCommandSections.ConsumedLineIndexes.Contains(index))
+            .ToArray();
         var parsedUsageLines = TrimNonEmpty(
             usageSectionParts.UsageLines.Count > 0
                 ? usageSectionParts.UsageLines
                 : PreambleInference.InferUsageLines(preamble));
         var rawOptionLines = ParserInputAssemblySupport.BuildRawOptionLines(
-            lines,
+            filteredAllLines,
             preamble,
             title,
             sections,
@@ -183,12 +170,6 @@ internal sealed class TextParser
             LegacyOptionTable.NormalizeOptionLines(rawOptionLines),
             ItemKind.Option);
 
-        var commands = ItemParser.ParseItems(commandLines ?? [], ItemKind.Command);
-        if (commands.Count == 0)
-        {
-            commands = ItemParser.InferCommands(preamble, sawInventoryHeader);
-        }
-
         var applicationDescription = ApplicationDescriptionInference.Infer(preamble, descriptionStartIndex);
         var commandDescription = JoinLines(descriptionLines ?? []);
         return new Document(
@@ -199,7 +180,10 @@ internal sealed class TextParser
             UsageLines: parsedUsageLines,
             Arguments: ItemParser.ParseItems(parsedArgumentLines, ItemKind.Argument),
             Options: parsedOptions,
-            Commands: commands);
+            Commands: commands)
+        {
+            EmbeddedCommandDocuments = embeddedCommandSections.Documents,
+        };
     }
 
     private static string[] Normalize(string text)

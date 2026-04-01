@@ -1,6 +1,8 @@
 namespace InSpectra.Discovery.Tool.Help.Signatures;
 
-internal static class CommandSignatureSupport
+using System.Text.RegularExpressions;
+
+internal static partial class CommandSignatureSupport
 {
     public static string NormalizeCommandKey(string key)
     {
@@ -59,6 +61,11 @@ internal static class CommandSignatureSupport
     public static string NormalizeCommandItemLine(string rawLine)
     {
         var trimmedStart = rawLine.TrimStart();
+        if (TryNormalizePipeSeparatedAliasInventoryRow(trimmedStart, out var normalizedAliasInventoryRow))
+        {
+            return normalizedAliasInventoryRow;
+        }
+
         if (!trimmedStart.StartsWith(">", StringComparison.Ordinal))
         {
             return rawLine;
@@ -88,5 +95,32 @@ internal static class CommandSignatureSupport
             && char.IsLetter(segment[0])
             && !segment.StartsWith("CommandLine.", StringComparison.Ordinal)
             && segment.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' or '.' or ':' or '+');
-}
 
+    private static bool TryNormalizePipeSeparatedAliasInventoryRow(string rawLine, out string normalizedLine)
+    {
+        normalizedLine = string.Empty;
+
+        var match = PipeSeparatedAliasInventoryRowRegex().Match(rawLine);
+        if (!match.Success)
+        {
+            return false;
+        }
+
+        var left = match.Groups["left"].Value.Trim();
+        var right = match.Groups["right"].Value.Trim();
+        var description = match.Groups["description"].Value.Trim();
+        if (!LooksLikeCommandSegment(left)
+            || !LooksLikeCommandSegment(right)
+            || !LooksLikeCommandDescription(description))
+        {
+            return false;
+        }
+
+        var commandName = left.Length >= right.Length ? left : right;
+        normalizedLine = $"{commandName}  {description}";
+        return true;
+    }
+
+    [GeneratedRegex(@"^(?<left>[A-Za-z][A-Za-z0-9_.:+-]*)\s*\|\s*(?<right>[A-Za-z][A-Za-z0-9_.:+-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
+    private static partial Regex PipeSeparatedAliasInventoryRowRegex();
+}

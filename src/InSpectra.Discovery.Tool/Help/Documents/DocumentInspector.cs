@@ -165,7 +165,7 @@ internal static partial class DocumentInspector
             && !trimmed.Contains('|', StringComparison.Ordinal);
     }
 
-    [GeneratedRegex(@"Unhandled exception\b|Hosting failed to start\b|Now listening on:|Application started\.|Microsoft\.Hosting\.Lifetime|System\.[A-Za-z]+Exception\b|Traceback \(most recent call last\):|Press any key to exit|Cannot read keys when either application does not have a console|You must install or update \.NET|A fatal error was encountered|It was not possible to find any compatible framework version|required to execute the application was not found|No executable found matching command|No embedding provider configured|Auto-downloading\b|Downloaded\b|\bMCP\b.*\btransport\b|\btransport\b.*\bMCP\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    [GeneratedRegex(@"Unhandled exception\b|Hosting failed to start\b|Now listening on:|Application started\.|Microsoft\.Hosting\.Lifetime|System\.[A-Za-z]+Exception\b|Traceback \(most recent call last\):|Press any key to exit|Cannot read keys when either application does not have a console|You must install or update \.NET|A fatal error was encountered|It was not possible to find any compatible framework version|required to execute the application was not found|No executable found matching command|No embedding provider configured|Auto-downloading\b|Downloaded\b|\bscaffolded at:\b|^\s*Next steps:\s*$|\bMCP\b.*\btransport\b|\btransport\b.*\bMCP\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex TerminalNonHelpPayloadRegex();
 }
 
@@ -185,4 +185,3 @@ internal sealed class InvocationComparer : IEqualityComparer<string[]>
         return hash.ToHashCode();
     }
 }
-

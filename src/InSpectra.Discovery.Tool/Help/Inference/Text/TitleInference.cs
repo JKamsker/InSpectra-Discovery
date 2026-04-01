@@ -129,19 +129,13 @@ internal static partial class TitleInference
             && version.Count(char.IsDigit) > 1;
 
     private static bool IsIgnorableLeadingLine(string line)
-        => string.Equals(line, "HELP:", StringComparison.OrdinalIgnoreCase)
+        => TextNoiseClassifier.ShouldIgnorePreambleLine(line)
+            || string.Equals(line, "HELP:", StringComparison.OrdinalIgnoreCase)
             || LooksLikeStatusTitle(line)
-            || LooksLikeDecorativeBannerLine(line)
             || LooksLikeBrandUrlBannerLine(line)
             || LooksLikeVersionBannerLine(line)
-            || LooksLikeMarketingTagline(line)
             || StandaloneHelpHeadingRegex().IsMatch(line)
             || TransientStatusLineRegex().IsMatch(line);
-
-    private static bool LooksLikeDecorativeBannerLine(string line)
-        => line.Length > 0
-            && line.Any(ch => !char.IsWhiteSpace(ch))
-            && !line.Any(char.IsLetterOrDigit);
 
     private static bool LooksLikeBrandUrlBannerLine(string line)
         => BrandUrlBannerRegex().IsMatch(line.Trim());
@@ -152,12 +146,6 @@ internal static partial class TitleInference
         return trimmed.Contains('\uFFFD')
             || BoxedVersionBannerRegex().IsMatch(trimmed);
     }
-
-    private static bool LooksLikeMarketingTagline(string line)
-        => line.StartsWith("Made with ", StringComparison.OrdinalIgnoreCase)
-            || line.Contains("Contact:", StringComparison.OrdinalIgnoreCase)
-            || (line.StartsWith("for ", StringComparison.OrdinalIgnoreCase)
-                && line.EndsWith("!", StringComparison.Ordinal));
 
     private static bool LooksLikeTransientStatusLine(string title, string version)
         => TransientStatusTitleRegex().IsMatch(title)

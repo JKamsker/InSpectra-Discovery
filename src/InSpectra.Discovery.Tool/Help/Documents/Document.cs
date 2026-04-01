@@ -11,11 +11,15 @@ internal sealed record Document(
     IReadOnlyList<Item> Options,
     IReadOnlyList<Item> Commands)
 {
+    public IReadOnlyDictionary<string, Document> EmbeddedCommandDocuments { get; init; }
+        = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase);
+
     public bool HasContent
         => UsageLines.Count > 0
             || Arguments.Count > 0
             || Options.Count > 0
             || Commands.Count > 0
+            || EmbeddedCommandDocuments.Count > 0
             || !string.IsNullOrWhiteSpace(CommandDescription)
             || !string.IsNullOrWhiteSpace(ApplicationDescription);
 }

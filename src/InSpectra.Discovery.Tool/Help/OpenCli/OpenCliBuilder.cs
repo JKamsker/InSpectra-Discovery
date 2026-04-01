@@ -18,10 +18,11 @@ internal sealed partial class OpenCliBuilder
         string packageVersion,
         IReadOnlyDictionary<string, Document> helpDocuments)
     {
-        helpDocuments.TryGetValue(string.Empty, out var rootHelp);
+        var expandedHelpDocuments = EmbeddedCommandDocumentExpansionSupport.Expand(commandName, helpDocuments);
+        expandedHelpDocuments.TryGetValue(string.Empty, out var rootHelp);
         var rootCommands = new JsonArray(_commandTreeBuilder
-            .Build(commandName, helpDocuments)
-            .Select(node => BuildCommandNode(commandName, node, helpDocuments))
+            .Build(commandName, expandedHelpDocuments)
+            .Select(node => BuildCommandNode(commandName, node, expandedHelpDocuments))
             .ToArray());
         var document = new JsonObject
         {
@@ -31,7 +32,7 @@ internal sealed partial class OpenCliBuilder
             {
                 ["artifactSource"] = "crawled-from-help",
                 ["generator"] = "InSpectra.Discovery",
-                ["helpDocumentCount"] = helpDocuments.Count,
+                ["helpDocumentCount"] = expandedHelpDocuments.Count,
             },
             ["commands"] = rootCommands,
         };
@@ -71,7 +72,11 @@ internal sealed partial class OpenCliBuilder
     {
         var parsedTitle = rootHelp?.Title;
         var parsedDescription = rootHelp?.CommandDescription ?? rootHelp?.ApplicationDescription;
-        var title = parsedTitle ?? commandName;
+        var cleanedParsedTitle = OpenCliDocumentTitleCleaner.CleanTitle(parsedTitle ?? string.Empty);
+        var title = !string.IsNullOrWhiteSpace(cleanedParsedTitle)
+            && !OpenCliDocumentPublishabilityInspector.LooksLikeNonPublishableTitle(cleanedParsedTitle)
+                ? cleanedParsedTitle
+                : commandName;
         var description = parsedDescription;
 
         if (!string.IsNullOrWhiteSpace(parsedTitle)
@@ -127,4 +132,3 @@ internal sealed partial class OpenCliBuilder
     [GeneratedRegex(@"^(?:Handle|Manage|Deploy|Generate|Create|Build|Run|Pack|Detect|Scaffold|Determine|Upload|Download|Install|Automagic|Convert|Transform|Publish|Update|Open|Execute|Launch|Parse|Analyze|Check|Validate|Scan|Watch|Monitor|Collect|Extract|Import|Export|Apply|Process|Send|Resolve|Configure|Migrate|Synchronize|Sync|Format|Serve|Clean|Remove|Delete|Compile|Inspect|Aggregate|Map|Push|Copy|Start|Stop|Test|Verify)\w*\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex DescriptionLikeTitleRegex();
 }
-

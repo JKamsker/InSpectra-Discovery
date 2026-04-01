@@ -37,6 +37,74 @@ public sealed class TextParserTests
     }
 
     [Fact]
+    public void Extracts_CommandScoped_Sections_From_Single_Page_Command_Help()
+    {
+        var parser = new TextParser();
+
+        var document = parser.Parse(
+            """
+            SqlDatabase Command Line Tools (v6.0.2)
+            Project on https://github.com/Apps72/Dev.Data
+            Usage: DbCmd <command> [options]
+
+            Commands:
+              GenerateEntities   | ge     Generate a file with entities.
+              Merge              | mg     Merge all script files.
+              Run                | rn     Run all script files.
+
+            'GenerateEntities' options:
+              --ConnectionString | -cs    Required. Connection string to the database server.
+              --Output           | -o     File name where class will be written.
+
+            'Merge' options:
+              --Source           | -s     Source directory pattern containing all files to merge.
+
+            Example:
+              DbCmd GenerateEntities -cs=\"Server=localhost;Database=Scott;\" -o=Entities.cs
+            """);
+
+        Assert.Empty(document.Options);
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "GenerateEntities", StringComparison.Ordinal));
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "Merge", StringComparison.Ordinal));
+        Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "Example", StringComparison.Ordinal));
+
+        Assert.True(document.EmbeddedCommandDocuments.ContainsKey("GenerateEntities"));
+        var generateEntitiesDocument = document.EmbeddedCommandDocuments["GenerateEntities"];
+        Assert.Contains(generateEntitiesDocument.Options, option => string.Equals(option.Key, "--ConnectionString | -cs", StringComparison.Ordinal));
+        Assert.Contains(generateEntitiesDocument.Options, option => string.Equals(option.Key, "--Output | -o", StringComparison.Ordinal));
+
+        Assert.True(document.EmbeddedCommandDocuments.ContainsKey("Merge"));
+        var mergeDocument = document.EmbeddedCommandDocuments["Merge"];
+        Assert.Contains(mergeDocument.Options, option => string.Equals(option.Key, "--Source | -s", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Parses_Flags_Sections_As_Options_Instead_Of_Commands()
+    {
+        var parser = new TextParser();
+
+        var document = parser.Parse(
+            """
+            EthisysCore CLI v0.0.0+build
+
+            Usage:
+              cc generate feature <name>
+
+            Commands:
+              generate feature  Scaffold a new plugin project
+
+            Flags:
+              --version, -v  Print the CLI version
+              --internal     Use internal SDK references
+            """);
+
+        Assert.Contains(document.Commands, command => string.Equals(command.Key, "generate feature", StringComparison.Ordinal));
+        Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "Flags", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--version, -v", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--internal", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Parses_Colon_Sections_With_Multiline_Descriptions()
     {
         var parser = new TextParser();
@@ -1021,4 +1089,3 @@ public sealed class TextParserTests
         Assert.DoesNotContain(document.Commands, command => string.Equals(command.Key, "Use", StringComparison.Ordinal));
     }
 }
-

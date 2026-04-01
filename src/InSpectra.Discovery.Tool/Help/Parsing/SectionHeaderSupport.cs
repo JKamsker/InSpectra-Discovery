@@ -40,7 +40,7 @@ internal static partial class SectionHeaderSupport
 
         var alias = match.Groups["header"].Value.Trim();
         if (!sectionAliases.TryGetValue(alias, out matchedSectionName)
-            && !TryResolveSectionAlias(alias, out matchedSectionName))
+            && !HelpSectionCatalog.TryResolveAlias(alias, out matchedSectionName))
         {
             return false;
         }
@@ -93,30 +93,8 @@ internal static partial class SectionHeaderSupport
 
         var alias = match.Groups["header"].Value.Trim();
         return !sectionAliases.ContainsKey(alias)
-            && !TryResolveSectionAlias(alias, out _)
+            && !HelpSectionCatalog.TryResolveAlias(alias, out _)
             && !ignoredHeaders.Contains(alias);
-    }
-
-    private static bool TryResolveSectionAlias(string alias, out string sectionName)
-    {
-        if (alias.EndsWith("OPTIONS", StringComparison.OrdinalIgnoreCase)
-            || alias.EndsWith("OPTIONEN", StringComparison.OrdinalIgnoreCase))
-        {
-            sectionName = "options";
-            return true;
-        }
-
-        if (alias.EndsWith("ARGUMENTS", StringComparison.OrdinalIgnoreCase)
-            || alias.EndsWith("ARGUMENTE", StringComparison.OrdinalIgnoreCase)
-            || alias.EndsWith("PARAMETERS", StringComparison.OrdinalIgnoreCase)
-            || alias.EndsWith("PARAMETER", StringComparison.OrdinalIgnoreCase))
-        {
-            sectionName = "arguments";
-            return true;
-        }
-
-        sectionName = string.Empty;
-        return false;
     }
 
     [GeneratedRegex(@"^(?<header>[\p{L}\p{M}\s]+):\s*(?<value>\S.*)?$", RegexOptions.Compiled)]
@@ -125,4 +103,3 @@ internal static partial class SectionHeaderSupport
     [GeneratedRegex(@"^#+\s*(?<header>[\p{L}\p{M}\s]+?)(?:\s*:\s*(?<value>\S.*))?$", RegexOptions.Compiled)]
     private static partial Regex MarkdownSectionHeaderRegex();
 }
-

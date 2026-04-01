@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Help.Parsing;
 
+using InSpectra.Discovery.Tool.Help.Inference.Text;
 using InSpectra.Discovery.Tool.Help.Signatures;
 
 using System.Text.RegularExpressions;
@@ -73,7 +74,9 @@ internal static partial class LegacyOptionRowSupport
             return false;
         }
 
-        return !StructuredHeadingRegex().IsMatch(trimmed);
+        return !StructuredHeadingRegex().IsMatch(trimmed)
+            && !TextNoiseClassifier.ShouldIgnoreSectionLine(trimmed)
+            && !TextNoiseClassifier.LooksLikeHelpHintFooter(trimmed);
     }
 
     public static bool LooksLikeLooseOptionRow(string rawLine)
@@ -183,4 +186,3 @@ internal static partial class LegacyOptionRowSupport
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
 }
-

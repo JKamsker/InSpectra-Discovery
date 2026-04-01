@@ -6,7 +6,16 @@ internal static class UsageArgumentPatternSupport
 {
     public static bool IsDispatcherPlaceholder(string value)
         => string.Equals(value, "command", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(value, "subcommand", StringComparison.OrdinalIgnoreCase);
+            || string.Equals(value, "subcommand", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "kommando", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "kommandos", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "befehl", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "befehle", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsOptionsPlaceholder(string value)
+        => string.Equals(value, "options", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "optionen", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(value, "flags", StringComparison.OrdinalIgnoreCase);
 
     public static string NormalizeUsageArgumentKey(string rawValue, bool isSequence)
     {
@@ -55,4 +64,3 @@ internal static class UsageArgumentPatternSupport
             : null;
     }
 }
-

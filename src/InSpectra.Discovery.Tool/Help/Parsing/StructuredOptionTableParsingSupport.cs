@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Help.Parsing;
 
+using InSpectra.Discovery.Tool.Help.Inference.Text;
 
 using System.Text.RegularExpressions;
 
@@ -87,7 +88,8 @@ internal static partial class StructuredOptionTableParsingSupport
 
         if (string.IsNullOrWhiteSpace(optionSpec))
         {
-            if (string.IsNullOrWhiteSpace(description))
+            if (string.IsNullOrWhiteSpace(description)
+                || TextNoiseClassifier.ShouldIgnoreSectionLine(description))
             {
                 return StructuredRowKind.None;
             }
@@ -97,6 +99,7 @@ internal static partial class StructuredOptionTableParsingSupport
         }
 
         if (string.IsNullOrWhiteSpace(description)
+            || TextNoiseClassifier.ShouldIgnoreSectionLine(description)
             || (!optionSpec.StartsWith("-", StringComparison.Ordinal) && !optionSpec.StartsWith("/", StringComparison.Ordinal)))
         {
             return StructuredRowKind.None;
@@ -210,4 +213,3 @@ internal static partial class StructuredOptionTableParsingSupport
         Continuation,
     }
 }
-

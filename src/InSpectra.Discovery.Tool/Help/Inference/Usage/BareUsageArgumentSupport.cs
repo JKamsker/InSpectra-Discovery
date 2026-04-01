@@ -33,7 +33,7 @@ internal static partial class BareUsageArgumentSupport
             || value.All(char.IsDigit)
             || value.EndsWith(":", StringComparison.Ordinal)
             || OptionSignatureSupport.LooksLikeOptionPlaceholder(value)
-            || string.Equals(value, "options", StringComparison.OrdinalIgnoreCase)
+            || UsageArgumentPatternSupport.IsOptionsPlaceholder(value)
             || UsageArgumentPatternSupport.IsDispatcherPlaceholder(value)
             || hasChildCommands)
         {

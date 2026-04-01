@@ -54,7 +54,7 @@ internal static partial class BracketedUsageArgumentSupport
             return null;
         }
 
-        if (string.Equals(value, "options", StringComparison.OrdinalIgnoreCase))
+        if (UsageArgumentPatternSupport.IsOptionsPlaceholder(value))
         {
             return null;
         }
@@ -71,4 +71,3 @@ internal static partial class BracketedUsageArgumentSupport
     [GeneratedRegex(@"(?<all>\[?<(?<name>[^>]+)>\]?)", RegexOptions.Compiled)]
     private static partial Regex UsageArgumentRegex();
 }
-

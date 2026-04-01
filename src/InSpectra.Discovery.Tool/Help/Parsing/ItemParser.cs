@@ -162,6 +162,7 @@ internal static class ItemParser
     {
         var trimmed = rawLine.Trim();
         return TextNoiseClassifier.IsFrameworkNoiseLine(trimmed)
+            || TextNoiseClassifier.ShouldIgnoreSectionLine(trimmed)
             || (kind == ItemKind.Argument && TextNoiseClassifier.IsArgumentNoiseLine(trimmed))
             || (kind == ItemKind.Option && TextNoiseClassifier.LooksLikeHelpHintFooter(trimmed))
             || (kind == ItemKind.Command && TextNoiseClassifier.LooksLikeSubcommandHelpHint(trimmed));

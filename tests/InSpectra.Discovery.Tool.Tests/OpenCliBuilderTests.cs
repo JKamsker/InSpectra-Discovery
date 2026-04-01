@@ -2,6 +2,7 @@ namespace InSpectra.Discovery.Tool.Tests;
 
 using InSpectra.Discovery.Tool.Help.Documents;
 using InSpectra.Discovery.Tool.Help.OpenCli;
+using InSpectra.Discovery.Tool.Help.Parsing;
 
 using System.Text.Json.Nodes;
 using Xunit;
@@ -594,5 +595,54 @@ public sealed class OpenCliBuilderTests
 
         Assert.Equal("Config feval command line tool", config!["description"]!.GetValue<string>());
     }
-}
 
+    [Fact]
+    public void Builds_CommandScoped_Subcommand_Surfaces_From_A_Single_Root_Help_Page()
+    {
+        var rootHelp = new TextParser().Parse(
+            """
+            SqlDatabase Command Line Tools (v6.0.2)
+            Project on https://github.com/Apps72/Dev.Data
+            Usage: DbCmd <command> [options]
+
+            Commands:
+              GenerateEntities   | ge     Generate a file with entities.
+              Merge              | mg     Merge all script files.
+              Run                | rn     Run all script files.
+
+            'GenerateEntities' options:
+              --ConnectionString | -cs    Required. Connection string to the database server.
+              --Output           | -o     File name where class will be written.
+
+            'Merge' options:
+              --Source           | -s     Source directory pattern containing all files to merge.
+
+            Example:
+              DbCmd GenerateEntities -cs=\"Server=localhost;Database=Scott;\" -o=Entities.cs
+            """);
+        var builder = new OpenCliBuilder();
+        var document = builder.Build(
+            "DbCmd",
+            "6.0.2",
+            new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+            {
+                [""] = rootHelp,
+            });
+
+        Assert.Equal("SqlDatabase Command Line Tools", document["info"]!["title"]!.GetValue<string>());
+        Assert.Null(document["options"]);
+
+        var commands = document["commands"]!.AsArray();
+        Assert.DoesNotContain(commands, command => string.Equals(command?["name"]?.GetValue<string>(), "Example", StringComparison.Ordinal));
+
+        var generateEntities = Assert.Single(commands.Where(command => string.Equals(command?["name"]?.GetValue<string>(), "GenerateEntities", StringComparison.Ordinal)));
+        Assert.Equal("--ConnectionString", generateEntities!["options"]![0]!["name"]!.GetValue<string>());
+        Assert.Equal("-cs", generateEntities["options"]![0]!["aliases"]![0]!.GetValue<string>());
+
+        var merge = Assert.Single(commands.Where(command => string.Equals(command?["name"]?.GetValue<string>(), "Merge", StringComparison.Ordinal)));
+        Assert.Equal("--Source", merge!["options"]![0]!["name"]!.GetValue<string>());
+
+        var run = Assert.Single(commands.Where(command => string.Equals(command?["name"]?.GetValue<string>(), "Run", StringComparison.Ordinal)));
+        Assert.Null(run!["options"]);
+    }
+}

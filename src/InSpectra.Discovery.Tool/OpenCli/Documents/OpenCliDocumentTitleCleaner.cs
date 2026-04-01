@@ -10,6 +10,7 @@ internal static partial class OpenCliDocumentTitleCleaner
 
         trimmed = CopyrightPrefixRegex().Replace(trimmed, string.Empty).Trim();
         trimmed = InlineCopyrightRegex().Replace(trimmed, " ").Trim();
+        trimmed = ParenthesizedVersionSuffixRegex().Replace(trimmed, string.Empty).Trim();
         trimmed = TrailingVersionNoiseRegex().Replace(trimmed, string.Empty).Trim();
         trimmed = trimmed.Trim('(', ')').Trim();
 
@@ -29,6 +30,9 @@ internal static partial class OpenCliDocumentTitleCleaner
     [GeneratedRegex(@"\s*\(c\)\s*", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex InlineCopyrightRegex();
 
+    [GeneratedRegex(@"\s+\(v?\d[\w.+\-]*(?:\))?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
+    private static partial Regex ParenthesizedVersionSuffixRegex();
+
     [GeneratedRegex(@"\s+(?:version[:\s]*|v)\d+[\d.+\-a-z]*(?:\s+.*)?$|\s*\[dotnet\s+SDK\s+[^\]]+\]$|\s*for\s+\.NET\s+Core$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex TrailingVersionNoiseRegex();
 
@@ -41,4 +45,3 @@ internal static partial class OpenCliDocumentTitleCleaner
     [GeneratedRegex(@"\s{2,}", RegexOptions.Compiled)]
     private static partial Regex MultipleSpacesRegex();
 }
-

@@ -26,6 +26,11 @@ internal static class CapturePayloadSupport
         foreach (var payload in EnumeratePayloadCandidates(capture))
         {
             var document = parser.Parse(payload);
+            if (DocumentInspector.LooksLikeTerminalNonHelpPayload(payload))
+            {
+                continue;
+            }
+
             var commandSegments = CommandPathSupport.ResolveStoredCaptureSegments(rootCommandName, storedCommand, document);
             if (!document.HasContent || !DocumentInspector.IsCompatible(commandSegments, document))
             {
@@ -72,7 +77,10 @@ internal static class CapturePayloadSupport
         foreach (var payload in candidates)
         {
             var document = parser.Parse(payload);
-            var compatibleDocument = document.HasContent && DocumentInspector.IsCompatible(commandSegments, document)
+            var looksLikeTerminalNonHelpPayload = DocumentInspector.LooksLikeTerminalNonHelpPayload(payload);
+            var compatibleDocument = !looksLikeTerminalNonHelpPayload
+                && document.HasContent
+                && DocumentInspector.IsCompatible(commandSegments, document)
                 ? document
                 : null;
             if (compatibleDocument is not null
@@ -165,7 +173,6 @@ internal static class CapturePayloadSupport
     {
         if (string.IsNullOrWhiteSpace(storedCommand)
             || commandSegments.Count == 0
-            || HasLeafSurface(document)
             || document.Commands.Count == 0)
         {
             return false;
@@ -178,6 +185,12 @@ internal static class CapturePayloadSupport
         }
 
         var parentKey = string.Join(' ', commandSegments);
+        if (LooksLikeSiblingUsageEcho(rootCommandName, parentKey, document.UsageLines))
+        {
+            return true;
+        }
+
+        var hasDescendantChild = false;
         foreach (var child in document.Commands)
         {
             if (SignatureNormalizer.IsBuiltinAuxiliaryCommand(child.Key))
@@ -189,8 +202,14 @@ internal static class CapturePayloadSupport
             if (childKey.Length > parentKey.Length
                 && childKey.StartsWith(parentKey + " ", StringComparison.OrdinalIgnoreCase))
             {
-                return false;
+                hasDescendantChild = true;
+                continue;
             }
+        }
+
+        if (hasDescendantChild)
+        {
+            return false;
         }
 
         return true;
@@ -200,6 +219,105 @@ internal static class CapturePayloadSupport
         => document.Options.Count > 0
             || document.Arguments.Count > 0
             || !string.IsNullOrWhiteSpace(document.CommandDescription);
+
+    private static bool LooksLikeSiblingUsageEcho(
+        string rootCommandName,
+        string parentKey,
+        IReadOnlyList<string> usageLines)
+    {
+        if (string.IsNullOrWhiteSpace(parentKey) || usageLines.Count == 0)
+        {
+            return false;
+        }
+
+        var rootSegments = CommandPathSupport.SplitSegments(rootCommandName);
+        foreach (var usageLine in usageLines)
+        {
+            var usageCommandKey = ExtractUsageCommandKey(rootSegments, usageLine);
+            if (string.IsNullOrWhiteSpace(usageCommandKey))
+            {
+                continue;
+            }
+
+            if (string.Equals(usageCommandKey, parentKey, StringComparison.OrdinalIgnoreCase)
+                || usageCommandKey.StartsWith(parentKey + " ", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string? ExtractUsageCommandKey(IReadOnlyList<string> rootSegments, string usageLine)
+    {
+        var tokens = usageLine.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length == 0)
+        {
+            return null;
+        }
+
+        var rootStart = FindTokenSequence(tokens, rootSegments);
+        if (rootStart < 0)
+        {
+            return null;
+        }
+
+        var commandTokens = new List<string>();
+        for (var index = rootStart + rootSegments.Count; index < tokens.Length; index++)
+        {
+            var token = tokens[index].Trim();
+            if (token.Length == 0
+                || token.StartsWith("<", StringComparison.Ordinal)
+                || token.StartsWith("[", StringComparison.Ordinal)
+                || token.StartsWith("(", StringComparison.Ordinal)
+                || token.StartsWith("-", StringComparison.Ordinal)
+                || token.StartsWith("/", StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            commandTokens.Add(token);
+        }
+
+        if (commandTokens.Count == 0)
+        {
+            return null;
+        }
+
+        var normalized = SignatureNormalizer.NormalizeCommandKey(string.Join(' ', commandTokens));
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static int FindTokenSequence(IReadOnlyList<string> tokens, IReadOnlyList<string> sequence)
+    {
+        if (sequence.Count == 0 || tokens.Count < sequence.Count)
+        {
+            return -1;
+        }
+
+        for (var start = 0; start <= tokens.Count - sequence.Count; start++)
+        {
+            var matched = true;
+            for (var index = 0; index < sequence.Count; index++)
+            {
+                if (!string.Equals(tokens[start + index], sequence[index], StringComparison.OrdinalIgnoreCase))
+                {
+                    matched = false;
+                    break;
+                }
+            }
+
+            if (matched)
+            {
+                return start;
+            }
+        }
+
+        return -1;
+    }
 
     private static IReadOnlyList<string> EnumeratePayloadCandidates(CommandRuntime.ProcessResult processResult)
         => EnumeratePayloadCandidates(

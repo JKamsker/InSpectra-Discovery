@@ -466,6 +466,198 @@ public sealed class CrawlerTests
         Assert.DoesNotContain(runtime.Invocations.Select(args => string.Join(' ', args)), invocation => invocation.Contains("x netagents", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task CrawlAsync_DoesNot_Treat_Singular_Example_Sections_As_Subcommands()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            if (string.Equals(key, "--help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stdout:
+                    """
+                    SqlDatabase Command Line Tools (v6.0.2)
+                    Usage: DbCmd <command> [options]
+
+                    Commands:
+                      GenerateEntities   | ge     Generate a file with entities.
+                      Merge              | mg     Merge all script files.
+
+                    'GenerateEntities' options:
+                      --ConnectionString | -cs    Required. Connection string to the database server.
+
+                    Example:
+                      DbCmd GenerateEntities -cs="Server=localhost;Database=Scott;"
+                    """);
+            }
+
+            if (arguments.Contains("GenerateEntities", StringComparer.OrdinalIgnoreCase)
+                || arguments.Contains("Merge", StringComparer.OrdinalIgnoreCase))
+            {
+                return Result(
+                    stdout:
+                    """
+                    Please, specify a command to execute: GenerateEntities, ...
+                    Write DbCmd --help for more information.
+                    """,
+                    exitCode: 1);
+            }
+
+            throw new InvalidOperationException($"Unexpected invocation: '{key}'.");
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "DbCmd",
+            "DbCmd",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.DoesNotContain(result.CaptureSummaries.Keys, key => string.Equals(key, "Example", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(runtime.Invocations.Select(args => string.Join(' ', args)), invocation => invocation.StartsWith("Example", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task CrawlAsync_Treats_Scaffolded_Output_As_Terminal_NonHelp_And_DoesNot_Recurse()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            if (string.Equals(key, "--help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stdout:
+                    """
+                    EthisysCore CLI v0.0.0+build
+
+                    Usage:
+                      cc generate feature <name>
+
+                    Commands:
+                      generate feature  Scaffold a new plugin project
+
+                    Flags:
+                      --version, -v  Print the CLI version
+                    """,
+                    exitCode: 1);
+            }
+
+            if (string.Equals(key, "generate feature --help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stdout:
+                    """
+                    Plugin 'Help' scaffolded at: /tmp/inspectra-help-demo/--help
+
+                      Solution:   --help.slnx
+                      Structure:  Default (single project)
+
+                    Next steps:
+                      1. cd --help
+                      2. dotnet build
+                    """);
+            }
+
+            throw new InvalidOperationException($"Unexpected invocation: '{key}'.");
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "cc",
+            "cc",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(["", "generate feature"], result.CaptureSummaries.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        Assert.True(result.CaptureSummaries["generate feature"].TerminalNonHelp);
+        Assert.Equal(["--help", "generate feature --help"], runtime.Invocations.Select(args => string.Join(' ', args)));
+        Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.Contains("Structure", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.Contains("Flags", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task CrawlAsync_Rejects_NonRoot_Dispatcher_Echoes_Even_When_They_Include_Global_Flags()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            if (string.Equals(key, "--help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stdout:
+                    """
+                    EthisysCore CLI v0.0.0+build
+
+                    Usage:
+                      cc generate feature <name>
+                      cc generate from-schema <schema.json>
+
+                    Commands:
+                      generate feature      Scaffold a new plugin project
+                      generate from-schema  Generate from schema
+
+                    Flags:
+                      --version, -v  Print the CLI version
+                    """,
+                    exitCode: 1);
+            }
+
+            if (arguments.Contains("generate", StringComparer.OrdinalIgnoreCase)
+                && arguments.Contains("from-schema", StringComparer.OrdinalIgnoreCase))
+            {
+                return Result(
+                    stdout:
+                    """
+                    EthisysCore CLI v0.0.0+build
+
+                    Usage:
+                      cc generate feature <name>
+                      cc generate from-schema <schema.json>
+
+                    Commands:
+                      generate feature      Scaffold a new plugin project
+                      generate from-schema  Generate from schema
+
+                    Flags:
+                      --version, -v  Print the CLI version
+                    """,
+                    exitCode: 1);
+            }
+
+            if (string.Equals(key, "generate feature --help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stdout:
+                    """
+                    Plugin 'Help' scaffolded at: /tmp/inspectra-help-demo/--help
+
+                    Next steps:
+                      1. cd --help
+                    """);
+            }
+
+            throw new InvalidOperationException($"Unexpected invocation: '{key}'.");
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "cc",
+            "cc",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal([""], result.Documents.Keys);
+        Assert.Equal(["", "generate feature", "generate from-schema"], result.CaptureSummaries.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.StartsWith("generate from-schema ", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static CommandRuntime.ProcessResult Result(string? stdout = null, string? stderr = null, int exitCode = 0, bool timedOut = false)
         => new(
             Status: timedOut ? "timed-out" : exitCode == 0 ? "ok" : "failed",
