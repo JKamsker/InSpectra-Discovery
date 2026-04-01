@@ -14,6 +14,7 @@ internal static class AutoModeSupport
         }
 
         var attempts = new List<AutoAnalysisAttempt>();
+        var hookFrameworks = ResolveHookFrameworks(descriptor);
         foreach (var provider in CliFrameworkProviderRegistry.ResolveAnalysisProviders(descriptor.CliFramework))
         {
             if (provider.SupportsCliFxAnalysis)
@@ -21,7 +22,7 @@ internal static class AutoModeSupport
                 attempts.Add(new AutoAnalysisAttempt("clifx", provider.Name));
             }
 
-            if (provider.SupportsHookAnalysis)
+            if (provider.SupportsHookAnalysis && hookFrameworks.Contains(provider.Name))
             {
                 attempts.Add(new AutoAnalysisAttempt("hook", provider.Name));
             }
@@ -45,5 +46,16 @@ internal static class AutoModeSupport
     {
         var attempts = BuildAttemptPlan(descriptor);
         return attempts.Count == 0 ? "help" : attempts[0].Mode;
+    }
+
+    private static HashSet<string> ResolveHookFrameworks(ToolDescriptor descriptor)
+    {
+        var hookCliFramework = !string.IsNullOrWhiteSpace(descriptor.HookCliFramework)
+            ? descriptor.HookCliFramework
+            : string.Equals(descriptor.SelectionReason, "candidate-static-analysis-framework", StringComparison.OrdinalIgnoreCase)
+                ? null
+                : descriptor.CliFramework;
+        return CliFrameworkProviderRegistry.ResolveFrameworkNames(hookCliFramework)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
 }

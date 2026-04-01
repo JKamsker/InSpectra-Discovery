@@ -65,7 +65,9 @@ internal sealed class PackageArchiveInspector
         }
 
         var toolLayout = toolLayoutBuilder.Build();
-        var toolAssemblyReferences = InspectToolAssemblyReferences(archive, toolLayout.ToolDirectories);
+        var toolCliFrameworkReferences = PackageArchiveCliFrameworkReferenceSupport.InspectToolAssemblyReferences(
+            archive,
+            toolLayout.ToolDirectories);
 
         return new SpectrePackageInspection(
             DepsFilePaths: depsFilePaths.ToArray(),
@@ -80,8 +82,13 @@ internal sealed class PackageArchiveInspector
             ToolSettingsPaths: toolLayout.ToolSettingsPaths,
             ToolCommandNames: toolLayout.ToolCommandNames,
             ToolEntryPointPaths: toolLayout.ToolEntryPointPaths,
-            ToolAssembliesReferencingSpectreConsole: toolAssemblyReferences.SpectreConsolePaths,
-            ToolAssembliesReferencingSpectreConsoleCli: toolAssemblyReferences.SpectreConsoleCliPaths);
+            ToolAssembliesReferencingSpectreConsole: PackageArchiveCliFrameworkReferenceSupport.GetReferencingAssemblyPaths(
+                toolCliFrameworkReferences,
+                "Spectre.Console"),
+            ToolAssembliesReferencingSpectreConsoleCli: PackageArchiveCliFrameworkReferenceSupport.GetReferencingAssemblyPaths(
+                toolCliFrameworkReferences,
+                "Spectre.Console.Cli"),
+            ToolCliFrameworkReferences: toolCliFrameworkReferences);
     }
 
     private static void ReadDependencyVersions(
@@ -113,46 +120,6 @@ internal sealed class PackageArchiveInspector
         }
     }
 
-    private static SpectreToolAssemblyReferenceInspection InspectToolAssemblyReferences(
-        ZipArchive archive,
-        IReadOnlySet<string> toolDirectories)
-    {
-        if (toolDirectories.Count == 0)
-        {
-            return SpectreToolAssemblyReferenceInspection.Empty;
-        }
-
-        var spectreConsolePaths = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-        var spectreConsoleCliPaths = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var entry in archive.Entries)
-        {
-            if (!PackageArchivePathSupport.IsToolManagedAssembly(
-                    entry,
-                    toolDirectories,
-                    "Spectre.Console.dll",
-                    "Spectre.Console.Cli.dll"))
-            {
-                continue;
-            }
-
-            var inspection = PackageArchivePortableExecutableSupport.ReadAssemblyInspection(entry);
-            if (PackageArchivePortableExecutableSupport.HasReference(inspection, "Spectre.Console"))
-            {
-                spectreConsolePaths.Add(entry.FullName);
-            }
-
-            if (PackageArchivePortableExecutableSupport.HasReference(inspection, "Spectre.Console.Cli"))
-            {
-                spectreConsoleCliPaths.Add(entry.FullName);
-            }
-        }
-
-        return new SpectreToolAssemblyReferenceInspection(
-            spectreConsolePaths.ToArray(),
-            spectreConsoleCliPaths.ToArray());
-    }
-
     private static bool TryParsePackageVersion(string key, string packageId, out string version)
     {
         var prefix = packageId + "/";
@@ -172,12 +139,4 @@ internal sealed class PackageArchiveInspector
             inspection.AssemblyVersion,
             inspection.FileVersion,
             inspection.InformationalVersion);
-
-    private sealed record SpectreToolAssemblyReferenceInspection(
-        IReadOnlyList<string> SpectreConsolePaths,
-        IReadOnlyList<string> SpectreConsoleCliPaths)
-    {
-        public static SpectreToolAssemblyReferenceInspection Empty { get; } = new([], []);
-    }
 }
-

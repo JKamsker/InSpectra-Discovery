@@ -50,6 +50,15 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
             }
         }
 
+        if (commands.Count == 0)
+        {
+            var heuristicDefinition = CmdParserHeuristicReaderSupport.TryReadBestCandidate(modules);
+            if (heuristicDefinition is not null)
+            {
+                StaticCommandDefinitionSupport.UpsertBest(commands, string.Empty, heuristicDefinition);
+            }
+        }
+
         return commands;
     }
 
@@ -92,21 +101,42 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
             var optionAttribute = StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, OptionAttributeName);
             if (optionAttribute is not null)
             {
-                options.Add(ReadOptionDefinition(property, optionAttribute));
+                options.Add(ReadOptionDefinition(property.Name?.String, property.PropertySig?.RetType, optionAttribute));
                 continue;
             }
 
             var valueAttribute = StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, ValueAttributeName);
             if (valueAttribute is not null)
             {
-                values.Add(ReadValueDefinition(property, valueAttribute));
+                values.Add(ReadValueDefinition(property.Name?.String, property.PropertySig?.RetType, valueAttribute));
+            }
+        }
+
+        foreach (var field in StaticAnalysisHierarchySupport.GetFieldsFromHierarchy(typeDef))
+        {
+            if (field.IsStatic || field.IsSpecialName || field.Name?.String.Contains("k__BackingField", StringComparison.Ordinal) == true)
+            {
+                continue;
+            }
+
+            var optionAttribute = StaticAnalysisAttributeSupport.FindAttribute(field.CustomAttributes, OptionAttributeName);
+            if (optionAttribute is not null)
+            {
+                options.Add(ReadOptionDefinition(field.Name?.String, field.FieldSig?.Type, optionAttribute));
+                continue;
+            }
+
+            var valueAttribute = StaticAnalysisAttributeSupport.FindAttribute(field.CustomAttributes, ValueAttributeName);
+            if (valueAttribute is not null)
+            {
+                values.Add(ReadValueDefinition(field.Name?.String, field.FieldSig?.Type, valueAttribute));
             }
         }
 
         return (options, values);
     }
 
-    private static StaticOptionDefinition ReadOptionDefinition(PropertyDef property, CustomAttribute attribute)
+    private static StaticOptionDefinition ReadOptionDefinition(string? memberName, TypeSig? memberType, CustomAttribute attribute)
     {
         var (longName, shortName) = ParseOptionConstructorArgs(attribute);
         var isRequired = StaticAnalysisAttributeSupport.GetNamedArgumentBool(attribute, "Required");
@@ -114,14 +144,13 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
         var defaultValue = StaticAnalysisAttributeSupport.GetNamedArgumentValueAsString(attribute, "Default");
         var metaValue = StaticAnalysisAttributeSupport.GetNamedArgumentString(attribute, "MetaValue");
         var isHidden = StaticAnalysisAttributeSupport.GetNamedArgumentBool(attribute, "Hidden");
-        var propertyType = property.PropertySig?.RetType;
-        var clrType = StaticAnalysisTypeSupport.GetClrTypeName(propertyType);
-        var isBoolLike = StaticAnalysisTypeSupport.IsBoolType(propertyType);
-        var isSequence = StaticAnalysisTypeSupport.IsSequenceType(propertyType);
-        var acceptedValues = StaticAnalysisTypeSupport.GetAcceptedValues(propertyType);
+        var clrType = StaticAnalysisTypeSupport.GetClrTypeName(memberType);
+        var isBoolLike = StaticAnalysisTypeSupport.IsBoolType(memberType);
+        var isSequence = StaticAnalysisTypeSupport.IsSequenceType(memberType);
+        var acceptedValues = StaticAnalysisTypeSupport.GetAcceptedValues(memberType);
 
         return new StaticOptionDefinition(
-            LongName: longName,
+            LongName: longName ?? CmdParserHeuristicReaderSupport.NormalizeOptionName(memberName),
             ShortName: shortName,
             IsRequired: isRequired,
             IsSequence: isSequence,
@@ -131,24 +160,23 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
             DefaultValue: defaultValue,
             MetaValue: metaValue,
             AcceptedValues: acceptedValues,
-            PropertyName: property.Name?.String);
+            PropertyName: memberName);
     }
 
-    private static StaticValueDefinition ReadValueDefinition(PropertyDef property, CustomAttribute attribute)
+    private static StaticValueDefinition ReadValueDefinition(string? memberName, TypeSig? memberType, CustomAttribute attribute)
     {
         var index = StaticAnalysisAttributeSupport.GetConstructorArgumentInt(attribute, 0);
         var isRequired = StaticAnalysisAttributeSupport.GetNamedArgumentBool(attribute, "Required");
         var description = StaticAnalysisAttributeSupport.GetNamedArgumentString(attribute, "HelpText");
         var metaName = StaticAnalysisAttributeSupport.GetNamedArgumentString(attribute, "MetaName");
         var defaultValue = StaticAnalysisAttributeSupport.GetNamedArgumentValueAsString(attribute, "Default");
-        var propertyType = property.PropertySig?.RetType;
-        var clrType = StaticAnalysisTypeSupport.GetClrTypeName(propertyType);
-        var isSequence = StaticAnalysisTypeSupport.IsSequenceType(propertyType);
-        var acceptedValues = StaticAnalysisTypeSupport.GetAcceptedValues(propertyType);
+        var clrType = StaticAnalysisTypeSupport.GetClrTypeName(memberType);
+        var isSequence = StaticAnalysisTypeSupport.IsSequenceType(memberType);
+        var acceptedValues = StaticAnalysisTypeSupport.GetAcceptedValues(memberType);
 
         return new StaticValueDefinition(
             Index: index,
-            Name: metaName ?? property.Name?.String?.ToLowerInvariant(),
+            Name: metaName ?? memberName?.ToLowerInvariant(),
             IsRequired: isRequired,
             IsSequence: isSequence,
             ClrType: clrType,
@@ -179,10 +207,19 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
 
     private static bool HasOptionOrValueProperties(TypeDef typeDef)
     {
-        foreach (var property in typeDef.Properties)
+        foreach (var property in StaticAnalysisHierarchySupport.GetPropertiesFromHierarchy(typeDef))
         {
             if (StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, OptionAttributeName) is not null
                 || StaticAnalysisAttributeSupport.FindAttribute(property.CustomAttributes, ValueAttributeName) is not null)
+            {
+                return true;
+            }
+        }
+
+        foreach (var field in StaticAnalysisHierarchySupport.GetFieldsFromHierarchy(typeDef))
+        {
+            if (StaticAnalysisAttributeSupport.FindAttribute(field.CustomAttributes, OptionAttributeName) is not null
+                || StaticAnalysisAttributeSupport.FindAttribute(field.CustomAttributes, ValueAttributeName) is not null)
             {
                 return true;
             }
@@ -200,4 +237,3 @@ internal sealed class CmdParserAttributeReader : IStaticAttributeReader
     }
 
 }
-

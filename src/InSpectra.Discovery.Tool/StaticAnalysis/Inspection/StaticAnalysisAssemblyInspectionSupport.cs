@@ -16,7 +16,10 @@ internal sealed class StaticAnalysisAssemblyInspectionSupport
         _assemblyScanner = assemblyScanner;
     }
 
-    public StaticAnalysisAssemblyInspectionResult InspectAssemblies(string installDirectory, string cliFramework)
+    public StaticAnalysisAssemblyInspectionResult InspectAssemblies(
+        string installDirectory,
+        string cliFramework,
+        string? preferredEntryPointPath)
     {
         var adapter = CliFrameworkProviderRegistry.ResolveStaticAnalysisAdapter(cliFramework);
         if (adapter is null)
@@ -24,7 +27,10 @@ internal sealed class StaticAnalysisAssemblyInspectionSupport
             return StaticAnalysisAssemblyInspectionResult.NoReader(cliFramework);
         }
 
-        var modules = _assemblyScanner.ScanForFramework(installDirectory, adapter.AssemblyName);
+        var modules = _assemblyScanner.ScanForFramework(
+            installDirectory,
+            adapter.AssemblyName,
+            preferredEntryPointPath);
         if (modules.Count == 0)
         {
             return StaticAnalysisAssemblyInspectionResult.FrameworkNotFound(cliFramework);
@@ -68,4 +74,3 @@ internal sealed record StaticAnalysisAssemblyInspectionResult(
     public static StaticAnalysisAssemblyInspectionResult NoReader(string framework)
         => new("no-reader", framework, 0, new(StringComparer.OrdinalIgnoreCase));
 }
-

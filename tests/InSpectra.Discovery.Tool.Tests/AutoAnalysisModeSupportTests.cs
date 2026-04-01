@@ -28,6 +28,11 @@ public sealed class AutoModeSupportTests
             },
             attempt =>
             {
+                Assert.Equal("hook", attempt.Mode);
+                Assert.Equal("CommandLineParser", attempt.Framework);
+            },
+            attempt =>
+            {
                 Assert.Equal("static", attempt.Mode);
                 Assert.Equal("CommandLineParser", attempt.Framework);
             },
@@ -111,7 +116,7 @@ public sealed class AutoModeSupportTests
     [InlineData("System.CommandLine", "hook")]
     [InlineData("System.CommandLine + CommandLineParser", "hook")]
     [InlineData("CliFx + System.CommandLine", "clifx")]
-    [InlineData("CommandLineParser", "static")]
+    [InlineData("CommandLineParser", "hook")]
     [InlineData(null, "help")]
     public void ResolveFallbackMode_ReturnsFirstAttemptMode(string? cliFramework, string expectedMode)
     {
@@ -120,6 +125,77 @@ public sealed class AutoModeSupportTests
         var mode = AutoModeSupport.ResolveFallbackMode(descriptor);
 
         Assert.Equal(expectedMode, mode);
+    }
+
+    [Fact]
+    public void BuildAttemptPlan_SkipsHookAttempts_ForCandidateStaticFramework()
+    {
+        var descriptor = new ToolDescriptor(
+            "Sample.Tool",
+            "1.2.3",
+            "sample",
+            "CommandLineParser",
+            "static",
+            "candidate-static-analysis-framework",
+            "https://www.nuget.org/packages/Sample.Tool/1.2.3",
+            "https://nuget.test/sample.tool.1.2.3.nupkg",
+            "https://nuget.test/catalog/sample.tool.1.2.3.json");
+
+        var plan = AutoModeSupport.BuildAttemptPlan(descriptor);
+
+        Assert.Collection(
+            plan,
+            attempt =>
+            {
+                Assert.Equal("static", attempt.Mode);
+                Assert.Equal("CommandLineParser", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("help", attempt.Mode);
+                Assert.Null(attempt.Framework);
+            });
+    }
+
+    [Fact]
+    public void BuildAttemptPlan_OnlyHooksConfirmedSubset_OfCompositeStaticFrameworks()
+    {
+        var descriptor = new ToolDescriptor(
+            "Sample.Tool",
+            "1.2.3",
+            "sample",
+            "System.CommandLine + CommandLineParser",
+            "static",
+            "confirmed-static-analysis-framework",
+            "https://www.nuget.org/packages/Sample.Tool/1.2.3",
+            "https://nuget.test/sample.tool.1.2.3.nupkg",
+            "https://nuget.test/catalog/sample.tool.1.2.3.json",
+            HookCliFramework: "System.CommandLine");
+
+        var plan = AutoModeSupport.BuildAttemptPlan(descriptor);
+
+        Assert.Collection(
+            plan,
+            attempt =>
+            {
+                Assert.Equal("hook", attempt.Mode);
+                Assert.Equal("System.CommandLine", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("static", attempt.Mode);
+                Assert.Equal("System.CommandLine", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("static", attempt.Mode);
+                Assert.Equal("CommandLineParser", attempt.Framework);
+            },
+            attempt =>
+            {
+                Assert.Equal("help", attempt.Mode);
+                Assert.Null(attempt.Framework);
+            });
     }
 
     private static ToolDescriptor CreateDescriptor(string? cliFramework, string preferredMode)

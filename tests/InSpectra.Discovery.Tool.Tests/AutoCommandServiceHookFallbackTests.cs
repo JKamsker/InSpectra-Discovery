@@ -503,7 +503,7 @@ public sealed class AutoCommandServiceHookFallbackTests
 
         Assert.Equal(0, exitCode);
         Assert.Equal(
-            ["hook:System.CommandLine", "static:System.CommandLine", "static:CommandLineParser"],
+            ["hook:System.CommandLine", "static:System.CommandLine", "hook:CommandLineParser", "static:CommandLineParser"],
             seenAttempts);
 
         var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
@@ -511,12 +511,12 @@ public sealed class AutoCommandServiceHookFallbackTests
         Assert.Equal("static", result["analysisMode"]?.GetValue<string>());
         Assert.Equal("CommandLineParser", result["cliFramework"]?.GetValue<string>());
         Assert.Equal("CommandLineParser", result["analysisSelection"]?["selectedFramework"]?.GetValue<string>());
-        Assert.Equal("static", result["fallback"]?["from"]?.GetValue<string>());
-        Assert.Equal("static-scl-failed", result["fallback"]?["classification"]?.GetValue<string>());
+        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("hook-scl-failed", result["fallback"]?["classification"]?.GetValue<string>());
 
         var attempts = result["analysisSelection"]?["attempts"]?.AsArray();
         Assert.NotNull(attempts);
-        Assert.Equal(3, attempts!.Count);
+        Assert.Equal(4, attempts!.Count);
     }
 
     [Fact]
@@ -588,6 +588,66 @@ public sealed class AutoCommandServiceHookFallbackTests
         Assert.Equal("Microsoft.Extensions.CommandLineUtils", result["analysisSelection"]?["selectedFramework"]?.GetValue<string>());
         Assert.Equal("static", result["fallback"]?["from"]?.GetValue<string>());
         Assert.Equal("static-McMaster.Extensions.CommandLineUtils-failed", result["fallback"]?["classification"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RunAsync_SkipsHookAttempt_ForCandidateStaticFrameworkDescriptor()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        var seenAttempts = new List<string>();
+
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
+                "Aspose.Like.Tool",
+                "24.6.0",
+                "aspose-like",
+                "CommandLineParser",
+                "static",
+                "candidate-static-analysis-framework",
+                "https://www.nuget.org/packages/Aspose.Like.Tool/24.6.0",
+                "https://nuget.test/aspose.like.tool.24.6.0.nupkg",
+                "https://nuget.test/catalog/aspose.like.tool.24.6.0.json")),
+            new ThrowingNativeRunner(),
+            new ThrowingHelpRunner(),
+            new ThrowingCliFxRunner(),
+            new FakeStaticRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                seenAttempts.Add($"static:{cliFramework}");
+                WriteResult(path, "success", "static-crawl", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+            }),
+            new FakeHookRunner((_, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                seenAttempts.Add($"hook:{cliFramework}");
+                throw new Xunit.Sdk.XunitException("Hook runner should not execute for candidate-only static framework hints.");
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Aspose.Like.Tool",
+            "24.6.0",
+            outputRoot,
+            "batch-013b",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.Equal(["static:CommandLineParser"], seenAttempts);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("static", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("CommandLineParser", result["analysisSelection"]?["selectedFramework"]?.GetValue<string>());
+
+        var attempts = result["analysisSelection"]?["attempts"]?.AsArray();
+        Assert.NotNull(attempts);
+        Assert.Single(attempts!);
     }
 
     private static void WriteResult(

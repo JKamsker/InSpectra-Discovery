@@ -57,6 +57,17 @@ public sealed class CliFrameworkProviderRegistryTests
 
     [Theory]
     [InlineData("System.CommandLine", true)]
+    [InlineData("CommandLineParser", true)]
+    [InlineData("System.CommandLine + CommandLineParser", true)]
+    [InlineData("CliFx", false)]
+    [InlineData(null, false)]
+    public void HasHookAnalysisSupport_Detects_Frameworks_With_Registered_Hook_Capture(string? cliFramework, bool expected)
+    {
+        Assert.Equal(expected, CliFrameworkProviderRegistry.HasHookAnalysisSupport(cliFramework));
+    }
+
+    [Theory]
+    [InlineData("System.CommandLine", true)]
     [InlineData("CliFx + System.CommandLine", true)]
     [InlineData("CommandLineParser", true)]
     [InlineData("DocoptNet", false)]

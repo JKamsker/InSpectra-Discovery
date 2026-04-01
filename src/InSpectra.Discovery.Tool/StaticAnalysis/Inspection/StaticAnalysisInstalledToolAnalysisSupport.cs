@@ -68,14 +68,20 @@ internal sealed class StaticInstalledToolAnalysisSupport
         }
 
         var crawlStopwatch = Stopwatch.StartNew();
-        var inspection = _assemblyInspectionSupport.InspectAssemblies(installedTool.InstallDirectory, cliFramework);
+        var preferredEntryPointPath = InstalledDotnetToolCommandSupport.TryResolve(
+            installedTool.InstallDirectory,
+            commandName)?.EntryPointPath;
+        var inspection = _assemblyInspectionSupport.InspectAssemblies(
+            installedTool.InstallDirectory,
+            cliFramework,
+            preferredEntryPointPath);
         if (ApplyInspectionFailure(result, inspection))
         {
             return;
         }
 
         var crawler = new Crawler(_runtime);
-        var crawl = await crawler.CrawlAsync(installedTool.CommandPath, tempRoot, installedTool.Environment, commandTimeoutSeconds, cancellationToken);
+        var crawl = await crawler.CrawlAsync(installedTool.CommandPath, commandName, tempRoot, installedTool.Environment, commandTimeoutSeconds, cancellationToken);
         crawlStopwatch.Stop();
 
         var staticCommands = inspection.Commands;

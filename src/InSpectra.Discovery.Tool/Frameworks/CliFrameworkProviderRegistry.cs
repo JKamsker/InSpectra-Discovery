@@ -31,6 +31,14 @@ internal static class CliFrameworkProviderRegistry
             : string.Join(" + ", matches);
     }
 
+    public static IReadOnlyList<CliFrameworkReferenceProbe> ResolveRuntimeReferenceProbes()
+        => Providers
+            .Select(static provider => new CliFrameworkReferenceProbe(
+                provider.Name,
+                provider.PackageAssemblyNames,
+                provider.RuntimeAssemblyNames))
+            .ToArray();
+
     public static bool HasCliFxAnalysisSupport(string? cliFramework)
         => ResolveAnalysisProviders(cliFramework).Any(static provider => provider.SupportsCliFxAnalysis);
 
@@ -120,6 +128,25 @@ internal static class CliFrameworkProviderRegistry
             .Select(static provider => provider.Name)
             .ToArray();
 
+    public static string? CombineFrameworkNames(IEnumerable<string> frameworkNames)
+    {
+        var names = frameworkNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (names.Count == 0)
+        {
+            return null;
+        }
+
+        var ordered = Providers
+            .Where(provider => names.Contains(provider.Name))
+            .Select(static provider => provider.Name)
+            .ToArray();
+        return ordered.Length == 0
+            ? null
+            : string.Join(" + ", ordered);
+    }
+
     private static IReadOnlyList<CliFrameworkProvider> CreateProviders()
     {
         return
@@ -162,6 +189,7 @@ internal static class CliFrameworkProviderRegistry
             LabelAliases: [],
             DependencyIds: ["CliFx"],
             PackageAssemblyNames: ["CliFx.dll"],
+            RuntimeAssemblyNames: ["CliFx"],
             SupportsCliFxAnalysis: true,
             SupportsHookAnalysis: false,
             StaticAnalysisAdapter: null);
@@ -176,6 +204,11 @@ internal static class CliFrameworkProviderRegistry
             LabelAliases: labelAliases,
             DependencyIds: dependencyIds,
             PackageAssemblyNames: packageAssemblyNames,
+            RuntimeAssemblyNames: packageAssemblyNames
+                .Select(static assemblyName => Path.GetFileNameWithoutExtension(assemblyName))
+                .Where(static assemblyName => !string.IsNullOrWhiteSpace(assemblyName))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray(),
             SupportsCliFxAnalysis: false,
             SupportsHookAnalysis: false,
             StaticAnalysisAdapter: null);
@@ -192,10 +225,12 @@ internal static class CliFrameworkProviderRegistry
             LabelAliases: labelAliases,
             DependencyIds: dependencyIds,
             PackageAssemblyNames: packageAssemblyNames,
+            RuntimeAssemblyNames: [staticAssemblyName],
             SupportsCliFxAnalysis: false,
             SupportsHookAnalysis:
                 string.Equals(name, "System.CommandLine", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(name, "McMaster.Extensions.CommandLineUtils", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(name, "Microsoft.Extensions.CommandLineUtils", StringComparison.OrdinalIgnoreCase),
+                || string.Equals(name, "Microsoft.Extensions.CommandLineUtils", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(name, "CommandLineParser", StringComparison.OrdinalIgnoreCase),
             StaticAnalysisAdapter: new StaticAnalysisFrameworkAdapter(name, staticAssemblyName, reader));
 }

@@ -1,12 +1,12 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
 using InSpectra.Discovery.Tool.Queue.Planning;
 
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
-using System.Xml.Linq;
 
 internal static class HookToolProcessInvocationResolver
 {
@@ -35,85 +35,35 @@ internal static class HookToolProcessInvocationResolver
 
     private static HookToolProcessInvocationResolution? TryResolveDotnetRunnerInvocation(string installDirectory, string commandName)
     {
-        if (string.IsNullOrWhiteSpace(installDirectory) || string.IsNullOrWhiteSpace(commandName))
+        var command = InstalledDotnetToolCommandSupport.TryResolve(installDirectory, commandName);
+        if (command is null
+            || !string.Equals(command.Runner, "dotnet", StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
 
-        foreach (var settingsPath in Directory.EnumerateFiles(installDirectory, "DotnetToolSettings.xml", SearchOption.AllDirectories))
+        var entryPointPath = command.EntryPointPath;
+        if (!File.Exists(entryPointPath))
         {
-            var invocation = TryResolveFromSettings(settingsPath, commandName);
-            if (invocation is not null)
-            {
-                return invocation;
-            }
+            return HookToolProcessInvocationResolution.TerminalFailure(
+                "hook-invalid-dotnet-entrypoint",
+                $"Dotnet tool entry point '{Path.GetFileName(entryPointPath)}' was declared in DotnetToolSettings.xml but was not found.");
         }
 
-        return null;
-    }
-
-    private static HookToolProcessInvocationResolution? TryResolveFromSettings(string settingsPath, string commandName)
-    {
-        try
-        {
-            var document = XDocument.Load(settingsPath);
-            var commandElement = document
-                .Descendants()
-                .FirstOrDefault(element =>
-                    string.Equals(element.Name.LocalName, "Command", StringComparison.OrdinalIgnoreCase)
-                    && string.Equals(
-                        element.Attribute("Name")?.Value,
-                        commandName,
-                        StringComparison.OrdinalIgnoreCase));
-
-            if (commandElement is null)
-            {
-                return null;
-            }
-
-            var runner = commandElement.Attribute("Runner")?.Value?.Trim();
-            var entryPoint = commandElement.Attribute("EntryPoint")?.Value?.Trim();
-            if (!string.Equals(runner, "dotnet", StringComparison.OrdinalIgnoreCase)
-                || string.IsNullOrWhiteSpace(entryPoint))
-            {
-                return null;
-            }
-
-            var settingsDirectory = Path.GetDirectoryName(settingsPath);
-            if (string.IsNullOrWhiteSpace(settingsDirectory))
-            {
-                return null;
-            }
-
-            var entryPointPath = Path.GetFullPath(Path.Combine(
-                settingsDirectory,
-                entryPoint.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar)));
-            if (!File.Exists(entryPointPath))
-            {
-                return HookToolProcessInvocationResolution.TerminalFailure(
-                    "hook-invalid-dotnet-entrypoint",
-                    $"Dotnet tool entry point '{Path.GetFileName(entryPointPath)}' was declared in DotnetToolSettings.xml but was not found.");
-            }
-
-            if (!EnsureRuntimeConfig(entryPointPath, settingsPath))
-            {
-                return null;
-            }
-
-            if (TryValidateManagedEntryPoint(entryPointPath, out var validationFailureMessage))
-            {
-                return HookToolProcessInvocationResolution.TerminalFailure(
-                    "hook-invalid-dotnet-entrypoint",
-                    validationFailureMessage);
-            }
-
-            return HookToolProcessInvocationResolution.FromInvocation(
-                new HookToolProcessInvocation(ResolveDotnetHostPath(), [entryPointPath, "--help"]));
-        }
-        catch
+        if (!EnsureRuntimeConfig(entryPointPath, command.SettingsPath))
         {
             return null;
         }
+
+        if (TryValidateManagedEntryPoint(entryPointPath, out var validationFailureMessage))
+        {
+            return HookToolProcessInvocationResolution.TerminalFailure(
+                "hook-invalid-dotnet-entrypoint",
+                validationFailureMessage);
+        }
+
+        return HookToolProcessInvocationResolution.FromInvocation(
+            new HookToolProcessInvocation(ResolveDotnetHostPath(), [entryPointPath, "--help"]));
     }
 
     private static bool EnsureRuntimeConfig(string entryPointPath, string settingsPath)

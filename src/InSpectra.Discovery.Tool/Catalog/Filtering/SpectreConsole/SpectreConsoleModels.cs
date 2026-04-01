@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Catalog.Filtering.SpectreConsole;
 
+using InSpectra.Discovery.Tool.Packages;
+
 
 internal sealed record SpectreConsoleFilterSnapshot(
     DateTimeOffset GeneratedAtUtc,
@@ -47,11 +49,17 @@ internal sealed record SpectrePackageInspection(
     IReadOnlyList<string> ToolCommandNames,
     IReadOnlyList<string> ToolEntryPointPaths,
     IReadOnlyList<string> ToolAssembliesReferencingSpectreConsole,
-    IReadOnlyList<string> ToolAssembliesReferencingSpectreConsoleCli)
+    IReadOnlyList<string> ToolAssembliesReferencingSpectreConsoleCli,
+    IReadOnlyList<ToolCliFrameworkReferenceInspection> ToolCliFrameworkReferences)
 {
     public bool HasToolAssemblyReferencingSpectreConsoleCli => ToolAssembliesReferencingSpectreConsoleCli.Count > 0;
 
+    public bool HasToolAssemblyReferencingCliFramework(string frameworkName)
+        => ToolCliFrameworkReferences.Any(reference =>
+            string.Equals(reference.FrameworkName, frameworkName, StringComparison.OrdinalIgnoreCase));
+
     public static SpectrePackageInspection Empty { get; } = new(
+        [],
         [],
         [],
         [],
@@ -69,4 +77,3 @@ internal sealed record SpectreAssemblyVersionInfo(
     string? AssemblyVersion,
     string? FileVersion,
     string? InformationalVersion);
-

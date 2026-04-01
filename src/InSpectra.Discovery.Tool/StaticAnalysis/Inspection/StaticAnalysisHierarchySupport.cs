@@ -6,6 +6,28 @@ internal static class StaticAnalysisHierarchySupport
 {
     public static IEnumerable<PropertyDef> GetPropertiesFromHierarchy(TypeDef typeDef)
     {
+        foreach (var current in EnumerateHierarchy(typeDef))
+        {
+            foreach (var property in current.Properties)
+            {
+                yield return property;
+            }
+        }
+    }
+
+    public static IEnumerable<FieldDef> GetFieldsFromHierarchy(TypeDef typeDef)
+    {
+        foreach (var current in EnumerateHierarchy(typeDef))
+        {
+            foreach (var field in current.Fields)
+            {
+                yield return field;
+            }
+        }
+    }
+
+    private static IEnumerable<TypeDef> EnumerateHierarchy(TypeDef typeDef)
+    {
         var chain = new Stack<TypeDef>();
         for (var current = typeDef; current is not null; current = ResolveBaseType(current))
         {
@@ -14,10 +36,7 @@ internal static class StaticAnalysisHierarchySupport
 
         while (chain.Count > 0)
         {
-            foreach (var property in chain.Pop().Properties)
-            {
-                yield return property;
-            }
+            yield return chain.Pop();
         }
     }
 
@@ -32,4 +51,3 @@ internal static class StaticAnalysisHierarchySupport
         return baseTypeRef.ResolveTypeDef();
     }
 }
-

@@ -112,6 +112,7 @@ internal static class ResultSupport
         detection["toolEntryPointPaths"] = ToJsonArray(inspection.ToolEntryPointPaths);
         detection["toolAssembliesReferencingSpectreConsole"] = ToJsonArray(inspection.ToolAssembliesReferencingSpectreConsole);
         detection["toolAssembliesReferencingSpectreConsoleCli"] = ToJsonArray(inspection.ToolAssembliesReferencingSpectreConsoleCli);
+        detection["toolCliFrameworkReferences"] = JsonSerializer.SerializeToNode(inspection.ToolCliFrameworkReferences, JsonOptions.Default);
     }
 
     public static string GetFailureSignature(string phase, string classification, string? message)
@@ -160,4 +161,3 @@ internal sealed record DetectionInfo(
         return array;
     }
 }
-

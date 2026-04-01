@@ -23,6 +23,11 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
         "System.CommandLine.RootCommand",
     ];
 
+    private static readonly string[] ArgumentBaseTypeNames =
+    [
+        "System.CommandLine.Argument",
+    ];
+
     public IReadOnlyDictionary<string, StaticCommandDefinition> Read(IReadOnlyList<ScannedModule> modules)
     {
         var commands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase);
@@ -65,9 +70,10 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
         }
 
         var options = new List<StaticOptionDefinition>();
-        foreach (var field in typeDef.Fields)
+        var values = new List<StaticValueDefinition>();
+        foreach (var field in StaticAnalysisHierarchySupport.GetFieldsFromHierarchy(typeDef))
         {
-            if (!field.IsPublic && !field.IsFamily && !field.IsAssembly)
+            if (field.IsStatic || field.IsSpecialName || field.Name?.String.Contains("k__BackingField", StringComparison.Ordinal) == true)
             {
                 continue;
             }
@@ -80,45 +86,33 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
 
             if (IsOptionType(fieldType))
             {
-                var innerType = ExtractGenericArgument(fieldType);
-                options.Add(new StaticOptionDefinition(
-                    LongName: ConvertToKebabCase(StripSuffix(field.Name?.String, "Option")),
-                    ShortName: null,
-                    IsRequired: false,
-                    IsSequence: StaticAnalysisTypeSupport.IsSequenceType(innerType),
-                    IsBoolLike: StaticAnalysisTypeSupport.IsBoolType(innerType),
-                    ClrType: StaticAnalysisTypeSupport.GetClrTypeName(innerType),
-                    Description: null,
-                    DefaultValue: null,
-                    MetaValue: null,
-                    AcceptedValues: StaticAnalysisTypeSupport.GetAcceptedValues(innerType),
-                    PropertyName: field.Name?.String));
+                options.Add(BuildOptionDefinition(field.Name?.String, fieldType));
+                continue;
+            }
+
+            if (IsArgumentType(fieldType))
+            {
+                values.Add(BuildValueDefinition(field.Name?.String, fieldType));
             }
         }
 
-        foreach (var property in typeDef.Properties)
+        foreach (var property in StaticAnalysisHierarchySupport.GetPropertiesFromHierarchy(typeDef))
         {
             var propertyType = property.PropertySig?.RetType;
-            if (propertyType is null)
+            if (propertyType is null || property.GetMethod?.IsStatic == true || property.SetMethod?.IsStatic == true)
             {
                 continue;
             }
 
             if (IsOptionType(propertyType))
             {
-                var innerType = ExtractGenericArgument(propertyType);
-                options.Add(new StaticOptionDefinition(
-                    LongName: ConvertToKebabCase(StripSuffix(property.Name?.String, "Option")),
-                    ShortName: null,
-                    IsRequired: false,
-                    IsSequence: StaticAnalysisTypeSupport.IsSequenceType(innerType),
-                    IsBoolLike: StaticAnalysisTypeSupport.IsBoolType(innerType),
-                    ClrType: StaticAnalysisTypeSupport.GetClrTypeName(innerType),
-                    Description: null,
-                    DefaultValue: null,
-                    MetaValue: null,
-                    AcceptedValues: StaticAnalysisTypeSupport.GetAcceptedValues(innerType),
-                    PropertyName: property.Name?.String));
+                options.Add(BuildOptionDefinition(property.Name?.String, propertyType));
+                continue;
+            }
+
+            if (IsArgumentType(propertyType))
+            {
+                values.Add(BuildValueDefinition(property.Name?.String, propertyType));
             }
         }
 
@@ -127,8 +121,15 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
             Description: null,
             IsDefault: isRoot,
             IsHidden: false,
-            Values: [],
-            Options: options.OrderBy(o => o.LongName).ToArray());
+            Values: values
+                .GroupBy(static value => value.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .Select(static group => group.First())
+                .ToArray(),
+            Options: options
+                .GroupBy(static option => option.LongName ?? option.PropertyName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .Select(static group => group.First())
+                .OrderBy(static option => option.LongName)
+                .ToArray());
     }
 
     private static bool InheritsFromCommand(TypeDef typeDef)
@@ -191,6 +192,61 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
         return false;
     }
 
+    private static bool IsArgumentType(TypeSig? typeSig)
+    {
+        if (typeSig is GenericInstSig g)
+        {
+            var name = g.GenericType?.FullName?.Split('`')[0];
+            return ArgumentBaseTypeNames.Any(argumentTypeName => string.Equals(name, argumentTypeName, StringComparison.Ordinal));
+        }
+
+        for (var current = typeSig?.ToTypeDefOrRef(); current is not null;)
+        {
+            if (current.FullName.StartsWith("System.CommandLine.Argument", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            var resolved = current.ResolveTypeDef();
+            current = resolved?.BaseType?.ResolveTypeDef();
+        }
+
+        return false;
+    }
+
+    private static StaticOptionDefinition BuildOptionDefinition(string? memberName, TypeSig memberType)
+    {
+        var innerType = ExtractGenericArgument(memberType);
+        var normalizedMemberName = NormalizeMemberName(memberName);
+        return new StaticOptionDefinition(
+            LongName: ConvertToKebabCase(StripSuffix(normalizedMemberName, "Option")),
+            ShortName: null,
+            IsRequired: false,
+            IsSequence: StaticAnalysisTypeSupport.IsSequenceType(innerType),
+            IsBoolLike: StaticAnalysisTypeSupport.IsBoolType(innerType),
+            ClrType: StaticAnalysisTypeSupport.GetClrTypeName(innerType),
+            Description: null,
+            DefaultValue: null,
+            MetaValue: null,
+            AcceptedValues: StaticAnalysisTypeSupport.GetAcceptedValues(innerType),
+            PropertyName: memberName);
+    }
+
+    private static StaticValueDefinition BuildValueDefinition(string? memberName, TypeSig memberType)
+    {
+        var innerType = ExtractGenericArgument(memberType);
+        var normalizedMemberName = NormalizeMemberName(memberName);
+        return new StaticValueDefinition(
+            Index: 0,
+            Name: ConvertToKebabCase(StripSuffix(normalizedMemberName, "Argument")),
+            IsRequired: true,
+            IsSequence: StaticAnalysisTypeSupport.IsSequenceType(innerType),
+            ClrType: StaticAnalysisTypeSupport.GetClrTypeName(innerType),
+            Description: null,
+            DefaultValue: null,
+            AcceptedValues: StaticAnalysisTypeSupport.GetAcceptedValues(innerType));
+    }
+
     private static TypeSig? ExtractGenericArgument(TypeSig? typeSig)
         => typeSig is GenericInstSig g && g.GenericArguments.Count > 0
             ? g.GenericArguments[0]
@@ -202,6 +258,16 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
         return name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase) && name.Length > suffix.Length
             ? name[..^suffix.Length]
             : name;
+    }
+
+    private static string? NormalizeMemberName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return name;
+        }
+
+        return name.TrimStart('_');
     }
 
     private static string ConvertToKebabCase(string? name)
@@ -217,4 +283,3 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
         return sb.ToString();
     }
 }
-

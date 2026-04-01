@@ -5,7 +5,10 @@ using dnlib.DotNet;
 
 internal sealed class DnlibAssemblyScanner
 {
-    public IReadOnlyList<ScannedModule> ScanForFramework(string installDirectory, string assemblyName)
+    public IReadOnlyList<ScannedModule> ScanForFramework(
+        string installDirectory,
+        string assemblyName,
+        string? preferredEntryPointPath = null)
     {
         var assemblyPaths = Directory.EnumerateFiles(installDirectory, "*.*", SearchOption.AllDirectories)
             .Where(path => path.EndsWith(".dll", StringComparison.OrdinalIgnoreCase)
@@ -13,7 +16,7 @@ internal sealed class DnlibAssemblyScanner
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        var results = new List<ScannedModule>();
+        var loadedModules = new List<ScannedModule>();
         foreach (var path in assemblyPaths)
         {
             ModuleDefMD? module;
@@ -30,39 +33,45 @@ internal sealed class DnlibAssemblyScanner
                 continue;
             }
 
-            if (!ReferencesAssembly(module, assemblyName))
+            loadedModules.Add(new ScannedModule(path, module));
+        }
+
+        var selectedPaths = StaticAnalysisModuleSelectionSupport.SelectPaths(
+            loadedModules.Select(CreateMetadata).ToArray(),
+            assemblyName,
+            preferredEntryPointPath);
+        var selectedPathSet = new HashSet<string>(
+            selectedPaths.Select(Path.GetFullPath),
+            OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+
+        var results = new List<ScannedModule>();
+        foreach (var module in loadedModules)
+        {
+            if (selectedPathSet.Contains(Path.GetFullPath(module.Path)))
+            {
+                results.Add(module);
+            }
+            else
             {
                 module.Dispose();
-                continue;
             }
-
-            results.Add(new ScannedModule(path, module));
         }
 
         return results;
     }
 
-    private static bool ReferencesAssembly(ModuleDefMD module, string assemblyName)
-    {
-        if (string.Equals(module.Assembly?.Name?.String, assemblyName, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        foreach (var assemblyRef in module.GetAssemblyRefs())
-        {
-            if (string.Equals(assemblyRef.Name?.String, assemblyName, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    private static ScannedModuleMetadata CreateMetadata(ScannedModule module)
+        => new(
+            module.Path,
+            module.Module.Assembly?.Name?.String,
+            module.Module.GetAssemblyRefs()
+                .Select(static assemblyRef => assemblyRef.Name?.String)
+                .Where(static name => !string.IsNullOrWhiteSpace(name))
+                .Cast<string>()
+                .ToArray());
 }
 
 internal sealed record ScannedModule(string Path, ModuleDefMD Module) : IDisposable
 {
     public void Dispose() => Module.Dispose();
 }
-

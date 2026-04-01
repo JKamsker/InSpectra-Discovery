@@ -8,6 +8,7 @@ internal sealed record CliFrameworkProvider(
     IReadOnlyList<string> LabelAliases,
     IReadOnlyList<string> DependencyIds,
     IReadOnlyList<string> PackageAssemblyNames,
+    IReadOnlyList<string> RuntimeAssemblyNames,
     bool SupportsCliFxAnalysis,
     bool SupportsHookAnalysis,
     StaticAnalysisFrameworkAdapter? StaticAnalysisAdapter)

@@ -12,6 +12,6 @@ internal sealed record ToolDescriptor(
     string? PackageContentUrl,
     string? CatalogEntryUrl,
     string? PackageTitle = null,
-    string? PackageDescription = null);
-
+    string? PackageDescription = null,
+    string? HookCliFramework = null);
 
