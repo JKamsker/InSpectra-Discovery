@@ -51,6 +51,15 @@ internal static class UsageArgumentSelectionSupport
             return explicitArgument;
         }
 
+        if (ArgumentNodeBuilder.IsLowSignalExplicitArgument(explicitArgument)
+            && !ArgumentNodeBuilder.IsLowSignalExplicitArgument(usageArgument))
+        {
+            return new Item(
+                usageArgument.Key,
+                explicitArgument.IsRequired || usageArgument.IsRequired,
+                explicitArgument.Description ?? usageArgument.Description);
+        }
+
         return explicitSignature.Name == usageSignature.Name
             ? new Item(
                 usageArgument.Key,
@@ -59,4 +68,3 @@ internal static class UsageArgumentSelectionSupport
             : explicitArgument;
     }
 }
-

@@ -48,5 +48,13 @@ public sealed class OptionDescriptionSignalSupportTests
 
         Assert.True(containsExample);
     }
-}
 
+    [Fact]
+    public void ContainsIllustrativeValueExample_Recognizes_Pipe_Delimited_Choice_Sets()
+    {
+        var containsExample = OptionDescriptionSignalSupport.ContainsIllustrativeValueExample(
+            "Save images referenced in docs (some|none|all).");
+
+        Assert.True(containsExample);
+    }
+}

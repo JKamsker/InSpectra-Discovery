@@ -1,6 +1,8 @@
 namespace InSpectra.Discovery.Tool.Help.Inference.Descriptions;
 
-internal static class OptionDescriptionPhraseSupport
+using System.Text.RegularExpressions;
+
+internal static partial class OptionDescriptionPhraseSupport
 {
     private static readonly HashSet<string> InformationalOptionDescriptions = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -71,6 +73,7 @@ internal static class OptionDescriptionPhraseSupport
         "Update ",
         "Use ",
         "Verbose ",
+        "Write ",
         "Wrap ",
         "Whether ",
     ];
@@ -83,11 +86,33 @@ internal static class OptionDescriptionPhraseSupport
         "directory",
         "connection string",
         "package ids",
+        "definition string",
+        "reference string",
+        "parameters for",
         "comma separated",
+        "comma-separated",
         "must be one of",
+        "supported values",
+        "acceptable values",
         "valid values",
         "output path",
         "input path",
+        "queue name",
+        "friendly name",
+        "sort key",
+        "utc datetime",
+        "folder names",
+        "start folder",
+        "url extension",
+        "use to set the version",
+        "header to write",
+        "replace string",
+        "game release",
+        "days to keep",
+        "properties to categorize",
+        "fully qualified names",
+        "separate by",
+        "must be positive",
     ];
 
     private static readonly string[] StrongValueHintPrefixes =
@@ -95,6 +120,7 @@ internal static class OptionDescriptionPhraseSupport
         "Specify ",
         "Input ",
         "Name of ",
+        "Number of ",
     ];
 
     private static readonly string[] IllustrativeValueExampleContains =
@@ -102,6 +128,8 @@ internal static class OptionDescriptionPhraseSupport
         "something like",
         "specified .net runtime (",
         "specified .net runtime ",
+        "supported values:",
+        "acceptable values are:",
     ];
 
     private static readonly string[] DescriptiveOverrideContains =
@@ -110,6 +138,7 @@ internal static class OptionDescriptionPhraseSupport
         "separate by",
         "separated by",
         "use to set the version",
+        "replace string",
     ];
 
     public static bool IsInformationalOptionDescription(string description)
@@ -126,7 +155,8 @@ internal static class OptionDescriptionPhraseSupport
             || StartsWithAny(description, StrongValueHintPrefixes);
 
     public static bool ContainsIllustrativeValueExample(string description)
-        => ContainsAny(description, IllustrativeValueExampleContains);
+        => ContainsAny(description, IllustrativeValueExampleContains)
+            || ParenthesizedAlternationRegex().IsMatch(description);
 
     public static bool AllowsDescriptiveValueEvidenceToOverrideFlag(string description)
         => ContainsAny(description, DescriptiveOverrideContains);
@@ -136,5 +166,7 @@ internal static class OptionDescriptionPhraseSupport
 
     private static bool ContainsAny(string value, IReadOnlyList<string> fragments)
         => fragments.Any(fragment => value.Contains(fragment, StringComparison.OrdinalIgnoreCase));
-}
 
+    [GeneratedRegex(@"\([^)]*[^)\s|][^)]*\|[^)]*[^)\s|][^)]*\)", RegexOptions.Compiled)]
+    private static partial Regex ParenthesizedAlternationRegex();
+}

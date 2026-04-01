@@ -22,6 +22,11 @@ internal static class OpenCliOptionDuplicatePrimaryNameResolver
                 continue;
             }
 
+            if (IsProtectedInformationalPrimaryName(primaryName))
+            {
+                continue;
+            }
+
             if (TryPromoteDerivedLongName(option, primaryName, unavailableTokens, out var resolvedPrimaryName)
                 || TryPromoteUniqueAlias(option, unavailableTokens, out resolvedPrimaryName))
             {
@@ -29,6 +34,13 @@ internal static class OpenCliOptionDuplicatePrimaryNameResolver
                 unavailableTokens.Add(resolvedPrimaryName);
             }
         }
+    }
+
+    private static bool IsProtectedInformationalPrimaryName(string primaryName)
+    {
+        var normalized = primaryName.Trim().TrimStart('-', '/');
+        return string.Equals(normalized, "help", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "version", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool TryPromoteDerivedLongName(

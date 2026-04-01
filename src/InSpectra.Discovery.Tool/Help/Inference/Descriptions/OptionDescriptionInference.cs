@@ -34,11 +34,15 @@ internal static class OptionDescriptionInference
         var descriptionForSignals = NormalizeDescriptionForSignals(string.IsNullOrWhiteSpace(descriptionWithoutDefault)
             ? trimmedDescription
             : descriptionWithoutDefault);
+        var hasOverrideValueLikeDescription = StartsWithOverridePrefix(normalizedDescription)
+            && OptionSignatureSupport.HasValueLikeOptionName(primaryOption);
         var hasRequiredPrefix = RequiredDescriptionSupport.StartsWithRequiredPrefix(normalizedDescription);
         var hasInlineOptionExample = OptionDescriptionSignalSupport.ContainsInlineOptionExample(signature, normalizedDescription);
+        var hasIllustrativeValueExample = OptionDescriptionSignalSupport.ContainsIllustrativeValueExample(descriptionForSignals);
         var hasExplicitValueEvidence = hasNonBooleanDefault
             || hasInlineOptionExample
-            || OptionDescriptionSignalSupport.ContainsIllustrativeValueExample(descriptionForSignals);
+            || hasIllustrativeValueExample
+            || hasOverrideValueLikeDescription;
         var hasDescriptiveValueEvidence = OptionDescriptionSignalSupport.ContainsStrongValueDescriptionHint(descriptionForSignals);
         if (string.IsNullOrWhiteSpace(trimmedDescription))
         {
@@ -63,6 +67,7 @@ internal static class OptionDescriptionInference
                 && OptionDescriptionSignalSupport.AllowsDescriptiveValueEvidenceToOverrideFlag(descriptionForSignals);
             var onlyDefaultBacksThis = hasNonBooleanDefault
                 && !hasInlineOptionExample
+                && !hasIllustrativeValueExample
                 && !hasDescriptiveValueEvidence;
             if (onlyDefaultBacksThis || (!hasExplicitValueEvidence && !descriptiveOverride))
             {
@@ -154,5 +159,7 @@ internal static class OptionDescriptionInference
     private static bool IsBooleanDefaultValue(string? defaultValue)
         => string.Equals(defaultValue, "false", StringComparison.OrdinalIgnoreCase)
             || string.Equals(defaultValue, "true", StringComparison.OrdinalIgnoreCase);
-}
 
+    private static bool StartsWithOverridePrefix(string description)
+        => description.TrimStart().StartsWith("Override:", StringComparison.OrdinalIgnoreCase);
+}

@@ -44,10 +44,17 @@ internal static class OpenCliOptionCollisionMergeSupport
             return false;
         }
 
-        if ((leftInformational ^ rightInformational)
-            && (OpenCliOptionSupport.HasArguments(leftEntry.Option) || OpenCliOptionSupport.HasArguments(rightOption)))
+        if (leftInformational ^ rightInformational)
         {
-            return false;
+            if (IsWellKnownInformationalName(leftName) || IsWellKnownInformationalName(rightName))
+            {
+                return false;
+            }
+
+            if (OpenCliOptionSupport.HasArguments(leftEntry.Option) || OpenCliOptionSupport.HasArguments(rightOption))
+            {
+                return false;
+            }
         }
 
         if (!OpenCliOptionDescriptionSupport.AreCompatibleDescriptions(
@@ -152,7 +159,9 @@ internal static class OpenCliOptionCollisionMergeSupport
             return true;
         }
 
-        return IsWellKnownInformationalName(option["name"]?.GetValue<string>())
+        return OpenCliOptionDescriptionSupport.LooksLikeWellKnownInformationalOptionDescription(
+                option["name"]?.GetValue<string>(),
+                normalizedDescription)
             && (!OpenCliOptionSupport.HasArguments(option) || HasIgnorableInformationalArguments(option));
     }
 
@@ -211,9 +220,9 @@ internal static class OpenCliOptionCollisionMergeSupport
     private static bool LooksLikeSyntheticSelfArgumentOption(JsonObject option)
     {
         var normalizedDescription = OpenCliOptionDescriptionSupport.NormalizeDescription(option["description"]?.GetValue<string>());
-        if (!string.IsNullOrWhiteSpace(normalizedDescription)
-            && !OpenCliOptionDescriptionSupport.IsInformationalOptionDescription(normalizedDescription)
-            && !IsWellKnownInformationalName(option["name"]?.GetValue<string>()))
+        if (!OpenCliOptionDescriptionSupport.LooksLikeWellKnownInformationalOptionDescription(
+                option["name"]?.GetValue<string>(),
+                normalizedDescription))
         {
             return false;
         }

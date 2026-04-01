@@ -53,10 +53,14 @@ internal static class CapturePayloadSupport
 
     public static SelectedPayload SelectBestProcessCapture(
         TextParser parser,
+        string rootCommandName,
         IReadOnlyList<string> commandSegments,
         IReadOnlyList<string> invokedArguments,
         CommandRuntime.ProcessResult processResult)
     {
+        var storedCommand = commandSegments.Count == 0
+            ? string.Empty
+            : string.Join(' ', commandSegments);
         var helpInvocation = invokedArguments.Count == 0
             ? null
             : string.Join(' ', invokedArguments);
@@ -71,6 +75,12 @@ internal static class CapturePayloadSupport
             var compatibleDocument = document.HasContent && DocumentInspector.IsCompatible(commandSegments, document)
                 ? document
                 : null;
+            if (compatibleDocument is not null
+                && ShouldRejectNonRootDispatcherEcho(rootCommandName, storedCommand, commandSegments, compatibleDocument))
+            {
+                compatibleDocument = null;
+            }
+
             var score = compatibleDocument is not null
                 ? DocumentInspector.Score(compatibleDocument) - GetPayloadSelectionPenalty(payload, helpInvocation)
                 : 0;

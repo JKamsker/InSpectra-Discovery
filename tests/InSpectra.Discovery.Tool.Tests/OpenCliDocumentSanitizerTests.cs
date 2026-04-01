@@ -548,4 +548,92 @@ public sealed class OpenCliDocumentSanitizerTests
         Assert.Equal("--output-namespace", options[1]!["name"]?.GetValue<string>());
         Assert.Equal("-on", Assert.Single(options[1]!["aliases"]!.AsArray())!.GetValue<string>());
     }
+
+    [Fact]
+    public void Sanitize_Does_Not_Hide_WellKnown_Informational_Primary_Name_Collisions()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["aliases"] = new JsonArray("-v"),
+                    ["description"] = "Will cause the application to mark all project files with this version number",
+                },
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Display version information.",
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var options = document["options"]!.AsArray();
+        Assert.Equal(2, options.Count);
+        Assert.All(
+            options.OfType<JsonObject>(),
+            option => Assert.Equal("--version", option["name"]?.GetValue<string>()));
+    }
+
+    [Fact]
+    public void Sanitize_Does_Not_Merge_Custom_Version_Self_Argument_With_BuiltIn_Version_Row()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["aliases"] = new JsonArray("-v"),
+                    ["description"] = "Will cause the application to mark all project files with this version number",
+                    ["arguments"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "VERSION",
+                            ["required"] = false,
+                            ["arity"] = new JsonObject
+                            {
+                                ["minimum"] = 0,
+                                ["maximum"] = 1,
+                            },
+                        },
+                    },
+                },
+                new JsonObject
+                {
+                    ["name"] = "--version",
+                    ["description"] = "Display version information.",
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var options = document["options"]!.AsArray();
+        Assert.Equal(2, options.Count);
+        Assert.Contains(
+            options.OfType<JsonObject>(),
+            option => option["arguments"] is JsonArray);
+        Assert.Contains(
+            options.OfType<JsonObject>(),
+            option => string.Equals(option["description"]?.GetValue<string>(), "Display version information.", StringComparison.Ordinal));
+    }
 }

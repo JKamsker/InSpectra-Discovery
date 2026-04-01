@@ -79,6 +79,7 @@ public sealed class CrawlerTests
 
         var result = await crawler.CrawlAsync(
             "demo",
+            "demo",
             workingDirectory: Environment.CurrentDirectory,
             environment: new Dictionary<string, string>(),
             timeoutSeconds: 30,
@@ -130,6 +131,7 @@ public sealed class CrawlerTests
 
         var result = await crawler.CrawlAsync(
             "demo",
+            "demo",
             workingDirectory: Environment.CurrentDirectory,
             environment: new Dictionary<string, string>(),
             timeoutSeconds: 30,
@@ -167,6 +169,7 @@ public sealed class CrawlerTests
         var crawler = new Crawler(runtime);
 
         var result = await crawler.CrawlAsync(
+            "demo",
             "demo",
             workingDirectory: Environment.CurrentDirectory,
             environment: new Dictionary<string, string>(),
@@ -209,6 +212,7 @@ public sealed class CrawlerTests
         var crawler = new Crawler(runtime);
 
         var result = await crawler.CrawlAsync(
+            "demo",
             "demo",
             workingDirectory: Environment.CurrentDirectory,
             environment: new Dictionary<string, string>(),
@@ -283,6 +287,7 @@ public sealed class CrawlerTests
 
         var result = await crawler.CrawlAsync(
             "Spriggit.Yaml.Skyrim",
+            "Spriggit.Yaml.Skyrim",
             workingDirectory: Environment.CurrentDirectory,
             environment: new Dictionary<string, string>(),
             timeoutSeconds: 30,
@@ -345,6 +350,7 @@ public sealed class CrawlerTests
 
         var result = await crawler.CrawlAsync(
             "Spriggit.Yaml.Skyrim",
+            "Spriggit.Yaml.Skyrim",
             workingDirectory: Environment.CurrentDirectory,
             environment: new Dictionary<string, string>(),
             timeoutSeconds: 30,
@@ -355,6 +361,109 @@ public sealed class CrawlerTests
         Assert.DoesNotContain(result.CaptureSummaries.Keys, key => string.Equals(key, "version", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.StartsWith("help ", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.StartsWith("version ", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task CrawlAsync_DoesNot_Recurse_Into_NonRoot_Dispatcher_Echoes()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            if (string.Equals(key, "--help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stdout:
+                    """
+                    mortis - local PR remediation agent
+
+                    Commands:
+                      mortis start <folder> [--full]  Scaffold a Mortis host folder
+                      mortis run --config <file>      Run Mortis using a config json
+                      mortis doctor                   Check prerequisites
+                      mortis version                  Print versions
+                    """);
+            }
+
+            if (arguments.Any(argument => argument is "start" or "run" or "doctor" or "version"))
+            {
+                return Result(
+                    stdout:
+                    """
+                    mortis - local PR remediation agent
+
+                    Commands:
+                      mortis start <folder> [--full]  Scaffold a Mortis host folder
+                      mortis run --config <file>      Run Mortis using a config json
+                      mortis doctor                   Check prerequisites
+                      mortis version                  Print versions
+                    """);
+            }
+
+            throw new InvalidOperationException($"Unexpected invocation: '{key}'.");
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "mortis",
+            "mortis",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(
+            ["", "doctor", "run", "start"],
+            result.CaptureSummaries.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        Assert.Equal([""], result.Documents.Keys);
+        Assert.DoesNotContain(runtime.Invocations.Select(args => string.Join(' ', args)), invocation => invocation.Contains("doctor run", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(runtime.Invocations.Select(args => string.Join(' ', args)), invocation => invocation.Contains("start run", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public async Task CrawlAsync_DoesNot_Treat_Status_Table_Echoes_As_Nested_Subcommands()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            if (string.Equals(key, "--help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stdout:
+                    """
+                    netagents - package manager for .agents directories
+
+                    Usage: netagents [--user] <command> [options]
+
+                    Commands:
+                      list    Show installed skills
+                    """);
+            }
+
+            if (arguments.Contains("list", StringComparer.OrdinalIgnoreCase))
+            {
+                return Result(
+                    stdout:
+                    """
+                    Skills:
+                      x netagents  getsentry/dotagents  not installed
+                    """);
+            }
+
+            throw new InvalidOperationException($"Unexpected invocation: '{key}'.");
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "netagents",
+            "netagents",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(["", "list"], result.CaptureSummaries.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        Assert.Equal([""], result.Documents.Keys);
+        Assert.DoesNotContain(runtime.Invocations.Select(args => string.Join(' ', args)), invocation => invocation.Contains("x netagents", StringComparison.OrdinalIgnoreCase));
     }
 
     private static CommandRuntime.ProcessResult Result(string? stdout = null, string? stderr = null, int exitCode = 0, bool timedOut = false)
@@ -392,4 +501,3 @@ public sealed class CrawlerTests
         }
     }
 }
-

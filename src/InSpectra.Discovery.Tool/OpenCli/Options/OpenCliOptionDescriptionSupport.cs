@@ -95,6 +95,37 @@ internal static class OpenCliOptionDescriptionSupport
     public static bool IsInformationalOptionDescription(string description)
         => InformationalOptionDescriptions.Contains(description);
 
+    public static bool LooksLikeWellKnownInformationalOptionDescription(string? optionName, string description)
+    {
+        if (string.IsNullOrWhiteSpace(optionName))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return true;
+        }
+
+        var normalizedDescription = NormalizeDescription(description);
+        if (string.IsNullOrWhiteSpace(normalizedDescription))
+        {
+            return true;
+        }
+
+        if (IsInformationalOptionDescription(normalizedDescription)
+            || TryGetInformationalDescriptionPrefix(normalizedDescription, out _))
+        {
+            return true;
+        }
+
+        var semanticName = optionName.Trim().TrimStart('-', '/');
+        return string.Equals(semanticName, "help", StringComparison.OrdinalIgnoreCase)
+            ? LooksLikeHelpInformationDescription(normalizedDescription)
+            : string.Equals(semanticName, "version", StringComparison.OrdinalIgnoreCase)
+                && LooksLikeVersionInformationDescription(normalizedDescription);
+    }
+
     public static bool HaveEquivalentInformationalTokenSets(
         IReadOnlySet<string> leftTokens,
         IReadOnlySet<string> rightTokens)
@@ -165,6 +196,34 @@ internal static class OpenCliOptionDescriptionSupport
             .Where(token => !DescriptionStopWords.Contains(token))
             .Select(token => token.ToLowerInvariant())
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    private static bool LooksLikeHelpInformationDescription(string description)
+    {
+        var keywords = GetDescriptionKeywords(description);
+        if (keywords.Count == 0)
+        {
+            return false;
+        }
+
+        return keywords.Contains("help")
+            || keywords.Contains("usage")
+            || keywords.Contains("screen");
+    }
+
+    private static bool LooksLikeVersionInformationDescription(string description)
+    {
+        var keywords = GetDescriptionKeywords(description);
+        if (keywords.Count == 0)
+        {
+            return false;
+        }
+
+        return keywords.Contains("information")
+            || (keywords.Contains("build") && keywords.Contains("information"))
+            || (keywords.Contains("display") && keywords.Contains("version"))
+            || (keywords.Contains("show") && keywords.Contains("version"))
+            || (keywords.Contains("print") && keywords.Contains("version"));
+    }
 
     private static bool LooksLikeTrailingDescriptionNoise(string line)
     {

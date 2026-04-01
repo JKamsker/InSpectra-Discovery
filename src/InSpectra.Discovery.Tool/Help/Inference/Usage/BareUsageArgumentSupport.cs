@@ -50,9 +50,24 @@ internal static partial class BareUsageArgumentSupport
     }
 
     public static bool LooksLikeExampleLabel(string? line)
-        => !string.IsNullOrWhiteSpace(line)
-            && line.TrimEnd().EndsWith(":", StringComparison.Ordinal)
-            && line.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).Length <= 3;
+    {
+        if (string.IsNullOrWhiteSpace(line))
+        {
+            return false;
+        }
+
+        var trimmed = line.Trim();
+        if (!trimmed.EndsWith(":", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var content = trimmed[..^1].TrimEnd();
+        return content.Length > 0
+            && !content.StartsWith("-", StringComparison.Ordinal)
+            && !content.Contains("--", StringComparison.Ordinal)
+            && content.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length <= 8;
+    }
 
     public static bool LooksLikeWrappedUsageValueContinuation(string? previousLine, string currentLine)
     {
@@ -98,4 +113,3 @@ internal static partial class BareUsageArgumentSupport
     [GeneratedRegex(@"\.[A-Za-z0-9]{1,8}$", RegexOptions.Compiled)]
     private static partial Regex FileLikeUsageTokenRegex();
 }
-

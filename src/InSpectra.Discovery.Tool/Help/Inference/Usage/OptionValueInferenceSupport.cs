@@ -11,14 +11,16 @@ internal static partial class OptionValueInferenceSupport
         "connection", "comment", "comments", "count", "culture", "database", "directories", "dir", "directory",
         "dll", "duration", "email", "env", "environment", "etw", "expiry", "exclude", "file", "files", "filter",
         "folder", "format", "factory", "feature", "guid", "host", "id", "ids", "index", "indexes", "include",
-        "input", "justification", "key", "kind", "language", "level", "license", "log", "migration", "model",
+        "input", "justification", "key", "kind", "language", "level", "license", "log", "max", "migration", "model",
         "modifier", "method", "namespace", "name", "notes", "output", "package", "param", "parser", "password",
         "path", "pattern", "plugin", "policy", "port", "post", "producer", "producers", "provider", "project",
-        "property", "prefix", "regex", "region", "regions", "repo", "repository", "result", "runtime", "rule",
-        "save", "schema", "schemas", "search", "service", "server", "solution", "source", "status", "subscription",
-        "table", "tables", "target", "targets", "template", "threshold", "thread", "threads", "thumbprint",
-        "timeout", "token", "topic", "tool", "trace", "type", "uri", "url", "value", "version", "xml", "xsl",
-        "yaml", "yml", "zip", "size",
+        "property", "prefix", "queue", "regex", "region", "regions", "repo", "repository", "result", "root",
+        "runtime", "rule", "save", "schema", "schemas", "search", "service", "server", "solution", "source",
+        "status", "subscription", "table", "tables", "target", "targets", "template", "threshold", "thread",
+        "threads", "thumbprint", "timeout", "title", "token", "topic", "tool", "tolerance", "trace", "type",
+        "uri", "url", "value", "version", "xml", "xsl", "yaml", "yml", "zip", "size", "width", "day", "days",
+        "header", "label", "labels", "offset", "reference", "shard", "char", "chars", "character", "characters", "ignore",
+        "convention",
     };
 
     public static string NormalizeArgumentName(string key)
@@ -125,4 +127,3 @@ internal static partial class OptionValueInferenceSupport
     [GeneratedRegex(@"[A-Z]+(?![a-z])|[A-Z]?[a-z]+|\d+", RegexOptions.Compiled)]
     private static partial Regex CamelCaseTokenRegex();
 }
-

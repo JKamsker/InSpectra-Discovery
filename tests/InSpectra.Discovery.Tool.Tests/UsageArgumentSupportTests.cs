@@ -84,5 +84,22 @@ public sealed class UsageArgumentSupportTests
 
         Assert.True(looksLikeInventory);
     }
-}
 
+    [Fact]
+    public void ExtractUsageArguments_Ignores_Long_Example_Label_Invocations()
+    {
+        var arguments = UsageArgumentSupport.ExtractUsageArguments(
+            commandName: "netenv",
+            commandPath: "",
+            usageLines:
+            [
+                "Run using local .env file:",
+                "dotenv",
+                "Run using specified file:",
+                "dotenv --file=.env.local",
+            ],
+            hasChildCommands: false);
+
+        Assert.Empty(arguments);
+    }
+}
