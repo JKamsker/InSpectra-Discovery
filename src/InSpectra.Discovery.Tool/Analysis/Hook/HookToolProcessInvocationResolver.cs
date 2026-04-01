@@ -2,15 +2,17 @@ namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
 using InSpectra.Discovery.Tool.Queue.Planning;
 
+using System.Reflection.Metadata;
+using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 
 internal static class HookToolProcessInvocationResolver
 {
-    public static HookToolProcessInvocation Resolve(string installDirectory, string commandName, string commandPath)
+    public static HookToolProcessInvocationResolution Resolve(string installDirectory, string commandName, string commandPath)
         => TryResolveDotnetRunnerInvocation(installDirectory, commandName)
-            ?? new HookToolProcessInvocation(commandPath, ["--help"]);
+            ?? HookToolProcessInvocationResolution.FromInvocation(new HookToolProcessInvocation(commandPath, ["--help"]));
 
     public static IReadOnlyList<HookToolProcessInvocation> BuildHelpFallbackInvocations(HookToolProcessInvocation invocation)
     {
@@ -31,7 +33,7 @@ internal static class HookToolProcessInvocationResolver
         ];
     }
 
-    private static HookToolProcessInvocation? TryResolveDotnetRunnerInvocation(string installDirectory, string commandName)
+    private static HookToolProcessInvocationResolution? TryResolveDotnetRunnerInvocation(string installDirectory, string commandName)
     {
         if (string.IsNullOrWhiteSpace(installDirectory) || string.IsNullOrWhiteSpace(commandName))
         {
@@ -50,7 +52,7 @@ internal static class HookToolProcessInvocationResolver
         return null;
     }
 
-    private static HookToolProcessInvocation? TryResolveFromSettings(string settingsPath, string commandName)
+    private static HookToolProcessInvocationResolution? TryResolveFromSettings(string settingsPath, string commandName)
     {
         try
         {
@@ -88,7 +90,9 @@ internal static class HookToolProcessInvocationResolver
                 entryPoint.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar)));
             if (!File.Exists(entryPointPath))
             {
-                return null;
+                return HookToolProcessInvocationResolution.TerminalFailure(
+                    "hook-invalid-dotnet-entrypoint",
+                    $"Dotnet tool entry point '{Path.GetFileName(entryPointPath)}' was declared in DotnetToolSettings.xml but was not found.");
             }
 
             if (!EnsureRuntimeConfig(entryPointPath, settingsPath))
@@ -96,7 +100,15 @@ internal static class HookToolProcessInvocationResolver
                 return null;
             }
 
-            return new HookToolProcessInvocation(ResolveDotnetHostPath(), [entryPointPath, "--help"]);
+            if (TryValidateManagedEntryPoint(entryPointPath, out var validationFailureMessage))
+            {
+                return HookToolProcessInvocationResolution.TerminalFailure(
+                    "hook-invalid-dotnet-entrypoint",
+                    validationFailureMessage);
+            }
+
+            return HookToolProcessInvocationResolution.FromInvocation(
+                new HookToolProcessInvocation(ResolveDotnetHostPath(), [entryPointPath, "--help"]));
         }
         catch
         {
@@ -176,6 +188,46 @@ internal static class HookToolProcessInvocationResolver
         return false;
     }
 
+    private static bool TryValidateManagedEntryPoint(string entryPointPath, out string failureMessage)
+    {
+        if (!string.Equals(Path.GetExtension(entryPointPath), ".dll", StringComparison.OrdinalIgnoreCase))
+        {
+            failureMessage = string.Empty;
+            return false;
+        }
+
+        try
+        {
+            using var stream = File.OpenRead(entryPointPath);
+            using var peReader = new PEReader(stream);
+            if (!peReader.HasMetadata)
+            {
+                failureMessage = $"Dotnet tool entry point '{Path.GetFileName(entryPointPath)}' is not a managed .NET assembly.";
+                return true;
+            }
+
+            _ = peReader.GetMetadataReader();
+            if (peReader.PEHeaders.CorHeader?.EntryPointTokenOrRelativeVirtualAddress > 0)
+            {
+                failureMessage = string.Empty;
+                return false;
+            }
+
+            failureMessage = $"Dotnet tool entry point '{Path.GetFileName(entryPointPath)}' does not contain a managed entry point.";
+            return true;
+        }
+        catch (BadImageFormatException)
+        {
+            failureMessage = $"Dotnet tool entry point '{Path.GetFileName(entryPointPath)}' is not a valid managed .NET assembly.";
+            return true;
+        }
+        catch (IOException ex)
+        {
+            failureMessage = $"Dotnet tool entry point '{Path.GetFileName(entryPointPath)}' could not be inspected: {ex.Message}";
+            return true;
+        }
+    }
+
     private static string ResolveDotnetHostPath()
     {
         foreach (var variableName in GetPreferredDotnetRootVariables())
@@ -222,3 +274,15 @@ internal static class HookToolProcessInvocationResolver
 internal sealed record HookToolProcessInvocation(
     string FilePath,
     IReadOnlyList<string> ArgumentList);
+
+internal sealed record HookToolProcessInvocationResolution(
+    HookToolProcessInvocation? Invocation,
+    string? TerminalFailureClassification,
+    string? TerminalFailureMessage)
+{
+    public static HookToolProcessInvocationResolution FromInvocation(HookToolProcessInvocation invocation)
+        => new(invocation, null, null);
+
+    public static HookToolProcessInvocationResolution TerminalFailure(string classification, string message)
+        => new(null, classification, message);
+}

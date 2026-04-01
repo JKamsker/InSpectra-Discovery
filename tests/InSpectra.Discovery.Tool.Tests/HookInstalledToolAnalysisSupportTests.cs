@@ -4,6 +4,7 @@ using InSpectra.Discovery.Tool.Analysis.Hook;
 using InSpectra.Discovery.Tool.Analysis.NonSpectre;
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -153,7 +154,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
             {
                 var toolDirectory = Path.Combine(installDirectory, ".store", "demo.tool", "1.2.3", "demo.tool", "1.2.3", "tools", "net6.0", "any");
                 Directory.CreateDirectory(toolDirectory);
-                File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.dll"), string.Empty);
+                WriteExecutableDotnetToolAssembly(Path.Combine(toolDirectory, "Demo.Tool.dll"));
                 File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.runtimeconfig.json"), "{}");
                 File.WriteAllText(
                     Path.Combine(toolDirectory, "DotnetToolSettings.xml"),
@@ -228,7 +229,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
             {
                 var toolDirectory = Path.Combine(installDirectory, ".store", "demo.tool", "1.2.3", "demo.tool", "1.2.3", "tools", "custom", "any");
                 Directory.CreateDirectory(toolDirectory);
-                File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.dll"), string.Empty);
+                WriteExecutableDotnetToolAssembly(Path.Combine(toolDirectory, "Demo.Tool.dll"));
                 File.WriteAllText(
                     Path.Combine(toolDirectory, "DotnetToolSettings.xml"),
                     """
@@ -299,7 +300,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
             {
                 var toolDirectory = Path.Combine(installDirectory, ".store", "demo.tool", "1.2.3", "demo.tool", "1.2.3", "tools", "net8.0", "any");
                 Directory.CreateDirectory(toolDirectory);
-                File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.dll"), string.Empty);
+                WriteExecutableDotnetToolAssembly(Path.Combine(toolDirectory, "Demo.Tool.dll"));
                 File.WriteAllText(
                     Path.Combine(toolDirectory, "DotnetToolSettings.xml"),
                     """
@@ -364,6 +365,55 @@ public sealed class HookInstalledToolAnalysisSupportTests
         Assert.Equal("success", result["disposition"]?.GetValue<string>());
         Assert.Equal("startup-hook", result["classification"]?.GetValue<string>());
         Assert.Equal("startup-hook", result["opencliSource"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task AnalyzeAsync_Applies_Terminal_Failure_When_Dotnet_Runner_Dll_Lacks_Managed_EntryPoint()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var hookDllPath = CreateHookPlaceholder(tempDirectory.Path);
+        var runtime = new FakeHookCommandRuntime(
+            "demo",
+            hookHandler: _ => throw new InvalidOperationException("Hook process should not be invoked for an invalid dotnet entry point."),
+            installDirectoryInitializer: installDirectory =>
+            {
+                var toolDirectory = Path.Combine(installDirectory, ".store", "demo.tool", "1.2.3", "demo.tool", "1.2.3", "tools", "net8.0", "any");
+                Directory.CreateDirectory(toolDirectory);
+                WriteManagedLibraryWithoutEntryPoint(Path.Combine(toolDirectory, "Demo.Tool.dll"));
+                File.WriteAllText(Path.Combine(toolDirectory, "Demo.Tool.runtimeconfig.json"), "{}");
+                File.WriteAllText(
+                    Path.Combine(toolDirectory, "DotnetToolSettings.xml"),
+                    """
+                    <?xml version="1.0" encoding="utf-8"?>
+                    <DotNetCliTool Version="1">
+                      <Commands>
+                        <Command Name="demo" EntryPoint="Demo.Tool.dll" Runner="dotnet" />
+                      </Commands>
+                    </DotNetCliTool>
+                    """);
+            });
+        var support = new HookInstalledToolAnalysisSupport(runtime, () => hookDllPath);
+        var result = CreateInitialResult("Microsoft.Extensions.CommandLineUtils");
+
+        await support.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.False(result["retryEligible"]?.GetValue<bool>() ?? true);
+        Assert.Equal("hook-setup", result["phase"]?.GetValue<string>());
+        Assert.Equal("hook-invalid-dotnet-entrypoint", result["classification"]?.GetValue<string>());
+        Assert.Contains(
+            "does not contain a managed entry point",
+            result["failureMessage"]?.GetValue<string>());
+        Assert.Null(result["artifacts"]?["opencliArtifact"]);
     }
 
     [Fact]
@@ -797,6 +847,16 @@ public sealed class HookInstalledToolAnalysisSupportTests
         Directory.CreateDirectory(Path.GetDirectoryName(hookPath)!);
         File.WriteAllText(hookPath, string.Empty);
         return hookPath;
+    }
+
+    private static void WriteExecutableDotnetToolAssembly(string destinationPath)
+    {
+        File.Copy(typeof(HookInstalledToolAnalysisSupport).Assembly.Location, destinationPath, overwrite: true);
+    }
+
+    private static void WriteManagedLibraryWithoutEntryPoint(string destinationPath)
+    {
+        File.Copy(typeof(JsonObject).Assembly.Location, destinationPath, overwrite: true);
     }
 
     private sealed class FakeHookCommandRuntime(

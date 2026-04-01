@@ -86,10 +86,21 @@ internal sealed class HookInstalledToolAnalysisSupport
         // Execute the tool with the startup hook attached. The hook observes the command tree
         // while the target processes `--help`, then writes a capture file for OpenCLI generation.
         var hookStopwatch = Stopwatch.StartNew();
-        var invocation = HookToolProcessInvocationResolver.Resolve(
+        var invocationResolution = HookToolProcessInvocationResolver.Resolve(
             installedTool.InstallDirectory,
             commandName,
             installedTool.CommandPath);
+        if (invocationResolution.TerminalFailureClassification is not null)
+        {
+            NonSpectreResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "hook-setup",
+                classification: invocationResolution.TerminalFailureClassification,
+                invocationResolution.TerminalFailureMessage);
+            return;
+        }
+
+        var invocation = invocationResolution.Invocation!;
         var processResult = await InvokeWithHelpFallbackAsync(
             invocation,
             tempRoot,
