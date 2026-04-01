@@ -489,4 +489,63 @@ public sealed class OpenCliDocumentSanitizerTests
         Assert.Equal("-v", Assert.Single(version["aliases"]!.AsArray())!.GetValue<string>());
         Assert.False(version.ContainsKey("arguments"));
     }
+
+    [Fact]
+    public void Sanitize_Promotes_Derived_Long_Name_When_Duplicate_Primary_Option_Names_Collide()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["version"] = "1.0.0",
+            },
+            ["commands"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "g2c",
+                    ["options"] = new JsonArray
+                    {
+                        new JsonObject
+                        {
+                            ["name"] = "--output",
+                            ["aliases"] = new JsonArray("-o"),
+                            ["description"] = "The implementation file to create.",
+                            ["arguments"] = new JsonArray
+                            {
+                                new JsonObject
+                                {
+                                    ["name"] = "OUTPUT-FILENAME",
+                                    ["required"] = true,
+                                },
+                            },
+                        },
+                        new JsonObject
+                        {
+                            ["name"] = "--output",
+                            ["aliases"] = new JsonArray("-on"),
+                            ["description"] = "The target namespace for the output.",
+                            ["arguments"] = new JsonArray
+                            {
+                                new JsonObject
+                                {
+                                    ["name"] = "OUTPUT-NAMESPACE",
+                                    ["required"] = true,
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        };
+
+        OpenCliDocumentSanitizer.Sanitize(document);
+
+        var options = document["commands"]![0]!["options"]!.AsArray();
+        Assert.Equal("--output", options[0]!["name"]?.GetValue<string>());
+        Assert.Equal("--output-namespace", options[1]!["name"]?.GetValue<string>());
+        Assert.Equal("-on", Assert.Single(options[1]!["aliases"]!.AsArray())!.GetValue<string>());
+    }
 }

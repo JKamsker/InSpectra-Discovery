@@ -10,6 +10,7 @@ internal static class OpenCliOptionSanitizer
     public static void DeduplicateSafeOptionCollisions(JsonArray options)
     {
         OpenCliOptionCollisionResolver.DeduplicateSafeOptionCollisions(options);
+        OpenCliOptionDuplicatePrimaryNameResolver.Resolve(options);
         OpenCliOptionAliasConflictResolver.RemoveConflictingAliases(options);
     }
 }
