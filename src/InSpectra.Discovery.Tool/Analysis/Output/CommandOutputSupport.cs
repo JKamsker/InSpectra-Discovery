@@ -67,6 +67,16 @@ internal static class CommandOutputSupport
             rows.Add(new SummaryRow("Framework", resultSummary.CliFramework));
         }
 
+        if (!string.IsNullOrWhiteSpace(resultSummary.Classification))
+        {
+            rows.Add(new SummaryRow("Classification", resultSummary.Classification));
+        }
+
+        if (!string.IsNullOrWhiteSpace(resultSummary.OpenCliSource))
+        {
+            rows.Add(new SummaryRow("OpenCLI source", resultSummary.OpenCliSource));
+        }
+
         if (!string.IsNullOrWhiteSpace(fallbackFrom))
         {
             rows.Add(new SummaryRow("Fallback from", fallbackFrom));
@@ -90,7 +100,9 @@ internal static class CommandOutputSupport
                 ? analysisMode
                 : result?["analysisMode"]?.GetValue<string>(),
             result?["command"]?.GetValue<string>(),
-            result?["cliFramework"]?.GetValue<string>());
+            result?["cliFramework"]?.GetValue<string>(),
+            result?["classification"]?.GetValue<string>(),
+            result?["opencliSource"]?.GetValue<string>());
     }
 
     private sealed record AnalysisCommandResult(
@@ -107,7 +119,8 @@ internal static class CommandOutputSupport
     internal sealed record AnalysisCommandResultSummary(
         string? AnalysisMode,
         string? Command,
-        string? CliFramework);
+        string? CliFramework,
+        string? Classification,
+        string? OpenCliSource);
 }
-
 

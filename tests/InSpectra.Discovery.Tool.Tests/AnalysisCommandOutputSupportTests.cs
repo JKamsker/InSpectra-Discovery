@@ -17,14 +17,20 @@ public sealed class CommandOutputSupportTests
             "1.2.3",
             resultPath,
             "success",
-            new CommandOutputSupport.AnalysisCommandResultSummary("clifx", "sample", "CliFx"),
+            new CommandOutputSupport.AnalysisCommandResultSummary(
+                "clifx",
+                "sample",
+                "CliFx",
+                "clifx-crawl",
+                "crawled-from-clifx-help"),
             selectionReason: "confirmed-clifx",
             fallbackFrom: null);
 
         Assert.Contains(rows, row => row is { Key: "Mode", Value: "clifx" });
         Assert.Contains(rows, row => row is { Key: "Command", Value: "sample" });
         Assert.Contains(rows, row => row is { Key: "Framework", Value: "CliFx" });
+        Assert.Contains(rows, row => row is { Key: "Classification", Value: "clifx-crawl" });
+        Assert.Contains(rows, row => row is { Key: "OpenCLI source", Value: "crawled-from-clifx-help" });
         Assert.Contains(rows, row => row is { Key: "Selection reason", Value: "confirmed-clifx" });
     }
 }
-
