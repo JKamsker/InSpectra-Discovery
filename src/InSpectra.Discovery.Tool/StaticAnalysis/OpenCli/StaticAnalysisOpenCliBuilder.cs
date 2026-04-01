@@ -25,6 +25,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
         IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
         IReadOnlyDictionary<string, Document> helpDocuments)
     {
+        staticCommands = StaticAnalysisCommandPublishabilitySupport.FilterPublishableCommands(framework, staticCommands);
         helpDocuments.TryGetValue(string.Empty, out var rootHelp);
         staticCommands.TryGetValue(string.Empty, out var defaultCommand);
 

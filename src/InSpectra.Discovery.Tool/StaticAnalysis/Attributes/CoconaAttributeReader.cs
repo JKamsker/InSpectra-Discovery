@@ -8,6 +8,13 @@ using dnlib.DotNet;
 
 internal sealed class CoconaAttributeReader : IStaticAttributeReader
 {
+    private static readonly string[] FrameworkNamespacePrefixes =
+    [
+        "Cocona",
+        "Microsoft",
+        "System",
+    ];
+
     private static readonly string[] CommandAttributeNames =
     [
         "Cocona.CommandAttribute",
@@ -74,6 +81,11 @@ internal sealed class CoconaAttributeReader : IStaticAttributeReader
 
             var commandAttr = StaticAnalysisAttributeSupport.FindAttribute(method.CustomAttributes, CommandAttributeNames);
             var isPrimary = StaticAnalysisAttributeSupport.FindAttribute(method.CustomAttributes, PrimaryCommandAttributeNames) is not null;
+            if (ShouldIgnoreImplicitInfrastructureMethod(method, commandAttr is not null || isPrimary))
+            {
+                continue;
+            }
+
             var name = StaticAnalysisAttributeSupport.GetConstructorArgumentString(commandAttr, 0);
             var description = StaticAnalysisAttributeSupport.GetNamedArgumentString(commandAttr, "Description");
 
@@ -167,6 +179,72 @@ internal sealed class CoconaAttributeReader : IStaticAttributeReader
         return (options, values);
     }
 
+    private static bool ShouldIgnoreImplicitInfrastructureMethod(MethodDef method, bool hasExplicitCommandMetadata)
+    {
+        if (hasExplicitCommandMetadata || HasParameterCliMetadata(method))
+        {
+            return false;
+        }
+
+        if (IsFrameworkType(method.DeclaringType))
+        {
+            return true;
+        }
+
+        var relevantParameters = method.Parameters
+            .Where(static parameter => !parameter.IsHiddenThisParameter)
+            .Where(static parameter => parameter.ParamDef is not null)
+            .Where(parameter => !IsCancellationToken(parameter.Type))
+            .ToArray();
+        return relevantParameters.Length > 0
+            && relevantParameters.All(parameter => LooksLikeInfrastructureType(parameter.Type));
+    }
+
+    private static bool HasParameterCliMetadata(MethodDef method)
+        => method.Parameters
+            .Where(static parameter => !parameter.IsHiddenThisParameter)
+            .Select(static parameter => parameter.ParamDef)
+            .Where(static parameter => parameter is not null)
+            .Any(parameter =>
+                StaticAnalysisAttributeSupport.FindAttribute(parameter!.CustomAttributes, OptionAttributeNames) is not null
+                || StaticAnalysisAttributeSupport.FindAttribute(parameter.CustomAttributes, ArgumentAttributeNames) is not null);
+
+    private static bool IsFrameworkType(TypeDef? typeDef)
+    {
+        var typeNamespace = typeDef?.Namespace?.String;
+        if (HasFrameworkPrefix(typeNamespace))
+        {
+            return true;
+        }
+
+        var assemblyName = typeDef?.Module?.Assembly?.Name?.String;
+        return HasFrameworkPrefix(assemblyName);
+    }
+
+    private static bool HasFrameworkPrefix(string? value)
+        => !string.IsNullOrWhiteSpace(value)
+            && FrameworkNamespacePrefixes.Any(prefix => value.StartsWith(prefix, StringComparison.Ordinal));
+
+    private static bool LooksLikeInfrastructureType(TypeSig? typeSig)
+    {
+        var fullName = StaticAnalysisTypeSupport.GetClrTypeName(typeSig);
+        if (string.IsNullOrWhiteSpace(fullName))
+        {
+            return false;
+        }
+
+        if (fullName.Contains("Microsoft.Extensions.", StringComparison.Ordinal)
+            || fullName.Contains("Microsoft.AspNetCore.", StringComparison.Ordinal)
+            || fullName.Contains("Cocona.", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return string.Equals(fullName, "System.IServiceProvider", StringComparison.Ordinal)
+            || string.Equals(fullName, "System.IServiceScope", StringComparison.Ordinal)
+            || string.Equals(fullName, "System.IAsyncDisposable", StringComparison.Ordinal);
+    }
+
     private static StaticOptionDefinition ReadOptionFromParameter(Parameter param, CustomAttribute attr)
     {
         var longName = StaticAnalysisAttributeSupport.GetConstructorArgumentString(attr, 0) ?? ConvertToKebabCase(param.Name);
@@ -221,4 +299,3 @@ internal sealed class CoconaAttributeReader : IStaticAttributeReader
         => string.Equals(typeSig?.FullName, "System.Threading.CancellationToken", StringComparison.Ordinal);
 
 }
-
