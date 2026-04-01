@@ -1,0 +1,837 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "git-forest",
+    "version": "0.1.10",
+    "description": "A .NET CLI for managing collections of git repositories as a unified forest, enabling systematic codebase cultivation."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.1.0",
+      "systemCommandLineVersion": "2.0.1.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedTitle": "GitForest.Cli",
+    "cliParsedDescription": "git-forest (gf) - CLI for managing repository forests"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--json",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output in JSON format [default: False]",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "description": "Initialize forest in current git repo",
+      "options": [
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force re-initialization [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory for forest state [default: .git-forest]",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--hosting",
+          "recursive": false,
+          "hidden": false,
+          "description": "Hosting model / persistence provider (orleans|file|memory). If omitted, prompts in interactive mode.",
+          "arguments": [
+            {
+              "name": "HOSTING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--setup",
+          "recursive": false,
+          "hidden": false,
+          "description": "If using orleans and no local cluster is found, attempt local setup (install Aspire workload and start AppHost). [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--fallback-to",
+          "recursive": false,
+          "hidden": false,
+          "description": "If using orleans and setup/connect fails, fall back to another provider (file|memory).",
+          "arguments": [
+            {
+              "name": "FALLBACK_TO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Show forest status"
+    },
+    {
+      "name": "config",
+      "description": "Manage configuration",
+      "commands": [
+        {
+          "name": "show",
+          "description": "Show configuration",
+          "options": [
+            {
+              "name": "--effective",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show effective configuration [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "set",
+          "description": "Set a configuration value",
+          "arguments": [
+            {
+              "name": "key",
+              "description": "Config key (persistence.provider | orleans.gatewayHost | orleans.gatewayPort | orleans.clusterId | orleans.serviceId)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "value",
+              "description": "Value to set",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "migrate",
+      "description": "Migrate forest state between persistence providers",
+      "options": [
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "Source provider (orleans|file|memory)",
+          "arguments": [
+            {
+              "name": "FROM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "Destination provider (orleans|file|memory)",
+          "arguments": [
+            {
+              "name": "TO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show what would be migrated without writing [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plans",
+      "description": "Manage plans",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List installed plans"
+        },
+        {
+          "name": "install",
+          "description": "Install a plan",
+          "arguments": [
+            {
+              "name": "source",
+              "description": "Plan source (GitHub slug, URL, or local path)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plan",
+      "description": "Manage a specific plan",
+      "arguments": [
+        {
+          "name": "plan-id",
+          "description": "Plan identifier",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ],
+      "commands": [
+        {
+          "name": "reconcile",
+          "description": "Reconcile plan to desired state",
+          "options": [
+            {
+              "name": "--update",
+              "recursive": false,
+              "hidden": false,
+              "description": "Update plan before reconciling [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--forum",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reconciliation forum to use (ai|file). Overrides config reconcile.forum",
+              "arguments": [
+                {
+                  "name": "FORUM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what would be done without applying [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plants",
+      "description": "Manage plants",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List plants",
+          "options": [
+            {
+              "name": "--status",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by status (planned|planted|growing|harvestable|harvested|archived)",
+              "arguments": [
+                {
+                  "name": "STATUS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--plan",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by plan ID",
+              "arguments": [
+                {
+                  "name": "PLAN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plant",
+      "description": "Manage a specific plant",
+      "arguments": [
+        {
+          "name": "selector",
+          "description": "Plant selector (key, slug, or P01)",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ],
+      "commands": [
+        {
+          "name": "show",
+          "description": "Show plant details"
+        },
+        {
+          "name": "assign",
+          "description": "Assign a planter to this plant",
+          "options": [
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what would be done without applying [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "planter-id",
+              "description": "Planter identifier",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "unassign",
+          "description": "Unassign a planter from this plant",
+          "options": [
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what would be done without applying [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "planter-id",
+              "description": "Planter identifier",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "branches",
+          "description": "Manage plant branches",
+          "commands": [
+            {
+              "name": "list",
+              "description": "List branches recorded for this plant"
+            }
+          ]
+        },
+        {
+          "name": "harvest",
+          "description": "Mark plant as harvested",
+          "options": [
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force state transition even if current status is unexpected [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what would be done without applying [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "archive",
+          "description": "Archive plant",
+          "options": [
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force state transition even if current status is unexpected [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what would be done without applying [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "planters",
+      "description": "Manage planters",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List planters",
+          "options": [
+            {
+              "name": "--builtin",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show only built-in planters [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--custom",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show only custom planters [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "planter",
+      "description": "Manage a specific planter",
+      "arguments": [
+        {
+          "name": "planter-id",
+          "description": "Planter identifier",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ],
+      "commands": [
+        {
+          "name": "show",
+          "description": "Show planter details"
+        },
+        {
+          "name": "plant",
+          "description": "Assign + create branch for a plant",
+          "options": [
+            {
+              "name": "--branch",
+              "recursive": false,
+              "hidden": false,
+              "description": "Branch name to use ('auto' uses a deterministic default) [default: auto]",
+              "arguments": [
+                {
+                  "name": "BRANCH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Proceed without prompting [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what would be done without applying [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "selector",
+              "description": "Plant selector (key, slug, or P01)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "grow",
+          "description": "Grow a plant (propose or apply changes)",
+          "options": [
+            {
+              "name": "--mode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Mode: propose|apply [default: apply]",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what would be done without applying [default: False]",
+              "arguments": [
+                {
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "selector",
+              "description": "Plant selector (key, slug, or P01)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "planners",
+      "description": "Manage planners",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List planners",
+          "options": [
+            {
+              "name": "--plan",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by plan ID",
+              "arguments": [
+                {
+                  "name": "PLAN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "planner",
+      "description": "Manage a specific planner",
+      "arguments": [
+        {
+          "name": "planner-id",
+          "description": "Planner identifier",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ],
+      "commands": [
+        {
+          "name": "run",
+          "description": "Run planner",
+          "options": [
+            {
+              "name": "--plan",
+              "recursive": false,
+              "hidden": false,
+              "description": "Plan ID to run against",
+              "arguments": [
+                {
+                  "name": "PLAN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

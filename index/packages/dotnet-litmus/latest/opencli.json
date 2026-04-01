@@ -1,0 +1,602 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Litmus",
+    "version": "0.3.1",
+    "description": "Identifies high-risk .NET source files and ranks them by starting priority.\n      Phase 1 cross-references git churn, code coverage, and cyclomatic complexity\n      to produce a Risk Score. Phase 2 adds Roslyn-based seam analysis (unseamed\n      infrastructure calls, direct instantiation, concrete constructor parameters,\n      static calls) to compute a Starting Priority score — so teams know both\n      where tests are needed and where they can practically begin today."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.3.0",
+      "systemCommandLineVersion": "2.0.3.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Litmus - Identify high-risk .NET source files and where to start testing today"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "analyze",
+      "description": "Analyze .NET solution for high-risk files and starting priority",
+      "options": [
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a .sln or .slnx file. Auto-detected if a single .sln/.slnx exists in the current directory.",
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--coverage",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a Cobertura XML coverage file",
+          "arguments": [
+            {
+              "name": "COVERAGE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Limit git history to commits after this date (ISO format)",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DateTime"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of top files to display [default: 20]",
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Glob pattern(s) to exclude files. Repeatable.",
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Export results to a file (format determined by extension: .json, .csv, or .html)",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a previous JSON export to compare against",
+          "arguments": [
+            {
+              "name": "BASELINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-color",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable colored output [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format for stdout: table, json, csv, or html (independent of --output file format) [default: table]",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed intermediate scores for each file [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress all output except errors (exit code only) [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--fail-on-threshold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit with code 1 if any file's Risk Score or Starting Priority exceeds this value (0.0-2.0)",
+          "arguments": [
+            {
+              "name": "FAIL_ON_THRESHOLD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--detailed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Expand top-ranked files with per-method coverage and complexity [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--explain",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show a plain-English explanation of each file's risk and priority drivers [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-group",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show a flat table instead of grouping by priority level [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "scan",
+      "description": "Run dotnet test, collect code coverage, and analyze the solution in one step",
+      "options": [
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a .sln or .slnx file. Auto-detected if a single .sln/.slnx exists in the current directory.",
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tests-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory or project file to run tests from. Defaults to the solution file, which runs all test projects in the solution.",
+          "arguments": [
+            {
+              "name": "TESTS_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Limit git history to commits after this date (ISO format)",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DateTime"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of top files to display [default: 20]",
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Glob pattern(s) to exclude files. Repeatable.",
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Export results to a file (format determined by extension: .json, .csv, or .html)",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a previous JSON export to compare against",
+          "arguments": [
+            {
+              "name": "BASELINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-color",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable colored output [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format for stdout: table, json, csv, or html (independent of --output file format) [default: table]",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed intermediate scores for each file [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress all output except errors (exit code only) [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum time in minutes to wait for dotnet test to complete (default: 10) [default: 10]",
+          "arguments": [
+            {
+              "name": "TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--coverage-tool",
+          "recursive": false,
+          "hidden": false,
+          "description": "Tool for collecting code coverage: coverlet (default) or dotnet-coverage [default: coverlet]",
+          "arguments": [
+            {
+              "name": "COVERAGE_TOOL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-coverage",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip test execution and coverage collection. Ranks files by churn, complexity, and testability only. [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--fail-on-threshold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit with code 1 if any file's Risk Score or Starting Priority exceeds this value (0.0-2.0)",
+          "arguments": [
+            {
+              "name": "FAIL_ON_THRESHOLD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--detailed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Expand top-ranked files with per-method coverage and complexity [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--explain",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show a plain-English explanation of each file's risk and priority drivers [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-group",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show a flat table instead of grouping by priority level [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

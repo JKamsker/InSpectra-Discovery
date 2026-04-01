@@ -1,0 +1,455 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "gdshrapt",
+    "version": "6.0.0-alpha.6",
+    "description": "GDShrapt.CLI is a .NET global tool for semantic analysis and safe refactoring of GDScript 2.0 (Godot 4.x) projects.\n\nKey Features:\n- Safe project-wide rename with confidence levels (Strict, Potential, NameMatch)\n- Semantic validation with type inference (GD1xxx-GD8xxx diagnostics)\n- Style linting with naming conventions and presets (GDLxxx rules)\n- Auto-formatting with style extraction\n- Dead code detection, dependency analysis, metrics, type coverage\n- CI-friendly exit codes and JSON/SARIF output\n\nInstall: dotnet tool install -g GDShrapt.CLI\nUsage: gdshrapt rename old_name new_name --diff"
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "GDShrapt - Semantic analysis and safe refactoring for GDScript\n\nPrimary feature: safe project-wide rename with confidence levels.\n\nCore commands:\n  rename      Safe project-wide rename with confidence\n  analyze     All diagnostics (lint + validate)\n  check       CI-friendly exit codes\n  validate    Syntax and semantic validation\n  lint        Style and naming rules\n  format      Auto-format GDScript files\n\nAdvanced commands:\n  symbols, find-refs, type-coverage, dead-code, deps,\n  metrics, stats, parse, extract-style, reorder-code,\n  add-types, license, info"
+  },
+  "commands": [
+    {
+      "name": "rename",
+      "description": "Rename a symbol across the project with confidence-aware safety levels.\n\nExamples:\n  gdshrapt rename speed new_speed              Rename by name\n  gdshrapt rename speed new_speed --diff       Preview with diff\n  gdshrapt rename speed new_speed --apply      Apply changes\n  gdshrapt rename new_speed --file player.gd --line 5   Rename symbol at position",
+      "arguments": [
+        {
+          "name": "old-name",
+          "description": "Current symbol name (or new name when using --line)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "new-name",
+          "description": "New symbol name",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "analyze",
+      "description": "Analyze a GDScript project and report all diagnostics (validation + linting).\n\nExamples:\n  gdshrapt analyze                         Analyze current directory\n  gdshrapt analyze ./my-project            Analyze specific project\n  gdshrapt analyze --format json           Output as JSON\n  gdshrapt analyze --fail-on warning       Fail on warnings (for CI)",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "description": "Quick project health check with exit codes for CI/CD pipelines.\n\nExamples:\n  gdshrapt check                           Check current directory\n  gdshrapt check --silent                  Only return exit code\n  gdshrapt check --fail-on warning         Fail on warnings too",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "validate",
+      "description": "Validate GDScript for syntax errors, type mismatches, and semantic issues.\n\nExamples:\n  gdshrapt validate                        Validate current project\n  gdshrapt validate --check-types          Only type checking\n  gdshrapt validate --strict               Treat all issues as errors",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "lint",
+      "description": "Check GDScript files for style violations, naming conventions, and best practices.\n\nUse --preset to apply predefined rule sets, or configure individual\noptions below. Individual options override preset values.\nMost options can also be set in .gdshrapt.json (see 'gdshrapt init').\n\nExamples:\n  gdshrapt lint                            Lint current project\n  gdshrapt lint --preset strict            Use strict rules\n  gdshrapt lint --rules GDL001,GDL003      Run specific rules\n  gdshrapt lint --category naming          Only naming rules",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "format",
+      "description": "Format GDScript files",
+      "arguments": [
+        {
+          "name": "path",
+          "description": "Path to file or directory",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "symbols",
+      "description": "List all symbols (classes, functions, variables, signals, constants) in a GDScript file.\nShows symbol kind, type annotation, and location.\n\nExamples:\n  gdshrapt symbols player.gd                             List all symbols\n  gdshrapt symbols scripts/entity.gd --format json       Output as JSON\n  gdshrapt symbols player.gd -p /path/to/project         Specify project path",
+      "arguments": [
+        {
+          "name": "file",
+          "description": "Path to the GDScript file",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "find-refs",
+      "description": "Find all references to a symbol across the project.\nSearch by name or by position in a file (--line/--column).\n\nExamples:\n  gdshrapt find-refs health                              Find by symbol name\n  gdshrapt find-refs take_damage -p ./my-project         Search in specific project\n  gdshrapt find-refs health --file player.gd             Search in one file only\n  gdshrapt find-refs --file player.gd --line 15          Find symbol at line 15\n  gdshrapt find-refs health --explain                    Show confidence reasons",
+      "arguments": [
+        {
+          "name": "symbol",
+          "description": "Symbol name to find references for (optional if --line is used)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "type-coverage",
+      "description": "Report how much of your code has explicit type annotations.\n\nExamples:\n  gdshrapt type-coverage                   Project-wide coverage\n  gdshrapt type-coverage --file player.gd  Single file coverage",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "dead-code",
+      "description": "Detect unused variables, functions, signals, and unreachable code.\n\nExamples:\n  gdshrapt dead-code                       Find all dead code\n  gdshrapt dead-code --fail-if-found       Fail for CI if found\n  gdshrapt dead-code --kind Function       Only unused functions\n  gdshrapt dead-code --top 10              Show top 10 files\n  gdshrapt dead-code --exclude-tests       Skip test files\n  gdshrapt dead-code --explain             Show evidence details",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "deps",
+      "description": "Visualize file dependencies (extends, preload) and detect circular imports.\n\nExamples:\n  gdshrapt deps                            Show dependency graph\n  gdshrapt deps --fail-on-cycles           Fail if cycles found\n  gdshrapt deps --show-coupled             Show most coupled files",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "metrics",
+      "description": "Calculate cyclomatic complexity, maintainability index, and other metrics.\n\nExamples:\n  gdshrapt metrics                         All project metrics\n  gdshrapt metrics --sort-by complexity     Sort by complexity\n  gdshrapt metrics --top 10 --show-methods Top 10 with methods",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "stats",
+      "description": "Show a combined summary of project size, complexity, and health.\n\nExamples:\n  gdshrapt stats                           Project statistics\n  gdshrapt stats --format json             JSON output",
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "parse",
+      "description": "Parse a GDScript file and display its abstract syntax tree.\n\nExamples:\n  gdshrapt parse player.gd                 Show AST tree\n  gdshrapt parse player.gd -o json         Output as JSON\n  gdshrapt parse player.gd -o tokens       Show token stream",
+      "arguments": [
+        {
+          "name": "file",
+          "description": "Path to the GDScript file",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "extract-style",
+      "description": "Detect formatting conventions from an existing GDScript file.\n\nExamples:\n  gdshrapt extract-style player.gd         Detect style (TOML)\n  gdshrapt extract-style player.gd -o json Output as JSON",
+      "arguments": [
+        {
+          "name": "file",
+          "description": "Path to the sample GDScript file",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "reorder-code",
+      "description": "Reorder class members according to style guide",
+      "arguments": [
+        {
+          "name": "path",
+          "description": "Path to file or directory",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "add-types",
+      "description": "Add type annotations to variables",
+      "arguments": [
+        {
+          "name": "path",
+          "description": "Path to file or directory",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "license",
+      "description": "Manage Pro license",
+      "commands": [
+        {
+          "name": "status",
+          "description": "Show license status"
+        },
+        {
+          "name": "activate",
+          "description": "Activate a license",
+          "arguments": [
+            {
+              "name": "key",
+              "description": "License key",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "info",
+      "description": "Show version and license information"
+    },
+    {
+      "name": "init",
+      "description": "Create a .gdshrapt.json configuration file.\n\nAvailable presets: minimal, recommended, strict, relaxed, ci, local, team\n\nExamples:\n  gdshrapt init                             Create config in current directory\n  gdshrapt init --preset strict             Create strict config\n  gdshrapt init --preset ci                 CI-optimized config (fail-fast)\n  gdshrapt init ./my-project --force        Overwrite existing config",
+      "arguments": [
+        {
+          "name": "path",
+          "description": "Directory to create config in [default: .]",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Manage .gdshrapt.json configuration.\n\nSubcommands:\n  init       Create a new configuration file\n  show       Display current configuration\n  validate   Check configuration for errors",
+      "commands": [
+        {
+          "name": "init",
+          "description": "Create a .gdshrapt.json configuration file with optional preset.\n\nAvailable presets: minimal, recommended, strict, relaxed, ci, local, team\n\nExamples:\n  gdshrapt config init                          Create config with defaults\n  gdshrapt config init --preset ci              CI-optimized config (fail-fast)\n  gdshrapt config init --preset team            Team conventions (balanced)\n  gdshrapt config init ./project --force        Overwrite existing config",
+          "arguments": [
+            {
+              "name": "project-path",
+              "description": "Directory to create config in [default: .]",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Display current project configuration.\n\nBy default shows the raw .gdshrapt.json content.\nUse --effective to see resolved config (defaults + file).\n\nExamples:\n  gdshrapt config show                          Show raw config\n  gdshrapt config show --effective              Show resolved config with defaults\n  gdshrapt config show --format json            Output as JSON\n  gdshrapt config show ./project --effective    Show effective config for project",
+          "arguments": [
+            {
+              "name": "project-path",
+              "description": "Directory containing configuration [default: .]",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "validate",
+          "description": "Check .gdshrapt.json for errors (schema, ranges, conflicts).\n\nExamples:\n  gdshrapt config validate                      Validate current config\n  gdshrapt config validate --explain            Show detailed explanations\n  gdshrapt config validate ./project            Validate config in project dir",
+          "arguments": [
+            {
+              "name": "project-path",
+              "description": "Directory containing configuration [default: .]",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "duplicates",
+      "description": "[Experimental] Find duplicated code blocks (Pro)",
+      "hidden": true,
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "security",
+      "description": "[Experimental] Scan for security vulnerabilities (Pro)",
+      "hidden": true,
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "trends",
+      "description": "[Experimental] View metrics trends over time (Pro)",
+      "hidden": true,
+      "arguments": [
+        {
+          "name": "project-path",
+          "description": "Path to the Godot project",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ]
+}
