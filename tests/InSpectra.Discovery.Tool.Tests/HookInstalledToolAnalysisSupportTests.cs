@@ -144,6 +144,74 @@ public sealed class HookInstalledToolAnalysisSupportTests
     }
 
     [Fact]
+    public async Task AnalyzeAsync_Rejects_Invalid_OpenCli_Artifact_From_Hook_Capture()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var hookDllPath = CreateHookPlaceholder(tempDirectory.Path);
+        var runtime = new FakeHookCommandRuntime("demo", invocation =>
+        {
+            var capturePath = invocation.Environment["INSPECTRA_CAPTURE_PATH"];
+            File.WriteAllText(capturePath, JsonSerializer.Serialize(new HookCaptureResult
+            {
+                CaptureVersion = 1,
+                Status = "ok",
+                CliFramework = "System.CommandLine",
+                FrameworkVersion = "2.0.0",
+                SystemCommandLineVersion = "2.0.0",
+                PatchTarget = "Parse-postfix",
+                Root = new HookCapturedCommand
+                {
+                    Name = "demo",
+                    Subcommands =
+                    [
+                        new HookCapturedCommand
+                        {
+                            Name = ".",
+                            Options =
+                            [
+                                new HookCapturedOption
+                                {
+                                    Name = "--verbose",
+                                    Description = "Verbose output.",
+                                    ValueType = "Boolean",
+                                },
+                            ],
+                        },
+                    ],
+                },
+            }));
+
+            return new CommandRuntime.ProcessResult(
+                Status: "ok",
+                TimedOut: false,
+                ExitCode: 0,
+                DurationMs: 15,
+                Stdout: string.Empty,
+                Stderr: string.Empty);
+        });
+        var support = new HookInstalledToolAnalysisSupport(runtime, () => hookDllPath);
+        var result = CreateInitialResult();
+
+        await support.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("opencli", result["phase"]?.GetValue<string>());
+        Assert.Equal("invalid-opencli-artifact", result["classification"]?.GetValue<string>());
+        Assert.Contains("non-publishable command name '.'", result["failureMessage"]?.GetValue<string>());
+        Assert.Null(result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
+        Assert.False(File.Exists(Path.Combine(tempDirectory.Path, "opencli.json")));
+    }
+
+    [Fact]
     public async Task AnalyzeAsync_Uses_Dotnet_Runner_From_Installed_Tool_Settings_When_Available()
     {
         using var tempDirectory = new TestTemporaryDirectory();
@@ -187,11 +255,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
                     FrameworkVersion = "2.0.0",
                     SystemCommandLineVersion = "2.0.0",
                     PatchTarget = "Parse-postfix",
-                    Root = new HookCapturedCommand
-                    {
-                        Name = "demo",
-                        Description = "Demo CLI",
-                    },
+                    Root = CreateValidRootCommand(),
                 }));
 
                 return new CommandRuntime.ProcessResult(
@@ -260,11 +324,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
                     FrameworkVersion = "2.0.0",
                     SystemCommandLineVersion = "2.0.0",
                     PatchTarget = "Parse-postfix",
-                    Root = new HookCapturedCommand
-                    {
-                        Name = "demo",
-                        Description = "Demo CLI",
-                    },
+                    Root = CreateValidRootCommand(),
                 }));
 
                 return new CommandRuntime.ProcessResult(
@@ -337,11 +397,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
                     FrameworkVersion = "2.0.0",
                     SystemCommandLineVersion = "2.0.0",
                     PatchTarget = "Parse-postfix",
-                    Root = new HookCapturedCommand
-                    {
-                        Name = "demo",
-                        Description = "Demo CLI",
-                    },
+                    Root = CreateValidRootCommand(),
                 }));
 
                 return new CommandRuntime.ProcessResult(
@@ -452,12 +508,8 @@ public sealed class HookInstalledToolAnalysisSupportTests
                 CliFramework = "Microsoft.Extensions.CommandLineUtils",
                 FrameworkVersion = "2.2.0.0",
                 PatchTarget = "Execute-postfix",
-                Root = new HookCapturedCommand
-                {
-                    Name = "demo",
-                    Description = "Demo CLI",
-                },
-            }));
+                    Root = CreateValidRootCommand(),
+                }));
 
             return new CommandRuntime.ProcessResult(
                 Status: "ok",
@@ -526,12 +578,8 @@ public sealed class HookInstalledToolAnalysisSupportTests
                 CliFramework = "Microsoft.Extensions.CommandLineUtils",
                 FrameworkVersion = "2.2.0.0",
                 PatchTarget = "Execute-postfix",
-                Root = new HookCapturedCommand
-                {
-                    Name = "demo",
-                    Description = "Demo CLI",
-                },
-            }));
+                    Root = CreateValidRootCommand(),
+                }));
 
             return new CommandRuntime.ProcessResult(
                 Status: "ok",
@@ -594,11 +642,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
                     CliFramework = "McMaster.Extensions.CommandLineUtils",
                     FrameworkVersion = "4.0.0.0",
                     PatchTarget = "Execute-postfix",
-                    Root = new HookCapturedCommand
-                    {
-                        Name = "demo",
-                        Description = "Demo CLI",
-                    },
+                    Root = CreateValidRootCommand(),
                 }));
 
                 return new CommandRuntime.ProcessResult(
@@ -672,11 +716,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
                 CliFramework = "Microsoft.Extensions.CommandLineUtils",
                 FrameworkVersion = "2.2.0.0",
                 PatchTarget = "Execute-postfix",
-                Root = new HookCapturedCommand
-                {
-                    Name = "demo",
-                    Description = "Demo CLI",
-                },
+                Root = CreateValidRootCommand(),
             }));
 
             return new CommandRuntime.ProcessResult(
@@ -746,11 +786,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
                 CliFramework = "Microsoft.Extensions.CommandLineUtils",
                 FrameworkVersion = "2.2.0.0",
                 PatchTarget = "Execute-postfix",
-                Root = new HookCapturedCommand
-                {
-                    Name = "demo",
-                    Description = "Demo CLI",
-                },
+                Root = CreateValidRootCommand(),
             }));
 
             return new CommandRuntime.ProcessResult(
@@ -800,11 +836,7 @@ public sealed class HookInstalledToolAnalysisSupportTests
                 CliFramework = "McMaster.Extensions.CommandLineUtils",
                 FrameworkVersion = "4.0.0.0",
                 PatchTarget = "Execute-postfix",
-                Root = new HookCapturedCommand
-                {
-                    Name = "demo",
-                    Description = "Demo CLI",
-                },
+                Root = CreateValidRootCommand(),
             }));
 
             return new CommandRuntime.ProcessResult(
@@ -844,6 +876,22 @@ public sealed class HookInstalledToolAnalysisSupportTests
             cliFramework: cliFramework,
             analysisMode: "hook",
             analyzedAt: DateTimeOffset.Parse("2026-03-31T00:00:00Z"));
+
+    private static HookCapturedCommand CreateValidRootCommand()
+        => new()
+        {
+            Name = "demo",
+            Description = "Demo CLI",
+            Options =
+            [
+                new HookCapturedOption
+                {
+                    Name = "--verbose",
+                    Description = "Verbose output.",
+                    ValueType = "Boolean",
+                },
+            ],
+        };
 
     private static string CreateHookPlaceholder(string tempRoot)
     {

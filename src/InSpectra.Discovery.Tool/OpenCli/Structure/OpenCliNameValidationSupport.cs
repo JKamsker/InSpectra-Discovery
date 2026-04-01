@@ -4,6 +4,12 @@ using System.Text.RegularExpressions;
 
 internal static partial class OpenCliNameValidationSupport
 {
+    public static bool IsPublishableCommandName(string? name)
+        => IsPublishableName(name, LooksLikeNonPublishableCommandName);
+
+    public static bool IsPublishableArgumentName(string? name)
+        => IsPublishableName(name, LooksLikeNonPublishableArgumentName);
+
     public static bool TryValidateCommandName(string? name, string path, out string? reason)
         => TryValidateName(name, path, "command", LooksLikeNonPublishableCommandName, out reason);
 
@@ -34,6 +40,13 @@ internal static partial class OpenCliNameValidationSupport
         return false;
     }
 
+    private static bool IsPublishableName(string? name, Func<string, bool> isNonPublishable)
+    {
+        var trimmed = name?.Trim();
+        return !string.IsNullOrWhiteSpace(trimmed)
+            && !isNonPublishable(trimmed);
+    }
+
     private static bool LooksLikeNonPublishableCommandName(string name)
         => PlaceholderCommandNameRegex().IsMatch(name)
             || ObfuscatedNameRegex().IsMatch(name)
@@ -49,7 +62,7 @@ internal static partial class OpenCliNameValidationSupport
     [GeneratedRegex(@"^\.\.?$", RegexOptions.Compiled)]
     private static partial Regex PlaceholderCommandNameRegex();
 
-    [GeneratedRegex(@"^#=[A-Za-z0-9$+/]+=$", RegexOptions.Compiled)]
+    [GeneratedRegex(@"^#=[A-Za-z0-9_$+/]+=$", RegexOptions.Compiled)]
     private static partial Regex ObfuscatedNameRegex();
 
     [GeneratedRegex(@"^[""']?[A-Z][A-Z0-9_]*=[^""'\s]+[""']?\]?$", RegexOptions.Compiled)]

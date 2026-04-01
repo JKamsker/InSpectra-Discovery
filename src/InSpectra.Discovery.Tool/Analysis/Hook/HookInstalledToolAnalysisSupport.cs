@@ -162,9 +162,7 @@ internal sealed class HookInstalledToolAnalysisSupport
             result["nugetTitle"]?.GetValue<string>(),
             result["nugetDescription"]?.GetValue<string>());
 
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
-        result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        NonSpectreResultSupport.ApplySuccess(result, classification: "startup-hook", artifactSource: "startup-hook");
+        HookOpenCliValidationSupport.TryWriteValidatedArtifact(result, outputDirectory, openCliDocument);
     }
 
     private static string? ResolveHookDllPath()

@@ -29,7 +29,27 @@ public sealed class HookOpenCliBuilderTests
         Assert.Null(document["x-inspectra"]?["cliParsedTitle"]);
     }
 
-    private static HookCaptureResult CreateCapture(string rootName)
+    [Fact]
+    public void Build_Replaces_Obfuscated_Option_Argument_Name_With_Option_Derived_Name()
+    {
+        var capture = CreateCapture(
+            "Aspose.Page.Convert",
+            new HookCapturedOption
+            {
+                Name = "--project",
+                ArgumentName = "#=Z_BSO_H3_QU=",
+                ValueType = "String",
+                MaxArity = 1,
+            });
+
+        var document = HookOpenCliBuilder.Build("Aspose.Page.Convert", "26.2.0", capture);
+
+        var option = Assert.Single(document["options"]!.AsArray());
+        var argument = Assert.Single(option!["arguments"]!.AsArray());
+        Assert.Equal("PROJECT", argument!["name"]?.GetValue<string>());
+    }
+
+    private static HookCaptureResult CreateCapture(string rootName, params HookCapturedOption[] options)
         => new()
         {
             CliFramework = "McMaster.Extensions.CommandLineUtils",
@@ -38,13 +58,12 @@ public sealed class HookOpenCliBuilderTests
             Root = new HookCapturedCommand
             {
                 Name = rootName,
-                Options =
-                [
-                    new HookCapturedOption
+                Options = options.Length > 0
+                    ? [.. options]
+                    : [new HookCapturedOption
                     {
                         Name = "--help",
-                    },
-                ],
+                    }],
             },
         };
 }

@@ -152,9 +152,9 @@ internal static class HookOpenCliBuilder
                 var argNode = new JsonObject();
 
                 // Argument name (e.g., "SERVER", "COUNT") — matches help-crawl output.
-                var argName = opt.ArgumentName;
+                var argName = HookCapturedNameSupport.ResolveOptionArgumentName(opt);
                 if (!string.IsNullOrWhiteSpace(argName))
-                    argNode["name"] = argName.ToUpperInvariant();
+                    argNode["name"] = argName;
 
                 // Boolean options are flags — arity 0..1, not required.
                 var isFlag = opt.ValueType == "Boolean";
@@ -187,11 +187,12 @@ internal static class HookOpenCliBuilder
     private static JsonArray BuildArguments(List<HookCapturedArgument> arguments)
     {
         var array = new JsonArray();
-        foreach (var arg in arguments)
+        for (var index = 0; index < arguments.Count; index++)
         {
+            var arg = arguments[index];
             var node = new JsonObject
             {
-                ["name"] = arg.Name ?? "value",
+                ["name"] = HookCapturedNameSupport.ResolvePositionalArgumentName(arg, index),
             };
 
             if (!string.IsNullOrWhiteSpace(arg.Description))
