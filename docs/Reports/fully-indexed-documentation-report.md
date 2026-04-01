@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-01 15:53:35+00:00
+Generated: 2026-04-01 18:35:09+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,15 +8,16 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 18
+Packages in scope: 19
 
 Fully documented: 9
 
-Incomplete: 9
+Incomplete: 10
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [BellaBaxter.Cli](#pkg-bellabaxter-cli) | 0.1.1-preview.36 | ok | xml-ready | 71/71 | 51/174 | 13/30 | 32/59 | FAIL |
+| [CloudAwesome.FolkTune.Reviewer](#pkg-cloudawesome-folktune-reviewer) | 2026.4.1.1635 | ok | xml-ready | 6/6 | 31/31 | 0/0 | 0/5 | FAIL |
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
 | [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.46 | ok | xml-ready | 8/8 | 88/88 | 4/4 | 0/5 | FAIL |
@@ -53,6 +54,23 @@ Incomplete: 9
 - Missing option descriptions: environments create --description, environments create --json, environments create --name, environments create --project, environments delete --force, environments delete --json, environments delete --project, environments get --json, environments get --project, environments list --json, environments list --project, environments update --description, environments update --json, environments update --name, environments update --project, login --api-key, login --force, login --json, logout --force, projects create --description, projects create --json, projects create --name, projects delete --force, projects delete --json, projects get --json, projects list --json, projects list --page, projects list --size, projects list --sort-by, projects list --sort-dir, projects update --description, projects update --json, projects update --name, providers create --description, providers create --json, providers create --name, providers create --type, providers delete --force, providers delete --json, providers get --json, providers list --json, providers list --project, pull --app, pull --environment, pull --format, pull --json, pull --output, pull --project, pull --provider, secrets delete --environment, secrets delete --force, secrets delete --json, secrets delete --project, secrets generate --class-name, secrets generate --dry-run, secrets generate --environment, secrets generate --namespace, secrets generate --output, secrets generate --project, secrets get --app, secrets get --environment, secrets get --format, secrets get --json, secrets get --output, secrets get --project, secrets get --provider, secrets list --environment, secrets list --json, secrets list --project, secrets push --description, secrets push --environment, secrets push --input, secrets push --json, secrets push --project, secrets set --description, secrets set --environment, secrets set --json, secrets set --project, ssh ca-key --environment, ssh ca-key --json, ssh ca-key --output, ssh ca-key --project, ssh configure --environment, ssh configure --json, ssh configure --project, ssh connect --environment, ssh connect --json, ssh connect --project, ssh connect --role, ssh roles create --environment, ssh roles create --json, ssh roles create --name, ssh roles create --project, ssh roles delete --environment, ssh roles delete --json, ssh roles delete --name, ssh roles delete --project, ssh roles list --environment, ssh roles list --json, ssh roles list --project, ssh sign --environment, ssh sign --json, ssh sign --project, ssh sign --role, totp code --environment, totp code --json, totp code --project, totp code --quiet, totp delete --environment, totp delete --force, totp delete --json, totp delete --project, totp generate --account, totp generate --environment, totp generate --issuer, totp generate --json, totp generate --project, totp import --environment, totp import --json, totp import --project, totp list --environment, totp list --json, totp list --project
 - Missing argument descriptions: environments delete <slug>, environments get <slug>, environments update <slug>, projects delete <identifier>, projects get <identifier>, projects update <identifier>, providers delete <id>, providers get <id-or-name>, secrets delete <key>, secrets generate <language>, secrets set <key>, secrets set <value>, totp code <name>, totp delete <name>, totp generate <name>, totp import <name>, totp import <otpauth-url>
 - Missing leaf command examples: auth refresh, auth status, config set-server, config show, context clear, context show, environments create, environments delete, environments get, environments list, environments update, logout, projects create, projects delete, projects get, projects list, projects update, providers create, providers delete, providers get, providers list, secrets delete, secrets get, secrets list, secrets push, secrets set, whoami
+
+<a id="pkg-cloudawesome-folktune-reviewer"></a>
+### CloudAwesome.FolkTune.Reviewer
+
+- Version: `2026.4.1.1635`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `6/6`
+- Option documentation: `31/31`
+- Argument documentation: `0/0`
+- Leaf command examples: `0/5`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: admin id-init, pick, review, session, stats
 
 <a id="pkg-cute"></a>
 ### cute
