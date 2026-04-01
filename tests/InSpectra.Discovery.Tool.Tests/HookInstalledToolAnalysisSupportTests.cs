@@ -173,6 +173,10 @@ public sealed class HookInstalledToolAnalysisSupportTests
                 Assert.Equal(2, invocation.ArgumentList.Length);
                 Assert.EndsWith(Path.Combine("tools", "net6.0", "any", "Demo.Tool.dll"), invocation.ArgumentList[0], StringComparison.OrdinalIgnoreCase);
                 Assert.Equal("--help", invocation.ArgumentList[1]);
+                Assert.EndsWith(
+                    Path.Combine("tools", "net6.0", "any"),
+                    invocation.Environment[HookInstalledToolAnalysisSupport.PreferredFrameworkDirectoryEnvironmentVariableName],
+                    StringComparison.OrdinalIgnoreCase);
 
                 var capturePath = invocation.Environment["INSPECTRA_CAPTURE_PATH"];
                 File.WriteAllText(capturePath, JsonSerializer.Serialize(new HookCaptureResult

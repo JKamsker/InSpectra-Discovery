@@ -14,6 +14,28 @@ internal static class HookToolProcessInvocationResolver
         => TryResolveDotnetRunnerInvocation(installDirectory, commandName)
             ?? HookToolProcessInvocationResolution.FromInvocation(new HookToolProcessInvocation(commandPath, ["--help"]));
 
+    public static string? TryResolvePreferredAssemblyDirectory(HookToolProcessInvocation invocation)
+    {
+        var candidatePath = invocation.ArgumentList.Count > 0
+            && string.Equals(Path.GetFileNameWithoutExtension(invocation.FilePath), "dotnet", StringComparison.OrdinalIgnoreCase)
+            ? invocation.ArgumentList[0]
+            : invocation.FilePath;
+        if (string.IsNullOrWhiteSpace(candidatePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var fullPath = Path.GetFullPath(candidatePath);
+            return Path.GetDirectoryName(fullPath);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static IReadOnlyList<HookToolProcessInvocation> BuildHelpFallbackInvocations(HookToolProcessInvocation invocation)
     {
         if (invocation.ArgumentList.Count == 0

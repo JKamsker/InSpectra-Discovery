@@ -4,12 +4,14 @@ internal static class AssemblyLoadInterceptor
 {
     private static string? _capturePath;
     private static string _expectedCliFramework = HookCliFrameworkSupport.SystemCommandLine;
+    private static string? _preferredFrameworkDirectory;
     private static bool _patched;
 
-    public static void Start(string capturePath, string? expectedCliFramework)
+    public static void Start(string capturePath, string? expectedCliFramework, string? preferredFrameworkDirectory)
     {
         _capturePath = capturePath;
         _expectedCliFramework = HookCliFrameworkSupport.NormalizeExpectedFramework(expectedCliFramework);
+        _preferredFrameworkDirectory = preferredFrameworkDirectory;
 
         // Check assemblies already loaded.
         foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
@@ -38,7 +40,7 @@ internal static class AssemblyLoadInterceptor
         if (_patched)
             return true;
 
-        if (!HookCliFrameworkSupport.MatchesExpectedAssembly(assembly, _expectedCliFramework))
+        if (!HookAssemblySelectionSupport.ShouldPatch(assembly, _expectedCliFramework, _preferredFrameworkDirectory))
             return false;
 
         _patched = true;

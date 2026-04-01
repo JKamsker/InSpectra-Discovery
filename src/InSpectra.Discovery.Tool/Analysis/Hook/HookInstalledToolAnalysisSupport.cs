@@ -17,6 +17,7 @@ using System.Text.Json.Nodes;
 internal sealed class HookInstalledToolAnalysisSupport
 {
     internal const string ExpectedCliFrameworkEnvironmentVariableName = "INSPECTRA_EXPECTED_CLI_FRAMEWORK";
+    internal const string PreferredFrameworkDirectoryEnvironmentVariableName = "INSPECTRA_PREFERRED_FRAMEWORK_DIRECTORY";
     internal const string GlobalizationInvariantEnvironmentVariableName = DotnetRuntimeCompatibilitySupport.GlobalizationInvariantEnvironmentVariableName;
     internal const string DotnetRollForwardEnvironmentVariableName = DotnetRuntimeCompatibilitySupport.DotnetRollForwardEnvironmentVariableName;
     internal const string DotnetRollForwardMajorValue = DotnetRuntimeCompatibilitySupport.DotnetRollForwardMajorValue;
@@ -101,6 +102,12 @@ internal sealed class HookInstalledToolAnalysisSupport
         }
 
         var invocation = invocationResolution.Invocation!;
+        var preferredFrameworkDirectory = HookToolProcessInvocationResolver.TryResolvePreferredAssemblyDirectory(invocation);
+        if (!string.IsNullOrWhiteSpace(preferredFrameworkDirectory))
+        {
+            hookEnvironment[PreferredFrameworkDirectoryEnvironmentVariableName] = preferredFrameworkDirectory;
+        }
+
         var processResult = await InvokeWithHelpFallbackAsync(
             invocation,
             tempRoot,

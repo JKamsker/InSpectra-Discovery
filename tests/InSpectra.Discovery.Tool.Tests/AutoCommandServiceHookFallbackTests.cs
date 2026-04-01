@@ -446,6 +446,7 @@ public sealed class AutoCommandServiceHookFallbackTests
         Assert.Equal("custom-parser-no-attributes", result["classification"]?.GetValue<string>());
         Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
         Assert.Equal("invalid-success-artifact", result["fallback"]?["classification"]?.GetValue<string>());
+        Assert.False(File.Exists(Path.Combine(outputRoot, "opencli.json")));
     }
 
     [Fact]

@@ -88,6 +88,23 @@ internal static class AutoSelectedAnalyzerSupport
             openCliStep["message"] = reason;
             openCliStep.Remove("artifactSource");
         }
+
+        TryDeleteInvalidArtifact(openCliPath);
+    }
+
+    private static void TryDeleteInvalidArtifact(string openCliPath)
+    {
+        try
+        {
+            if (File.Exists(openCliPath))
+            {
+                File.Delete(openCliPath);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup only. Result classification already records the invalid artifact.
+        }
     }
 }
 
