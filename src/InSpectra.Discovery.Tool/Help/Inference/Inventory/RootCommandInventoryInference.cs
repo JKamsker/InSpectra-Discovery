@@ -95,6 +95,7 @@ internal static class RootCommandInventoryInference
             && (!trimmed.Contains(' ', StringComparison.Ordinal) || trimmed.Contains("  ", StringComparison.Ordinal))
             && !trimmed.Contains('[', StringComparison.Ordinal)
             && !trimmed.Contains('<', StringComparison.Ordinal)
+            && !LooksLikeOptionStyleDescription(trimmed)
             && !trimmed.StartsWith("Copyright", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -112,5 +113,35 @@ internal static class RootCommandInventoryInference
 
     private static int GetIndentation(string rawLine)
         => rawLine.TakeWhile(char.IsWhiteSpace).Count();
-}
 
+    private static bool LooksLikeOptionStyleDescription(string line)
+    {
+        var description = TryExtractDescription(line);
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return false;
+        }
+
+        return description.StartsWith("If specified", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Path to ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Required.", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Optional.", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("(Default:", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string? TryExtractDescription(string line)
+    {
+        for (var index = 0; index < line.Length - 1; index++)
+        {
+            if (!char.IsWhiteSpace(line[index]) || !char.IsWhiteSpace(line[index + 1]))
+            {
+                continue;
+            }
+
+            var description = line[(index + 2)..].Trim();
+            return description.Length == 0 ? null : description;
+        }
+
+        return null;
+    }
+}

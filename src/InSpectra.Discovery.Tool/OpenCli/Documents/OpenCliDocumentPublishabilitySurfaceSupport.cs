@@ -4,6 +4,30 @@ using System.Text.Json.Nodes;
 
 internal static partial class OpenCliDocumentPublishabilityInspector
 {
+    private static readonly HashSet<string> DotnetHostRootCommands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "add",
+        "build",
+        "clean",
+        "format",
+        "fsi",
+        "list",
+        "msbuild",
+        "new",
+        "nuget",
+        "pack",
+        "publish",
+        "restore",
+        "run",
+        "sdk",
+        "sln",
+        "store",
+        "test",
+        "tool",
+        "vstest",
+        "workload",
+    };
+
     private static bool HasPublishableSurfaceCore(JsonObject document)
         => HasVisibleItems(document["options"] as JsonArray)
             || HasVisibleItems(document["arguments"] as JsonArray)
@@ -46,6 +70,22 @@ internal static partial class OpenCliDocumentPublishabilityInspector
         }
 
         return count;
+    }
+
+    private static bool LooksLikeStartupHookHostCaptureCore(JsonObject document)
+    {
+        if (!string.Equals(GetArtifactSource(document), "startup-hook", StringComparison.Ordinal)
+            || !string.Equals(GetString((document["info"] as JsonObject)?["title"]), "dotnet", StringComparison.OrdinalIgnoreCase)
+            || document["commands"] is not JsonArray commands)
+        {
+            return false;
+        }
+
+        var dotnetHostCommandOverlap = commands
+            .OfType<JsonObject>()
+            .Select(command => GetString(command["name"]))
+            .Count(name => !string.IsNullOrWhiteSpace(name) && DotnetHostRootCommands.Contains(name));
+        return dotnetHostCommandOverlap >= 5;
     }
 
     private static bool HasVisibleCommandSurface(JsonArray? commands)
@@ -103,4 +143,3 @@ internal static partial class OpenCliDocumentPublishabilityInspector
             ? text
             : null;
 }
-

@@ -185,6 +185,52 @@ public sealed class OpenCliDocumentValidatorTests
     }
 
     [Fact]
+    public void TryLoadValidDocument_Accepts_Command_Name_Repeated_Up_To_Three_Times_In_One_Path()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray
+                {
+                    CreateCommandPathNode(["command", "input", "command", "input", "command", "leaf"]),
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out var document, out var reason);
+
+        Assert.True(valid);
+        Assert.NotNull(document);
+        Assert.Null(reason);
+    }
+
+    [Fact]
+    public void TryLoadValidDocument_Rejects_Command_Name_Repeated_More_Than_Three_Times_In_One_Path()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray
+                {
+                    CreateCommandPathNode(["command", "input", "command", "input", "command", "input", "command"]),
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Contains("OpenCLI artifact repeats command name 'command' more than 3 times", reason);
+        Assert.Contains("$.commands[0].commands[0].commands[0].commands[0]", reason);
+    }
+
+    [Fact]
     public void TryLoadValidDocument_Rejects_Duplicate_Option_Tokens()
     {
         using var tempDirectory = new TemporaryDirectory();
@@ -283,6 +329,85 @@ public sealed class OpenCliDocumentValidatorTests
         Assert.Equal("OpenCLI artifact has a non-publishable 'info.title' value.", reason);
     }
 
+    [Fact]
+    public void TryLoadValidDocument_Rejects_StartupHook_Dotnet_Host_Captures()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "dotnet",
+                    ["version"] = "1.1.5",
+                },
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "startup-hook",
+                },
+                ["commands"] = new JsonArray
+                {
+                    CreateLeafCommand("add"),
+                    CreateLeafCommand("build"),
+                    CreateLeafCommand("clean"),
+                    CreateLeafCommand("nuget"),
+                    CreateLeafCommand("restore"),
+                    CreateLeafCommand("run"),
+                    CreateLeafCommand("test"),
+                    CreateLeafCommand("tool"),
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact looks like a startup-hook capture of the dotnet host instead of the installed tool.", reason);
+    }
+
+    private static JsonObject CreateCommandPathNode(IReadOnlyList<string> commandNames, int index = 0)
+    {
+        var node = new JsonObject
+        {
+            ["name"] = commandNames[index],
+            ["hidden"] = false,
+        };
+
+        if (index == commandNames.Count - 1)
+        {
+            node["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--verbose",
+                },
+            };
+            return node;
+        }
+
+        node["commands"] = new JsonArray
+        {
+            CreateCommandPathNode(commandNames, index + 1),
+        };
+        return node;
+    }
+
+    private static JsonObject CreateLeafCommand(string name)
+        => new()
+        {
+            ["name"] = name,
+            ["hidden"] = false,
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--help",
+                },
+            },
+        };
+
     private sealed class TemporaryDirectory : IDisposable
     {
         public TemporaryDirectory()
@@ -304,4 +429,3 @@ public sealed class OpenCliDocumentValidatorTests
         }
     }
 }
-

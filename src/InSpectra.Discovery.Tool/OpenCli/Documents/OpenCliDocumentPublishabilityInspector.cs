@@ -19,10 +19,12 @@ internal static partial class OpenCliDocumentPublishabilityInspector
     public static bool ContainsBoxDrawingCommandNames(JsonObject node)
         => ContainsBoxDrawingCommandNamesCore(node);
 
+    public static bool LooksLikeStartupHookHostCapture(JsonObject document)
+        => LooksLikeStartupHookHostCaptureCore(document);
+
     public static bool LooksLikeNonPublishableTitle(string? title)
         => LooksLikeNonPublishableTitleCore(title);
 
     public static bool LooksLikeNonPublishableDescription(string? description)
         => LooksLikeNonPublishableDescriptionCore(description);
 }
-

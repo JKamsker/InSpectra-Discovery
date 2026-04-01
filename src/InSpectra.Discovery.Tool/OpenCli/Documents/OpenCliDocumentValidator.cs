@@ -66,6 +66,12 @@ internal static class OpenCliDocumentValidator
             return false;
         }
 
+        if (OpenCliDocumentPublishabilityInspector.LooksLikeStartupHookHostCapture(document))
+        {
+            reason = "OpenCLI artifact looks like a startup-hook capture of the dotnet host instead of the installed tool.";
+            return false;
+        }
+
         var totalCommandCount = OpenCliDocumentPublishabilityInspector.CountTotalCommands(document);
         if (totalCommandCount > 500)
         {
@@ -114,4 +120,3 @@ internal static class OpenCliDocumentValidator
         return true;
     }
 }
-

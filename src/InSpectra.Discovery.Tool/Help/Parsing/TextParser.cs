@@ -50,13 +50,18 @@ internal sealed class TextParser
         var firstMeaningfulLines = lines
             .Select(line => line.Trim())
             .Where(line => !string.IsNullOrWhiteSpace(line))
-            .Take(2)
+            .Take(4)
             .ToArray();
-        if (TextNoiseClassifier.LooksLikeRejectedHelpInvocation(
-            firstMeaningfulLines.FirstOrDefault(),
-            firstMeaningfulLines.Skip(1).FirstOrDefault()))
+        for (var index = 0; index < firstMeaningfulLines.Length; index++)
         {
-            return new Document(null, null, null, null, [], [], [], []);
+            var firstLine = firstMeaningfulLines[index];
+            var secondLine = index + 1 < firstMeaningfulLines.Length
+                ? firstMeaningfulLines[index + 1]
+                : null;
+            if (TextNoiseClassifier.LooksLikeRejectedHelpInvocation(firstLine, secondLine))
+            {
+                return new Document(null, null, null, null, [], [], [], []);
+            }
         }
 
         var sections = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
@@ -211,4 +216,3 @@ internal sealed class TextParser
         return joined.Length == 0 ? null : joined;
     }
 }
-

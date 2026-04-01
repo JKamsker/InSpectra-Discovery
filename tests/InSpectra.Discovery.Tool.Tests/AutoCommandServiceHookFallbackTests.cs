@@ -325,6 +325,66 @@ public sealed class AutoCommandServiceHookFallbackTests
     }
 
     [Fact]
+    public async Task RunAsync_FallsBackToStatic_WhenHookReportsSuccess_WithDotnetHostCapture()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        var staticRunnerCalled = false;
+
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
+                "Hooked.Tool",
+                "3.4.10",
+                "hooked",
+                "System.CommandLine",
+                "static",
+                "confirmed-static-analysis-framework",
+                "https://www.nuget.org/packages/Hooked.Tool/3.4.10",
+                "https://nuget.test/hooked.tool.3.4.10.nupkg",
+                "https://nuget.test/catalog/hooked.tool.3.4.10.json")),
+            new ThrowingNativeRunner(),
+            new ThrowingHelpRunner(),
+            new ThrowingCliFxRunner(),
+            new FakeStaticRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                staticRunnerCalled = true;
+                WriteResult(path, "success", "static-crawl", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+                WriteOpenCli(path, CreateValidOpenCliDocument(commandName ?? "hooked", "3.4.10"));
+            }),
+            new FakeHookRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                WriteResult(path, "success", "startup-hook", cliFramework: cliFramework, includeOpenCliArtifact: true, command: "hooked");
+                WriteOpenCli(path, CreateDotnetHostCaptureOpenCliDocument("3.4.10"));
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Hooked.Tool",
+            "3.4.10",
+            outputRoot,
+            "batch-010b",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(staticRunnerCalled);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("static", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("static-crawl", result["classification"]?.GetValue<string>());
+        Assert.Equal("static", result["analysisSelection"]?["selectedMode"]?.GetValue<string>());
+        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("invalid-success-artifact", result["fallback"]?["classification"]?.GetValue<string>());
+    }
+
+    [Fact]
     public async Task RunAsync_PrefersTerminalStaticFallback_WhenHookArtifactFailureCannotRecover()
     {
         Runtime.Initialize();
@@ -601,6 +661,46 @@ public sealed class AutoCommandServiceHookFallbackTests
             {
                 ["title"] = commandName,
                 ["version"] = version,
+            },
+        };
+
+    private static JsonObject CreateDotnetHostCaptureOpenCliDocument(string version)
+        => new()
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "dotnet",
+                ["version"] = version,
+            },
+            ["x-inspectra"] = new JsonObject
+            {
+                ["artifactSource"] = "startup-hook",
+            },
+            ["commands"] = new JsonArray
+            {
+                CreateLeafCommand("add"),
+                CreateLeafCommand("build"),
+                CreateLeafCommand("clean"),
+                CreateLeafCommand("nuget"),
+                CreateLeafCommand("restore"),
+                CreateLeafCommand("run"),
+                CreateLeafCommand("test"),
+                CreateLeafCommand("tool"),
+            },
+        };
+
+    private static JsonObject CreateLeafCommand(string commandName)
+        => new()
+        {
+            ["name"] = commandName,
+            ["hidden"] = false,
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--help",
+                },
             },
         };
 

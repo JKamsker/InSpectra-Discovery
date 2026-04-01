@@ -116,6 +116,7 @@ internal static class RootCommandAliasInventorySupport
             return trimmed.StartsWith("Required.", StringComparison.OrdinalIgnoreCase)
                 || trimmed.StartsWith("Optional.", StringComparison.OrdinalIgnoreCase)
                 || trimmed.StartsWith("(Default:", StringComparison.OrdinalIgnoreCase)
+                || trimmed.StartsWith("If specified", StringComparison.OrdinalIgnoreCase)
                 || trimmed.StartsWith("Path to ", StringComparison.OrdinalIgnoreCase)
                 || trimmed.StartsWith("List of ", StringComparison.OrdinalIgnoreCase);
         });
@@ -123,4 +124,3 @@ internal static class RootCommandAliasInventorySupport
     private static int GetIndentation(string rawLine)
         => rawLine.TakeWhile(char.IsWhiteSpace).Count();
 }
-

@@ -6,11 +6,20 @@ using System.Text.Json.Nodes;
 
 internal static class OpenCliNodeValidationSupport
 {
+    private const int MaxCommandPathRecurrence = 3;
     private static readonly string[] CommandLikeArrayProperties = ["arguments", "commands", "examples", "options"];
     private static readonly string[] OptionArrayProperties = ["acceptedValues", "aliases", "arguments", "metadata"];
     private static readonly string[] ArgumentArrayProperties = ["acceptedValues", "metadata"];
 
     public static bool TryValidateCommandLikeNode(JsonObject node, string path, bool isRoot, out string? reason)
+        => TryValidateCommandLikeNode(node, path, isRoot, [], out reason);
+
+    private static bool TryValidateCommandLikeNode(
+        JsonObject node,
+        string path,
+        bool isRoot,
+        IReadOnlyList<string> ancestorCommandNames,
+        out string? reason)
     {
         reason = null;
 
@@ -34,6 +43,16 @@ internal static class OpenCliNodeValidationSupport
             return false;
         }
 
+        var commandName = GetValidatedCommandName(node, path, isRoot, ancestorCommandNames, out reason);
+        if (reason is not null)
+        {
+            return false;
+        }
+
+        var childAncestorCommandNames = commandName is null
+            ? ancestorCommandNames
+            : [.. ancestorCommandNames, commandName];
+
         if (!TryValidateOptions(node["options"] as JsonArray, path, out reason))
         {
             return false;
@@ -44,7 +63,7 @@ internal static class OpenCliNodeValidationSupport
             return false;
         }
 
-        if (!TryValidateCommands(node["commands"] as JsonArray, $"{path}.commands", out reason))
+        if (!TryValidateCommands(node["commands"] as JsonArray, $"{path}.commands", childAncestorCommandNames, out reason))
         {
             return false;
         }
@@ -79,7 +98,11 @@ internal static class OpenCliNodeValidationSupport
         return true;
     }
 
-    private static bool TryValidateCommands(JsonArray? commands, string pathPrefix, out string? reason)
+    private static bool TryValidateCommands(
+        JsonArray? commands,
+        string pathPrefix,
+        IReadOnlyList<string> ancestorCommandNames,
+        out string? reason)
     {
         reason = null;
         if (commands is null)
@@ -96,13 +119,56 @@ internal static class OpenCliNodeValidationSupport
                 return false;
             }
 
-            if (!TryValidateCommandLikeNode(command, commandPath, isRoot: false, out reason))
+            if (!TryValidateCommandLikeNode(command, commandPath, isRoot: false, ancestorCommandNames, out reason))
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static string? GetValidatedCommandName(
+        JsonObject node,
+        string path,
+        bool isRoot,
+        IReadOnlyList<string> ancestorCommandNames,
+        out string? reason)
+    {
+        reason = null;
+        if (isRoot)
+        {
+            return null;
+        }
+
+        var commandName = OpenCliValidationSupport.GetString(node["name"])?.Trim();
+        if (string.IsNullOrWhiteSpace(commandName))
+        {
+            return null;
+        }
+
+        var recurrenceCount = CountCommandNameOccurrences(ancestorCommandNames, commandName) + 1;
+        if (recurrenceCount <= MaxCommandPathRecurrence)
+        {
+            return commandName;
+        }
+
+        reason = $"OpenCLI artifact repeats command name '{commandName}' more than {MaxCommandPathRecurrence} times within the same command path at '{path}'.";
+        return null;
+    }
+
+    private static int CountCommandNameOccurrences(IReadOnlyList<string> commandNames, string candidate)
+    {
+        var count = 0;
+        foreach (var commandName in commandNames)
+        {
+            if (string.Equals(commandName, candidate, StringComparison.OrdinalIgnoreCase))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     private static bool TryValidateOptionNode(
@@ -199,4 +265,3 @@ internal static class OpenCliNodeValidationSupport
         return true;
     }
 }
-

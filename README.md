@@ -143,6 +143,29 @@ Each analyzed tool produces versioned artifacts under `index/packages/{packageId
 
 A global manifest at `index/all.json` lists all indexed packages with their latest status.
 
+### Troubleshooting Suspicious OpenCLI Artifacts
+
+After a promotion commit, audit newly added `latest/opencli.json` artifacts before trusting unusual command trees:
+
+```powershell
+./scripts/Measure-OpenCliCommandRecurrence.ps1 -Commit <sha> -AddedOnly -SortBy Combined -Top 100 |
+    Format-Table PackageId, Version, MaxRecurrence, RepeatedName, TotalNodes, MaxDepth, ArtifactSource
+
+./scripts/Measure-OpenCliCommandRecurrence.ps1 -Commit <sha> -AddedOnly -SortBy Depth -Top 20 |
+    Format-Table PackageId, Version, MaxDepth, MaxRecurrence, TotalNodes, ArtifactSource
+
+./scripts/Measure-OpenCliCommandRecurrence.ps1 -Commit <sha> -AddedOnly -SortBy Nodes -Top 20 |
+    Format-Table PackageId, Version, TotalNodes, MaxDepth, MaxRecurrence, ArtifactSource
+```
+
+Use these heuristics when triaging results:
+
+- `MaxRecurrence > 3` usually means recursive inventory output was parsed as nested commands.
+- High `MaxDepth` with the same root name reappearing in the path often indicates a help crawler loop.
+- High `TotalNodes` can still be valid, but compare `opencli.json` against the matching `metadata.json`.
+- A root title like `dotnet` or notebook directives such as `#i` / `#!who` can indicate host-shell capture instead of the package CLI.
+- For help-derived artifacts, inspect `crawl.json` alongside `opencli.json` to find the specific help page or list output that polluted the parse.
+
 ## CI/CD
 
 | Workflow | Schedule | Purpose |

@@ -3,6 +3,7 @@ namespace InSpectra.Discovery.Tool.Help.Crawling;
 using InSpectra.Discovery.Tool.Help.OpenCli;
 
 using InSpectra.Discovery.Tool.Help.Documents;
+using InSpectra.Discovery.Tool.Help.Signatures;
 
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
@@ -27,6 +28,11 @@ internal static class CapturePayloadSupport
             var document = parser.Parse(payload);
             var commandSegments = CommandPathSupport.ResolveStoredCaptureSegments(rootCommandName, storedCommand, document);
             if (!document.HasContent || !DocumentInspector.IsCompatible(commandSegments, document))
+            {
+                continue;
+            }
+
+            if (ShouldRejectNonRootDispatcherEcho(rootCommandName, storedCommand, commandSegments, document))
             {
                 continue;
             }
@@ -141,6 +147,50 @@ internal static class CapturePayloadSupport
             : 0;
     }
 
+    private static bool ShouldRejectNonRootDispatcherEcho(
+        string rootCommandName,
+        string storedCommand,
+        IReadOnlyList<string> commandSegments,
+        Document document)
+    {
+        if (string.IsNullOrWhiteSpace(storedCommand)
+            || commandSegments.Count == 0
+            || HasLeafSurface(document)
+            || document.Commands.Count == 0)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(document.Title)
+            && document.Title.Trim().EndsWith(":", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        var parentKey = string.Join(' ', commandSegments);
+        foreach (var child in document.Commands)
+        {
+            if (SignatureNormalizer.IsBuiltinAuxiliaryCommand(child.Key))
+            {
+                continue;
+            }
+
+            var childKey = CommandPathSupport.ResolveChildKey(rootCommandName, parentKey, child.Key);
+            if (childKey.Length > parentKey.Length
+                && childKey.StartsWith(parentKey + " ", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool HasLeafSurface(Document document)
+        => document.Options.Count > 0
+            || document.Arguments.Count > 0
+            || !string.IsNullOrWhiteSpace(document.CommandDescription);
+
     private static IReadOnlyList<string> EnumeratePayloadCandidates(CommandRuntime.ProcessResult processResult)
         => EnumeratePayloadCandidates(
             storedPayload: null,
@@ -184,4 +234,3 @@ internal static class CapturePayloadSupport
         return payloads.Distinct(StringComparer.Ordinal).ToArray();
     }
 }
-
