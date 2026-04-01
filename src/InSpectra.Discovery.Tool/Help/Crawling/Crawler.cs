@@ -70,7 +70,7 @@ internal sealed class Crawler
 
             foreach (var child in capture.Document.Commands)
             {
-                var resolvedChildKey = CommandPathSupport.ResolveChildKey(commandPath, key, child.Key);
+                var resolvedChildKey = CommandPathSupport.ResolveChildKey(rootCommandName, key, child.Key);
                 var childSegments = CommandPathSupport.SplitSegments(resolvedChildKey);
                 var childKey = InvocationSupport.GetCommandKey(childSegments);
                 if (DocumentInspector.IsBuiltinAuxiliaryCommandPath(childKey))

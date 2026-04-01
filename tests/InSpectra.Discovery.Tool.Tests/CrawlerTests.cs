@@ -182,6 +182,54 @@ public sealed class CrawlerTests
     }
 
     [Fact]
+    public async Task CrawlAsync_Normalizes_RootQualified_Subcommands_Using_Root_Command_Name()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            return key switch
+            {
+                "--help" => Result(
+                    stdout:
+                    """
+                    CYCODT - AI-powered CLI Test Framework
+
+                    USAGE: cycodt <command> [...]
+
+                    COMMANDS
+
+                      cycodt list [...]       Lists CLI YAML tests
+                    """),
+                "list --help" => Result(
+                    stdout:
+                    """
+                    CYCODT LIST
+
+                      The cycodt list command lists CLI YAML tests.
+
+                    USAGE: cycodt list [...]
+
+                      --file FILE  Read tests from file.
+                    """),
+                _ => throw new InvalidOperationException($"Unexpected invocation: '{key}'."),
+            };
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            @"C:\tools\cycodt.exe",
+            "cycodt",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(["", "list"], result.Documents.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        Assert.Equal("list --help", result.CaptureSummaries["list"].HelpInvocation);
+        Assert.DoesNotContain(runtime.Invocations.Select(args => string.Join(' ', args)), invocation => invocation.StartsWith("cycodt list", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task CrawlAsync_Stops_Probing_A_Subcommand_After_Terminal_NonHelp_Output()
     {
         var runtime = new FakeCommandRuntime(arguments =>
