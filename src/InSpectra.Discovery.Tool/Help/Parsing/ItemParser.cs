@@ -5,6 +5,7 @@ using InSpectra.Discovery.Tool.Help.Inference.Text;
 using InSpectra.Discovery.Tool.Help.Signatures;
 
 using InSpectra.Discovery.Tool.Help.Inference.Inventory;
+using InSpectra.Discovery.Tool.Help.Inference.Usage;
 
 using InSpectra.Discovery.Tool.Help.Documents;
 
@@ -117,32 +118,35 @@ internal static class ItemParser
 
     public static IReadOnlyList<Item> InferCommands(
         IReadOnlyList<string> preamble,
+        IReadOnlyList<string> usageLines,
         bool sawInventoryHeader)
     {
-        if (sawInventoryHeader)
+        if (!sawInventoryHeader)
         {
-            return [];
+            var inventoryLines = RootCommandInventoryInference.InferLines(preamble);
+            if (inventoryLines.Count > 0)
+            {
+                var parsedCommands = ParseItems(inventoryLines, ItemKind.Command);
+                var describedCommands = parsedCommands
+                    .Where(item => !string.IsNullOrWhiteSpace(item.Description))
+                    .ToArray();
+                if (describedCommands.Any(item => !SignatureNormalizer.IsBuiltinAuxiliaryCommand(item.Key)))
+                {
+                    return describedCommands;
+                }
+
+                var fallbackCommands = parsedCommands
+                    .Where(item => string.IsNullOrWhiteSpace(item.Description))
+                    .Where(item => !SignatureNormalizer.IsBuiltinAuxiliaryCommand(item.Key))
+                    .ToArray();
+                if (fallbackCommands.Length > 0)
+                {
+                    return fallbackCommands;
+                }
+            }
         }
 
-        var inventoryLines = RootCommandInventoryInference.InferLines(preamble);
-        if (inventoryLines.Count == 0)
-        {
-            return [];
-        }
-
-        var parsedCommands = ParseItems(inventoryLines, ItemKind.Command);
-        var describedCommands = parsedCommands
-            .Where(item => !string.IsNullOrWhiteSpace(item.Description))
-            .ToArray();
-        if (describedCommands.Any(item => !SignatureNormalizer.IsBuiltinAuxiliaryCommand(item.Key)))
-        {
-            return describedCommands;
-        }
-
-        return parsedCommands
-            .Where(item => string.IsNullOrWhiteSpace(item.Description))
-            .Where(item => !SignatureNormalizer.IsBuiltinAuxiliaryCommand(item.Key))
-            .ToArray();
+        return UsageCommandInferenceSupport.InferCommands(usageLines);
     }
 
     private static void FlushItem(ICollection<Item> items, string? key, bool isRequired, string? description)

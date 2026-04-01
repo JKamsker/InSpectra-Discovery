@@ -105,6 +105,35 @@ public sealed class TextParserTests
     }
 
     [Fact]
+    public void Infers_Commands_From_Multiline_Usage_Inventories_Without_A_Commands_Section()
+    {
+        var parser = new TextParser();
+
+        var document = parser.Parse(
+            """
+            mcpdebugger - AI-controlled cooperative debugger via MCP
+
+            Usage:
+              mcpdebugger serve [--port <port>]   Start the HTTP debug server (default port: 5200)
+              mcpdebugger mcp [--port <port>]     Start the MCP server (talks to debug server)
+              mcpdebugger --help                  Show this help message
+
+            Typical usage:
+              1. Run 'mcpdebugger serve' in one terminal
+            """);
+
+        var commandKeys = document.Commands
+            .Select(command => command.Key)
+            .OrderBy(key => key, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(new[] { "mcp", "serve" }, commandKeys);
+        Assert.Contains(document.Commands, command =>
+            string.Equals(command.Key, "serve", StringComparison.Ordinal)
+            && string.Equals(command.Description, "Start the HTTP debug server (default port: 5200)", StringComparison.Ordinal));
+        Assert.Contains("mcpdebugger serve [--port <port>]   Start the HTTP debug server (default port: 5200)", document.UsageLines);
+    }
+
+    [Fact]
     public void Parses_Colon_Sections_With_Multiline_Descriptions()
     {
         var parser = new TextParser();

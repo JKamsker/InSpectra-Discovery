@@ -345,6 +345,59 @@ public sealed class CrawlerTests
     }
 
     [Fact]
+    public async Task CrawlAsync_Infers_Root_Subcommands_From_Multiline_Usage_Inventories()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            return key switch
+            {
+                "--help" => Result(
+                    stdout:
+                    """
+                    mcpdebugger - AI-controlled cooperative debugger via MCP
+
+                    Usage:
+                      mcpdebugger serve [--port <port>]   Start the HTTP debug server (default port: 5200)
+                      mcpdebugger mcp [--port <port>]     Start the MCP server (talks to debug server)
+                      mcpdebugger --help                  Show this help message
+                    """),
+                "serve --help" => Result(
+                    stdout:
+                    """
+                    mcpdebugger serve
+
+                    Options:
+                      --port  Port for the HTTP debug server.
+                    """),
+                "mcp --help" => Result(
+                    stdout:
+                    """
+                    mcpdebugger mcp
+
+                    Options:
+                      --port  Port for the MCP bridge.
+                    """),
+                _ => throw new InvalidOperationException($"Unexpected invocation: '{key}'."),
+            };
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "mcpdebugger",
+            "mcpdebugger",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(["", "mcp", "serve"], result.Documents.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        Assert.Equal(["--help", "mcp --help", "serve --help"], runtime.Invocations.Select(args => string.Join(' ', args)).OrderBy(value => value, StringComparer.OrdinalIgnoreCase));
+        Assert.Equal("serve --help", result.CaptureSummaries["serve"].HelpInvocation);
+        Assert.Equal("mcp --help", result.CaptureSummaries["mcp"].HelpInvocation);
+    }
+
+    [Fact]
     public async Task CrawlAsync_Prefers_Single_Stream_Help_Payload_Over_Invocation_Echo_Combination()
     {
         var runtime = new FakeCommandRuntime(arguments =>

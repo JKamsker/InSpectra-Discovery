@@ -1,9 +1,73 @@
 namespace InSpectra.Discovery.Tool.Help.Inference.Usage;
 
+using InSpectra.Discovery.Tool.Help.Documents;
 using InSpectra.Discovery.Tool.Help.Signatures;
 
 internal static class UsageCommandInferenceSupport
 {
+    public static IReadOnlyList<Item> InferCommands(
+        IReadOnlyList<string> usageLines)
+    {
+        var rootSegments = InferCommonRootSegments(usageLines);
+        if (rootSegments.Length == 0)
+        {
+            return [];
+        }
+
+        var inferredCommands = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
+        foreach (var usageLine in usageLines)
+        {
+            if (!TrySplitPrototypeAndDescription(usageLine, out var prototype, out var description))
+            {
+                continue;
+            }
+
+            var tokens = TokenizeUsageLine(prototype);
+            if (tokens.Length == 0)
+            {
+                continue;
+            }
+
+            var rootStart = FindTokenSequence(tokens, rootSegments);
+            if (rootStart < 0)
+            {
+                continue;
+            }
+
+            var commandTokens = new List<string>();
+            for (var index = rootStart + rootSegments.Length; index < tokens.Length; index++)
+            {
+                if (!LooksLikeLiteralCommandToken(tokens[index]))
+                {
+                    break;
+                }
+
+                commandTokens.Add(tokens[index]);
+            }
+
+            if (commandTokens.Count == 0)
+            {
+                continue;
+            }
+
+            var key = SignatureNormalizer.NormalizeCommandKey(string.Join(' ', commandTokens));
+            if (string.IsNullOrWhiteSpace(key)
+                || SignatureNormalizer.IsBuiltinAuxiliaryCommand(key))
+            {
+                continue;
+            }
+
+            var item = new Item(key, false, NormalizeDescription(description));
+            if (!inferredCommands.TryGetValue(key, out var existing)
+                || ShouldPrefer(item, existing))
+            {
+                inferredCommands[key] = item;
+            }
+        }
+
+        return inferredCommands.Values.ToArray();
+    }
+
     public static IReadOnlyList<string> InferChildCommands(
         string rootCommandName,
         IReadOnlyList<string> commandSegments,
@@ -55,11 +119,57 @@ internal static class UsageCommandInferenceSupport
             ? []
             : commandKey.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
+    private static string[] InferCommonRootSegments(IReadOnlyList<string> usageLines)
+    {
+        var literalSequences = usageLines
+            .Select(TryExtractLeadingLiteralTokens)
+            .Where(tokens => tokens.Length > 0)
+            .GroupBy(tokens => tokens[0], StringComparer.OrdinalIgnoreCase)
+            .OrderByDescending(group => group.Count())
+            .FirstOrDefault(group => group.Count() >= 2)?
+            .ToArray()
+            ?? []
+            ;
+        if (literalSequences.Length < 2)
+        {
+            return [];
+        }
+
+        return ComputeCommonPrefix(literalSequences);
+    }
+
+    private static string[] ComputeCommonPrefix(string[][] literalSequences)
+    {
+        var commonLength = literalSequences.Min(tokens => tokens.Length);
+        for (var index = 0; index < commonLength; index++)
+        {
+            var expected = literalSequences[0][index];
+            if (literalSequences.Any(tokens => !string.Equals(tokens[index], expected, StringComparison.OrdinalIgnoreCase)))
+            {
+                return index == 0 ? [] : literalSequences[0][..index];
+            }
+        }
+
+        return literalSequences[0][..commonLength];
+    }
+
     private static string[] TokenizeUsageLine(string line)
-        => line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        => StripLinePrefix(line).Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(token => token.Trim().Trim(',', ';'))
             .Where(token => token.Length > 0)
             .ToArray();
+
+    private static string[] TryExtractLeadingLiteralTokens(string usageLine)
+    {
+        if (!TrySplitPrototypeAndDescription(usageLine, out var prototype, out _))
+        {
+            return [];
+        }
+
+        return TokenizeUsageLine(prototype)
+            .TakeWhile(LooksLikeLiteralCommandToken)
+            .ToArray();
+    }
 
     private static int FindTokenSequence(IReadOnlyList<string> tokens, IReadOnlyList<string> sequence)
     {
@@ -95,6 +205,70 @@ internal static class UsageCommandInferenceSupport
         }
 
         return true;
+    }
+
+    private static string StripLinePrefix(string line)
+    {
+        var trimmed = line.Trim();
+        if (trimmed.StartsWith("OR:", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed[3..].TrimStart();
+        }
+
+        if (trimmed.StartsWith("OR ", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed[2..].TrimStart();
+        }
+
+        return trimmed;
+    }
+
+    private static bool TrySplitPrototypeAndDescription(string usageLine, out string prototype, out string? description)
+    {
+        prototype = StripLinePrefix(usageLine);
+        description = null;
+        if (prototype.Length == 0)
+        {
+            return false;
+        }
+
+        var gapIndex = prototype.IndexOf("  ", StringComparison.Ordinal);
+        if (gapIndex < 0)
+        {
+            return true;
+        }
+
+        var separatorLength = 2;
+        while (gapIndex + separatorLength < prototype.Length
+            && prototype[gapIndex + separatorLength] == ' ')
+        {
+            separatorLength++;
+        }
+
+        var prototypeCandidate = prototype[..gapIndex].TrimEnd();
+        var descriptionCandidate = prototype[(gapIndex + separatorLength)..].Trim();
+        if (prototypeCandidate.Length == 0)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(descriptionCandidate))
+        {
+            prototype = prototypeCandidate;
+            description = descriptionCandidate;
+        }
+
+        return true;
+    }
+
+    private static string? NormalizeDescription(string? description)
+        => string.IsNullOrWhiteSpace(description) ? null : description.Trim();
+
+    private static bool ShouldPrefer(Item candidate, Item existing)
+    {
+        var candidateDescriptionLength = candidate.Description?.Length ?? 0;
+        var existingDescriptionLength = existing.Description?.Length ?? 0;
+        return candidateDescriptionLength > existingDescriptionLength;
     }
 
     private static bool LooksLikeLiteralCommandToken(string token)

@@ -141,20 +141,20 @@ internal sealed class TextParser
             trailingStructuredBlock);
         ItemParser.SplitArgumentSectionLines(rawArgumentLines, out var parsedArgumentLines, out var optionStyleArgumentLines);
 
+        var parsedUsageLines = TrimNonEmpty(
+            usageSectionParts.UsageLines.Count > 0
+                ? usageSectionParts.UsageLines
+                : PreambleInference.InferUsageLines(preamble));
         var commands = ItemParser.ParseItems(commandLines ?? [], ItemKind.Command);
         if (commands.Count == 0)
         {
-            commands = ItemParser.InferCommands(preamble, sawInventoryHeader);
+            commands = ItemParser.InferCommands(preamble, parsedUsageLines, sawInventoryHeader);
         }
 
         var embeddedCommandSections = CommandScopedSectionSupport.Extract(lines, commands);
         var filteredAllLines = lines
             .Where((_, index) => !embeddedCommandSections.ConsumedLineIndexes.Contains(index))
             .ToArray();
-        var parsedUsageLines = TrimNonEmpty(
-            usageSectionParts.UsageLines.Count > 0
-                ? usageSectionParts.UsageLines
-                : PreambleInference.InferUsageLines(preamble));
         var rawOptionLines = ParserInputAssemblySupport.BuildRawOptionLines(
             filteredAllLines,
             preamble,
