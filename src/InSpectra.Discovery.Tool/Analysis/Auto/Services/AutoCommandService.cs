@@ -76,6 +76,31 @@ internal sealed class AutoCommandService
             suppressOutput: false,
             cancellationToken);
 
+    internal Task<int> RunQuietAsync(
+        string packageId,
+        string version,
+        string outputRoot,
+        string batchId,
+        int attempt,
+        string source,
+        int installTimeoutSeconds,
+        int analysisTimeoutSeconds,
+        int commandTimeoutSeconds,
+        CancellationToken cancellationToken)
+        => RunCoreAsync(
+            packageId,
+            version,
+            outputRoot,
+            batchId,
+            attempt,
+            source,
+            installTimeoutSeconds,
+            analysisTimeoutSeconds,
+            commandTimeoutSeconds,
+            json: false,
+            suppressOutput: true,
+            cancellationToken);
+
     private async Task<int> RunCoreAsync(
         string packageId,
         string version,

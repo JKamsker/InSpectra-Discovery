@@ -27,6 +27,20 @@ internal sealed class PromotionApplyCommandService
         string? summaryOutputPath,
         bool json,
         CancellationToken cancellationToken)
+        => (await ApplyCoreAsync(downloadRoot, summaryOutputPath, json, suppressOutput: false, cancellationToken)).ExitCode;
+
+    internal Task<PromotionApplyRunResult> ApplyUntrustedQuietAsync(
+        string downloadRoot,
+        string? summaryOutputPath,
+        CancellationToken cancellationToken)
+        => ApplyCoreAsync(downloadRoot, summaryOutputPath, json: false, suppressOutput: true, cancellationToken);
+
+    private async Task<PromotionApplyRunResult> ApplyCoreAsync(
+        string downloadRoot,
+        string? summaryOutputPath,
+        bool json,
+        bool suppressOutput,
+        CancellationToken cancellationToken)
     {
         var repositoryRoot = RepositoryPathResolver.ResolveRepositoryRoot();
         var packagesRoot = Path.Combine(repositoryRoot, "index", "packages");
@@ -151,29 +165,42 @@ internal sealed class PromotionApplyCommandService
             RepositoryPathResolver.WriteJsonFile(summaryOutputPath, summary);
         }
 
-        var output = Runtime.CreateOutput();
-        return await output.WriteSuccessAsync(
-            new
-            {
-                batchId = summary["batchId"]?.GetValue<string>(),
-                targetBranch = summary["targetBranch"]?.GetValue<string>(),
-                successCount = summary["successCount"]?.GetValue<int>() ?? 0,
-                terminalNegativeCount = summary["terminalNegativeCount"]?.GetValue<int>() ?? 0,
-                retryableFailureCount = summary["retryableFailureCount"]?.GetValue<int>() ?? 0,
-                terminalFailureCount = summary["terminalFailureCount"]?.GetValue<int>() ?? 0,
-                missingCount = summary["missingCount"]?.GetValue<int>() ?? 0,
-                summaryOutputPath = string.IsNullOrWhiteSpace(summaryOutputPath) ? null : Path.GetFullPath(summaryOutputPath),
-            },
-            [
-                new SummaryRow("Batch", summary["batchId"]?.GetValue<string>() ?? string.Empty),
-                new SummaryRow("Success", (summary["successCount"]?.GetValue<int>() ?? 0).ToString()),
-                new SummaryRow("Terminal negative", (summary["terminalNegativeCount"]?.GetValue<int>() ?? 0).ToString()),
-                new SummaryRow("Retryable failure", (summary["retryableFailureCount"]?.GetValue<int>() ?? 0).ToString()),
-                new SummaryRow("Terminal failure", (summary["terminalFailureCount"]?.GetValue<int>() ?? 0).ToString()),
-                new SummaryRow("Missing artifacts", (summary["missingCount"]?.GetValue<int>() ?? 0).ToString()),
-            ],
-            json,
-            cancellationToken);
+        var resolvedSummaryOutputPath = string.IsNullOrWhiteSpace(summaryOutputPath)
+            ? null
+            : Path.GetFullPath(summaryOutputPath);
+        var exitCode = 0;
+        if (!suppressOutput)
+        {
+            var output = Runtime.CreateOutput();
+            exitCode = await output.WriteSuccessAsync(
+                new
+                {
+                    batchId = summary["batchId"]?.GetValue<string>(),
+                    targetBranch = summary["targetBranch"]?.GetValue<string>(),
+                    successCount = summary["successCount"]?.GetValue<int>() ?? 0,
+                    terminalNegativeCount = summary["terminalNegativeCount"]?.GetValue<int>() ?? 0,
+                    retryableFailureCount = summary["retryableFailureCount"]?.GetValue<int>() ?? 0,
+                    terminalFailureCount = summary["terminalFailureCount"]?.GetValue<int>() ?? 0,
+                    missingCount = summary["missingCount"]?.GetValue<int>() ?? 0,
+                    summaryOutputPath = resolvedSummaryOutputPath,
+                },
+                [
+                    new SummaryRow("Batch", summary["batchId"]?.GetValue<string>() ?? string.Empty),
+                    new SummaryRow("Success", (summary["successCount"]?.GetValue<int>() ?? 0).ToString()),
+                    new SummaryRow("Terminal negative", (summary["terminalNegativeCount"]?.GetValue<int>() ?? 0).ToString()),
+                    new SummaryRow("Retryable failure", (summary["retryableFailureCount"]?.GetValue<int>() ?? 0).ToString()),
+                    new SummaryRow("Terminal failure", (summary["terminalFailureCount"]?.GetValue<int>() ?? 0).ToString()),
+                    new SummaryRow("Missing artifacts", (summary["missingCount"]?.GetValue<int>() ?? 0).ToString()),
+                ],
+                json,
+                cancellationToken);
+        }
+
+        return new PromotionApplyRunResult(exitCode, summary, resolvedSummaryOutputPath);
     }
 }
 
+internal sealed record PromotionApplyRunResult(
+    int ExitCode,
+    JsonObject Summary,
+    string? SummaryOutputPath);

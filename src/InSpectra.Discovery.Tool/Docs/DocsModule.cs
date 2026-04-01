@@ -12,9 +12,11 @@ internal static class DocsModule
     public static IServiceCollection AddDocsModule(this IServiceCollection services)
     {
         services.AddTransient<DocsCommandService>();
+        services.AddTransient<DocsPartialReanalysisCommandService>();
         services.AddTransient<DocsRebuildIndexesCommand>();
         services.AddTransient<DocsReconcileStoredOpenCliCommand>();
         services.AddTransient<DocsReconcileLegacyPartialMetadataCommand>();
+        services.AddTransient<DocsReanalyzeLatestPartialsCommand>();
         services.AddTransient<DocsRegenerateNativeOpenCliCommand>();
         services.AddTransient<DocsRegenerateStartupHookOpenCliCommand>();
         services.AddTransient<DocsRegenerateStaticCrawlsCommand>();
@@ -35,6 +37,7 @@ internal static class DocsModule
             docs.AddCommand<DocsRebuildIndexesCommand>("rebuild-indexes").WithDescription("Rebuild package summaries, index/all.json, and index/index.json from indexed metadata.");
             docs.AddCommand<DocsReconcileStoredOpenCliCommand>("reconcile-stored-opencli").WithDescription("Revalidate stored opencli.json files and sync indexed metadata from their actual artifact provenance.");
             docs.AddCommand<DocsReconcileLegacyPartialMetadataCommand>("reconcile-legacy-partials").WithDescription("Backfill explicit introspection failure metadata for legacy partial results that have no stored analysis artifacts.");
+            docs.AddCommand<DocsReanalyzeLatestPartialsCommand>("reanalyze-latest-partials").WithDescription("Rerun the latest partial package records through current auto analysis and reapply the results into index/state.");
             docs.AddCommand<DocsRegenerateNativeOpenCliCommand>("regenerate-native-opencli").WithDescription("Resanitize native OpenCLI artifacts from stored opencli.json files.");
             docs.AddCommand<DocsRegenerateStartupHookOpenCliCommand>("regenerate-startup-hook-opencli").WithDescription("Resanitize startup-hook OpenCLI artifacts from stored opencli.json files.");
             docs.AddCommand<DocsRegenerateStaticCrawlsCommand>("regenerate-static-crawls").WithDescription("Regenerate static-analysis OpenCLI artifacts from stored crawl.json captures.");

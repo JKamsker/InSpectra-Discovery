@@ -38,9 +38,14 @@ internal static class OpenCliArtifactRejectionSupport
 
         var steps = metadata["steps"] as JsonObject ?? new JsonObject();
         var openCliStep = steps["opencli"] as JsonObject ?? new JsonObject();
+        var analysisMode = ResolveAnalysisMode(metadata, artifacts, openCliStep);
         openCliStep["status"] = "failed";
         openCliStep["classification"] = "invalid-opencli-artifact";
         openCliStep["message"] = message;
+        if (!string.IsNullOrWhiteSpace(analysisMode))
+        {
+            openCliStep["analysisMode"] = analysisMode;
+        }
         openCliStep.Remove("path");
         openCliStep.Remove("artifactSource");
         steps["opencli"] = openCliStep;
@@ -92,5 +97,16 @@ internal static class OpenCliArtifactRejectionSupport
 
     private static bool HasExistingPath(string? path)
         => !string.IsNullOrWhiteSpace(path) && File.Exists(path);
+
+    private static string? ResolveAnalysisMode(JsonObject metadata, JsonObject? artifacts, JsonObject? openCliStep)
+        => openCliStep?["analysisMode"]?.GetValue<string>()
+            ?? metadata["analysisMode"]?.GetValue<string>()
+            ?? metadata["analysisSelection"]?["selectedMode"]?.GetValue<string>()
+            ?? OpenCliArtifactSourceSupport.InferAnalysisMode(
+                openCliStep?["artifactSource"]?.GetValue<string>()
+                ?? artifacts?["opencliSource"]?.GetValue<string>()
+                ?? metadata["opencliSource"]?.GetValue<string>())
+            ?? OpenCliArtifactSourceSupport.InferAnalysisModeFromClassification(
+                openCliStep?["classification"]?.GetValue<string>());
 }
 
