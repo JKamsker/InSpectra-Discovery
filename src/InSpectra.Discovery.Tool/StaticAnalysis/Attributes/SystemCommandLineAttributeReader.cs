@@ -116,6 +116,10 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
             }
         }
 
+        var constructorSurface = SystemCommandLineConstructorReaderSupport.ReadSurface(typeDef);
+        options.AddRange(constructorSurface.Options);
+        values.AddRange(constructorSurface.Values);
+
         return new StaticCommandDefinition(
             Name: name,
             Description: null,

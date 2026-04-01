@@ -60,6 +60,22 @@ namespace InSpectra.Discovery.Tool.Tests
         }
 
         [Fact]
+        public void SystemCommandLineReader_Reads_Constructor_Configured_Options_And_Arguments()
+        {
+            using var module = LoadCurrentTestModule();
+
+            var reader = new SystemCommandLineAttributeReader();
+            var commands = reader.Read([new ScannedModule(module.Location!, module)]);
+
+            Assert.True(commands.TryGetValue("constructorconfigured", out var command));
+            Assert.NotNull(command);
+            Assert.Contains(command!.Options, option => string.Equals(option.LongName, "image", StringComparison.Ordinal));
+            Assert.Contains(command.Options, option => string.Equals(option.LongName, "engine", StringComparison.Ordinal));
+            Assert.Contains(command.Options, option => string.Equals(option.ShortName?.ToString(), "t", StringComparison.Ordinal));
+            Assert.Contains(command.Values, argument => string.Equals(argument.Name, "project", StringComparison.Ordinal));
+        }
+
+        [Fact]
         public void CommandLineParserTreeWalker_Builds_Verb_Root_From_TypeInfo_Choices()
         {
             var parseResult = new FakeCommandLineParserResult(new FakeCommandLineParserTypeInfo
@@ -167,6 +183,22 @@ namespace InSpectra.Discovery.Tool.Tests.CommandLineFixtures
         private readonly global::System.CommandLine.Option<int> _retryCountOption = new();
         private readonly global::System.CommandLine.Argument<string> _inputArgument = new();
     }
+
+    public sealed class ConstructorConfiguredCommand : global::System.CommandLine.Command
+    {
+        public ConstructorConfiguredCommand()
+        {
+            var imageOption = new global::System.CommandLine.Option<string>("--image", "Image name.");
+            var engineOption = new global::System.CommandLine.Option<string>(new[] { "-t", "--engine" }, "Container engine.");
+            var verboseOption = new global::System.CommandLine.Option<bool>("--verbose");
+            var projectArgument = new global::System.CommandLine.Argument<string>("project", "Project path.");
+
+            Add(projectArgument);
+            Add(imageOption);
+            Add(engineOption);
+            Add(verboseOption);
+        }
+    }
 }
 
 namespace CommandLine
@@ -231,6 +263,21 @@ namespace System.CommandLine
 {
     public class Command
     {
+        public void Add<T>(Option<T> option)
+        {
+        }
+
+        public void Add<T>(Argument<T> argument)
+        {
+        }
+
+        public void AddOption<T>(Option<T> option)
+        {
+        }
+
+        public void AddArgument<T>(Argument<T> argument)
+        {
+        }
     }
 
     public class RootCommand : Command
@@ -239,9 +286,27 @@ namespace System.CommandLine
 
     public class Option<T>
     {
+        public Option()
+        {
+        }
+
+        public Option(string alias, string? description = null)
+        {
+        }
+
+        public Option(string[] aliases, string? description = null)
+        {
+        }
     }
 
     public class Argument<T>
     {
+        public Argument()
+        {
+        }
+
+        public Argument(string name, string? description = null)
+        {
+        }
     }
 }
