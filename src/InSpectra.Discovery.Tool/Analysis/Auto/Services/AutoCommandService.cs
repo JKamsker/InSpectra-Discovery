@@ -12,6 +12,8 @@ using InSpectra.Discovery.Tool.Analysis.Auto.Runners;
 
 using InSpectra.Discovery.Tool.Analysis.Tools;
 
+using System.Text.Json.Nodes;
+
 internal sealed class AutoCommandService
 {
     private readonly IToolDescriptorResolver _descriptorResolver;
@@ -168,6 +170,9 @@ internal sealed class AutoCommandService
                 resultPath,
                 nativeResult: null,
                 cancellationToken);
+            JsonObject? failedFallbackResult = AutoResultInspector.ShouldUseFailedFallbackResult(hookFailureResult, staticResult)
+                ? staticResult
+                : null;
 
             if (AutoResultInspector.ShouldUseFallbackResult(staticResult))
             {
@@ -203,6 +208,19 @@ internal sealed class AutoCommandService
                     selectedResult = helpResult;
                     selectedMode = "help";
                 }
+                else if (failedFallbackResult is null
+                    && AutoResultInspector.ShouldUseFailedFallbackResult(hookFailureResult, helpResult))
+                {
+                    failedFallbackResult = helpResult;
+                }
+            }
+
+            if (failedFallbackResult is JsonObject finalFailedFallbackResult
+                && ReferenceEquals(selectedResult, hookFailureResult))
+            {
+                AutoResultSupport.ApplyFallback(finalFailedFallbackResult, "hook", hookFailureResult);
+                selectedResult = finalFailedFallbackResult;
+                selectedMode = finalFailedFallbackResult["analysisMode"]?.GetValue<string>() ?? selectedMode;
             }
         }
 

@@ -257,6 +257,129 @@ public sealed class AutoCommandServiceHookFallbackTests
         Assert.Equal("hook-no-assembly-loaded", result["fallback"]?["classification"]?.GetValue<string>());
     }
 
+    [Fact]
+    public async Task RunAsync_FallsBackToStatic_WhenHookReportsSuccess_WithInvalidOpenCliArtifact()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        var staticRunnerCalled = false;
+
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
+                "Hooked.Tool",
+                "3.4.9",
+                "hooked",
+                "Microsoft.Extensions.CommandLineUtils",
+                "static",
+                "confirmed-static-analysis-framework",
+                "https://www.nuget.org/packages/Hooked.Tool/3.4.9",
+                "https://nuget.test/hooked.tool.3.4.9.nupkg",
+                "https://nuget.test/catalog/hooked.tool.3.4.9.json")),
+            new ThrowingNativeRunner(),
+            new ThrowingHelpRunner(),
+            new ThrowingCliFxRunner(),
+            new FakeStaticRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                staticRunnerCalled = true;
+                WriteResult(path, "success", "static-crawl", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+                WriteOpenCli(path, CreateValidOpenCliDocument(commandName ?? "hooked", "3.4.9"));
+            }),
+            new FakeHookRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                WriteResult(path, "success", "startup-hook", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+                WriteOpenCli(path, CreateEmptyOpenCliDocument(commandName ?? "hooked", "3.4.9"));
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Hooked.Tool",
+            "3.4.9",
+            outputRoot,
+            "batch-010",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(staticRunnerCalled);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+        Assert.Equal("static", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("static-crawl", result["classification"]?.GetValue<string>());
+        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("invalid-success-artifact", result["fallback"]?["classification"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task RunAsync_PrefersTerminalStaticFallback_WhenHookArtifactFailureCannotRecover()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var outputRoot = tempDirectory.GetPath("analysis");
+        var staticRunnerCalled = false;
+        var helpRunnerCalled = false;
+
+        var service = new AutoCommandService(
+            new FakeDescriptorResolver(new ToolDescriptor(
+                "Hooked.Tool",
+                "3.5.0",
+                "hooked",
+                "McMaster.Extensions.CommandLineUtils",
+                "static",
+                "confirmed-static-analysis-framework",
+                "https://www.nuget.org/packages/Hooked.Tool/3.5.0",
+                "https://nuget.test/hooked.tool.3.5.0.nupkg",
+                "https://nuget.test/catalog/hooked.tool.3.5.0.json")),
+            new ThrowingNativeRunner(),
+            new FakeHelpRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                helpRunnerCalled = true;
+                WriteResult(path, "terminal-failure", "help-crawl-empty", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }),
+            new ThrowingCliFxRunner(),
+            new FakeStaticRunner((path, _, _, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                staticRunnerCalled = true;
+                WriteResult(path, "terminal-failure", "custom-parser-no-attributes", cliFramework: cliFramework, includeOpenCliArtifact: false);
+            }),
+            new FakeHookRunner((path, _, commandName, _, _, _, cliFramework, _, _, _, _) =>
+            {
+                WriteResult(path, "success", "startup-hook", cliFramework: cliFramework, includeOpenCliArtifact: true, command: commandName);
+                WriteOpenCli(path, CreateEmptyOpenCliDocument(commandName ?? "hooked", "3.5.0"));
+            }));
+
+        var exitCode = await service.RunAsync(
+            "Hooked.Tool",
+            "3.5.0",
+            outputRoot,
+            "batch-011",
+            1,
+            "test",
+            300,
+            600,
+            60,
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+        Assert.True(staticRunnerCalled);
+        Assert.True(helpRunnerCalled);
+
+        var result = ParseJsonObject(Path.Combine(outputRoot, "result.json"));
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("static", result["analysisMode"]?.GetValue<string>());
+        Assert.Equal("custom-parser-no-attributes", result["classification"]?.GetValue<string>());
+        Assert.Equal("hook", result["fallback"]?["from"]?.GetValue<string>());
+        Assert.Equal("invalid-success-artifact", result["fallback"]?["classification"]?.GetValue<string>());
+    }
+
     private static void WriteResult(
         string outputRoot,
         string disposition,
@@ -288,11 +411,48 @@ public sealed class AutoCommandServiceHookFallbackTests
                     ["xmldocArtifact"] = null,
                 },
             });
+
+        if (hasOpenCliArtifact && !File.Exists(Path.Combine(outputRoot, "opencli.json")))
+        {
+            WriteOpenCli(outputRoot, CreateValidOpenCliDocument(command ?? "sample", "1.2.3"));
+        }
     }
 
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
+
+    private static void WriteOpenCli(string outputRoot, JsonObject document)
+        => RepositoryPathResolver.WriteJsonFile(Path.Combine(outputRoot, "opencli.json"), document);
+
+    private static JsonObject CreateValidOpenCliDocument(string commandName, string version)
+        => new()
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = commandName,
+                ["version"] = version,
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--help",
+                },
+            },
+        };
+
+    private static JsonObject CreateEmptyOpenCliDocument(string commandName, string version)
+        => new()
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = commandName,
+                ["version"] = version,
+            },
+        };
 
     private sealed class FakeDescriptorResolver(ToolDescriptor descriptor) : IToolDescriptorResolver
     {

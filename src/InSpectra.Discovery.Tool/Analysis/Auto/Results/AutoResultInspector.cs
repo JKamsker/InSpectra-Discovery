@@ -22,6 +22,10 @@ internal static class AutoResultInspector
         => (IsSuccessful(result) && !HasOpenCliArtifact(result))
             || IsTerminalFailure(result);
 
+    public static bool ShouldUseFailedFallbackResult(JsonObject initialResult, JsonObject fallbackResult)
+        => !IsTerminalFailure(initialResult)
+            && IsTerminalFailure(fallbackResult);
+
     public static bool ShouldUseStaticFallback(JsonObject result)
         => ShouldUseFallbackResult(result);
 
