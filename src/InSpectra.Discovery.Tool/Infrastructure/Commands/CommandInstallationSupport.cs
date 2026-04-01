@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
+using InSpectra.Discovery.Tool.Infrastructure.Artifacts;
 
 using InSpectra.Discovery.Tool.Analysis.NonSpectre;
 
@@ -65,10 +66,41 @@ internal static class CommandInstallationSupport
             CommandPath: commandPath);
     }
 
-    public static void WriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
+    public static bool TryWriteCrawlArtifactOrApplyFailure(string outputDirectory, JsonObject result, JsonObject crawlArtifact)
     {
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "crawl.json"), crawlArtifact);
-        result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
+        if (TryWriteCrawlArtifact(outputDirectory, result, crawlArtifact, out var validationError))
+        {
+            return true;
+        }
+
+        NonSpectreResultSupport.ApplyTerminalFailure(
+            result,
+            phase: "crawl",
+            classification: "crawl-artifact-too-large",
+            validationError ?? "Generated crawl.json exceeded the allowed size.");
+        return false;
+    }
+
+    public static bool TryWriteCrawlArtifact(string outputDirectory, JsonObject result, JsonObject crawlArtifact, out string? validationError)
+    {
+        var crawlPath = Path.Combine(outputDirectory, "crawl.json");
+        var artifacts = result["artifacts"]?.AsObject()
+            ?? throw new InvalidOperationException("Result is missing artifacts container.");
+
+        if (!CrawlArtifactValidationSupport.TryValidate(crawlArtifact, out _, out validationError))
+        {
+            artifacts.Remove("crawlArtifact");
+            if (File.Exists(crawlPath))
+            {
+                File.Delete(crawlPath);
+            }
+
+            return false;
+        }
+
+        RepositoryPathResolver.WriteJsonFile(crawlPath, crawlArtifact);
+        artifacts["crawlArtifact"] = "crawl.json";
+        return true;
     }
 
     private static void EnsureDirectories(IReadOnlyList<string> directories)
@@ -84,5 +116,4 @@ internal sealed record InstalledToolContext(
     IReadOnlyDictionary<string, string> Environment,
     string InstallDirectory,
     string CommandPath);
-
 

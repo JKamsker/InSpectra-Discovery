@@ -58,7 +58,14 @@ internal sealed class InstalledToolAnalyzer
         crawlStopwatch.Stop();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
-        CommandInstallationSupport.WriteCrawlArtifact(outputDirectory, result, CrawlArtifactBuilder.Build(crawl.Documents.Count, crawl.Captures));
+        if (!CommandInstallationSupport.TryWriteCrawlArtifactOrApplyFailure(
+            outputDirectory,
+            result,
+            CrawlArtifactBuilder.Build(crawl.Documents.Count, crawl.Captures)))
+        {
+            return;
+        }
+
         if (crawl.Documents.Count == 0)
         {
             NonSpectreResultSupport.ApplyTerminalFailure(
@@ -95,4 +102,3 @@ internal sealed class InstalledToolAnalyzer
         NonSpectreResultSupport.ApplySuccess(result, classification: "help-crawl", artifactSource: "crawled-from-help");
     }
 }
-

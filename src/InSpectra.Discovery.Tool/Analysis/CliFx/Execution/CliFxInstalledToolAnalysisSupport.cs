@@ -76,13 +76,17 @@ internal sealed class CliFxInstalledToolAnalysisSupport
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         result["coverage"] = coverageJson;
-        CommandInstallationSupport.WriteCrawlArtifact(
+        if (!CommandInstallationSupport.TryWriteCrawlArtifactOrApplyFailure(
             outputDirectory,
             result,
             CrawlArtifactBuilder.Build(
                 crawl.Documents.Count,
                 crawl.Captures,
-                CliFxCrawlArtifactSupport.BuildMetadata(staticCommands, coverageJson)));
+                CliFxCrawlArtifactSupport.BuildMetadata(staticCommands, coverageJson))))
+        {
+            return;
+        }
+
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
             NonSpectreResultSupport.ApplyTerminalFailure(
@@ -112,5 +116,4 @@ internal sealed class CliFxInstalledToolAnalysisSupport
     private static Dictionary<string, CliFxCommandDefinition> NormalizeCommandLookup(IReadOnlyDictionary<string, CliFxCommandDefinition> commands)
         => new(commands, StringComparer.OrdinalIgnoreCase);
 }
-
 

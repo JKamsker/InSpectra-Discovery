@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Promotion.Artifacts;
 
 using InSpectra.Discovery.Tool.Promotion.Results;
+using InSpectra.Discovery.Tool.Infrastructure.Artifacts;
 
 using InSpectra.Discovery.Tool.Analysis.Help.Batch;
 
@@ -31,13 +32,14 @@ internal static class PromotionSuccessArtifactValidationSupport
         var hasCrawlArtifact = crawlArtifactPath is not null;
         var hasXmlDocArtifact = xmlDocArtifactPath is not null;
         string? openCliValidationError = null;
+        string? crawlValidationError = null;
         string? xmlDocValidationError = null;
         JsonObject? openCliDocument = null;
         JsonObject? crawlDocument = null;
         var hasUsableOpenCli = openCliArtifactPath is not null
             && OpenCliDocumentValidator.TryLoadValidDocument(openCliArtifactPath, out openCliDocument, out openCliValidationError);
         var hasUsableCrawl = crawlArtifactPath is not null
-            && PromotionArtifactSupport.TryLoadJsonObject(crawlArtifactPath, out crawlDocument);
+            && CrawlArtifactValidationSupport.TryLoadValidatedJsonObject(crawlArtifactPath, out crawlDocument, out crawlValidationError);
         var hasUsableXmlDoc = xmlDocArtifactPath is not null
             && PromotionAnalysisModeSupport.TryLoadXmlArtifact(xmlDocArtifactPath, out xmlDocValidationError);
         var selectedAnalysisMode = PromotionAnalysisModeSupport.ResolveAnalysisMode(
@@ -80,9 +82,11 @@ internal static class PromotionSuccessArtifactValidationSupport
             : invalidArtifacts.Count > 0
                 ? !string.IsNullOrWhiteSpace(openCliValidationError)
                     ? openCliValidationError
-                    : !string.IsNullOrWhiteSpace(xmlDocValidationError)
+                    : !string.IsNullOrWhiteSpace(crawlValidationError)
+                        ? crawlValidationError
+                        : !string.IsNullOrWhiteSpace(xmlDocValidationError)
                         ? xmlDocValidationError
-                        : "Success result declared JSON artifact(s) that are not usable JSON objects: " + string.Join(", ", invalidArtifacts)
+                            : "Success result declared JSON artifact(s) that are not usable JSON objects: " + string.Join(", ", invalidArtifacts)
             : requiresCrawlArtifact && !hasUsableCrawl
                 ? "Success result did not include a usable crawl.json artifact."
                 : "Success result did not include either opencli.json or xmldoc.xml.";

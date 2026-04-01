@@ -3,6 +3,7 @@ namespace InSpectra.Discovery.Tool.Analysis.Help.Batch;
 using InSpectra.Discovery.Tool.OpenCli.Documents;
 
 using InSpectra.Discovery.Tool.Promotion.Artifacts;
+using InSpectra.Discovery.Tool.Infrastructure.Artifacts;
 
 using InSpectra.Discovery.Tool.Infrastructure.Json;
 
@@ -55,7 +56,7 @@ internal static class HelpBatchResultSupport
         var crawlArtifactName = result?["artifacts"]?["crawlArtifact"]?.GetValue<string>();
         var openCliExists = HasUsableOpenCliArtifact(itemOutputRoot, openCliArtifactName);
         var crawlExists = !HelpBatchArtifactSupport.RequiresCrawlArtifact(item.AnalysisMode)
-            || HasUsableJsonArtifact(itemOutputRoot, crawlArtifactName);
+            || HasUsableCrawlArtifact(itemOutputRoot, crawlArtifactName);
         var disposition = result?["disposition"]?.GetValue<string>();
         var success = exitCode == 0
                       && string.Equals(disposition, "success", StringComparison.Ordinal)
@@ -127,10 +128,10 @@ internal static class HelpBatchResultSupport
     private static string? FirstNonEmpty(params string?[] values)
         => values.FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
-    private static bool HasUsableJsonArtifact(string artifactDirectory, string? artifactName)
+    private static bool HasUsableCrawlArtifact(string artifactDirectory, string? artifactName)
     {
         var artifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, artifactName);
-        return artifactPath is not null && PromotionArtifactSupport.TryLoadJsonObject(artifactPath, out _);
+        return artifactPath is not null && CrawlArtifactValidationSupport.TryLoadValidatedJsonObject(artifactPath, out _, out _);
     }
 
     private static bool HasUsableOpenCliArtifact(string artifactDirectory, string? artifactName)
@@ -147,5 +148,4 @@ internal static class HelpBatchResultSupport
         }
     }
 }
-
 

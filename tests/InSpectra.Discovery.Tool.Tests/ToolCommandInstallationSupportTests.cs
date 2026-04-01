@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
+using InSpectra.Discovery.Tool.Infrastructure.Artifacts;
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 using System.Text.Json.Nodes;
@@ -83,6 +84,39 @@ public sealed class CommandInstallationSupportTests
         Assert.Equal("installed-command-missing", result["classification"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void TryWriteCrawlArtifactOrApplyFailure_Applies_Terminal_Failure_When_Crawl_Exceeds_Limit()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var result = CreateResultSkeleton();
+        var oversizedCrawl = new JsonObject
+        {
+            ["documentCount"] = 1,
+            ["captureCount"] = 1,
+            ["commands"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["command"] = "demo",
+                    ["payload"] = new string('x', CrawlArtifactValidationSupport.MaxArtifactBytes),
+                },
+            },
+        };
+
+        var wroteArtifact = CommandInstallationSupport.TryWriteCrawlArtifactOrApplyFailure(
+            tempDirectory.Path,
+            result,
+            oversizedCrawl);
+
+        Assert.False(wroteArtifact);
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("crawl", result["phase"]?.GetValue<string>());
+        Assert.Equal("crawl-artifact-too-large", result["classification"]?.GetValue<string>());
+        Assert.Contains("1 MiB limit", result["failureMessage"]?.GetValue<string>());
+        Assert.DoesNotContain("crawlArtifact", result["artifacts"]!.AsObject().Select(property => property.Key));
+        Assert.False(File.Exists(Path.Combine(tempDirectory.Path, "crawl.json")));
+    }
+
     private static JsonObject CreateResultSkeleton()
         => new()
         {
@@ -149,5 +183,4 @@ public sealed class CommandInstallationSupportTests
         }
     }
 }
-
 

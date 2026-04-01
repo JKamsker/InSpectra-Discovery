@@ -84,13 +84,16 @@ internal sealed class StaticInstalledToolAnalysisSupport
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         result["coverage"] = coverageJson;
-        CommandInstallationSupport.WriteCrawlArtifact(
+        if (!CommandInstallationSupport.TryWriteCrawlArtifactOrApplyFailure(
             outputDirectory,
             result,
             CrawlArtifactBuilder.Build(
                 crawl.Documents.Count,
                 crawl.Captures,
-                StaticAnalysisCrawlArtifactSupport.BuildMetadata(staticCommands, coverageJson)));
+                StaticAnalysisCrawlArtifactSupport.BuildMetadata(staticCommands, coverageJson))))
+        {
+            return;
+        }
 
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
@@ -160,4 +163,3 @@ internal sealed class StaticInstalledToolAnalysisSupport
     private static string ResolveFrameworkName(string cliFramework)
         => CliFrameworkProviderRegistry.ResolveStaticAnalysisAdapter(cliFramework)?.FrameworkName ?? cliFramework;
 }
-
