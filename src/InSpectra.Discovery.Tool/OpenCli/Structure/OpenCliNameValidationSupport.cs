@@ -49,15 +49,21 @@ internal static partial class OpenCliNameValidationSupport
 
     private static bool LooksLikeNonPublishableCommandName(string name)
         => PlaceholderCommandNameRegex().IsMatch(name)
+            || ContainsAngleBracketMarkers(name)
             || ObfuscatedNameRegex().IsMatch(name)
             || EnvironmentAssignmentSnippetRegex().IsMatch(name);
 
     private static bool LooksLikeNonPublishableArgumentName(string name)
-        => ObfuscatedNameRegex().IsMatch(name)
+        => ContainsAngleBracketMarkers(name)
+            || ObfuscatedNameRegex().IsMatch(name)
             || EnvironmentAssignmentSnippetRegex().IsMatch(name)
             || HeadingLabelRegex().IsMatch(name)
             || OptionSyntaxRegex().IsMatch(name)
             || UppercaseSentenceLabelRegex().IsMatch(name);
+
+    private static bool ContainsAngleBracketMarkers(string name)
+        => name.Contains('<', StringComparison.Ordinal)
+            || name.Contains('>', StringComparison.Ordinal);
 
     [GeneratedRegex(@"^\.\.?$", RegexOptions.Compiled)]
     private static partial Regex PlaceholderCommandNameRegex();

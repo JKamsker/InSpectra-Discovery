@@ -10,78 +10,73 @@ internal sealed class StaticAnalysisOpenCliArgumentBuilder
 {
     public JsonArray? BuildArguments(StaticCommandDefinition? staticCommand, Document? helpDocument)
     {
-        if (staticCommand?.Values.Count is > 0)
+        if (helpDocument is not null)
         {
-            return BuildMetadataFirstArguments(staticCommand, helpDocument);
+            return BuildHelpAnchoredArguments(staticCommand, helpDocument);
         }
 
-        if (helpDocument?.Arguments.Count is not > 0)
+        if (staticCommand?.Values.Count is > 0)
+        {
+            return BuildMetadataFirstArguments(staticCommand);
+        }
+
+        return null;
+    }
+
+    private JsonArray? BuildHelpAnchoredArguments(StaticCommandDefinition? staticCommand, Document helpDocument)
+    {
+        if (helpDocument.Arguments.Count is not > 0)
         {
             return null;
         }
 
-        var helpOnlyArgs = new JsonArray();
-        foreach (var argument in helpDocument.Arguments)
-        {
-            helpOnlyArgs.Add(BuildArgumentNode(
-                argument.Key,
-                argument.IsRequired,
-                isSequence: false,
-                argument.Description,
-                clrType: null,
-                acceptedValues: null));
-        }
-
-        return helpOnlyArgs.Count > 0 ? helpOnlyArgs : null;
-    }
-
-    private JsonArray? BuildMetadataFirstArguments(StaticCommandDefinition staticCommand, Document? helpDocument)
-    {
         var array = new JsonArray();
-        var helpArguments = helpDocument?.Arguments.ToList() ?? [];
-        var matchedHelpArguments = new bool[helpArguments.Count];
-        var useIndexFallback = helpArguments.Count == staticCommand.Values.Count;
+        var staticArguments = staticCommand?.Values ?? [];
+        var matchedStaticArguments = new bool[staticArguments.Count];
+        var useIndexFallback = staticArguments.Count == helpDocument.Arguments.Count;
 
-        for (var index = 0; index < staticCommand.Values.Count; index++)
+        for (var index = 0; index < helpDocument.Arguments.Count; index++)
         {
-            var definition = staticCommand.Values[index];
-            var helpArgumentIndex = FindHelpArgumentIndex(helpArguments, matchedHelpArguments, definition.Name);
-            if (helpArgumentIndex < 0 && useIndexFallback && !matchedHelpArguments[index])
+            var helpArgument = helpDocument.Arguments[index];
+            var staticArgumentIndex = FindStaticArgumentIndex(staticArguments, matchedStaticArguments, helpArgument.Key);
+            if (staticArgumentIndex < 0 && useIndexFallback && !matchedStaticArguments[index])
             {
-                helpArgumentIndex = index;
+                staticArgumentIndex = index;
             }
 
-            Item? helpArgument = null;
-            if (helpArgumentIndex >= 0)
+            StaticValueDefinition? staticArgument = null;
+            if (staticArgumentIndex >= 0)
             {
-                matchedHelpArguments[helpArgumentIndex] = true;
-                helpArgument = helpArguments[helpArgumentIndex];
+                matchedStaticArguments[staticArgumentIndex] = true;
+                staticArgument = staticArguments[staticArgumentIndex];
             }
 
-            array.Add(BuildArgumentNode(
-                definition.Name ?? $"value{definition.Index}",
-                definition.IsRequired,
-                definition.IsSequence,
-                helpArgument?.Description ?? definition.Description,
-                definition.ClrType,
-                definition.AcceptedValues));
-        }
-
-        for (var index = 0; index < helpArguments.Count; index++)
-        {
-            if (matchedHelpArguments[index])
-            {
-                continue;
-            }
-
-            var helpArgument = helpArguments[index];
             array.Add(BuildArgumentNode(
                 helpArgument.Key,
                 helpArgument.IsRequired,
                 isSequence: false,
                 helpArgument.Description,
-                clrType: null,
-                acceptedValues: null));
+                staticArgument?.ClrType,
+                staticArgument?.AcceptedValues));
+        }
+
+        return array.Count > 0 ? array : null;
+    }
+
+    private JsonArray? BuildMetadataFirstArguments(StaticCommandDefinition staticCommand)
+    {
+        var array = new JsonArray();
+
+        for (var index = 0; index < staticCommand.Values.Count; index++)
+        {
+            var definition = staticCommand.Values[index];
+            array.Add(BuildArgumentNode(
+                definition.Name ?? $"value{definition.Index}",
+                definition.IsRequired,
+                definition.IsSequence,
+                definition.Description,
+                definition.ClrType,
+                definition.AcceptedValues));
         }
 
         return array.Count > 0 ? array : null;
@@ -108,18 +103,18 @@ internal sealed class StaticAnalysisOpenCliArgumentBuilder
         return argument;
     }
 
-    private static int FindHelpArgumentIndex(
-        IReadOnlyList<Item> helpArguments,
+    private static int FindStaticArgumentIndex(
+        IReadOnlyList<StaticValueDefinition> staticArguments,
         IReadOnlyList<bool> matched,
-        string? name)
+        string helpArgumentName)
     {
-        if (string.IsNullOrWhiteSpace(name))
+        if (string.IsNullOrWhiteSpace(helpArgumentName))
         {
             return -1;
         }
 
-        var normalized = StaticAnalysisOpenCliNodeSupport.NormalizeForLookup(name);
-        for (var index = 0; index < helpArguments.Count; index++)
+        var normalized = StaticAnalysisOpenCliNodeSupport.NormalizeForLookup(helpArgumentName);
+        for (var index = 0; index < staticArguments.Count; index++)
         {
             if (matched[index])
             {
@@ -127,7 +122,7 @@ internal sealed class StaticAnalysisOpenCliArgumentBuilder
             }
 
             if (string.Equals(
-                StaticAnalysisOpenCliNodeSupport.NormalizeForLookup(helpArguments[index].Key),
+                StaticAnalysisOpenCliNodeSupport.NormalizeForLookup(staticArguments[index].Name),
                 normalized,
                 StringComparison.Ordinal))
             {
@@ -138,4 +133,3 @@ internal sealed class StaticAnalysisOpenCliArgumentBuilder
         return -1;
     }
 }
-

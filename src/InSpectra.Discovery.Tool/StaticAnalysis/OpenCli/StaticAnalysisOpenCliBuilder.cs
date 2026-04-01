@@ -112,9 +112,21 @@ internal sealed class StaticAnalysisOpenCliBuilder
         IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
         IReadOnlyDictionary<string, Document> helpDocuments)
     {
+        var restrictStaticCommands = ShouldRestrictStaticCommandsToHelpGraph(helpDocuments);
+        var helpCommandKeys = restrictStaticCommands
+            ? BuildHelpCommandKeySet(commandName, helpDocuments)
+            : null;
+
         foreach (var pair in staticCommands.Where(pair => !string.IsNullOrWhiteSpace(pair.Key)))
         {
             if (IsPlaceholderStaticRootCommand(pair.Key, pair.Value, staticCommands, helpDocuments))
+            {
+                continue;
+            }
+
+            if (restrictStaticCommands
+                && helpCommandKeys is not null
+                && !ShouldIncludeStaticCommand(pair.Key, helpCommandKeys))
             {
                 continue;
             }
@@ -188,4 +200,46 @@ internal sealed class StaticAnalysisOpenCliBuilder
             && string.IsNullOrWhiteSpace(definition.Description)
             && definition.Options.Count == 0
             && definition.Values.Count == 0;
+
+    private static bool ShouldRestrictStaticCommandsToHelpGraph(IReadOnlyDictionary<string, Document> helpDocuments)
+        => helpDocuments.TryGetValue(string.Empty, out var rootHelp)
+            && rootHelp.Commands.Count > 0;
+
+    private static HashSet<string> BuildHelpCommandKeySet(
+        string commandName,
+        IReadOnlyDictionary<string, Document> helpDocuments)
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var pair in helpDocuments)
+        {
+            if (!string.IsNullOrWhiteSpace(pair.Key))
+            {
+                keys.Add(pair.Key);
+            }
+
+            foreach (var child in pair.Value.Commands)
+            {
+                var childFullName = CommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);
+                if (!string.IsNullOrWhiteSpace(childFullName)
+                    && !DocumentInspector.IsBuiltinAuxiliaryCommandPath(childFullName))
+                {
+                    keys.Add(childFullName);
+                }
+            }
+        }
+
+        return keys;
+    }
+
+    private static bool ShouldIncludeStaticCommand(string commandKey, IReadOnlySet<string> helpCommandKeys)
+    {
+        if (helpCommandKeys.Contains(commandKey))
+        {
+            return true;
+        }
+
+        return helpCommandKeys.Any(helpKey =>
+            helpKey.StartsWith(commandKey + " ", StringComparison.OrdinalIgnoreCase));
+    }
 }

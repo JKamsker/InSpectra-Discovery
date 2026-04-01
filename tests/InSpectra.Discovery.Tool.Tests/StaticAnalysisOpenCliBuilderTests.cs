@@ -304,6 +304,107 @@ public sealed class StaticAnalysisOpenCliBuilderTests
                 .ToArray());
     }
 
+    [Fact]
+    public void Build_Prefers_Help_Surface_Over_Unmatched_Static_Metadata_When_Help_Graph_Exists()
+    {
+        var builder = new StaticAnalysisOpenCliBuilder();
+        var staticCommands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Name: null,
+                Description: "Default command",
+                IsDefault: true,
+                IsHidden: false,
+                Values:
+                [
+                    new StaticValueDefinition(
+                        0,
+                        "FILE",
+                        true,
+                        false,
+                        "System.String",
+                        "Static-only positional argument.",
+                        null,
+                        []),
+                ],
+                Options:
+                [
+                    new StaticOptionDefinition(
+                        LongName: "value",
+                        ShortName: 'v',
+                        IsRequired: true,
+                        IsSequence: false,
+                        IsBoolLike: false,
+                        ClrType: "System.String",
+                        Description: "Static-only root option.",
+                        DefaultValue: null,
+                        MetaValue: "VALUE",
+                        AcceptedValues: [],
+                        PropertyName: "Value"),
+                ]),
+            ["greet"] = new(
+                Name: "greet",
+                Description: "Greet a user.",
+                IsDefault: false,
+                IsHidden: false,
+                Values: [],
+                Options: []),
+            ["gethashcode"] = new(
+                Name: "gethashcode",
+                Description: "Compiler noise.",
+                IsDefault: false,
+                IsHidden: false,
+                Values: [],
+                Options: []),
+            ["<clone>$"] = new(
+                Name: "<clone>$",
+                Description: "Compiler noise.",
+                IsDefault: false,
+                IsHidden: false,
+                Values: [],
+                Options: []),
+        };
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = CreateHelpDocument(
+                title: "demo",
+                version: "1.0.0",
+                options:
+                [
+                    new Item("-h, --help", false, "Show help."),
+                    new Item("--version", false, "Show version."),
+                ],
+                commands:
+                [
+                    new Item("greet", false, "Greet a user."),
+                ]),
+            ["greet"] = CreateHelpDocument(
+                description: "Greet a user."),
+        };
+
+        var document = builder.Build(
+            "demo",
+            "1.0.0",
+            "Cocona",
+            staticCommands,
+            helpDocuments);
+
+        var commands = Assert.IsType<JsonArray>(document["commands"]);
+        var greet = Assert.IsType<JsonObject>(Assert.Single(commands));
+        Assert.Equal("greet", greet["name"]!.GetValue<string>());
+
+        var options = Assert.IsType<JsonArray>(document["options"]);
+        Assert.Equal(
+            new[] { "--help", "--version" },
+            options
+                .OfType<JsonObject>()
+                .Select(option => option["name"]!.GetValue<string>())
+                .OrderBy(name => name, StringComparer.Ordinal)
+                .ToArray());
+
+        Assert.Null(document["arguments"]);
+    }
+
     private static Document CreateHelpDocument(
         string? title = null,
         string? version = null,

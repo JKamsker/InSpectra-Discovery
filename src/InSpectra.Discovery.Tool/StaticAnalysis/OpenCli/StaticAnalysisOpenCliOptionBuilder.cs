@@ -12,7 +12,22 @@ internal sealed class StaticAnalysisOpenCliOptionBuilder
 {
     public JsonArray? BuildOptions(StaticCommandDefinition? staticCommand, Document? helpDocument)
     {
-        if (helpDocument?.Options.Count is not > 0 && staticCommand?.Options.Count is not > 0)
+        if (helpDocument is not null)
+        {
+            return BuildHelpAnchoredOptions(staticCommand, helpDocument);
+        }
+
+        if (staticCommand?.Options.Count is not > 0)
+        {
+            return null;
+        }
+
+        return BuildStaticOnlyOptions(staticCommand.Options);
+    }
+
+    private JsonArray? BuildHelpAnchoredOptions(StaticCommandDefinition? staticCommand, Document helpDocument)
+    {
+        if (helpDocument.Options.Count is not > 0)
         {
             return null;
         }
@@ -20,7 +35,7 @@ internal sealed class StaticAnalysisOpenCliOptionBuilder
         var array = new JsonArray();
         var matcher = new StaticOptionDefinitionMatcher(staticCommand?.Options ?? []);
 
-        foreach (var helpOption in helpDocument?.Options ?? [])
+        foreach (var helpOption in helpDocument.Options)
         {
             var names = StaticAnalysisOpenCliNodeSupport.ParseHelpOptionNames(helpOption.Key);
             var definition = matcher.TakeMatch(names.LongName, names.ShortName);
@@ -33,7 +48,13 @@ internal sealed class StaticAnalysisOpenCliOptionBuilder
                 names.ShortName));
         }
 
-        foreach (var option in matcher.GetRemainingDefinitions())
+        return array.Count > 0 ? array : null;
+    }
+
+    private JsonArray? BuildStaticOnlyOptions(IReadOnlyList<StaticOptionDefinition> options)
+    {
+        var array = new JsonArray();
+        foreach (var option in options)
         {
             if (option.IsBoolLike && StaticAnalysisOpenCliNodeSupport.IsHiddenOption(option))
             {
@@ -157,4 +178,3 @@ internal sealed class StaticAnalysisOpenCliOptionBuilder
         return aliases.Count > 0 ? aliases : null;
     }
 }
-

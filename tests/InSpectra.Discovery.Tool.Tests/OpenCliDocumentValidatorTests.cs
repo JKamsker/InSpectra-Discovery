@@ -207,6 +207,28 @@ public sealed class OpenCliDocumentValidatorTests
     }
 
     [Fact]
+    public void TryLoadValidDocument_Rejects_AngleBracket_Command_Names()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var artifactPath = Path.Combine(tempDirectory.Path, "opencli.json");
+        RepositoryPathResolver.WriteJsonFile(
+            artifactPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["commands"] = new JsonArray
+                {
+                    CreateLeafCommand("<clone>$"),
+                },
+            });
+
+        var valid = OpenCliDocumentValidator.TryLoadValidDocument(artifactPath, out _, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact has a non-publishable command name '<clone>$' at '$.commands[0]'.", reason);
+    }
+
+    [Fact]
     public void TryLoadValidDocument_Rejects_NonPublishable_Argument_Names()
     {
         using var tempDirectory = new TemporaryDirectory();
