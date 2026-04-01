@@ -31,6 +31,14 @@ public sealed class SignatureNormalizerTests
     }
 
     [Fact]
+    public void NormalizeOptionSignatureKey_Normalizes_Bare_Placeholders_With_Optional_Tails()
+    {
+        var key = SignatureNormalizer.NormalizeOptionSignatureKey("--files FILE1 [FILE2 [...]]");
+
+        Assert.Equal("--files <FILE1> [FILE2 [...]]", key);
+    }
+
+    [Fact]
     public void TryExtractLeadingAliasFromDescription_Consumes_Split_Column_Placeholders()
     {
         var matched = SignatureNormalizer.TryExtractLeadingAliasFromDescription(
@@ -43,4 +51,3 @@ public sealed class SignatureNormalizerTests
         Assert.Equal("write file", normalizedDescription);
     }
 }
-

@@ -82,12 +82,17 @@ internal static partial class LegacyOptionRowSupport
     public static bool LooksLikeLooseOptionRow(string rawLine)
     {
         var trimmed = rawLine.TrimStart();
-        var optionMatch = OptionTokenRegex().Match(trimmed);
         if (CommandPrototypeSupport.LooksLikeBareShortLongOptionRow(rawLine))
         {
             return true;
         }
 
+        if (SignatureNormalizer.LooksLikeOptionSignature(trimmed))
+        {
+            return true;
+        }
+
+        var optionMatch = OptionTokenRegex().Match(trimmed);
         if (!optionMatch.Success || optionMatch.Index != 0)
         {
             return false;

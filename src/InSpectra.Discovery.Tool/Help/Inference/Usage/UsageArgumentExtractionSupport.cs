@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Help.Inference.Usage;
 
 using InSpectra.Discovery.Tool.Help.Documents;
+using InSpectra.Discovery.Tool.Help.Parsing;
 using InSpectra.Discovery.Tool.Help.Signatures;
 
 internal static class UsageArgumentExtractionSupport
@@ -18,9 +19,16 @@ internal static class UsageArgumentExtractionSupport
             : $"{commandName} {commandPath}";
         string? previousNonEmptyLine = null;
 
-        foreach (var line in usageLines)
+        for (var index = 0; index < usageLines.Count; index++)
         {
+            var line = usageLines[index];
             if (ShouldSkipDescendantUsageLine(invocation, line, hasChildCommands))
+            {
+                previousNonEmptyLine = line;
+                continue;
+            }
+
+            if (LooksLikeStructuredUsageGroupLabel(usageLines, index))
             {
                 previousNonEmptyLine = line;
                 continue;
@@ -65,6 +73,30 @@ internal static class UsageArgumentExtractionSupport
         }
 
         return arguments;
+    }
+
+    private static bool LooksLikeStructuredUsageGroupLabel(IReadOnlyList<string> usageLines, int index)
+    {
+        var trimmed = usageLines[index].Trim();
+        if (!LooksLikeStandaloneGroupLabel(trimmed))
+        {
+            return false;
+        }
+
+        for (var nextIndex = index + 1; nextIndex < usageLines.Count; nextIndex++)
+        {
+            var nextLine = usageLines[nextIndex];
+            if (string.IsNullOrWhiteSpace(nextLine))
+            {
+                continue;
+            }
+
+            var trimmedNextLine = nextLine.TrimStart();
+            return LegacyOptionRowSupport.LooksLikeLooseOptionRow(trimmedNextLine)
+                || ItemStartParserSupport.TryParsePositionalArgumentRow(trimmedNextLine, out _, out _, out _);
+        }
+
+        return false;
     }
 
     private static bool ShouldSkipDescendantUsageLine(string invocation, string usageLine, bool hasChildCommands)
@@ -140,5 +172,20 @@ internal static class UsageArgumentExtractionSupport
         var normalized = SignatureNormalizer.NormalizeCommandKey(trimmed);
         return !string.IsNullOrWhiteSpace(normalized)
             && string.Equals(normalized, trimmed.TrimEnd(':', ','), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikeStandaloneGroupLabel(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line)
+            || line.Contains(' ', StringComparison.Ordinal)
+            || line.Length < 2)
+        {
+            return false;
+        }
+
+        var letters = line.Where(char.IsLetter).ToArray();
+        return letters.Length > 0
+            && letters.All(char.IsUpper)
+            && line.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_');
     }
 }

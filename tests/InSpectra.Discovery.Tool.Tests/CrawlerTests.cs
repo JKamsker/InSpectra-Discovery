@@ -275,6 +275,76 @@ public sealed class CrawlerTests
     }
 
     [Fact]
+    public async Task CrawlAsync_Infers_Nested_Subcommands_From_Usage_Lines_When_Command_Sections_Are_Missing()
+    {
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            if (key is "expect --help" or "expect -h" or "expect -?" or "expect --h" or "expect /help" or "expect /?" or "expect")
+            {
+                return Result(
+                    stdout: "Invalid argument: expect",
+                    exitCode: 1);
+            }
+
+            return key switch
+            {
+                "--help" => Result(
+                    stdout:
+                    """
+                    demo 1.0.0
+
+                    Usage: demo <command>
+
+                    Commands:
+                      expect  Manage expectations.
+                    """),
+                "help expect" => Result(
+                    stdout:
+                    """
+                    demo expect
+
+                    Usage: demo expect check [options]
+                       OR: demo expect format [options]
+                    """),
+                "expect check --help" => Result(
+                    stdout:
+                    """
+                    demo expect check
+
+                    Options:
+                      --instructions  Instructions for the validator.
+                    """),
+                "expect format --help" => Result(
+                    stdout:
+                    """
+                    demo expect format
+
+                    Options:
+                      --save-output  Save the formatted output.
+                    """),
+                _ => throw new InvalidOperationException($"Unexpected invocation: '{key}'."),
+            };
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "demo",
+            "demo",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(
+            ["", "expect", "expect check", "expect format"],
+            result.Documents.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        Assert.Equal("help expect", result.CaptureSummaries["expect"].HelpInvocation);
+        Assert.Equal("expect check --help", result.CaptureSummaries["expect check"].HelpInvocation);
+        Assert.Equal("expect format --help", result.CaptureSummaries["expect format"].HelpInvocation);
+    }
+
+    [Fact]
     public async Task CrawlAsync_Prefers_Single_Stream_Help_Payload_Over_Invocation_Echo_Combination()
     {
         var runtime = new FakeCommandRuntime(arguments =>

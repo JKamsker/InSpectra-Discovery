@@ -3,6 +3,7 @@ namespace InSpectra.Discovery.Tool.Help.Crawling;
 using InSpectra.Discovery.Tool.Help.OpenCli;
 
 using InSpectra.Discovery.Tool.Help.Signatures;
+using InSpectra.Discovery.Tool.Help.Inference.Usage;
 
 using InSpectra.Discovery.Tool.Help.Documents;
 
@@ -71,16 +72,17 @@ internal sealed class Crawler
             foreach (var child in capture.Document.Commands)
             {
                 var resolvedChildKey = CommandPathSupport.ResolveChildKey(rootCommandName, key, child.Key);
-                var childSegments = CommandPathSupport.SplitSegments(resolvedChildKey);
-                var childKey = InvocationSupport.GetCommandKey(childSegments);
-                if (DocumentInspector.IsBuiltinAuxiliaryCommandPath(childKey))
-                {
-                    continue;
-                }
+                EnqueueChild(resolvedChildKey, queue, seen);
+            }
 
-                if (childSegments.Length <= MaxCommandDepth && seen.Add(childKey))
+            if (capture.Document.Commands.Count == 0)
+            {
+                foreach (var inferredChildKey in UsageCommandInferenceSupport.InferChildCommands(
+                    rootCommandName,
+                    commandSegments,
+                    capture.Document.UsageLines))
                 {
-                    queue.Enqueue(childSegments);
+                    EnqueueChild(inferredChildKey, queue, seen);
                 }
             }
         }
@@ -128,6 +130,21 @@ internal sealed class Crawler
         }
 
         return bestCapture ?? new Capture(null, null, null, null, false);
+    }
+
+    private static void EnqueueChild(string childKey, Queue<string[]> queue, ISet<string> seen)
+    {
+        var childSegments = CommandPathSupport.SplitSegments(childKey);
+        var normalizedChildKey = InvocationSupport.GetCommandKey(childSegments);
+        if (DocumentInspector.IsBuiltinAuxiliaryCommandPath(normalizedChildKey))
+        {
+            return;
+        }
+
+        if (childSegments.Length <= MaxCommandDepth && seen.Add(normalizedChildKey))
+        {
+            queue.Enqueue(childSegments);
+        }
     }
 
     private Capture BuildCapture(

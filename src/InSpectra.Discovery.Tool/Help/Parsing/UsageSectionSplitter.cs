@@ -19,8 +19,9 @@ internal static partial class UsageSectionSplitter
         var currentIndentation = -1;
         var sawUsageSeparator = false;
 
-        foreach (var rawLine in lines)
+        for (var index = 0; index < lines.Count; index++)
         {
+            var rawLine = lines[index];
             if (string.IsNullOrWhiteSpace(rawLine))
             {
                 if (currentTarget == UsageSectionTarget.Usage)
@@ -33,6 +34,13 @@ internal static partial class UsageSectionSplitter
                     GetTargetLines(currentTarget, argumentLines, optionLines).Add(rawLine);
                 }
 
+                continue;
+            }
+
+            if (sawUsageSeparator
+                && TryClassifyStructuredGroupLabel(lines, index, out currentTarget))
+            {
+                currentIndentation = GetIndentation(rawLine);
                 continue;
             }
 
@@ -83,7 +91,7 @@ internal static partial class UsageSectionSplitter
         indentation = GetIndentation(rawLine);
 
         var trimmed = rawLine.TrimStart();
-        if (OptionRowRegex().IsMatch(trimmed))
+        if (LegacyOptionRowSupport.LooksLikeLooseOptionRow(trimmed))
         {
             target = UsageSectionTarget.Options;
             return true;
@@ -98,11 +106,49 @@ internal static partial class UsageSectionSplitter
         return false;
     }
 
+    private static bool TryClassifyStructuredGroupLabel(
+        IReadOnlyList<string> lines,
+        int index,
+        out UsageSectionTarget target)
+    {
+        target = UsageSectionTarget.Usage;
+        var trimmed = lines[index].Trim();
+        if (!LooksLikeStructuredGroupLabel(trimmed))
+        {
+            return false;
+        }
+
+        for (var nextIndex = index + 1; nextIndex < lines.Count; nextIndex++)
+        {
+            var nextLine = lines[nextIndex];
+            if (string.IsNullOrWhiteSpace(nextLine))
+            {
+                continue;
+            }
+
+            return TryClassifyStructuredUsageLine(nextLine, out target, out _);
+        }
+
+        return false;
+    }
+
     private static int GetIndentation(string rawLine)
         => rawLine.TakeWhile(char.IsWhiteSpace).Count();
 
-    [GeneratedRegex(@"^(?:--?[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*)(?:\s*[,|]\s*(?:--?[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*))*\s{2,}\S", RegexOptions.Compiled)]
-    private static partial Regex OptionRowRegex();
+    private static bool LooksLikeStructuredGroupLabel(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line)
+            || line.Contains(' ', StringComparison.Ordinal)
+            || line.Length < 2)
+        {
+            return false;
+        }
+
+        var letters = line.Where(char.IsLetter).ToArray();
+        return letters.Length > 0
+            && letters.All(char.IsUpper)
+            && line.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_');
+    }
 
     [GeneratedRegex(@"^\S(?:.*?\S)?\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
@@ -122,4 +168,3 @@ internal static partial class UsageSectionSplitter
         Options,
     }
 }
-

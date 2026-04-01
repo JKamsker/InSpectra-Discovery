@@ -6,6 +6,8 @@ using InSpectra.Discovery.Tool.Help.Inference.Usage;
 using InSpectra.Discovery.Tool.Help.OpenCli;
 using InSpectra.Discovery.Tool.Help.Parsing;
 
+using System.Text.Json.Nodes;
+
 using Xunit;
 
 public sealed class HelpNoiseRegressionTests
@@ -377,5 +379,95 @@ public sealed class HelpNoiseRegressionTests
         Assert.Equal("--port", port!["name"]!.GetValue<string>());
         Assert.Contains("Integration host", port["description"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain("Shutting down", port["description"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Builds_Options_From_Grouped_Bare_Option_Prototype_Blocks_Without_Inventing_Group_Arguments()
+    {
+        var parser = new TextParser();
+        var builder = new OpenCliBuilder();
+        var rootHelp = parser.Parse(
+            """
+            CYCODT - AI-powered CLI Test Framework
+
+            USAGE: cycodt <command> [...]
+
+            COMMANDS
+
+              cycodt list [...]       Lists CLI YAML tests
+            """);
+        var listHelp = parser.Parse(
+            """
+            CYCODT LIST
+
+            USAGE: cycodt list [...]
+
+              FILES
+                --file FILE
+                --files FILE1 [FILE2 [...]]
+
+              TESTS
+                --test TEXT
+                --tests TEXT1 [TEXT2 [...]]
+            """);
+
+        var document = builder.Build(
+            "cycodt",
+            "1.0.0-alpha",
+            new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+            {
+                [""] = rootHelp,
+                ["list"] = listHelp,
+            });
+
+        var list = Assert.Single(document["commands"]!.AsArray());
+        var options = list!["options"]!.AsArray()
+            .OfType<JsonObject>()
+            .Select(option => option["name"]!.GetValue<string>())
+            .ToArray();
+
+        Assert.Equal(new[] { "--file", "--files", "--test", "--tests" }, options);
+        Assert.Null(list["arguments"]);
+    }
+
+    [Fact]
+    public void Does_Not_Invent_Positional_Arguments_For_Option_Only_Commands_That_Shadow_Option_Value_Names()
+    {
+        var parser = new TextParser();
+        var builder = new OpenCliBuilder();
+        var rootHelp = parser.Parse(
+            """
+            demo
+
+            Usage: demo <command>
+
+            Commands:
+              check  Validate expectations.
+            """);
+        var checkHelp = parser.Parse(
+            """
+            demo check
+
+            Usage: demo check [options]
+
+              INPUT
+                --input FILE          Read input from FILE
+                --save-output FILE    Write output to FILE
+            """);
+
+        var document = builder.Build(
+            "demo",
+            "1.0.0",
+            new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+            {
+                [""] = rootHelp,
+                ["check"] = checkHelp,
+            });
+
+        var check = Assert.Single(document["commands"]!.AsArray());
+        Assert.Null(check!["arguments"]);
+        Assert.Equal(
+            new[] { "--input", "--save-output" },
+            check["options"]!.AsArray().OfType<JsonObject>().Select(option => option["name"]!.GetValue<string>()).ToArray());
     }
 }

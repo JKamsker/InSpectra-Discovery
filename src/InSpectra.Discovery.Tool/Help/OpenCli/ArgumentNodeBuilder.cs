@@ -46,6 +46,11 @@ internal sealed partial class ArgumentNodeBuilder
             helpDocument.UsageLines,
             helpDocument.Commands.Count > 0);
         var arguments = UsageArgumentSupport.SelectArguments(explicitArguments, usageArguments);
+        if (ShouldSuppressOptionShadowArguments(arguments, helpDocument.Options))
+        {
+            arguments = [];
+        }
+
         if (arguments.Count == 0)
         {
             if (SignatureNormalizer.IsBuiltinAuxiliaryCommand(commandPath))
@@ -138,6 +143,37 @@ internal sealed partial class ArgumentNodeBuilder
             && GenericArgumentNames.Contains(signature.Name)
             && string.IsNullOrWhiteSpace(argument.Description);
 
+    private static bool ShouldSuppressOptionShadowArguments(
+        IReadOnlyList<Item> arguments,
+        IReadOnlyList<Item> options)
+    {
+        if (arguments.Count == 0 || options.Count == 0)
+        {
+            return false;
+        }
+
+        var optionArgumentNames = options
+            .Select(GetOptionArgumentName)
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Cast<string>()
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (optionArgumentNames.Count == 0)
+        {
+            return false;
+        }
+
+        foreach (var argument in arguments)
+        {
+            if (!TryParseArgumentSignature(argument.Key, out var signature)
+                || !optionArgumentNames.Contains(signature.Name))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static JsonObject BuildArity(int minimum, bool isSequence = false)
     {
         var arity = new JsonObject
@@ -176,6 +212,12 @@ internal sealed partial class ArgumentNodeBuilder
         return true;
     }
 
+    private static string? GetOptionArgumentName(Item option)
+    {
+        var signature = OptionSignatureSupport.Parse(option.Key);
+        return signature.ArgumentName ?? OptionDescriptionInference.InferArgumentName(signature, option.Description);
+    }
+
     private static string NormalizeArgumentToken(string token)
     {
         var normalized = token.Trim()
@@ -191,4 +233,3 @@ internal sealed partial class ArgumentNodeBuilder
     [GeneratedRegex(@"\d+$", RegexOptions.Compiled)]
     private static partial Regex TrailingDigitsRegex();
 }
-

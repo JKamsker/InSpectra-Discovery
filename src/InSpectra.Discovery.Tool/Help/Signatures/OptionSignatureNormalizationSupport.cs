@@ -26,6 +26,11 @@ internal static partial class OptionSignatureNormalizationSupport
             return $"{key[..(matches[^1].Index + matches[^1].Length)].Trim()} {trailing}";
         }
 
+        if (TryNormalizeCompositePlaceholderPrefix(trailing, out var normalizedTrailing))
+        {
+            return $"{key[..(matches[^1].Index + matches[^1].Length)].Trim()} {normalizedTrailing}";
+        }
+
         if (!IsBareOptionPlaceholder(trailing))
         {
             return key.Trim();
@@ -36,6 +41,7 @@ internal static partial class OptionSignatureNormalizationSupport
 
     public static bool LooksLikeOptionSignature(string key)
     {
+        key = NormalizeOptionSignatureKey(key);
         var remaining = key.Trim();
         var sawToken = false;
         while (remaining.Length > 0)
@@ -159,6 +165,32 @@ internal static partial class OptionSignatureNormalizationSupport
             && value.Any(char.IsLetter)
             && value.Where(char.IsLetter).All(char.IsUpper);
 
+    private static bool TryNormalizeCompositePlaceholderPrefix(string value, out string normalizedValue)
+    {
+        normalizedValue = string.Empty;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var separatorIndex = value.IndexOf(' ');
+        if (separatorIndex <= 0)
+        {
+            return false;
+        }
+
+        var firstToken = value[..separatorIndex].Trim();
+        var remainder = value[(separatorIndex + 1)..].TrimStart();
+        if (!IsBareOptionPlaceholder(firstToken)
+            || !(remainder.StartsWith("[", StringComparison.Ordinal) || remainder.StartsWith("<", StringComparison.Ordinal)))
+        {
+            return false;
+        }
+
+        normalizedValue = $"<{firstToken.ToUpperInvariant()}> {remainder}";
+        return true;
+    }
+
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))", RegexOptions.Compiled)]
     private static partial Regex OptionTokenRegex();
 
@@ -168,4 +200,3 @@ internal static partial class OptionSignatureNormalizationSupport
     [GeneratedRegex(@"(?<option>(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*))\s+(?<placeholder>[A-Za-z][A-Za-z0-9_\.\-]*)(?=\s*(?:[,|]\s*(?:--[A-Za-z0-9][A-Za-z0-9_\.\?\-]*|-[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9][A-Za-z0-9_\.\?\-]*)|$))", RegexOptions.Compiled)]
     private static partial Regex InterleavedOptionPlaceholderRegex();
 }
-

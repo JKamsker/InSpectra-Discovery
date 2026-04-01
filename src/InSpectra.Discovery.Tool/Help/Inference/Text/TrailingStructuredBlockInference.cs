@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Help.Inference.Text;
 
 using InSpectra.Discovery.Tool.Help.Signatures;
+using InSpectra.Discovery.Tool.Help.Parsing;
 
 
 using System.Text.RegularExpressions;
@@ -96,7 +97,7 @@ internal static partial class TrailingStructuredBlockInference
         }
 
         var trimmed = rawLine.Trim();
-        if (OptionRowRegex().IsMatch(trimmed) || CommandPrototypeSupport.LooksLikeBareShortLongOptionRow(rawLine))
+        if (LegacyOptionRowSupport.LooksLikeLooseOptionRow(trimmed))
         {
             rowKind = StructuredRowKind.Option;
             return true;
@@ -114,9 +115,6 @@ internal static partial class TrailingStructuredBlockInference
     private static int GetIndentation(string rawLine)
         => rawLine.TakeWhile(char.IsWhiteSpace).Count();
 
-    [GeneratedRegex(@"^(?:--?[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*)(?:\s*[,|]\s*(?:--?[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*|/[A-Za-z0-9\?][A-Za-z0-9_\.\?\-]*))*?(?:\s{2,}\S.*)?$", RegexOptions.Compiled)]
-    private static partial Regex OptionRowRegex();
-
     [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]*\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex PositionalArgumentRowRegex();
 
@@ -131,4 +129,3 @@ internal static partial class TrailingStructuredBlockInference
         Argument,
     }
 }
-

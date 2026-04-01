@@ -57,6 +57,11 @@ internal static class OpenCliOptionCollisionMergeSupport
             }
         }
 
+        if (TryResolveAlternativeValueFormDuplicate(leftEntry.Option, rightOption, leftInformational, rightInformational, out resolvedEntry))
+        {
+            return true;
+        }
+
         if (!OpenCliOptionDescriptionSupport.AreCompatibleDescriptions(
                 leftDescription,
                 rightDescription,
@@ -285,5 +290,86 @@ internal static class OpenCliOptionCollisionMergeSupport
         var minimum = arity["minimum"]?.GetValue<int>();
         var maximum = arity["maximum"]?.GetValue<int>();
         return minimum == 0 && maximum == 1;
+    }
+
+    private static bool TryResolveAlternativeValueFormDuplicate(
+        JsonObject leftOption,
+        JsonObject rightOption,
+        bool leftInformational,
+        bool rightInformational,
+        out OpenCliOptionCollisionEntry resolvedEntry)
+    {
+        resolvedEntry = new OpenCliOptionCollisionEntry(leftOption, OpenCliOptionSupport.GetOptionTokens(leftOption));
+        if (leftInformational
+            || rightInformational
+            || !OpenCliOptionSupport.HasArguments(leftOption)
+            || !OpenCliOptionSupport.HasArguments(rightOption))
+        {
+            return false;
+        }
+
+        var leftTokens = OpenCliOptionSupport.GetOptionTokens(leftOption);
+        var rightTokens = OpenCliOptionSupport.GetOptionTokens(rightOption);
+        if (!leftTokens.SetEquals(rightTokens))
+        {
+            return false;
+        }
+
+        var leftArgument = GetSingleArgument(leftOption);
+        var rightArgument = GetSingleArgument(rightOption);
+        if (leftArgument is null || rightArgument is null)
+        {
+            return false;
+        }
+
+        var leftDescription = leftOption["description"]?.GetValue<string>();
+        var rightDescription = rightOption["description"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(leftDescription) || string.IsNullOrWhiteSpace(rightDescription))
+        {
+            return false;
+        }
+
+        var preferred = ScoreOption(leftOption) >= ScoreOption(rightOption) ? leftOption : rightOption;
+        var other = ReferenceEquals(preferred, leftOption) ? rightOption : leftOption;
+        var merged = OpenCliOptionSupport.MergeOptions(preferred, other);
+        merged["description"] = MergeAlternativeValueFormDescriptions(leftDescription, rightDescription);
+        merged["arguments"] = new JsonArray
+        {
+            BuildMergedArgument(leftOption["name"]?.GetValue<string>(), leftArgument, rightArgument),
+        };
+        resolvedEntry = new OpenCliOptionCollisionEntry(merged, OpenCliOptionSupport.GetOptionTokens(merged));
+        return true;
+    }
+
+    private static JsonObject? GetSingleArgument(JsonObject option)
+        => option["arguments"] is JsonArray arguments && arguments.Count == 1
+            ? arguments[0] as JsonObject
+            : null;
+
+    private static string MergeAlternativeValueFormDescriptions(string leftDescription, string rightDescription)
+    {
+        var lines = leftDescription
+            .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Concat(rightDescription.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return string.Join("\n", lines);
+    }
+
+    private static JsonObject BuildMergedArgument(string? optionName, JsonObject leftArgument, JsonObject rightArgument)
+    {
+        var mergedArgument = (JsonObject)leftArgument.DeepClone();
+        mergedArgument["name"] = OpenCliOptionSupport.DeriveSyntheticArgumentName(optionName);
+
+        var leftRequired = leftArgument["required"]?.GetValue<bool>() == true;
+        var rightRequired = rightArgument["required"]?.GetValue<bool>() == true;
+        mergedArgument["required"] = leftRequired && rightRequired;
+
+        if (mergedArgument["arity"] is JsonObject arity)
+        {
+            arity["minimum"] = leftRequired && rightRequired ? 1 : 0;
+        }
+
+        return mergedArgument;
     }
 }
