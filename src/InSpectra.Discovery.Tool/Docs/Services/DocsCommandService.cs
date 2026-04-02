@@ -70,6 +70,35 @@ internal sealed class DocsCommandService
             cancellationToken);
     }
 
+    public async Task<int> BuildGitHubPagesSnapshotAsync(
+        string repositoryRoot,
+        string sourceRoot,
+        string outputRoot,
+        bool json,
+        CancellationToken cancellationToken)
+    {
+        var root = RepositoryPathResolver.ResolveRepositoryRoot(repositoryRoot);
+        var sourceDirectory = Path.GetFullPath(Path.Combine(root, sourceRoot));
+        var outputDirectory = Path.GetFullPath(Path.Combine(root, outputRoot));
+        var snapshot = await DocsGitHubPagesSnapshotSupport.BuildAsync(sourceDirectory, outputDirectory, cancellationToken);
+        var output = Runtime.CreateOutput();
+
+        return await output.WriteSuccessAsync(
+            new
+            {
+                sourceRoot = snapshot.SourceRoot,
+                outputRoot = snapshot.OutputRoot,
+                publishedFileCount = snapshot.PublishedFileCount,
+            },
+            [
+                new SummaryRow("Source root", snapshot.SourceRoot),
+                new SummaryRow("Output root", snapshot.OutputRoot),
+                new SummaryRow("Published JSON files", snapshot.PublishedFileCount.ToString()),
+            ],
+            json,
+            cancellationToken);
+    }
+
     public async Task<int> BuildFullyIndexedDocumentationReportAsync(
         string repositoryRoot,
         string manifestPath,
@@ -106,4 +135,3 @@ internal sealed class DocsCommandService
             cancellationToken);
     }
 }
-

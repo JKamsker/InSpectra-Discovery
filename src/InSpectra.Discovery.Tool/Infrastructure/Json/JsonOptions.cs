@@ -19,6 +19,10 @@ internal static class JsonOptions
         // Repository JSON is stored and diffed as files, not embedded into HTML.
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
-}
 
+    public static readonly JsonSerializerOptions MinifiedRepositoryFiles = new(RepositoryFiles)
+    {
+        WriteIndented = false,
+    };
+}
 

@@ -1,0 +1,75 @@
+name: Publish Index Pages
+
+on:
+  push:
+    paths:
+      - index/**
+      - src/InSpectra.Discovery.Tool/**
+      - .github/workflows/publish-index-pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-index-pages
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build GitHub Pages snapshot
+        id: snapshot
+        shell: pwsh
+        run: |
+          $publishRoot = Join-Path $env:RUNNER_TEMP 'gh-pages-site'
+          dotnet run --project src/InSpectra.Discovery.Tool/InSpectra.Discovery.Tool.csproj --configuration Release -- `
+            docs github-pages-snapshot `
+            --repo-root "$PWD" `
+            --output-root "$publishRoot"
+          "publish_root=$publishRoot" >> $env:GITHUB_OUTPUT
+
+      - name: Publish snapshot to gh_pages branch
+        shell: pwsh
+        run: |
+          $publishRoot = '${{ steps.snapshot.outputs.publish_root }}'
+          $worktreePath = Join-Path $env:RUNNER_TEMP 'gh-pages-worktree'
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          if (Test-Path -LiteralPath $worktreePath) {
+            Remove-Item -LiteralPath $worktreePath -Recurse -Force
+          }
+
+          git worktree add --detach $worktreePath
+
+          Push-Location $worktreePath
+          try {
+            git checkout --orphan gh-pages-publish
+            git rm -r -f --ignore-unmatch .
+
+            Get-ChildItem -Force | Where-Object { $_.Name -ne '.git' } | Remove-Item -Recurse -Force
+            Get-ChildItem -LiteralPath $publishRoot -Force | Copy-Item -Destination $worktreePath -Recurse -Force
+
+            git add --all
+            git commit -m 'deploy: publish index pages'
+            git push --force origin HEAD:gh_pages
+          }
+          finally {
+            Pop-Location
+            git worktree remove $worktreePath --force
+          }

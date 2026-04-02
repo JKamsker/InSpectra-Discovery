@@ -26,6 +26,7 @@ internal static class DocsModule
         services.AddTransient<DocsRegenerateHelpCrawlsCommand>();
         services.AddTransient<DocsRegenerateXmldocOpenCliCommand>();
         services.AddTransient<DocsBrowserIndexCommand>();
+        services.AddTransient<DocsGitHubPagesSnapshotCommand>();
         services.AddTransient<DocsFullyIndexedReportCommand>();
 
         return services;
@@ -48,6 +49,7 @@ internal static class DocsModule
             docs.AddCommand<DocsRegenerateHelpCrawlsCommand>("regenerate-help-crawls").WithDescription("Regenerate generic help OpenCLI artifacts from stored crawl.json captures.");
             docs.AddCommand<DocsRegenerateXmldocOpenCliCommand>("regenerate-xmldoc-opencli").WithDescription("Regenerate XMLDoc-synthesized OpenCLI artifacts from stored xmldoc.xml files.");
             docs.AddCommand<DocsBrowserIndexCommand>("browser-index").WithDescription("Build the lightweight browser index from index/all.json.");
+            docs.AddCommand<DocsGitHubPagesSnapshotCommand>("github-pages-snapshot").WithDescription("Build a minified GitHub Pages snapshot from selected index JSON artifacts.");
             docs.AddCommand<DocsFullyIndexedReportCommand>("fully-indexed-report").WithDescription("Build the fully indexed package documentation coverage report.");
         });
     }
