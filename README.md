@@ -64,7 +64,7 @@ fallback to recursive --help crawl"| Results["Analysis results"]
 ## Repository structure
 
 ```
-src/InSpectra.Discovery.Tool/        # .NET 8 tool/CLI (discovery, analysis, promotion)
+src/InSpectra.Discovery.Tool/        # .NET 10 tool/CLI (discovery, analysis, promotion)
 scripts/                             # Legacy/manual PowerShell helpers
 .github/workflows/                   # CI/CD pipelines (scheduled discovery, batch analysis)
 docs/Plans/                          # Reusable checked-in analysis plans
@@ -143,6 +143,16 @@ Each analyzed tool produces versioned artifacts under `index/packages/{packageId
 
 A global manifest at `index/all.json` lists all indexed packages with their latest status.
 
+### GitHub Pages Snapshot
+
+The repository also exposes a publish-ready Pages snapshot that keeps only the web-facing JSON artifacts:
+
+```powershell
+dotnet run --project src/InSpectra.Discovery.Tool -- docs github-pages-snapshot --output-root artifacts/github-pages
+```
+
+That command copies only `index.json`, `metadata.json`, and `opencli.json`, preserves their paths relative to `index/`, minifies the JSON payloads, and writes a `.nojekyll` marker for GitHub Pages hosting.
+
 ### Troubleshooting Suspicious OpenCLI Artifacts
 
 After a promotion commit, audit newly added `latest/opencli.json` artifacts before trusting unusual command trees:
@@ -199,6 +209,7 @@ The wrapper reuses `.github/scripts/run-analysis-in-docker.ps1` for the containe
 | `promote-untrusted-analysis-results` | On demand | Promotes successful results into the main index |
 | `index-unindexed-nuget-tools` | On demand | Builds the current unindexed backlog, analyzes 250-item batches in parallel, and promotes by merging the batch plans/artifacts |
 | `queue-indexed-metadata-backfill` | On demand | Backfills historical versions for indexed packages |
+| `publish-index-pages` | On `index/**` or docs-tool changes, plus manual dispatch | Builds the minified GitHub Pages snapshot and force-pushes `gh_pages` as a single-commit branch |
 
 ## Prerequisites
 
