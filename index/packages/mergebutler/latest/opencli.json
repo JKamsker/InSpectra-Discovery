@@ -1,0 +1,348 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "MergeButler",
+    "version": "0.0.2",
+    "description": "Package Description"
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.5.0",
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "MergeButler - Automated PR approval tool"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "evaluate",
+      "description": "Evaluate a pull request against configured rules and optionally approve it.",
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the MergeButler YAML configuration file. [default: mergebutler.yaml]",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--pr",
+          "recursive": false,
+          "hidden": false,
+          "description": "URL of the pull request to evaluate.",
+          "arguments": [
+            {
+              "name": "PR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--platform",
+          "recursive": false,
+          "hidden": false,
+          "description": "The platform hosting the pull request.",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PLATFORM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Platform",
+              "allowedValues": [
+                "GitHub",
+                "AzureDevOps"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--token",
+          "recursive": false,
+          "hidden": false,
+          "description": "Authentication token for the platform API. Defaults to GITHUB_TOKEN or AZURE_DEVOPS_TOKEN environment variable.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOKEN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Evaluate the pull request without submitting an approval. [default: False]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "description": "Start the MergeButler MCP server for local development (stdio transport)."
+    },
+    {
+      "name": "config",
+      "description": "View or modify MergeButler configuration (exclusions and rules).",
+      "commands": [
+        {
+          "name": "show",
+          "description": "Display the effective merged configuration and where each item comes from."
+        },
+        {
+          "name": "set-exclusion",
+          "description": "Add or update an exclusion pattern.",
+          "options": [
+            {
+              "name": "--target",
+              "recursive": false,
+              "hidden": false,
+              "description": "What the pattern matches against. [default: Both]",
+              "arguments": [
+                {
+                  "name": "TARGET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "ExclusionTarget",
+                  "allowedValues": [
+                    "Title",
+                    "Description",
+                    "Both"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to save: user-level or repo-level. [default: Repo]",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "ConfigScope",
+                  "allowedValues": [
+                    "User",
+                    "Repo"
+                  ]
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "pattern",
+              "description": "The exclusion pattern to add or update.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "set-rule",
+          "description": "Add or update a rule.",
+          "options": [
+            {
+              "name": "--type",
+              "recursive": false,
+              "hidden": false,
+              "description": "The rule type.",
+              "arguments": [
+                {
+                  "name": "TYPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "RuleType",
+                  "allowedValues": [
+                    "FileGlob",
+                    "Agentic"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--patterns",
+              "recursive": false,
+              "hidden": false,
+              "description": "File glob patterns (for fileGlob rules). Specify multiple: --patterns *.md --patterns docs/**",
+              "arguments": [
+                {
+                  "name": "PATTERNS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--prompt",
+              "recursive": false,
+              "hidden": false,
+              "description": "Evaluation prompt (for agentic rules).",
+              "arguments": [
+                {
+                  "name": "PROMPT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to save: user-level or repo-level. [default: Repo]",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "ConfigScope",
+                  "allowedValues": [
+                    "User",
+                    "Repo"
+                  ]
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "name",
+              "description": "The rule name (used as unique identifier).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "setup",
+      "description": "Set up mergiraf, configure Git for structural merging, and install the resolve-conflicts Copilot skill.",
+      "options": [
+        {
+          "name": "--yes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip all prompts and perform every setup step automatically. [default: False]",
+          "aliases": [
+            "-y"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
