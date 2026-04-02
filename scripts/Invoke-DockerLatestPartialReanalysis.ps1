@@ -57,6 +57,7 @@ $summaryPath = Join-Path $resolvedWorkingRoot 'promotion-summary.json'
 $toolProject = Join-Path $repositoryRoot 'src\InSpectra.Discovery.Tool\InSpectra.Discovery.Tool.csproj'
 $dockerRunnerPath = Join-Path $repositoryRoot '.github\scripts\run-analysis-in-docker.ps1'
 $resolvedToolRoot = $null
+$resolvedToolAssemblyPath = $null
 
 function Normalize-Segment {
     param([string]$Value)
@@ -104,20 +105,44 @@ function Resolve-ToolRoot {
     return $defaultToolRoot
 }
 
+function Invoke-DiscoveryTool {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepositoryRoot,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$ToolAssemblyPath,
+
+        [Parameter(Mandatory = $true)]
+        [string[]]$ArgumentList
+    )
+
+    if (Test-Path -LiteralPath $ToolAssemblyPath) {
+        & dotnet $ToolAssemblyPath @ArgumentList | Out-Host
+    }
+    else {
+        $runArgs = @('run', '--project', $ProjectPath, '--') + $ArgumentList
+        dotnet @runArgs | Out-Host
+    }
+
+    return $LASTEXITCODE
+}
+
 try {
     $resolvedToolRoot = Resolve-ToolRoot `
         -RepositoryRoot $repositoryRoot `
         -ProjectPath $toolProject `
         -ConfigurationName $Configuration `
         -ToolRootPath $ToolRoot
+    $resolvedToolAssemblyPath = Join-Path $resolvedToolRoot 'InSpectra.Discovery.Tool.dll'
 
     New-Item -ItemType Directory -Path (Split-Path -Parent $expectedPath) -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $resolvedWorkingRoot 'results') -Force | Out-Null
 
     $exportArgs = @(
-        'run',
-        '--project', $toolProject,
-        '--',
         'docs',
         'export-latest-partials-plan',
         '--output', $expectedPath,
@@ -150,8 +175,12 @@ try {
         $exportArgs += @('--limit', $Limit.ToString([System.Globalization.CultureInfo]::InvariantCulture))
     }
 
-    dotnet @exportArgs | Out-Host
-    if ($LASTEXITCODE -ne 0) {
+    $exportExitCode = Invoke-DiscoveryTool `
+        -RepositoryRoot $repositoryRoot `
+        -ProjectPath $toolProject `
+        -ToolAssemblyPath $resolvedToolAssemblyPath `
+        -ArgumentList $exportArgs
+    if ($exportExitCode -ne 0) {
         throw "Failed to export latest partial plan."
     }
 
@@ -180,8 +209,19 @@ try {
             -Json
     }
 
-    dotnet run --project $toolProject -- promotion apply-untrusted --download-root $resolvedWorkingRoot --summary-output $summaryPath --json | Out-Host
-    if ($LASTEXITCODE -ne 0) {
+    $applyArgs = @(
+        'promotion',
+        'apply-untrusted',
+        '--download-root', $resolvedWorkingRoot,
+        '--summary-output', $summaryPath,
+        '--json'
+    )
+    $applyExitCode = Invoke-DiscoveryTool `
+        -RepositoryRoot $repositoryRoot `
+        -ProjectPath $toolProject `
+        -ToolAssemblyPath $resolvedToolAssemblyPath `
+        -ArgumentList $applyArgs
+    if ($applyExitCode -ne 0) {
         throw "Failed to apply untrusted promotion output from '$resolvedWorkingRoot'."
     }
 
