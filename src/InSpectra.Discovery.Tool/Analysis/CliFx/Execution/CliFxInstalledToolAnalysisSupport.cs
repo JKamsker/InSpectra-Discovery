@@ -74,9 +74,24 @@ internal sealed class CliFxInstalledToolAnalysisSupport
         crawlStopwatch.Stop();
         var coverage = _coverageClassifier.Classify(staticCommands.Count, crawl);
         var coverageJson = coverage.ToJsonObject();
+        var outputLimitExceededCommands = crawl.CaptureSummaries.Values
+            .Where(summary => summary.OutputLimitExceeded)
+            .Select(summary => string.IsNullOrWhiteSpace(summary.Command) ? "<root>" : summary.Command)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         result["coverage"] = coverageJson;
+        if (outputLimitExceededCommands.Length > 0)
+        {
+            NonSpectreResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "crawl",
+                classification: "clifx-output-too-large",
+                $"{ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage()} Affected commands: {string.Join(", ", outputLimitExceededCommands)}.");
+            return;
+        }
+
         if (!CommandInstallationSupport.TryWriteCrawlArtifactOrApplyFailure(
             outputDirectory,
             result,
@@ -90,21 +105,6 @@ internal sealed class CliFxInstalledToolAnalysisSupport
 
         if (crawl.Documents.Count == 0 && staticCommands.Count == 0)
         {
-            var outputLimitExceededCommands = crawl.CaptureSummaries.Values
-                .Where(summary => summary.OutputLimitExceeded)
-                .Select(summary => string.IsNullOrWhiteSpace(summary.Command) ? "<root>" : summary.Command)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-            if (outputLimitExceededCommands.Length > 0)
-            {
-                NonSpectreResultSupport.ApplyTerminalFailure(
-                    result,
-                    phase: "crawl",
-                    classification: "clifx-output-too-large",
-                    $"{ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage()} Affected commands: {string.Join(", ", outputLimitExceededCommands)}.");
-                return;
-            }
-
             if (string.Equals(coverage.RuntimeCompatibilityMode, "missing-framework", StringComparison.Ordinal))
             {
                 NonSpectreResultSupport.ApplyTerminalFailure(

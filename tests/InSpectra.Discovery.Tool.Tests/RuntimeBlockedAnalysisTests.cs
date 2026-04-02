@@ -6,6 +6,7 @@ using InSpectra.Discovery.Tool.Analysis.CliFx.OpenCli;
 using InSpectra.Discovery.Tool.Analysis.NonSpectre;
 using InSpectra.Discovery.Tool.Help.Crawling;
 using InSpectra.Discovery.Tool.Help.OpenCli;
+using InSpectra.Discovery.Tool.Infrastructure.Artifacts;
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 using System.Text.Json.Nodes;
@@ -203,7 +204,7 @@ public sealed class RuntimeBlockedAnalysisTests
             TimedOut: false,
             ExitCode: 0,
             DurationMs: 1,
-            Stdout: ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage(),
+            Stdout: new string('x', CrawlArtifactValidationSupport.MaxArtifactBytes),
             Stderr: string.Empty,
             OutputLimitExceeded: true);
 

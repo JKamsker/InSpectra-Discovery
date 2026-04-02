@@ -58,8 +58,23 @@ internal sealed class InstalledToolAnalyzer
         var crawler = new Crawler(_runtime);
         var crawl = await crawler.CrawlAsync(installedTool.CommandPath, commandName, tempRoot, installedTool.Environment, commandTimeoutSeconds, cancellationToken);
         crawlStopwatch.Stop();
+        var outputLimitExceededCommands = crawl.CaptureSummaries.Values
+            .Where(summary => summary.OutputLimitExceeded)
+            .Select(summary => string.IsNullOrWhiteSpace(summary.Command) ? "<root>" : summary.Command)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
+        if (outputLimitExceededCommands.Length > 0)
+        {
+            NonSpectreResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "crawl",
+                classification: "help-crawl-output-too-large",
+                $"{ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage()} Affected commands: {string.Join(", ", outputLimitExceededCommands)}.");
+            return;
+        }
+
         if (!CommandInstallationSupport.TryWriteCrawlArtifactOrApplyFailure(
             outputDirectory,
             result,
@@ -70,21 +85,6 @@ internal sealed class InstalledToolAnalyzer
 
         if (crawl.Documents.Count == 0)
         {
-            var outputLimitExceededCommands = crawl.CaptureSummaries.Values
-                .Where(summary => summary.OutputLimitExceeded)
-                .Select(summary => string.IsNullOrWhiteSpace(summary.Command) ? "<root>" : summary.Command)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-            if (outputLimitExceededCommands.Length > 0)
-            {
-                NonSpectreResultSupport.ApplyTerminalFailure(
-                    result,
-                    phase: "crawl",
-                    classification: "help-crawl-output-too-large",
-                    $"{ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage()} Affected commands: {string.Join(", ", outputLimitExceededCommands)}.");
-                return;
-            }
-
             var runtimeIssues = crawl.CaptureSummaries.Values
                 .Select(summary => DotnetRuntimeCompatibilitySupport.DetectMissingFramework(
                     summary.Command,
