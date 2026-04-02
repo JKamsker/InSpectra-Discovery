@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-02 09:52:46+00:00
+Generated: 2026-04-02 12:33:03+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
