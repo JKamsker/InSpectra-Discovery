@@ -221,7 +221,7 @@ internal static class SystemCommandLineConstructorReaderSupport
         }
     }
 
-    private static OptionValue? TryBuildOptionValue(TypeSig? typeSig, IReadOnlyList<ConstructorValue> arguments)
+    internal static OptionValue? TryBuildOptionValue(TypeSig? typeSig, IReadOnlyList<ConstructorValue> arguments)
     {
         var (longName, shortName) = ReadOptionAliases(arguments.FirstOrDefault());
         if (longName is null && shortName is null)
@@ -245,7 +245,7 @@ internal static class SystemCommandLineConstructorReaderSupport
                 PropertyName: null));
     }
 
-    private static ArgumentValue? TryBuildArgumentValue(TypeSig? typeSig, IReadOnlyList<ConstructorValue> arguments)
+    internal static ArgumentValue? TryBuildArgumentValue(TypeSig? typeSig, IReadOnlyList<ConstructorValue> arguments)
     {
         var rawName = arguments.FirstOrDefault() switch
         {
@@ -314,13 +314,13 @@ internal static class SystemCommandLineConstructorReaderSupport
             ? genericInstSig.GenericArguments[0]
             : null;
 
-    private static bool IsOptionType(ITypeDefOrRef? type)
+    internal static bool IsOptionType(ITypeDefOrRef? type)
         => type?.FullName.StartsWith("System.CommandLine.Option", StringComparison.Ordinal) == true;
 
-    private static bool IsArgumentType(ITypeDefOrRef? type)
+    internal static bool IsArgumentType(ITypeDefOrRef? type)
         => type?.FullName.StartsWith("System.CommandLine.Argument", StringComparison.Ordinal) == true;
 
-    private static bool TryGetLocalIndex(Instruction instruction, out int index)
+    internal static bool TryGetLocalIndex(Instruction instruction, out int index)
     {
         index = instruction.OpCode.Code switch
         {
@@ -345,7 +345,7 @@ internal static class SystemCommandLineConstructorReaderSupport
         return false;
     }
 
-    private static bool TryReadInt32(Instruction instruction, out int value)
+    internal static bool TryReadInt32(Instruction instruction, out int value)
     {
         value = instruction.OpCode.Code switch
         {
@@ -390,20 +390,29 @@ internal static class SystemCommandLineConstructorReaderSupport
         return value;
     }
 
-    private abstract record ConstructorValue;
+    internal abstract record ConstructorValue;
 
-    private sealed record StringValue(string? Value) : ConstructorValue;
+    internal sealed record StringValue(string? Value) : ConstructorValue;
 
-    private sealed record Int32Value(int Value) : ConstructorValue;
+    internal sealed record Int32Value(int Value) : ConstructorValue;
 
-    private sealed record StringArrayValue(int Length) : ConstructorValue
+    internal sealed record StringArrayValue(int Length) : ConstructorValue
     {
+        public StringArrayValue(string?[] values)
+            : this(values.Length)
+        {
+            for (var index = 0; index < values.Length; index++)
+            {
+                Values[index] = values[index];
+            }
+        }
+
         public string?[] Values { get; } = new string?[Length];
     }
 
-    private sealed record OptionValue(StaticOptionDefinition Definition) : ConstructorValue;
+    internal sealed record OptionValue(StaticOptionDefinition Definition) : ConstructorValue;
 
-    private sealed record ArgumentValue(StaticValueDefinition Definition) : ConstructorValue;
+    internal sealed record ArgumentValue(StaticValueDefinition Definition) : ConstructorValue;
 
     private sealed record CurrentCommandValue : ConstructorValue
     {
@@ -415,7 +424,7 @@ internal static class SystemCommandLineConstructorReaderSupport
         public static NullValue Instance { get; } = new();
     }
 
-    private sealed record UnknownValue : ConstructorValue
+    internal sealed record UnknownValue : ConstructorValue
     {
         public static UnknownValue Instance { get; } = new();
     }

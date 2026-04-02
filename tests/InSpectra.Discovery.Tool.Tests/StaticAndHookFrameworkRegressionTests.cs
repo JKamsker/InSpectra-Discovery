@@ -76,6 +76,26 @@ namespace InSpectra.Discovery.Tool.Tests
         }
 
         [Fact]
+        public void SystemCommandLineReader_Reads_Fluent_Factory_Built_Root_And_Subcommands()
+        {
+            using var module = LoadCurrentTestModule();
+
+            var reader = new SystemCommandLineAttributeReader();
+            var commands = reader.Read([new ScannedModule(module.Location!, module)]);
+
+            Assert.True(commands.TryGetValue(string.Empty, out var rootCommand));
+            Assert.NotNull(rootCommand);
+            Assert.Equal("Factory root description.", rootCommand!.Description);
+            Assert.Contains(rootCommand.Options, option => string.Equals(option.LongName, "verbose", StringComparison.Ordinal));
+
+            Assert.True(commands.TryGetValue("sync", out var syncCommand));
+            Assert.NotNull(syncCommand);
+            Assert.Equal("Sync data.", syncCommand!.Description);
+            Assert.Contains(syncCommand.Options, option => string.Equals(option.LongName, "source", StringComparison.Ordinal));
+            Assert.Contains(syncCommand.Values, argument => string.Equals(argument.Name, "path", StringComparison.Ordinal));
+        }
+
+        [Fact]
         public void CommandLineParserTreeWalker_Builds_Verb_Root_From_TypeInfo_Choices()
         {
             var parseResult = new FakeCommandLineParserResult(new FakeCommandLineParserTypeInfo
@@ -199,6 +219,24 @@ namespace InSpectra.Discovery.Tool.Tests.CommandLineFixtures
             Add(verboseOption);
         }
     }
+
+    public static class FluentFactoryCommandBuilder
+    {
+        public static global::System.CommandLine.RootCommand Build()
+        {
+            var root = new global::System.CommandLine.RootCommand("Factory root description.");
+            var verboseOption = new global::System.CommandLine.Option<bool>("--verbose", "Verbose logging.");
+            var syncCommand = new global::System.CommandLine.Command("sync", "Sync data.");
+            var sourceOption = new global::System.CommandLine.Option<string>("--source", "Source path.");
+            var pathArgument = new global::System.CommandLine.Argument<string>("path", "Target path.");
+
+            syncCommand.Add(sourceOption);
+            syncCommand.Add(pathArgument);
+            root.Add(verboseOption);
+            root.Add(syncCommand);
+            return root;
+        }
+    }
 }
 
 namespace CommandLine
@@ -263,11 +301,23 @@ namespace System.CommandLine
 {
     public class Command
     {
+        public Command()
+        {
+        }
+
+        public Command(string name, string? description = null)
+        {
+        }
+
         public void Add<T>(Option<T> option)
         {
         }
 
         public void Add<T>(Argument<T> argument)
+        {
+        }
+
+        public void Add(Command command)
         {
         }
 
@@ -282,6 +332,13 @@ namespace System.CommandLine
 
     public class RootCommand : Command
     {
+        public RootCommand()
+        {
+        }
+
+        public RootCommand(string? description)
+        {
+        }
     }
 
     public class Option<T>

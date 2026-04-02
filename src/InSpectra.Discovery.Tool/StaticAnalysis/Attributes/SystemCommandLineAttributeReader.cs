@@ -53,7 +53,12 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
                 }
 
                 var key = definition.Name ?? string.Empty;
-                StaticCommandDefinitionSupport.UpsertBest(commands, key, definition);
+                UpsertMerged(commands, key, definition);
+            }
+
+            foreach (var pair in SystemCommandLineFactoryMethodReaderSupport.Read(scannedModule.Module))
+            {
+                UpsertMerged(commands, pair.Key, pair.Value);
             }
         }
 
@@ -285,5 +290,35 @@ internal sealed class SystemCommandLineAttributeReader : IStaticAttributeReader
         }
 
         return sb.ToString();
+    }
+
+    private static void UpsertMerged(
+        IDictionary<string, StaticCommandDefinition> commands,
+        string key,
+        StaticCommandDefinition candidate)
+    {
+        if (!commands.TryGetValue(key, out var existing))
+        {
+            commands[key] = candidate;
+            return;
+        }
+
+        commands[key] = new StaticCommandDefinition(
+            Name: existing.Name ?? candidate.Name,
+            Description: existing.Description ?? candidate.Description,
+            IsDefault: existing.IsDefault || candidate.IsDefault,
+            IsHidden: existing.IsHidden && candidate.IsHidden,
+            Values: existing.Values
+                .Concat(candidate.Values)
+                .GroupBy(static value => value.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .Select(static group => group.OrderBy(static value => value.Index).First())
+                .OrderBy(static value => value.Index)
+                .ToArray(),
+            Options: existing.Options
+                .Concat(candidate.Options)
+                .GroupBy(static option => option.LongName ?? option.PropertyName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                .Select(static group => group.First())
+                .OrderBy(static option => option.LongName)
+                .ToArray());
     }
 }
