@@ -49,6 +49,45 @@ public sealed class HookOpenCliBuilderTests
         Assert.Equal("PROJECT", argument!["name"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void Build_Hoists_Directive_Host_Wrapper_Command_For_Startup_Hook_Captures()
+    {
+        var capture = new HookCaptureResult
+        {
+            CliFramework = "System.CommandLine",
+            FrameworkVersion = "2.0.0.0",
+            PatchTarget = "Parse-postfix",
+            Root = new HookCapturedCommand
+            {
+                Name = "Weik.io CLI",
+                Description = "CLI for the Weik.io integration platform",
+                Subcommands =
+                [
+                    new HookCapturedCommand { Name = "#!who", Description = "Host directive" },
+                    new HookCapturedCommand
+                    {
+                        Name = "#!weikio",
+                        Description = "Hello Weik.io",
+                        Subcommands =
+                        [
+                            new HookCapturedCommand { Name = "connector", Description = "Integration connector management" },
+                            new HookCapturedCommand { Name = "version", Description = "Show the version number" },
+                        ],
+                    },
+                ],
+            },
+        };
+
+        var document = HookOpenCliBuilder.Build("weikio", "2024.1.0-preview.37", capture);
+
+        Assert.Equal("Weik.io CLI", document["info"]?["title"]?.GetValue<string>());
+        var commands = document["commands"]?.AsArray().OfType<JsonObject>().ToArray() ?? [];
+        Assert.Equal(
+            new[] { "connector", "version" },
+            commands.Select(command => command["name"]?.GetValue<string>()).ToArray());
+        Assert.DoesNotContain(commands, command => command["name"]?.GetValue<string>()?.StartsWith("#", StringComparison.Ordinal) is true);
+    }
+
     private static HookCaptureResult CreateCapture(string rootName, params HookCapturedOption[] options)
         => new()
         {
