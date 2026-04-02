@@ -3,6 +3,7 @@ namespace InSpectra.Discovery.Tool.Analysis.Execution;
 using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 internal static class RuntimeSupport
 {
@@ -96,8 +97,10 @@ internal static class RuntimeSupport
 
         var stopwatch = Stopwatch.StartNew();
         process.Start();
-        var stdoutTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
-        var stderrTask = process.StandardError.ReadToEndAsync(cancellationToken);
+        var stdout = ProcessOutputCaptureSupport.CreateBuffer();
+        var stderr = ProcessOutputCaptureSupport.CreateBuffer();
+        var stdoutTask = PumpStreamAsync(process.StandardOutput, stdout, cancellationToken);
+        var stderrTask = PumpStreamAsync(process.StandardError, stderr, cancellationToken);
         var waitTask = process.WaitForExitAsync(cancellationToken);
         var timeoutTask = Task.Delay(TimeSpan.FromSeconds(timeoutSeconds), cancellationToken);
 
@@ -120,8 +123,8 @@ internal static class RuntimeSupport
             await waitTask;
         }
 
-        var stdout = await stdoutTask;
-        var stderr = await stderrTask;
+        await stdoutTask;
+        await stderrTask;
         stopwatch.Stop();
 
         return new ProcessResult(
@@ -129,8 +132,9 @@ internal static class RuntimeSupport
             TimedOut: timedOut,
             ExitCode: timedOut ? null : process.ExitCode,
             DurationMs: (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds),
-            Stdout: stdout,
-            Stderr: stderr);
+            Stdout: stdout.ToString(),
+            Stderr: stderr.ToString(),
+            OutputLimitExceeded: stdout.LimitExceeded || stderr.LimitExceeded);
     }
 
     public static string? ResolveInstalledCommandPath(string installDirectory, string commandName)
@@ -175,6 +179,23 @@ internal static class RuntimeSupport
         normalized = normalized.Trim();
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
-}
 
+    private static async Task PumpStreamAsync(
+        StreamReader reader,
+        ProcessOutputCaptureSupport.LimitedOutputBuffer buffer,
+        CancellationToken cancellationToken)
+    {
+        var chunk = new char[4096];
+        while (true)
+        {
+            var readCount = await reader.ReadAsync(chunk.AsMemory(0, chunk.Length), cancellationToken);
+            if (readCount == 0)
+            {
+                return;
+            }
+
+            buffer.Append(chunk, readCount);
+        }
+    }
+}
 

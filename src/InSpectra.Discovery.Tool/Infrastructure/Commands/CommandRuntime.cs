@@ -78,7 +78,8 @@ internal class CommandRuntime
         int? ExitCode,
         int DurationMs,
         string Stdout,
-        string Stderr)
+        string Stderr,
+        bool OutputLimitExceeded = false)
     {
         public JsonObject ToJsonObject()
             => new()
@@ -89,8 +90,8 @@ internal class CommandRuntime
                 ["durationMs"] = DurationMs,
                 ["stdout"] = NormalizeConsoleText(Stdout),
                 ["stderr"] = NormalizeConsoleText(Stderr),
+                ["outputLimitExceeded"] = OutputLimitExceeded,
             };
     }
 }
-
 

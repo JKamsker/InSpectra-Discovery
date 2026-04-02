@@ -89,6 +89,12 @@ internal sealed class CliFxHelpCrawler
                 timeoutSeconds,
                 workingDirectory,
                 cancellationToken);
+            if (processResult.OutputLimitExceeded)
+            {
+                fallbackCapture = SelectFallbackCapture(fallbackCapture, new CliFxHelpCapture(helpSwitch, processResult, null));
+                continue;
+            }
+
             var payload = SelectBestPayload(processResult);
             if (payload is null)
             {
@@ -207,7 +213,8 @@ internal sealed class CliFxHelpCrawler
                 TimedOut: ProcessResult?.TimedOut ?? false,
                 ExitCode: ProcessResult?.ExitCode,
                 Stdout: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
-                Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
+                Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr),
+                OutputLimitExceeded: ProcessResult?.OutputLimitExceeded ?? false);
         }
     }
 }
@@ -219,4 +226,5 @@ internal sealed record CliFxCaptureSummary(
     bool TimedOut,
     int? ExitCode,
     string? Stdout,
-    string? Stderr);
+    string? Stderr,
+    bool OutputLimitExceeded = false);

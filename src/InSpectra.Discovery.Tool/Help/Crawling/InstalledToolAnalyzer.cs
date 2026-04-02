@@ -70,6 +70,21 @@ internal sealed class InstalledToolAnalyzer
 
         if (crawl.Documents.Count == 0)
         {
+            var outputLimitExceededCommands = crawl.CaptureSummaries.Values
+                .Where(summary => summary.OutputLimitExceeded)
+                .Select(summary => string.IsNullOrWhiteSpace(summary.Command) ? "<root>" : summary.Command)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (outputLimitExceededCommands.Length > 0)
+            {
+                NonSpectreResultSupport.ApplyTerminalFailure(
+                    result,
+                    phase: "crawl",
+                    classification: "help-crawl-output-too-large",
+                    $"{ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage()} Affected commands: {string.Join(", ", outputLimitExceededCommands)}.");
+                return;
+            }
+
             var runtimeIssues = crawl.CaptureSummaries.Values
                 .Select(summary => DotnetRuntimeCompatibilitySupport.DetectMissingFramework(
                     summary.Command,

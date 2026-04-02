@@ -9,4 +9,5 @@ internal sealed record CaptureSummary(
     bool TimedOut,
     int? ExitCode,
     string? Stdout,
-    string? Stderr);
+    string? Stderr,
+    bool OutputLimitExceeded = false);

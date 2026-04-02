@@ -10,7 +10,8 @@ internal sealed record ProcessResult(
     int? ExitCode,
     int DurationMs,
     string Stdout,
-    string Stderr)
+    string Stderr,
+    bool OutputLimitExceeded = false)
 {
     public JsonObject ToStepMetadata(bool includeStdout)
     {
@@ -22,6 +23,7 @@ internal sealed record ProcessResult(
             ["durationMs"] = DurationMs,
             ["stdoutLength"] = Encoding.UTF8.GetByteCount(Stdout ?? string.Empty),
             ["stderrLength"] = Encoding.UTF8.GetByteCount(Stderr ?? string.Empty),
+            ["outputLimitExceeded"] = OutputLimitExceeded,
         };
 
         if (includeStdout)

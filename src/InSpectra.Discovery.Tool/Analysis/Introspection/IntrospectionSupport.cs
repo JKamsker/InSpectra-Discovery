@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.Introspection;
 
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 using InSpectra.Discovery.Tool.OpenCli.Documents;
 
@@ -54,6 +55,13 @@ internal static class IntrospectionSupport
             }
 
             message ??= "Command timed out.";
+        }
+        else if (processResult.OutputLimitExceeded)
+        {
+            status = "invalid-output";
+            classification = "output-too-large";
+            dispositionHint = "terminal-failure";
+            message = ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage();
         }
         else if (parse.Success)
         {
@@ -235,4 +243,3 @@ internal static class IntrospectionSupport
         result["failureMessage"] = "The tool did not yield a usable introspection result.";
     }
 }
-

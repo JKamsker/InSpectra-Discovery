@@ -18,8 +18,8 @@ internal static partial class CommandProcessSupport
     {
         using var ownedProcess = process;
         using var readerCancellation = new CancellationTokenSource();
-        var stdout = new StringBuilder();
-        var stderr = new StringBuilder();
+        var stdout = ProcessOutputCaptureSupport.CreateBuffer();
+        var stderr = ProcessOutputCaptureSupport.CreateBuffer();
         var stopwatch = Stopwatch.StartNew();
         ownedProcess.Start();
 
@@ -58,7 +58,8 @@ internal static partial class CommandProcessSupport
                 ExitCode: timedOut ? null : ownedProcess.ExitCode,
                 DurationMs: (int)Math.Round(stopwatch.Elapsed.TotalMilliseconds),
                 Stdout: stdout.ToString(),
-                Stderr: stderr.ToString());
+                Stderr: stderr.ToString(),
+                OutputLimitExceeded: stdout.LimitExceeded || stderr.LimitExceeded);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -126,7 +127,10 @@ internal static partial class CommandProcessSupport
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
 
-    private static async Task PumpStreamAsync(StreamReader reader, StringBuilder buffer, CancellationToken cancellationToken)
+    private static async Task PumpStreamAsync(
+        StreamReader reader,
+        ProcessOutputCaptureSupport.LimitedOutputBuffer buffer,
+        CancellationToken cancellationToken)
     {
         var chunk = new char[4096];
         while (true)
@@ -146,7 +150,7 @@ internal static partial class CommandProcessSupport
                 return;
             }
 
-            buffer.Append(chunk, 0, readCount);
+            buffer.Append(chunk, readCount);
         }
     }
 
@@ -203,5 +207,4 @@ internal static partial class CommandProcessSupport
     [GeneratedRegex(@"\x1B[@-_]", RegexOptions.Compiled)]
     private static partial Regex AnsiEscapeRegex();
 }
-
 

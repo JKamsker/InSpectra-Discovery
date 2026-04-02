@@ -100,6 +100,62 @@ public sealed class RuntimeBlockedAnalysisTests
         Assert.Contains("currently only supported on linux-x64", result["failureMessage"]?.GetValue<string>());
     }
 
+    [Fact]
+    public async Task HelpAnalyzer_Reports_OutputTooLarge_Failure_When_Help_Output_Exceeds_Capture_Limit()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var runtime = new FakeInstallingRuntime("demo", OutputTooLargeResult);
+        var analyzer = new InstalledToolAnalyzer(runtime, new OpenCliBuilder());
+        var result = CreateInitialResult("help");
+
+        await analyzer.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("crawl", result["phase"]?.GetValue<string>());
+        Assert.Equal("help-crawl-output-too-large", result["classification"]?.GetValue<string>());
+        Assert.Contains(ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage(), result["failureMessage"]?.GetValue<string>());
+        Assert.Contains("<root>", result["failureMessage"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task CliFxAnalyzer_Reports_OutputTooLarge_Failure_When_Help_Output_Exceeds_Capture_Limit()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var runtime = new FakeInstallingRuntime("demo", OutputTooLargeResult);
+        var analyzer = new CliFxInstalledToolAnalysisSupport(
+            runtime,
+            new CliFxMetadataInspector(),
+            new CliFxOpenCliBuilder(),
+            new CliFxCoverageClassifier());
+        var result = CreateInitialResult("clifx", cliFramework: "CliFx");
+
+        await analyzer.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("crawl", result["phase"]?.GetValue<string>());
+        Assert.Equal("clifx-output-too-large", result["classification"]?.GetValue<string>());
+        Assert.Contains(ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage(), result["failureMessage"]?.GetValue<string>());
+        Assert.Contains("<root>", result["failureMessage"]?.GetValue<string>());
+    }
+
     private static JsonObject CreateInitialResult(string analysisMode, string? cliFramework = null)
         => NonSpectreResultSupport.CreateInitialResult(
             packageId: "Demo.Tool",
@@ -140,6 +196,16 @@ public sealed class RuntimeBlockedAnalysisTests
             Platform win-x64 not supported yet.
             """,
             Stderr: string.Empty);
+
+    private static CommandRuntime.ProcessResult OutputTooLargeResult()
+        => new(
+            Status: "ok",
+            TimedOut: false,
+            ExitCode: 0,
+            DurationMs: 1,
+            Stdout: ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage(),
+            Stderr: string.Empty,
+            OutputLimitExceeded: true);
 
     private sealed class FakeInstallingRuntime(
         string commandName,

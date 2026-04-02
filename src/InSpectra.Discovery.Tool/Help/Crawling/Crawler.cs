@@ -162,6 +162,11 @@ internal sealed class Crawler
             commandSegments,
             invokedArguments,
             processResult);
+        if (processResult.OutputLimitExceeded)
+        {
+            return new Capture(helpInvocation, processResult, null, null, false);
+        }
+
         return new Capture(helpInvocation, processResult, selection.Document, selection.Payload, selection.IsTerminalNonHelp);
     }
 
@@ -220,7 +225,8 @@ internal sealed class Crawler
                 TimedOut: ProcessResult?.TimedOut ?? false,
                 ExitCode: ProcessResult?.ExitCode,
                 Stdout: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
-                Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr));
+                Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr),
+                OutputLimitExceeded: ProcessResult?.OutputLimitExceeded ?? false);
         }
     }
 }
