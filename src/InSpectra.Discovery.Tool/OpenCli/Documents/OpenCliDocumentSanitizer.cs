@@ -20,6 +20,7 @@ internal static partial class OpenCliDocumentSanitizer
     public static JsonObject Sanitize(JsonObject document)
     {
         SanitizeInfoTitle(document);
+        OpenCliStartupHookDirectiveHostNormalizationSupport.Normalize(document);
         SanitizeNode(document, arrayContext: null);
         return document;
     }
