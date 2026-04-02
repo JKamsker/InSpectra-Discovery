@@ -48,6 +48,7 @@ jobs:
             docs github-pages-snapshot `
             --repo-root "$PWD" `
             --output-root "$publishRoot"
+          Set-Content -LiteralPath (Join-Path $publishRoot 'CNAME') -Value 'inspectra-data.kamsker.at' -NoNewline
           "publish_root=$publishRoot" >> $env:GITHUB_OUTPUT
 
       - name: Publish snapshot to gh_pages branch
@@ -81,3 +82,15 @@ jobs:
             Pop-Location
             git worktree remove $worktreePath --force
           }
+
+      - name: Configure GitHub Pages custom domain
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh api `
+            --method PUT `
+            repos/${{ github.repository }}/pages `
+            -f source[branch]=gh_pages `
+            -f source[path]=/ `
+            -f cname=inspectra-data.kamsker.at
