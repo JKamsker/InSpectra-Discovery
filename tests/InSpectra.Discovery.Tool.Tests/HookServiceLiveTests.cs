@@ -31,13 +31,15 @@ public sealed class HookServiceLiveTests
             "1.4.4",
             "amsmigrate",
             "Azure Media Services Asset Migration Tool",
-            expectedCommands: ["analyze", "assets", "storage", "keys", "liveevents", "transforms"]));
+            expectedCommands: ["analyze", "assets", "storage", "keys", "liveevents", "transforms"],
+            expectedOptions: ["--log-level", "-l", "--subscription", "--resource-group", "--account-name", "--cloud-type", "-d", "--version", "-h"]));
         data.Add(new HookLiveToolCase(
             "CSharpier",
             "1.2.6",
             "csharpier",
             "CSharpier",
-            expectedCommands: ["format", "check", "pipe-files", "server"]));
+            expectedCommands: ["format", "check", "pipe-files", "server"],
+            expectedOptions: ["--version", "-h"]));
         data.Add(new HookLiveToolCase(
             "cassini.cli",
             "1.0.18",
@@ -50,7 +52,8 @@ public sealed class HookServiceLiveTests
             "0.4.3",
             "ccpdf",
             "CCPDF",
-            expectedCommands: ["compress", "resize", "rezip"]));
+            expectedCommands: ["compress", "resize", "rezip"],
+            expectedOptions: ["--version", "-h"]));
         data.Add(new HookLiveToolCase(
             "Cnct",
             "0.5.0",
@@ -62,7 +65,8 @@ public sealed class HookServiceLiveTests
             "1.5.0",
             "mdt",
             "mdt",
-            expectedArguments: ["file"]));
+            expectedOptions: ["--in-place", "--output", "--force", "--progress", "--quite", "--lang", "--mode", "--version", "-h"],
+            expectedArguments: ["FILE"]));
         data.Add(new HookLiveToolCase(
             "dotnet-httpie",
             "0.17.0-preview-20260321-070334",
@@ -132,17 +136,20 @@ public sealed class HookServiceLiveTests
                 "process-build-version",
                 "check-updates",
                 "list-unity",
-            ]));
+            ],
+            expectedOptions: ["--version", "-h"]));
         data.Add(new HookLiveToolCase(
             "Walgelijk.FontGenerator",
             "1.6.0",
             "wfont",
-            "Walgelijk.FontGenerator"));
+            "Walgelijk.FontGenerator",
+            expectedOptions: ["--input", "--output", "--charset", "--font-size", "--version", "-h"]));
         data.Add(new HookLiveToolCase(
             "PyWinRT",
             "3.2.1",
             "pywinrt",
-            "PyWinRT"));
+            "PyWinRT",
+            expectedOptions: ["--input", "--reference", "--output", "--include", "--exclude", "--header-path", "--nullability-json", "--component-dlls", "--verbose", "--version", "-h"]));
         data.Add(new HookLiveToolCase(
             "PatliteTool",
             "1.4.0",

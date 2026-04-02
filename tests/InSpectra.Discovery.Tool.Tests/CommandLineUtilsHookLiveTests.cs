@@ -34,7 +34,7 @@ public sealed class CommandLineUtilsHookLiveTests
             "versioninfo",
             "versioninfo",
             expectedOptions: ["--relative", "--json", "--version", "--help"],
-            expectedArguments: ["Pattern"]));
+            expectedArguments: ["PATTERN"]));
         data.Add(new CommandLineUtilsHookToolCase(
             "McMaster.Extensions.CommandLineUtils",
             "dotnet-tinify",
@@ -42,7 +42,7 @@ public sealed class CommandLineUtilsHookLiveTests
             "dotnet-tinify",
             "dotnet tinify",
             expectedOptions: ["--help", "--api-key"],
-            expectedArguments: ["path"]));
+            expectedArguments: ["PATH"]));
         data.Add(new CommandLineUtilsHookToolCase(
             "McMaster.Extensions.CommandLineUtils",
             "Neo.Trace",
@@ -80,7 +80,7 @@ public sealed class CommandLineUtilsHookLiveTests
             "dotnet-tcloud",
             "dotnet-tcloud",
             expectedOptions: ["--help", "--cookie", "--uin", "--csrf"],
-            expectedArguments: ["MarkdownFilePath"]));
+            expectedArguments: ["MARKDOWNFILEPATH"]));
         data.Add(new CommandLineUtilsHookToolCase(
             "Microsoft.Extensions.CommandLineUtils",
             "SignClient",
