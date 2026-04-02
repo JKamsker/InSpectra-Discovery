@@ -5,6 +5,7 @@ internal static class HelpCrawlGuardrailSupport
     public const int MaxCommandDepth = 8;
     public const int MaxCapturedCommands = 64;
     public const int MaxChildCommandsPerDocument = 48;
+    public const int MaxTimedOutHelpInvocationsPerCommand = 3;
     public const int MaxPayloadCharacters = 262_144;
     public const int MaxPayloadLines = 4_000;
 
@@ -45,5 +46,12 @@ internal static class HelpCrawlGuardrailSupport
         var displayName = string.IsNullOrWhiteSpace(commandName) ? "<root>" : commandName;
         return
             $"Help crawling exceeded the per-command child budget of {MaxChildCommandsPerDocument} commands at '{displayName}' ({commandCount} discovered).";
+    }
+
+    public static string BuildTimedOutHelpInvocationBudgetExceededMessage(string commandName)
+    {
+        var displayName = string.IsNullOrWhiteSpace(commandName) ? "<root>" : commandName;
+        return
+            $"Help crawling exceeded the per-command timeout budget of {MaxTimedOutHelpInvocationsPerCommand} timed-out help invocations at '{displayName}'.";
     }
 }

@@ -870,6 +870,34 @@ public sealed class CrawlerTests
         Assert.Equal(["--help"], runtime.Invocations.Select(args => string.Join(' ', args)));
     }
 
+    [Fact]
+    public async Task CrawlAsync_Stops_After_Repeated_Timed_Out_Help_Invocations_For_The_Same_Command()
+    {
+        var runtime = new FakeCommandRuntime(_ => Result(timedOut: true));
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "demo",
+            "demo",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal(
+            HelpCrawlGuardrailSupport.MaxTimedOutHelpInvocationsPerCommand,
+            runtime.Invocations.Count);
+        Assert.Equal(
+            new[] { "--help", "-h", "-?" },
+            runtime.Invocations.Select(args => string.Join(' ', args)).ToArray());
+        Assert.True(result.CaptureSummaries[string.Empty].TimedOut);
+        Assert.NotNull(result.CaptureSummaries[string.Empty].GuardrailFailureMessage);
+        Assert.Contains(
+            HelpCrawlGuardrailSupport.MaxTimedOutHelpInvocationsPerCommand.ToString(),
+            result.CaptureSummaries[string.Empty].GuardrailFailureMessage);
+        Assert.Equal([""], result.CaptureSummaries.Keys);
+    }
+
     private static CommandRuntime.ProcessResult Result(string? stdout = null, string? stderr = null, int exitCode = 0, bool timedOut = false)
         => new(
             Status: timedOut ? "timed-out" : exitCode == 0 ? "ok" : "failed",

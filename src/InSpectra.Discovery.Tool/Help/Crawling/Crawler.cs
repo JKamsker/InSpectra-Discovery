@@ -118,6 +118,8 @@ internal sealed class Crawler
         CancellationToken cancellationToken)
     {
         Capture? bestCapture = null;
+        var timedOutInvocationCount = 0;
+        var commandKey = InvocationSupport.GetCommandKey(commandSegments);
         foreach (var candidate in InvocationSupport.BuildHelpInvocations(commandSegments))
         {
             var processResult = await DotnetRuntimeCompatibilitySupport.InvokeWithCompatibilityRetriesAsync(
@@ -136,6 +138,17 @@ internal sealed class Crawler
                 bestCapture = capture;
             }
 
+            if (processResult.TimedOut)
+            {
+                timedOutInvocationCount++;
+                if (timedOutInvocationCount >= HelpCrawlGuardrailSupport.MaxTimedOutHelpInvocationsPerCommand)
+                {
+                    return ApplyGuardrailFailure(
+                        bestCapture,
+                        HelpCrawlGuardrailSupport.BuildTimedOutHelpInvocationBudgetExceededMessage(commandKey));
+                }
+            }
+
             if (capture.Document?.HasContent == true)
             {
                 return capture;
@@ -148,6 +161,19 @@ internal sealed class Crawler
         }
 
         return bestCapture ?? new Capture(null, null, null, null, false, null);
+    }
+
+    private static Capture ApplyGuardrailFailure(Capture? capture, string failureMessage)
+    {
+        if (capture is null)
+        {
+            return new Capture(null, null, null, null, false, failureMessage);
+        }
+
+        return capture with
+        {
+            GuardrailFailureMessage = failureMessage,
+        };
     }
 
     private static void EnqueueChild(string childKey, Queue<string[]> queue, ISet<string> seen)

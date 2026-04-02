@@ -183,6 +183,34 @@ public sealed class RuntimeBlockedAnalysisTests
     }
 
     [Fact]
+    public async Task HelpAnalyzer_Reports_BudgetExceeded_Failure_When_Help_Probes_Keep_Timing_Out()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var runtime = new FakeInstallingRuntime("demo", TimedOutResult);
+        var analyzer = new InstalledToolAnalyzer(runtime, new OpenCliBuilder());
+        var result = CreateInitialResult("help");
+
+        await analyzer.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("crawl", result["phase"]?.GetValue<string>());
+        Assert.Equal("help-crawl-budget-exceeded", result["classification"]?.GetValue<string>());
+        Assert.Contains(HelpCrawlGuardrailSupport.MaxTimedOutHelpInvocationsPerCommand.ToString(), result["failureMessage"]?.GetValue<string>());
+        Assert.Equal(
+            HelpCrawlGuardrailSupport.MaxTimedOutHelpInvocationsPerCommand,
+            runtime.AnalysisInvocations.Count);
+    }
+
+    [Fact]
     public async Task CliFxAnalyzer_Reports_BudgetExceeded_Failure_When_Help_Payload_Exceeds_Parse_Budget()
     {
         using var tempDirectory = new TestTemporaryDirectory();
@@ -295,6 +323,15 @@ public sealed class RuntimeBlockedAnalysisTests
             OPTIONS
               --verbose  {{new string('x', HelpCrawlGuardrailSupport.MaxPayloadCharacters)}}
             """,
+            Stderr: string.Empty);
+
+    private static CommandRuntime.ProcessResult TimedOutResult()
+        => new(
+            Status: "timed-out",
+            TimedOut: true,
+            ExitCode: null,
+            DurationMs: 1,
+            Stdout: string.Empty,
             Stderr: string.Empty);
 
     private sealed class FakeInstallingRuntime(
