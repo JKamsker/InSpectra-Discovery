@@ -106,5 +106,12 @@ public sealed class OpenCliDocumentPublishabilityInspectorTests
 
         Assert.True(OpenCliDocumentPublishabilityInspector.LooksLikeNonPublishableDescription(description));
     }
-}
 
+    [Fact]
+    public void LooksLikeNonPublishableDescription_Does_Not_Reject_Mcp_Server_Help_Text()
+    {
+        const string description = "Start as MCP server (stdio transport, for AI agents)";
+
+        Assert.False(OpenCliDocumentPublishabilityInspector.LooksLikeNonPublishableDescription(description));
+    }
+}

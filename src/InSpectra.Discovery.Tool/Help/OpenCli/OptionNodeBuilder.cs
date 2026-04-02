@@ -10,15 +10,26 @@ using System.Text.Json.Nodes;
 
 internal sealed class OptionNodeBuilder
 {
-    public JsonArray? Build(Document? helpDocument)
+    public JsonArray? Build(string rootCommandName, string commandPath, Document? helpDocument)
     {
-        if (helpDocument?.Options.Count is not > 0)
+        if (helpDocument is null)
+        {
+            return null;
+        }
+
+        var optionItems = helpDocument.Options.Count > 0
+            ? helpDocument.Options
+            : InSpectra.Discovery.Tool.Help.Inference.Usage.UsageOptionInferenceSupport.ExtractOptions(
+                rootCommandName,
+                commandPath,
+                helpDocument.UsageLines);
+        if (optionItems.Count is not > 0)
         {
             return null;
         }
 
         var options = new JsonArray();
-        foreach (var item in helpDocument.Options)
+        foreach (var item in optionItems)
         {
             var signature = OptionSignatureSupport.Parse(item.Key);
             if (signature.PrimaryName is null)
@@ -82,4 +93,3 @@ internal sealed class OptionNodeBuilder
             ["maximum"] = 1,
         };
 }
-

@@ -96,10 +96,9 @@ internal static partial class OpenCliDocumentPublishabilityInspector
     [GeneratedRegex(@"\b(?:System\.\w+Exception|Unhandled\s+[Ee]xception|FileNotFoundException|ArgumentNullException|NullReferenceException|StackOverflowException|InvalidOperationException)\b|^\s*at\s+\S+\.\S+\(|^\s*---\s*>", RegexOptions.Compiled | RegexOptions.Multiline)]
     private static partial Regex ErrorTextRegex();
 
-    [GeneratedRegex(@"Unhandled exception\b|Hosting failed to start\b|Now listening on:|Application started\.|Microsoft\.Hosting\.Lifetime|System\.[A-Za-z]+Exception\b|Traceback \(most recent call last\):|Press any key to exit|Cannot read keys when either application does not have a console|You must install or update \.NET|A fatal error was encountered|It was not possible to find any compatible framework version|required to execute the application was not found|\bMCP\b.*\btransport\b|\btransport\b.*\bMCP\b", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+    [GeneratedRegex(@"Unhandled exception\b|Hosting failed to start\b|Now listening on:|Application started\.|Microsoft\.Hosting\.Lifetime|System\.[A-Za-z]+Exception\b|Traceback \(most recent call last\):|Press any key to exit|Cannot read keys when either application does not have a console|You must install or update \.NET|A fatal error was encountered|It was not possible to find any compatible framework version|required to execute the application was not found", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline)]
     private static partial Regex DescriptionNoiseRegex();
 
     [GeneratedRegex(@"^(?:Error|Warning)\b|^There was an error\b|\bfatal error\b|\berror creating\b|\berror while\b|\bPlease try the command\b|\blibhostpolicy\.so\b|\bAttempt to copy\b", RegexOptions.Compiled | RegexOptions.IgnoreCase)]
     private static partial Regex ErrorLikeTitleRegex();
 }
-

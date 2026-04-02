@@ -75,6 +75,31 @@ public sealed class RuntimeBlockedAnalysisTests
             invocation => invocation.Environment.ContainsKey(DotnetRuntimeCompatibilitySupport.DotnetRollForwardEnvironmentVariableName));
     }
 
+    [Fact]
+    public async Task HelpAnalyzer_Reports_PlatformBlocked_Failure_When_Tool_Does_Not_Support_Current_Platform()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var runtime = new FakeInstallingRuntime("demo", UnsupportedPlatformResult);
+        var analyzer = new InstalledToolAnalyzer(runtime, new OpenCliBuilder());
+        var result = CreateInitialResult("help");
+
+        await analyzer.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("crawl", result["phase"]?.GetValue<string>());
+        Assert.Equal("help-crawl-platform-blocked", result["classification"]?.GetValue<string>());
+        Assert.Contains("currently only supported on linux-x64", result["failureMessage"]?.GetValue<string>());
+    }
+
     private static JsonObject CreateInitialResult(string analysisMode, string? cliFramework = null)
         => NonSpectreResultSupport.CreateInitialResult(
             packageId: "Demo.Tool",
@@ -103,7 +128,22 @@ public sealed class RuntimeBlockedAnalysisTests
               10.0.5 at [C:\Program Files\dotnet\shared\Microsoft.NETCore.App]
             """);
 
-    private sealed class FakeInstallingRuntime(string commandName) : CommandRuntime
+    private static CommandRuntime.ProcessResult UnsupportedPlatformResult()
+        => new(
+            Status: "failed",
+            TimedOut: false,
+            ExitCode: 127,
+            DurationMs: 1,
+            Stdout:
+            """
+            AppMap for .NET is currently only supported on linux-x64.
+            Platform win-x64 not supported yet.
+            """,
+            Stderr: string.Empty);
+
+    private sealed class FakeInstallingRuntime(
+        string commandName,
+        Func<CommandRuntime.ProcessResult>? analysisResultFactory = null) : CommandRuntime
     {
         public List<InvocationRecord> AnalysisInvocations { get; } = [];
 
@@ -138,7 +178,7 @@ public sealed class RuntimeBlockedAnalysisTests
                 argumentList.ToArray(),
                 new Dictionary<string, string>(environment, StringComparer.OrdinalIgnoreCase));
             AnalysisInvocations.Add(invocation);
-            return Task.FromResult(MissingFrameworkResult());
+            return Task.FromResult((analysisResultFactory ?? MissingFrameworkResult).Invoke());
         }
     }
 

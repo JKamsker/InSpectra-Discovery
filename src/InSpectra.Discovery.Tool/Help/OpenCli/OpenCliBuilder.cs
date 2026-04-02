@@ -37,7 +37,7 @@ internal sealed partial class OpenCliBuilder
             ["commands"] = rootCommands,
         };
 
-        AddIfPresent(document, "options", _optionBuilder.Build(rootHelp));
+        AddIfPresent(document, "options", _optionBuilder.Build(commandName, string.Empty, rootHelp));
         AddIfPresent(document, "arguments", _argumentBuilder.Build(commandName, string.Empty, rootHelp));
         return OpenCliDocumentSanitizer.Sanitize(document);
     }
@@ -48,6 +48,7 @@ internal sealed partial class OpenCliBuilder
         IReadOnlyDictionary<string, Document> helpDocuments)
     {
         helpDocuments.TryGetValue(commandNode.FullName, out var helpDocument);
+        helpDocument ??= UsagePrototypeDocumentSupport.Create(commandName, commandNode.FullName, helpDocuments);
         var node = new JsonObject
         {
             ["name"] = commandNode.DisplayName,
@@ -55,7 +56,7 @@ internal sealed partial class OpenCliBuilder
         };
 
         AddIfPresent(node, "description", helpDocument?.CommandDescription ?? commandNode.Description);
-        AddIfPresent(node, "options", _optionBuilder.Build(helpDocument));
+        AddIfPresent(node, "options", _optionBuilder.Build(commandName, commandNode.FullName, helpDocument));
         AddIfPresent(node, "arguments", _argumentBuilder.Build(commandName, commandNode.FullName, helpDocument));
 
         if (commandNode.Children.Count > 0)

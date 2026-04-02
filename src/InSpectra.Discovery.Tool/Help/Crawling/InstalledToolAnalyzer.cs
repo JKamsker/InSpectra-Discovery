@@ -9,6 +9,7 @@ using InSpectra.Discovery.Tool.Analysis.NonSpectre;
 using InSpectra.Discovery.Tool.Infrastructure.Artifacts;
 
 using InSpectra.Discovery.Tool.Help.OpenCli;
+using InSpectra.Discovery.Tool.Help.Documents;
 
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
@@ -89,6 +90,19 @@ internal sealed class InstalledToolAnalyzer
                             .Select(issue => issue.Requirement!)
                             .Distinct()
                             .ToArray()));
+                return;
+            }
+
+            var platformBlockedMessage = crawl.CaptureSummaries.Values
+                .SelectMany(summary => new[] { summary.Stdout, summary.Stderr })
+                .FirstOrDefault(DocumentInspector.LooksLikePlatformBlockedPayload);
+            if (!string.IsNullOrWhiteSpace(platformBlockedMessage))
+            {
+                NonSpectreResultSupport.ApplyTerminalFailure(
+                    result,
+                    phase: "crawl",
+                    classification: "help-crawl-platform-blocked",
+                    platformBlockedMessage);
                 return;
             }
 
