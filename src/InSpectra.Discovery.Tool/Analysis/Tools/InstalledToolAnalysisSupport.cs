@@ -88,9 +88,8 @@ internal sealed class InstalledToolAnalysisSupport
             commandTimeoutSeconds,
             cancellationToken);
 
-        IntrospectionSupport.ApplyOutputs(result, outputDirectory, openCliOutcome, xmlDocOutcome);
+        IntrospectionSupport.ApplyOutputs(result, outputDirectory, ref openCliOutcome, xmlDocOutcome);
         IntrospectionSupport.ApplyClassification(result, openCliOutcome, xmlDocOutcome);
     }
 }
-
 

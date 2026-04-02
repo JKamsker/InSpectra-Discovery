@@ -19,6 +19,7 @@ using InSpectra.Discovery.Tool.Infrastructure.Commands;
 using InSpectra.Discovery.Tool.StaticAnalysis.OpenCli;
 
 using InSpectra.Discovery.Tool.Analysis;
+using InSpectra.Discovery.Tool.Analysis.OpenCli;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 
@@ -123,19 +124,12 @@ internal sealed class StaticInstalledToolAnalysisSupport
             result["nugetTitle"]?.GetValue<string>(),
             result["nugetDescription"]?.GetValue<string>());
 
-        if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
-        {
-            NonSpectreResultSupport.ApplyTerminalFailure(
-                result,
-                phase: "opencli",
-                classification: "invalid-opencli-artifact",
-                validationError ?? "Generated OpenCLI artifact is not publishable.");
-            return;
-        }
-
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
-        result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        NonSpectreResultSupport.ApplySuccess(result, classification: "static-crawl", artifactSource: "static-analysis");
+        OpenCliAnalysisArtifactValidationSupport.TryWriteValidatedArtifact(
+            result,
+            outputDirectory,
+            openCliDocument,
+            successClassification: "static-crawl",
+            artifactSource: "static-analysis");
     }
 
     private static bool ApplyInspectionFailure(JsonObject result, StaticAnalysisAssemblyInspectionResult inspection)

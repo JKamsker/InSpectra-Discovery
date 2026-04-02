@@ -19,8 +19,6 @@ internal sealed record StoredOpenCliArtifactCandidate(
 
 internal static class StoredOpenCliArtifactCandidateFactory
 {
-    private const long InlineArtifactSizeLimitBytes = 2 * 1024 * 1024;
-
     public static StoredOpenCliArtifactCandidate? TryCreateAnyCandidate(
         string repositoryRoot,
         string metadataPath)
@@ -123,7 +121,7 @@ internal static class StoredOpenCliArtifactCandidateFactory
     private static JsonObject? TryLoadInspectableOpenCli(string openCliPath)
     {
         var openCliFileSize = new FileInfo(openCliPath).Length;
-        return openCliFileSize <= InlineArtifactSizeLimitBytes
+        return openCliFileSize <= OpenCliDocumentValidator.MaxArtifactSizeBytes
             ? JsonNodeFileLoader.TryLoadJsonObject(openCliPath)
             : null;
     }
@@ -157,18 +155,16 @@ internal static class StoredOpenCliArtifactCandidateFactory
 
 internal static class StoredOpenCliArtifactRegenerationSupport
 {
-    private const long MaxArtifactSizeBytes = 2 * 1024 * 1024;
-
     public static bool ProcessCandidate(string repositoryRoot, StoredOpenCliArtifactCandidate candidate)
     {
         var fileSize = new FileInfo(candidate.OpenCliPath).Length;
-        if (fileSize > MaxArtifactSizeBytes)
+        if (fileSize > OpenCliDocumentValidator.MaxArtifactSizeBytes)
         {
             var rejectedMetadataChanged = OpenCliArtifactRejectionSupport.RejectInvalidArtifact(
                 repositoryRoot,
                 candidate.MetadataPath,
                 candidate.OpenCliPath,
-                $"OpenCLI artifact is implausibly large ({fileSize / 1024 / 1024} MB).",
+                OpenCliDocumentValidator.BuildOversizedArtifactReason(fileSize),
                 xmldocPath: candidate.XmlDocPath);
             var rejectedStateChanged = IndexedStatePathsRepair.SyncFromMetadata(repositoryRoot, candidate.MetadataPath);
             return rejectedMetadataChanged || rejectedStateChanged;

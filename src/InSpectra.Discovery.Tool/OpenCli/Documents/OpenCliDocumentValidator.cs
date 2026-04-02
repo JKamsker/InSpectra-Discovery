@@ -4,14 +4,24 @@ using InSpectra.Discovery.Tool.OpenCli.Structure;
 
 using InSpectra.Discovery.Tool.Promotion.Artifacts;
 
+using System.Text;
 using System.Text.Json.Nodes;
 
 internal static class OpenCliDocumentValidator
 {
+    internal const long MaxArtifactSizeBytes = 2 * 1024 * 1024;
+
     public static bool TryLoadValidDocument(string path, out JsonObject? document, out string? reason)
     {
         document = null;
         reason = null;
+
+        var fileSize = new FileInfo(path).Length;
+        if (fileSize > MaxArtifactSizeBytes)
+        {
+            reason = BuildOversizedArtifactReason(fileSize);
+            return false;
+        }
 
         if (!PromotionArtifactSupport.TryLoadJsonObject(path, out var parsedDocument) || parsedDocument is null)
         {
@@ -31,6 +41,13 @@ internal static class OpenCliDocumentValidator
     public static bool TryValidateDocument(JsonObject document, out string? reason)
     {
         reason = null;
+
+        var serializedSizeBytes = Encoding.UTF8.GetByteCount(document.ToJsonString());
+        if (serializedSizeBytes > MaxArtifactSizeBytes)
+        {
+            reason = BuildOversizedArtifactReason(serializedSizeBytes);
+            return false;
+        }
 
         if (string.IsNullOrWhiteSpace(OpenCliValidationSupport.GetString(document["opencli"])))
         {
@@ -87,6 +104,9 @@ internal static class OpenCliDocumentValidator
 
         return true;
     }
+
+    public static string BuildOversizedArtifactReason(long artifactSizeBytes)
+        => $"OpenCLI artifact is implausibly large ({artifactSizeBytes / 1024 / 1024} MB).";
 
     private static bool TryValidateInfo(JsonObject document, out string? reason)
     {

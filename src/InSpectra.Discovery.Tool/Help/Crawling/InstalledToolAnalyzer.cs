@@ -14,6 +14,7 @@ using InSpectra.Discovery.Tool.Help.Documents;
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 using InSpectra.Discovery.Tool.Analysis;
+using InSpectra.Discovery.Tool.Analysis.OpenCli;
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 
@@ -125,18 +126,11 @@ internal sealed class InstalledToolAnalyzer
             result["nugetTitle"]?.GetValue<string>(),
             result["nugetDescription"]?.GetValue<string>());
 
-        if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
-        {
-            NonSpectreResultSupport.ApplyTerminalFailure(
-                result,
-                phase: "opencli",
-                classification: "invalid-opencli-artifact",
-                validationError ?? "Generated OpenCLI artifact is not publishable.");
-            return;
-        }
-
-        RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
-        result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        NonSpectreResultSupport.ApplySuccess(result, classification: "help-crawl", artifactSource: "crawled-from-help");
+        OpenCliAnalysisArtifactValidationSupport.TryWriteValidatedArtifact(
+            result,
+            outputDirectory,
+            openCliDocument,
+            successClassification: "help-crawl",
+            artifactSource: "crawled-from-help");
     }
 }

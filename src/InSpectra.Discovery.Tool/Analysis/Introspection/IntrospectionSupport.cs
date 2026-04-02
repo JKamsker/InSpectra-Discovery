@@ -101,21 +101,17 @@ internal static class IntrospectionSupport
     public static void ApplyOutputs(
         JsonObject result,
         string outputDirectory,
-        IntrospectionOutcome openCliOutcome,
+        ref IntrospectionOutcome openCliOutcome,
         IntrospectionOutcome xmlDocOutcome)
     {
         result["timings"]!.AsObject()["opencliMs"] = openCliOutcome.ProcessResult.DurationMs;
         result["timings"]!.AsObject()["xmldocMs"] = xmlDocOutcome.ProcessResult.DurationMs;
 
+        openCliOutcome = NormalizeOpenCliOutcome(openCliOutcome);
+
         if (openCliOutcome.ArtifactObject is JsonObject openCliDocument)
         {
-            OpenCliDocumentSanitizer.EnsureArtifactSource(openCliDocument, "tool-output");
-            RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), OpenCliDocumentSanitizer.Sanitize(openCliDocument));
-            result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
-        }
-        else if (openCliOutcome.ArtifactObject is not null)
-        {
-            RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliOutcome.ArtifactObject);
+            RepositoryPathResolver.WriteJsonFile(Path.Combine(outputDirectory, "opencli.json"), openCliDocument);
             result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
         }
 
@@ -141,6 +137,45 @@ internal static class IntrospectionSupport
         result["steps"]!.AsObject()["opencli"] = openCliOutcome.ToStepMetadata(result["artifacts"]?["opencliArtifact"]?.GetValue<string>());
         result["steps"]!.AsObject()["xmldoc"] = xmlDocOutcome.ToStepMetadata(result["artifacts"]?["xmldocArtifact"]?.GetValue<string>());
     }
+
+    private static IntrospectionOutcome NormalizeOpenCliOutcome(IntrospectionOutcome openCliOutcome)
+    {
+        if (openCliOutcome.ArtifactObject is null)
+        {
+            return openCliOutcome;
+        }
+
+        if (openCliOutcome.ArtifactObject is not JsonObject openCliDocument)
+        {
+            return CreateInvalidOpenCliOutcome(openCliOutcome, "OpenCLI artifact is not a JSON object.");
+        }
+
+        OpenCliDocumentSanitizer.EnsureArtifactSource(openCliDocument, "tool-output");
+        OpenCliDocumentSanitizer.Sanitize(openCliDocument);
+
+        if (!OpenCliDocumentValidator.TryValidateDocument(openCliDocument, out var validationError))
+        {
+            return CreateInvalidOpenCliOutcome(
+                openCliOutcome,
+                validationError ?? "Generated OpenCLI artifact is not publishable.");
+        }
+
+        return openCliOutcome with
+        {
+            ArtifactObject = openCliDocument,
+        };
+    }
+
+    private static IntrospectionOutcome CreateInvalidOpenCliOutcome(IntrospectionOutcome openCliOutcome, string message)
+        => openCliOutcome with
+        {
+            Status = "invalid-output",
+            Classification = "invalid-opencli-artifact",
+            DispositionHint = "terminal-failure",
+            Message = message,
+            ArtifactObject = null,
+            ArtifactText = null,
+        };
 
     public static void ApplyClassification(JsonObject result, IntrospectionOutcome openCliOutcome, IntrospectionOutcome xmlDocOutcome)
     {
@@ -200,5 +235,4 @@ internal static class IntrospectionSupport
         result["failureMessage"] = "The tool did not yield a usable introspection result.";
     }
 }
-
 

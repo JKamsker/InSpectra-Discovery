@@ -495,6 +495,32 @@ public sealed class OpenCliDocumentValidatorTests
         Assert.Equal("OpenCLI artifact looks like a startup-hook capture of the dotnet host instead of the installed tool.", reason);
     }
 
+    [Fact]
+    public void TryValidateDocument_Rejects_Implausibly_Large_Artifacts()
+    {
+        var document = new JsonObject
+        {
+            ["opencli"] = "0.1-draft",
+            ["info"] = new JsonObject
+            {
+                ["title"] = "demo",
+                ["description"] = new string('a', (int)OpenCliDocumentValidator.MaxArtifactSizeBytes),
+            },
+            ["options"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["name"] = "--verbose",
+                },
+            },
+        };
+
+        var valid = OpenCliDocumentValidator.TryValidateDocument(document, out var reason);
+
+        Assert.False(valid);
+        Assert.Equal("OpenCLI artifact is implausibly large (2 MB).", reason);
+    }
+
     private static JsonObject CreateCommandPathNode(IReadOnlyList<string> commandNames, int index = 0)
     {
         var node = new JsonObject
