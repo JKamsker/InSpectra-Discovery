@@ -16,7 +16,6 @@ using System.Text.Json.Nodes;
 
 internal sealed class Crawler
 {
-    private const int MaxCommandDepth = 8;
     private readonly TextParser _parser = new();
     private readonly CommandRuntime _runtime;
 
@@ -43,9 +42,16 @@ internal sealed class Crawler
         var documents = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase);
         var captures = new Dictionary<string, JsonObject>(StringComparer.OrdinalIgnoreCase);
         var captureSummaries = new Dictionary<string, CaptureSummary>(StringComparer.OrdinalIgnoreCase);
+        string? guardrailFailureMessage = null;
 
         while (queue.Count > 0)
         {
+            if (captures.Count >= HelpCrawlGuardrailSupport.MaxCapturedCommands)
+            {
+                guardrailFailureMessage = HelpCrawlGuardrailSupport.BuildCaptureBudgetExceededMessage();
+                break;
+            }
+
             var commandSegments = queue.Dequeue();
             var key = InvocationSupport.GetCommandKey(commandSegments);
             if (documents.ContainsKey(key))
@@ -63,16 +69,17 @@ internal sealed class Crawler
             }
 
             documents[key] = capture.Document;
-            if (commandSegments.Length >= MaxCommandDepth
+            if (commandSegments.Length >= HelpCrawlGuardrailSupport.MaxCommandDepth
                 || DocumentInspector.IsBuiltinAuxiliaryInventoryEcho(key, capture.Document))
             {
                 continue;
             }
 
+            var childKeys = new List<string>();
             foreach (var child in capture.Document.Commands)
             {
                 var resolvedChildKey = CommandPathSupport.ResolveChildKey(rootCommandName, key, child.Key);
-                EnqueueChild(resolvedChildKey, queue, seen);
+                childKeys.Add(resolvedChildKey);
             }
 
             if (capture.Document.Commands.Count == 0)
@@ -82,12 +89,23 @@ internal sealed class Crawler
                     commandSegments,
                     capture.Document.UsageLines))
                 {
-                    EnqueueChild(inferredChildKey, queue, seen);
+                    childKeys.Add(inferredChildKey);
                 }
+            }
+
+            if (childKeys.Count > HelpCrawlGuardrailSupport.MaxChildCommandsPerDocument)
+            {
+                guardrailFailureMessage = HelpCrawlGuardrailSupport.BuildCommandFanoutExceededMessage(key, childKeys.Count);
+                break;
+            }
+
+            foreach (var childKey in childKeys)
+            {
+                EnqueueChild(childKey, queue, seen);
             }
         }
 
-        return new CrawlResult(documents, captures, captureSummaries);
+        return new CrawlResult(documents, captures, captureSummaries, guardrailFailureMessage);
     }
 
     private async Task<Capture> CaptureHelpAsync(
@@ -129,7 +147,7 @@ internal sealed class Crawler
             }
         }
 
-        return bestCapture ?? new Capture(null, null, null, null, false);
+        return bestCapture ?? new Capture(null, null, null, null, false, null);
     }
 
     private static void EnqueueChild(string childKey, Queue<string[]> queue, ISet<string> seen)
@@ -141,7 +159,7 @@ internal sealed class Crawler
             return;
         }
 
-        if (childSegments.Length <= MaxCommandDepth && seen.Add(normalizedChildKey))
+        if (childSegments.Length <= HelpCrawlGuardrailSupport.MaxCommandDepth && seen.Add(normalizedChildKey))
         {
             queue.Enqueue(childSegments);
         }
@@ -164,10 +182,16 @@ internal sealed class Crawler
             processResult);
         if (processResult.OutputLimitExceeded)
         {
-            return new Capture(helpInvocation, processResult, null, null, false);
+            return new Capture(helpInvocation, processResult, null, null, false, null);
         }
 
-        return new Capture(helpInvocation, processResult, selection.Document, selection.Payload, selection.IsTerminalNonHelp);
+        return new Capture(
+            helpInvocation,
+            processResult,
+            selection.Document,
+            selection.Payload,
+            selection.IsTerminalNonHelp,
+            selection.GuardrailFailureMessage);
     }
 
     internal static IReadOnlyList<string[]> BuildHelpInvocations(IReadOnlyList<string> commandSegments)
@@ -198,7 +222,8 @@ internal sealed class Crawler
         CommandRuntime.ProcessResult? ProcessResult,
         Document? Document,
         string? ParsedPayload,
-        bool IsTerminalNonHelp)
+        bool IsTerminalNonHelp,
+        string? GuardrailFailureMessage)
     {
         public JsonObject ToJsonObject(IReadOnlyList<string> commandSegments)
         {
@@ -226,7 +251,8 @@ internal sealed class Crawler
                 ExitCode: ProcessResult?.ExitCode,
                 Stdout: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
                 Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr),
-                OutputLimitExceeded: ProcessResult?.OutputLimitExceeded ?? false);
+                OutputLimitExceeded: ProcessResult?.OutputLimitExceeded ?? false,
+                GuardrailFailureMessage: GuardrailFailureMessage);
         }
     }
 }

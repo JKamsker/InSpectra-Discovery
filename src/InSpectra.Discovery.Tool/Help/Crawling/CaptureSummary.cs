@@ -10,4 +10,5 @@ internal sealed record CaptureSummary(
     int? ExitCode,
     string? Stdout,
     string? Stderr,
-    bool OutputLimitExceeded = false);
+    bool OutputLimitExceeded = false,
+    string? GuardrailFailureMessage = null);

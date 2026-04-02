@@ -829,6 +829,47 @@ public sealed class CrawlerTests
         Assert.DoesNotContain(result.CaptureSummaries.Keys, key => key.StartsWith("generate from-schema ", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task CrawlAsync_Fails_When_A_Command_Exceeds_The_Child_Command_Budget()
+    {
+        var commandRows = Enumerable.Range(1, HelpCrawlGuardrailSupport.MaxChildCommandsPerDocument + 1)
+            .Select(index => $"  cmd{index:D2}  Command {index}.")
+            .ToArray();
+        var runtime = new FakeCommandRuntime(arguments =>
+        {
+            var key = string.Join(' ', arguments);
+            if (string.Equals(key, "--help", StringComparison.Ordinal))
+            {
+                return Result(
+                    stdout:
+                    $$"""
+                    demo 1.0.0
+
+                    Usage: demo <command>
+
+                    Commands:
+                    {{string.Join(Environment.NewLine, commandRows)}}
+                    """);
+            }
+
+            throw new InvalidOperationException($"Unexpected invocation: '{key}'.");
+        });
+        var crawler = new Crawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "demo",
+            "demo",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.NotNull(result.GuardrailFailureMessage);
+        Assert.Contains(HelpCrawlGuardrailSupport.MaxChildCommandsPerDocument.ToString(), result.GuardrailFailureMessage);
+        Assert.Equal([""], result.Documents.Keys);
+        Assert.Equal(["--help"], runtime.Invocations.Select(args => string.Join(' ', args)));
+    }
+
     private static CommandRuntime.ProcessResult Result(string? stdout = null, string? stderr = null, int exitCode = 0, bool timedOut = false)
         => new(
             Status: timedOut ? "timed-out" : exitCode == 0 ? "ok" : "failed",

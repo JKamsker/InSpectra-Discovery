@@ -157,6 +157,60 @@ public sealed class RuntimeBlockedAnalysisTests
         Assert.Contains("<root>", result["failureMessage"]?.GetValue<string>());
     }
 
+    [Fact]
+    public async Task HelpAnalyzer_Reports_BudgetExceeded_Failure_When_Help_Payload_Exceeds_Parse_Budget()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var runtime = new FakeInstallingRuntime("demo", ParseBudgetExceededResult);
+        var analyzer = new InstalledToolAnalyzer(runtime, new OpenCliBuilder());
+        var result = CreateInitialResult("help");
+
+        await analyzer.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("crawl", result["phase"]?.GetValue<string>());
+        Assert.Equal("help-crawl-budget-exceeded", result["classification"]?.GetValue<string>());
+        Assert.Contains(HelpCrawlGuardrailSupport.MaxPayloadCharacters.ToString(), result["failureMessage"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task CliFxAnalyzer_Reports_BudgetExceeded_Failure_When_Help_Payload_Exceeds_Parse_Budget()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var runtime = new FakeInstallingRuntime("demo", ParseBudgetExceededCliFxResult);
+        var analyzer = new CliFxInstalledToolAnalysisSupport(
+            runtime,
+            new CliFxMetadataInspector(),
+            new CliFxOpenCliBuilder(),
+            new CliFxCoverageClassifier());
+        var result = CreateInitialResult("clifx", cliFramework: "CliFx");
+
+        await analyzer.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("terminal-failure", result["disposition"]?.GetValue<string>());
+        Assert.Equal("crawl", result["phase"]?.GetValue<string>());
+        Assert.Equal("clifx-crawl-budget-exceeded", result["classification"]?.GetValue<string>());
+        Assert.Contains(HelpCrawlGuardrailSupport.MaxPayloadCharacters.ToString(), result["failureMessage"]?.GetValue<string>());
+    }
+
     private static JsonObject CreateInitialResult(string analysisMode, string? cliFramework = null)
         => NonSpectreResultSupport.CreateInitialResult(
             packageId: "Demo.Tool",
@@ -207,6 +261,41 @@ public sealed class RuntimeBlockedAnalysisTests
             Stdout: new string('x', CrawlArtifactValidationSupport.MaxArtifactBytes),
             Stderr: string.Empty,
             OutputLimitExceeded: true);
+
+    private static CommandRuntime.ProcessResult ParseBudgetExceededResult()
+        => new(
+            Status: "ok",
+            TimedOut: false,
+            ExitCode: 0,
+            DurationMs: 1,
+            Stdout:
+            $$"""
+            demo 1.0.0
+
+            Usage: demo [options]
+
+            Options:
+              --verbose  {{new string('x', HelpCrawlGuardrailSupport.MaxPayloadCharacters)}}
+            """,
+            Stderr: string.Empty);
+
+    private static CommandRuntime.ProcessResult ParseBudgetExceededCliFxResult()
+        => new(
+            Status: "ok",
+            TimedOut: false,
+            ExitCode: 0,
+            DurationMs: 1,
+            Stdout:
+            $$"""
+            demo
+
+            USAGE
+              demo [options]
+
+            OPTIONS
+              --verbose  {{new string('x', HelpCrawlGuardrailSupport.MaxPayloadCharacters)}}
+            """,
+            Stderr: string.Empty);
 
     private sealed class FakeInstallingRuntime(
         string commandName,

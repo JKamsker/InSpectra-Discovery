@@ -3,6 +3,7 @@ namespace InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
 using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
 
 using InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
+using InSpectra.Discovery.Tool.Help.Crawling;
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 
@@ -32,9 +33,16 @@ internal sealed class CliFxHelpCrawler
         var documents = new Dictionary<string, CliFxHelpDocument>(StringComparer.OrdinalIgnoreCase);
         var captures = new Dictionary<string, JsonObject>(StringComparer.OrdinalIgnoreCase);
         var captureSummaries = new Dictionary<string, CliFxCaptureSummary>(StringComparer.OrdinalIgnoreCase);
+        string? guardrailFailureMessage = null;
 
         while (queue.Count > 0)
         {
+            if (captures.Count >= HelpCrawlGuardrailSupport.MaxCapturedCommands)
+            {
+                guardrailFailureMessage = HelpCrawlGuardrailSupport.BuildCaptureBudgetExceededMessage();
+                break;
+            }
+
             var commandSegments = queue.Dequeue();
             var key = GetKey(commandSegments);
             if (documents.ContainsKey(key))
@@ -52,11 +60,21 @@ internal sealed class CliFxHelpCrawler
             }
 
             documents[key] = capture.Document;
+            if (capture.Document.Commands.Count > HelpCrawlGuardrailSupport.MaxChildCommandsPerDocument)
+            {
+                guardrailFailureMessage = HelpCrawlGuardrailSupport.BuildCommandFanoutExceededMessage(key, capture.Document.Commands.Count);
+                break;
+            }
 
             foreach (var child in capture.Document.Commands)
             {
                 var childSegments = commandSegments.Concat(
                     child.Key.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)).ToArray();
+                if (childSegments.Length > HelpCrawlGuardrailSupport.MaxCommandDepth)
+                {
+                    continue;
+                }
+
                 var childKey = GetKey(childSegments);
                 if (!documents.ContainsKey(childKey))
                 {
@@ -65,7 +83,7 @@ internal sealed class CliFxHelpCrawler
             }
         }
 
-        return new CliFxCrawlResult(documents, captures, captureSummaries);
+        return new CliFxCrawlResult(documents, captures, captureSummaries, guardrailFailureMessage);
     }
 
     private async Task<CliFxHelpCapture> CaptureHelpAsync(
@@ -102,6 +120,14 @@ internal sealed class CliFxHelpCrawler
                 continue;
             }
 
+            if (!HelpCrawlGuardrailSupport.TryValidatePayload(payload, out var payloadFailureMessage))
+            {
+                fallbackCapture = SelectFallbackCapture(
+                    fallbackCapture,
+                    new CliFxHelpCapture(helpSwitch, processResult, null, payloadFailureMessage));
+                continue;
+            }
+
             var document = _parser.Parse(payload);
             if (document.UsageLines.Count == 0 && document.Options.Count == 0 && document.Commands.Count == 0)
             {
@@ -112,7 +138,7 @@ internal sealed class CliFxHelpCrawler
             return new CliFxHelpCapture(helpSwitch, processResult, document);
         }
 
-        return fallbackCapture ?? new CliFxHelpCapture(null, null, null);
+        return fallbackCapture ?? new CliFxHelpCapture(null, null, null, null);
     }
 
     private static string? SelectBestPayload(CliFxRuntime.ProcessResult processResult)
@@ -180,12 +206,14 @@ internal sealed class CliFxHelpCrawler
     internal sealed record CliFxCrawlResult(
         IReadOnlyDictionary<string, CliFxHelpDocument> Documents,
         IReadOnlyDictionary<string, JsonObject> Captures,
-        IReadOnlyDictionary<string, CliFxCaptureSummary> CaptureSummaries);
+        IReadOnlyDictionary<string, CliFxCaptureSummary> CaptureSummaries,
+        string? GuardrailFailureMessage = null);
 
     private sealed record CliFxHelpCapture(
         string? HelpSwitch,
         CliFxRuntime.ProcessResult? ProcessResult,
-        CliFxHelpDocument? Document)
+        CliFxHelpDocument? Document,
+        string? GuardrailFailureMessage = null)
     {
         public JsonObject ToJsonObject(IReadOnlyList<string> commandSegments)
         {
@@ -214,7 +242,8 @@ internal sealed class CliFxHelpCrawler
                 ExitCode: ProcessResult?.ExitCode,
                 Stdout: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stdout),
                 Stderr: CommandRuntime.NormalizeConsoleText(ProcessResult?.Stderr),
-                OutputLimitExceeded: ProcessResult?.OutputLimitExceeded ?? false);
+                OutputLimitExceeded: ProcessResult?.OutputLimitExceeded ?? false,
+                GuardrailFailureMessage: GuardrailFailureMessage);
         }
     }
 }
@@ -227,4 +256,5 @@ internal sealed record CliFxCaptureSummary(
     int? ExitCode,
     string? Stdout,
     string? Stderr,
-    bool OutputLimitExceeded = false);
+    bool OutputLimitExceeded = false,
+    string? GuardrailFailureMessage = null);

@@ -25,6 +25,11 @@ internal static class CapturePayloadSupport
 
         foreach (var payload in EnumeratePayloadCandidates(capture))
         {
+            if (!HelpCrawlGuardrailSupport.TryValidatePayload(payload, out _))
+            {
+                continue;
+            }
+
             var document = parser.Parse(payload);
             if (DocumentInspector.LooksLikeTerminalNonHelpPayload(payload))
             {
@@ -73,9 +78,16 @@ internal static class CapturePayloadSupport
         Document? bestDocument = null;
         var bestPayload = candidates.FirstOrDefault();
         var bestScore = -1;
+        string? guardrailFailureMessage = null;
 
         foreach (var payload in candidates)
         {
+            if (!HelpCrawlGuardrailSupport.TryValidatePayload(payload, out var payloadFailureMessage))
+            {
+                guardrailFailureMessage ??= payloadFailureMessage;
+                continue;
+            }
+
             var document = parser.Parse(payload);
             var looksLikeTerminalNonHelpPayload = DocumentInspector.LooksLikeTerminalNonHelpPayload(payload);
             var compatibleDocument = !looksLikeTerminalNonHelpPayload
@@ -103,7 +115,7 @@ internal static class CapturePayloadSupport
         }
 
         var isTerminalNonHelp = bestDocument is null && candidates.Any(DocumentInspector.LooksLikeTerminalNonHelpPayload);
-        return new(bestDocument, bestPayload, isTerminalNonHelp);
+        return new(bestDocument, bestPayload, isTerminalNonHelp, guardrailFailureMessage);
     }
 
     private static int ScorePayloadCandidate(

@@ -63,6 +63,13 @@ internal sealed class InstalledToolAnalyzer
             .Select(summary => string.IsNullOrWhiteSpace(summary.Command) ? "<root>" : summary.Command)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
+        var guardrailFailureMessages = crawl.CaptureSummaries.Values
+            .Select(summary => summary.GuardrailFailureMessage)
+            .Concat([crawl.GuardrailFailureMessage])
+            .Where(message => !string.IsNullOrWhiteSpace(message))
+            .Distinct(StringComparer.Ordinal)
+            .Cast<string>()
+            .ToArray();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         if (outputLimitExceededCommands.Length > 0)
@@ -72,6 +79,16 @@ internal sealed class InstalledToolAnalyzer
                 phase: "crawl",
                 classification: "help-crawl-output-too-large",
                 $"{ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage()} Affected commands: {string.Join(", ", outputLimitExceededCommands)}.");
+            return;
+        }
+
+        if (guardrailFailureMessages.Length > 0)
+        {
+            NonSpectreResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "crawl",
+                classification: "help-crawl-budget-exceeded",
+                string.Join(" ", guardrailFailureMessages));
             return;
         }
 

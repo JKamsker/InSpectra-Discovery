@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Tests;
 
 using InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
+using InSpectra.Discovery.Tool.Help.Crawling;
 using InSpectra.Discovery.Tool.Infrastructure.Commands;
 
 using Xunit;
@@ -29,6 +30,35 @@ public sealed class CliFxHelpCrawlerTests
             DotnetRuntimeCompatibilitySupport.DotnetRollForwardMajorValue,
             runtime.Invocations[1].Environment[DotnetRuntimeCompatibilitySupport.DotnetRollForwardEnvironmentVariableName]);
         Assert.Equal("--help", result.CaptureSummaries[string.Empty].HelpSwitch);
+    }
+
+    [Fact]
+    public async Task CrawlAsync_Fails_When_A_CliFx_Command_Exceeds_The_Child_Command_Budget()
+    {
+        var commandRows = Enumerable.Range(1, HelpCrawlGuardrailSupport.MaxChildCommandsPerDocument + 1)
+            .Select(index => $"  cmd{index:D2}         Command {index}.")
+            .ToArray();
+        var runtime = new FanoutCommandRuntime(
+            """
+            demo
+
+            USAGE
+              demo [command]
+
+            COMMANDS
+            """ + Environment.NewLine + string.Join(Environment.NewLine, commandRows));
+        var crawler = new CliFxHelpCrawler(runtime);
+
+        var result = await crawler.CrawlAsync(
+            "demo",
+            workingDirectory: Environment.CurrentDirectory,
+            environment: new Dictionary<string, string>(),
+            timeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.NotNull(result.GuardrailFailureMessage);
+        Assert.Contains(HelpCrawlGuardrailSupport.MaxChildCommandsPerDocument.ToString(), result.GuardrailFailureMessage);
+        Assert.Equal([""], result.Documents.Keys);
     }
 
     private static CommandRuntime.ProcessResult MissingFrameworkResult()
@@ -88,6 +118,25 @@ public sealed class CliFxHelpCrawlerTests
                 : MissingFrameworkResult();
             return Task.FromResult(result);
         }
+    }
+
+    private sealed class FanoutCommandRuntime(string helpText) : CommandRuntime
+    {
+        public override Task<ProcessResult> InvokeProcessCaptureAsync(
+            string filePath,
+            IReadOnlyList<string> argumentList,
+            string workingDirectory,
+            IReadOnlyDictionary<string, string> environment,
+            int timeoutSeconds,
+            string? sandboxRoot,
+            CancellationToken cancellationToken)
+            => Task.FromResult(new ProcessResult(
+                Status: "ok",
+                TimedOut: false,
+                ExitCode: 0,
+                DurationMs: 1,
+                Stdout: helpText,
+                Stderr: string.Empty));
     }
 
     private sealed record InvocationRecord(

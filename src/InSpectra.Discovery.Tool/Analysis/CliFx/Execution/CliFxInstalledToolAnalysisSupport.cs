@@ -79,6 +79,13 @@ internal sealed class CliFxInstalledToolAnalysisSupport
             .Select(summary => string.IsNullOrWhiteSpace(summary.Command) ? "<root>" : summary.Command)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
+        var guardrailFailureMessages = crawl.CaptureSummaries.Values
+            .Select(summary => summary.GuardrailFailureMessage)
+            .Concat([crawl.GuardrailFailureMessage])
+            .Where(message => !string.IsNullOrWhiteSpace(message))
+            .Distinct(StringComparer.Ordinal)
+            .Cast<string>()
+            .ToArray();
 
         result["timings"]!.AsObject()["crawlMs"] = (int)Math.Round(crawlStopwatch.Elapsed.TotalMilliseconds);
         result["coverage"] = coverageJson;
@@ -89,6 +96,16 @@ internal sealed class CliFxInstalledToolAnalysisSupport
                 phase: "crawl",
                 classification: "clifx-output-too-large",
                 $"{ProcessOutputCaptureSupport.BuildOutputLimitExceededMessage()} Affected commands: {string.Join(", ", outputLimitExceededCommands)}.");
+            return;
+        }
+
+        if (guardrailFailureMessages.Length > 0)
+        {
+            NonSpectreResultSupport.ApplyTerminalFailure(
+                result,
+                phase: "crawl",
+                classification: "clifx-crawl-budget-exceeded",
+                string.Join(" ", guardrailFailureMessages));
             return;
         }
 
