@@ -13,6 +13,7 @@ internal sealed record BrowserIndexDocument(
     DateTimeOffset UpdatedAt,
     DateTimeOffset GeneratedAt,
     int PackageCount,
+    int? IncludedPackageCount,
     IReadOnlyList<JsonObject> Packages);
 
 internal static class DocsBrowserIndexSupport
@@ -52,6 +53,7 @@ internal static class DocsBrowserIndexSupport
             UpdatedAt: now,
             GeneratedAt: now,
             PackageCount: packages.Count,
+            IncludedPackageCount: null,
             Packages: packages);
     }
 
@@ -72,7 +74,8 @@ internal static class DocsBrowserIndexSupport
             CreatedAt: browserIndex.CreatedAt,
             UpdatedAt: browserIndex.UpdatedAt,
             GeneratedAt: browserIndex.GeneratedAt,
-            PackageCount: topPackages.Length,
+            PackageCount: browserIndex.PackageCount,
+            IncludedPackageCount: topPackages.Length,
             Packages: topPackages);
     }
 

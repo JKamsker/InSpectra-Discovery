@@ -91,6 +91,8 @@ public sealed class DocsCommandServiceTests
             ?? throw new InvalidOperationException("Expected one package in browser index.");
         Assert.Equal("2026-03-27T00:30:00.0000000+00:00", browserPackage["createdAt"]?.GetValue<string>());
         Assert.Equal("2026-03-27T00:30:00.0000000+00:00", browserPackage["updatedAt"]?.GetValue<string>());
+        Assert.Equal(1, browserMinIndex["packageCount"]?.GetValue<int>());
+        Assert.Equal(1, browserMinIndex["includedPackageCount"]?.GetValue<int>());
         Assert.Single(browserMinIndex["packages"]?.AsArray().OfType<JsonObject>() ?? []);
     }
 
@@ -187,6 +189,7 @@ public sealed class DocsCommandServiceTests
         var minIndex = JsonNode.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "index", "index.min.json")))?.AsObject()
             ?? throw new InvalidOperationException("Generated min browser index was empty.");
         Assert.Equal(1, minIndex["packageCount"]?.GetValue<int>());
+        Assert.Equal(1, minIndex["includedPackageCount"]?.GetValue<int>());
         Assert.Single(minIndex["packages"]?.AsArray().OfType<JsonObject>() ?? []);
     }
 
@@ -248,7 +251,8 @@ public sealed class DocsCommandServiceTests
         var minPackages = minIndex["packages"]?.AsArray().OfType<JsonObject>().ToArray()
             ?? throw new InvalidOperationException("Missing min browser index packages.");
 
-        Assert.Equal(200, minIndex["packageCount"]?.GetValue<int>());
+        Assert.Equal(205, minIndex["packageCount"]?.GetValue<int>());
+        Assert.Equal(200, minIndex["includedPackageCount"]?.GetValue<int>());
         Assert.Equal(200, minPackages.Length);
         Assert.Equal("Package.204", minPackages[0]["packageId"]?.GetValue<string>());
         Assert.Equal("Package.005", minPackages[^1]["packageId"]?.GetValue<string>());
@@ -1049,4 +1053,3 @@ public sealed class DocsCommandServiceTests
         }
     }
 }
-

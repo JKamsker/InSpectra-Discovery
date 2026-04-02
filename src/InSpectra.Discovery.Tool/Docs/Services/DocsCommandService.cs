@@ -71,13 +71,15 @@ internal sealed class DocsCommandService
                 packageCount = browserIndex.PackageCount,
                 outputPath = outputFile,
                 minOutputPath = minOutputFile,
-                minPackageCount = browserMinIndex.PackageCount,
+                minPackageCount = browserMinIndex.IncludedPackageCount ?? browserMinIndex.Packages.Count,
+                totalPackageCount = browserMinIndex.PackageCount,
             },
             [
                 new SummaryRow("Packages", browserIndex.PackageCount.ToString()),
                 new SummaryRow("Output", outputFile),
                 new SummaryRow("Min output", minOutputFile),
-                new SummaryRow("Min packages", browserMinIndex.PackageCount.ToString()),
+                new SummaryRow("Min packages", (browserMinIndex.IncludedPackageCount ?? browserMinIndex.Packages.Count).ToString()),
+                new SummaryRow("Total packages", browserMinIndex.PackageCount.ToString()),
             ],
             json,
             cancellationToken);
