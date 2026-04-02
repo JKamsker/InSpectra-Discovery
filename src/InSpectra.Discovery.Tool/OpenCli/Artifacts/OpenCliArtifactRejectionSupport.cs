@@ -18,9 +18,11 @@ internal static class OpenCliArtifactRejectionSupport
             ?? throw new InvalidOperationException($"Metadata artifact '{metadataPath}' is empty.");
         var original = metadata.DeepClone();
 
+        var deletedOpenCli = false;
         if (File.Exists(openCliPath))
         {
             File.Delete(openCliPath);
+            deletedOpenCli = true;
         }
 
         var artifacts = metadata["artifacts"] as JsonObject ?? new JsonObject();
@@ -74,13 +76,14 @@ internal static class OpenCliArtifactRejectionSupport
         introspection["opencli"] = openCliIntrospection;
         metadata["introspection"] = introspection;
 
-        if (JsonNode.DeepEquals(original, metadata))
+        var metadataChanged = !JsonNode.DeepEquals(original, metadata);
+        if (metadataChanged)
         {
-            return false;
+            RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
         }
 
-        RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
-        return true;
+        var latestChanged = LatestArtifactRefreshSupport.SyncLatestDirectoryForVersion(repositoryRoot, metadataPath);
+        return deletedOpenCli || metadataChanged || latestChanged;
     }
 
     private static void SetOptionalRelativePath(JsonObject target, string propertyName, string repositoryRoot, string? path)

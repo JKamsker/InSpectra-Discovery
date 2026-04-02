@@ -7,6 +7,7 @@ using InSpectra.Discovery.Tool.Help.Inference.Descriptions;
 using InSpectra.Discovery.Tool.Help.Signatures;
 
 using InSpectra.Discovery.Tool.Help.Documents;
+using InSpectra.Discovery.Tool.OpenCli.Structure;
 
 using System.Text.RegularExpressions;
 
@@ -58,6 +59,13 @@ internal static partial class ItemStartParserSupport
         {
             key = SignatureNormalizer.NormalizeOptionSignatureKey(key);
             if (!SignatureNormalizer.LooksLikeOptionSignature(key))
+            {
+                return false;
+            }
+
+            var optionSignature = OptionSignatureSupport.Parse(key);
+            if (!OpenCliNameValidationSupport.IsPublishableOptionName(optionSignature.PrimaryName)
+                || optionSignature.Aliases.Any(alias => !OpenCliNameValidationSupport.IsPublishableOptionName(alias)))
             {
                 return false;
             }

@@ -144,6 +144,74 @@ public sealed class HookInstalledToolAnalysisSupportTests
     }
 
     [Fact]
+    public async Task AnalyzeAsync_Drops_NonPublishable_Separator_Options_From_Hook_Capture()
+    {
+        using var tempDirectory = new TestTemporaryDirectory();
+        var hookDllPath = CreateHookPlaceholder(tempDirectory.Path);
+        var runtime = new FakeHookCommandRuntime("demo", invocation =>
+        {
+            var capturePath = invocation.Environment["INSPECTRA_CAPTURE_PATH"];
+            File.WriteAllText(capturePath, JsonSerializer.Serialize(new HookCaptureResult
+            {
+                CaptureVersion = 1,
+                Status = "ok",
+                CliFramework = "System.CommandLine",
+                FrameworkVersion = "2.0.0",
+                SystemCommandLineVersion = "2.0.0",
+                PatchTarget = "Parse-postfix",
+                Root = new HookCapturedCommand
+                {
+                    Name = "demo",
+                    Options =
+                    [
+                        new HookCapturedOption
+                        {
+                            Name = "⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼",
+                            Description = "separator row",
+                            ValueType = "Boolean",
+                        },
+                        new HookCapturedOption
+                        {
+                            Name = "--verbose",
+                            Description = "Verbose output.",
+                            ValueType = "Boolean",
+                            Aliases = ["-v"],
+                        },
+                    ],
+                },
+            }));
+
+            return new CommandRuntime.ProcessResult(
+                Status: "ok",
+                TimedOut: false,
+                ExitCode: 0,
+                DurationMs: 15,
+                Stdout: string.Empty,
+                Stderr: string.Empty);
+        });
+        var support = new HookInstalledToolAnalysisSupport(runtime, () => hookDllPath);
+        var result = CreateInitialResult();
+
+        await support.AnalyzeAsync(
+            result,
+            packageId: "Demo.Tool",
+            version: "1.2.3",
+            commandName: "demo",
+            outputDirectory: tempDirectory.Path,
+            tempRoot: tempDirectory.Path,
+            installTimeoutSeconds: 30,
+            commandTimeoutSeconds: 30,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Equal("success", result["disposition"]?.GetValue<string>());
+
+        var openCli = JsonNode.Parse(File.ReadAllText(Path.Combine(tempDirectory.Path, "opencli.json")))!.AsObject();
+        var options = openCli["options"]!.AsArray();
+        Assert.DoesNotContain(options, option => option?["name"]?.GetValue<string>() == "⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼");
+        Assert.Contains(options, option => option?["name"]?.GetValue<string>() == "--verbose");
+    }
+
+    [Fact]
     public async Task AnalyzeAsync_Rejects_Invalid_OpenCli_Artifact_From_Hook_Capture()
     {
         using var tempDirectory = new TestTemporaryDirectory();

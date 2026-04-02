@@ -71,4 +71,20 @@ public sealed class ItemParserTests
             && string.Equals(command.Description, "Start the HTTP debug server (default port: 5200)", StringComparison.Ordinal));
         Assert.DoesNotContain(commands, command => string.Equals(command.Key, "help", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void InferCommands_Does_Not_Treat_Repeated_Usage_Prose_As_Command_Inventory()
+    {
+        var commands = ItemParser.InferCommands(
+            [],
+            [
+                "$NAME COLOR1=REGEX1 COLOR2=REGEX2 ... COLORN=REGEXN",
+                "The regular expression pattern language reference can be found online at:",
+                "The above copyright notice and this permission notice shall be",
+                "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not",
+            ],
+            sawInventoryHeader: false);
+
+        Assert.Empty(commands);
+    }
 }

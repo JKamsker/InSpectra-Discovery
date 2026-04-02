@@ -176,6 +176,82 @@ public sealed class StartupHookOpenCliArtifactRegeneratorTests
         Assert.Equal("invalid-opencli-artifact", metadata["steps"]?["opencli"]?["classification"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void Regenerator_Drops_NonPublishable_Separator_Options_From_Stored_StartupHook_OpenCli()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = InitializeRepository(tempDirectory.Path);
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "hook.tool", "1.0.0");
+        var openCliPath = Path.Combine(versionRoot, "opencli.json");
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Hook.Tool",
+                ["version"] = "1.0.0",
+                ["analysisMode"] = "hook",
+                ["opencliSource"] = "startup-hook",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["status"] = "ok",
+                        ["classification"] = "startup-hook",
+                        ["artifactSource"] = "startup-hook",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["opencliPath"] = "index/packages/hook.tool/1.0.0/opencli.json",
+                    ["opencliSource"] = "startup-hook",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            openCliPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "hook-tool",
+                    ["version"] = "1.0.0",
+                },
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "startup-hook",
+                },
+                ["options"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼",
+                        ["description"] = "separator row",
+                    },
+                    new JsonObject
+                    {
+                        ["name"] = "--help",
+                        ["description"] = "Show help.",
+                    },
+                },
+            });
+
+        var regenerator = new StartupHookOpenCliArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+        Assert.Equal(0, result.FailedCount);
+
+        var openCli = ParseJsonObject(openCliPath);
+        var options = openCli["options"]!.AsArray();
+        Assert.DoesNotContain(options, option => option?["name"]?.GetValue<string>() == "⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼⎼");
+        Assert.Contains(options, option => option?["name"]?.GetValue<string>() == "--help");
+    }
+
     private static string InitializeRepository(string root)
     {
         RepositoryPathResolver.WriteTextFile(Path.Combine(root, "InSpectra.Discovery.sln"), string.Empty);

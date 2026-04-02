@@ -104,6 +104,37 @@ public sealed class HelpNoiseRegressionTests
     }
 
     [Fact]
+    public void Does_Not_Parse_Separator_Rows_As_Options()
+    {
+        var parser = new TextParser();
+
+        var dotnetCliZip = parser.Parse(
+            """
+            dotnet cli zip
+            ---------------
+            """);
+        var entityFrameworkRuler = parser.Parse(
+            """
+            Entity Framework Ruler
+            -----------------------
+            Rule Generation Usage:
+            efruler -g <edmxfilepath> <efCoreProjectBasePath>
+            efruler -a <pathContainingRulesAndCsProj>
+            """);
+        var biak = parser.Parse(
+            """
+            Enable / Disable .editorconfig rules
+            ---
+            * dotnet biak setup | Setup command
+            --------------------
+            """);
+
+        Assert.Empty(dotnetCliZip.Options);
+        Assert.Empty(entityFrameworkRuler.Options);
+        Assert.Empty(biak.Options);
+    }
+
+    [Fact]
     public void Keeps_Box_Table_Continuation_Rows_After_Their_Entry_Row()
     {
         var lines = new[]
@@ -469,5 +500,126 @@ public sealed class HelpNoiseRegressionTests
         Assert.Equal(
             new[] { "--input", "--save-output" },
             check["options"]!.AsArray().OfType<JsonObject>().Select(option => option["name"]!.GetValue<string>()).ToArray());
+    }
+
+    [Fact]
+    public void Does_Not_Turn_Recolor_Usage_Prose_And_License_Text_Into_Commands()
+    {
+        var parser = new TextParser();
+        var builder = new OpenCliBuilder();
+        var rootHelp = parser.Parse(
+            """
+            Recolor 2.5.0+6cf9c7646a9301bfc7c6b6ece2c9265ec5039aac)
+            Copyright © 2010 Atif Aziz. All rights reserved.
+            Portions Copyright © .NET Foundation and Contributors.
+
+            Colors text received over standard input based on regular expression patterns.
+
+            Usage:
+
+                $NAME COLOR1=REGEX1 COLOR2=REGEX2 ... COLORN=REGEXN
+
+            A color is specified in one of three formats:
+
+                1. FOREGROUND
+                2. FOREGROUND/BACKGROUND
+                3. HEX
+
+            Format 1 sets only the foreground color of the text whereas format 2 sets the
+            foreground and background colors (separated by a forward-slash to mean
+            foreground over background). FOREGROUND can be omitted to set just the
+            background. The colors themselves are specified using the names listed below.
+            In format 3, the colors are specified by two hex digits: the first corresponds
+            to the background and the second the foreground. If only a single hex digit is
+            given then it sets the foreground color. The color corresponding to each hex
+            digits is shown below.
+
+                0 = Black           8 = DarkGray
+                1 = DarkBlue        9 = Blue
+                2 = DarkGreen       A = Green
+                3 = DarkCyan        B = Cyan
+                4 = DarkRed         C = Red
+                5 = DarkMagenta     D = Magenta
+                6 = DarkYellow      E = Yellow
+                7 = Gray            F = White
+
+            The regular expression pattern language reference can be found online at:
+
+                http://go.microsoft.com/fwlink/?LinkId=133231
+
+            Below is a quick reference:
+
+                Main Elements ------------------------------------------------------------
+
+                text     Matches exact characters anywhere in the original text.
+
+                .        Matches any single character.
+
+                [chars]  Matches at least one of the characters in the brackets.
+
+                [range]  Matches at least one of the characters within the range. The use
+                         of a hyphen (-) allows you to specify an adjacent character.
+
+                [^chars] Matches any characters except those in brackets.
+
+                ^        Matches the beginning characters.
+
+                $        Matches the end characters.
+
+                *        Matches any instances of the preceding character.
+
+                ?        Matches zero or one instance of the preceding character.
+
+                \        Matches the character that follows as an escaped character.
+
+                Quantifiers --------------------------------------------------------------
+
+                *        Specifies zero or more matches.
+
+                +        Matches repeating instances of the preceding characters.
+
+                ?        Specifies zero or one matches.
+
+                {n}      Specifies exactly n matches.
+
+                {n,}     Specifies at least n matches.
+
+                {n,m}    Specifies at least n, but no more than m, matches.
+
+                Character Classes --------------------------------------------------------
+
+                \p{name} Matches any character in the named character class specified by
+                         {name}. Supported names are Unicode groups and block ranges such
+                         as Ll, Nd, Z, IsGreek, and IsBoxDrawing.
+
+            Licensed under the Apache License, Version 2.0 (the "License"); you may not
+            use this file except in compliance with the License.
+
+            Portions of this software are covered by The MIT License (MIT):
+
+                Copyright (c) .NET Foundation and Contributors. All rights reserved.
+
+                The above copyright notice and this permission notice shall be
+                included in all copies or substantial portions of the Software.
+            """);
+
+        var document = builder.Build(
+            "recolor",
+            "2.5.0",
+            new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+            {
+                [""] = rootHelp,
+            });
+
+        var commands = document["commands"]?.AsArray().OfType<JsonObject>()
+            .Select(command => command["name"]?.GetValue<string>())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Cast<string>()
+            .ToArray()
+            ?? [];
+
+        Assert.True(commands.Length == 0, $"Unexpected commands: {string.Join(", ", commands)}");
+        Assert.DoesNotContain("Apache", document.ToJsonString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("\"above\"", document.ToJsonString(), StringComparison.Ordinal);
     }
 }

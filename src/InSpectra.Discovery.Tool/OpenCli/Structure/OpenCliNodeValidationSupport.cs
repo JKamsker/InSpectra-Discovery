@@ -184,6 +184,14 @@ internal static class OpenCliNodeValidationSupport
     {
         reason = null;
 
+        if (!OpenCliNameValidationSupport.TryValidateOptionName(
+                OpenCliValidationSupport.GetString(node["name"]),
+                path,
+                out reason))
+        {
+            return false;
+        }
+
         foreach (var arrayProperty in OptionArrayProperties)
         {
             if (!OpenCliValidationSupport.TryValidateArrayProperty(node, arrayProperty, path, out reason))
@@ -194,6 +202,12 @@ internal static class OpenCliNodeValidationSupport
 
         if (node["aliases"] is JsonArray aliases
             && !OpenCliValidationSupport.TryValidateStringEntries(aliases, $"{path}.aliases", out reason))
+        {
+            return false;
+        }
+
+        if (node["aliases"] is JsonArray optionAliases
+            && !TryValidateOptionAliases(optionAliases, $"{path}.aliases", out reason))
         {
             return false;
         }
@@ -218,6 +232,23 @@ internal static class OpenCliNodeValidationSupport
             }
 
             seenTokens[token] = path;
+        }
+
+        return true;
+    }
+
+    private static bool TryValidateOptionAliases(JsonArray aliases, string pathPrefix, out string? reason)
+    {
+        reason = null;
+        for (var index = 0; index < aliases.Count; index++)
+        {
+            if (!OpenCliNameValidationSupport.TryValidateOptionName(
+                    OpenCliValidationSupport.GetString(aliases[index]),
+                    $"{pathPrefix}[{index}]",
+                    out reason))
+            {
+                return false;
+            }
         }
 
         return true;

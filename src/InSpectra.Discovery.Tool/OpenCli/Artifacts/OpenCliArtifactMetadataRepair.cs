@@ -117,13 +117,14 @@ internal static class OpenCliArtifactMetadataRepair
             metadata["analysisSelection"] = analysisSelection;
         }
 
-        if (JsonNode.DeepEquals(original, metadata))
+        var metadataChanged = !JsonNode.DeepEquals(original, metadata);
+        if (metadataChanged)
         {
-            return false;
+            RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
         }
 
-        RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
-        return true;
+        var latestChanged = LatestArtifactRefreshSupport.SyncLatestDirectoryForVersion(repositoryRoot, metadataPath);
+        return metadataChanged || latestChanged;
     }
 
     private static string? ResolveClassification(

@@ -17,6 +17,11 @@ internal static class UsageCommandInferenceSupport
         var inferredCommands = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
         foreach (var usageLine in usageLines)
         {
+            if (!LooksLikeCommandPrototypeLine(usageLine))
+            {
+                continue;
+            }
+
             if (!TrySplitPrototypeAndDescription(usageLine, out var prototype, out var description))
             {
                 continue;
@@ -78,6 +83,11 @@ internal static class UsageCommandInferenceSupport
 
         foreach (var usageLine in usageLines)
         {
+            if (!LooksLikeCommandPrototypeLine(usageLine))
+            {
+                continue;
+            }
+
             var tokens = TokenizeUsageLine(usageLine);
             if (tokens.Length == 0)
             {
@@ -122,6 +132,7 @@ internal static class UsageCommandInferenceSupport
     private static string[] InferCommonRootSegments(IReadOnlyList<string> usageLines)
     {
         var literalSequences = usageLines
+            .Where(LooksLikeRootPrototypeLine)
             .Select(TryExtractLeadingLiteralTokens)
             .Where(tokens => tokens.Length > 0)
             .GroupBy(tokens => tokens[0], StringComparer.OrdinalIgnoreCase)
@@ -158,6 +169,70 @@ internal static class UsageCommandInferenceSupport
             .Select(token => token.Trim().Trim(',', ';'))
             .Where(token => token.Length > 0)
             .ToArray();
+
+    private static bool LooksLikeCommandPrototypeLine(string usageLine)
+    {
+        if (!TrySplitPrototypeAndDescription(usageLine, out var prototype, out var description))
+        {
+            return false;
+        }
+
+        if (prototype.Length == 0)
+        {
+            return false;
+        }
+
+        if (ContainsUsageSyntaxMarker(prototype))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(description) || LooksLikeDecorativeDescription(description))
+        {
+            return false;
+        }
+
+        var tokens = TokenizeUsageLine(prototype);
+        return tokens.Length is >= 2 and <= 4
+            && tokens.All(LooksLikeLiteralCommandToken);
+    }
+
+    private static bool LooksLikeRootPrototypeLine(string usageLine)
+    {
+        if (!TrySplitPrototypeAndDescription(usageLine, out var prototype, out var description))
+        {
+            return false;
+        }
+
+        if (prototype.Length == 0)
+        {
+            return false;
+        }
+
+        if (ContainsUsageSyntaxMarker(prototype))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(description) || LooksLikeDecorativeDescription(description))
+        {
+            return false;
+        }
+
+        var tokens = TokenizeUsageLine(prototype);
+        return tokens.Length >= 1
+            && tokens.All(LooksLikeLiteralCommandToken);
+    }
+
+    private static bool ContainsUsageSyntaxMarker(string prototype)
+        => prototype.Contains('[', StringComparison.Ordinal)
+            || prototype.Contains('<', StringComparison.Ordinal)
+            || prototype.Contains("--", StringComparison.Ordinal)
+            || prototype.Contains("...", StringComparison.Ordinal)
+            || prototype.Contains('|', StringComparison.Ordinal);
+
+    private static bool LooksLikeDecorativeDescription(string description)
+        => description.All(ch => !char.IsLetterOrDigit(ch));
 
     private static string[] TryExtractLeadingLiteralTokens(string usageLine)
     {

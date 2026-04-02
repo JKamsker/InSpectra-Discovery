@@ -92,6 +92,93 @@ public sealed class OpenCliArtifactMetadataRepairTests
         Assert.Equal("synthesized-from-xmldoc", metadata["opencliSource"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void SyncMetadata_Refreshes_Latest_OpenCli_For_Current_Version()
+    {
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        var packageRoot = Path.Combine(repositoryRoot, "index", "packages", "sample.tool");
+        var versionRoot = Path.Combine(packageRoot, "1.0.0");
+        var latestRoot = Path.Combine(packageRoot, "latest");
+        Directory.CreateDirectory(versionRoot);
+        Directory.CreateDirectory(latestRoot);
+
+        var versionMetadataPath = Path.Combine(versionRoot, "metadata.json");
+        var versionOpenCliPath = Path.Combine(versionRoot, "opencli.json");
+        var latestMetadataPath = Path.Combine(latestRoot, "metadata.json");
+        var latestOpenCliPath = Path.Combine(latestRoot, "opencli.json");
+
+        RepositoryPathResolver.WriteJsonFile(
+            versionMetadataPath,
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Sample.Tool",
+                ["version"] = "1.0.0",
+                ["status"] = "partial",
+                ["artifacts"] = new JsonObject(),
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            versionOpenCliPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "fresh-sample",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            latestOpenCliPath,
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["info"] = new JsonObject
+                {
+                    ["title"] = "stale-sample",
+                },
+            });
+        RepositoryPathResolver.WriteJsonFile(
+            latestMetadataPath,
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Sample.Tool",
+                ["version"] = "1.0.0",
+                ["status"] = "ok",
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, latestMetadataPath),
+                    ["opencliPath"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, latestOpenCliPath),
+                    ["opencliSource"] = "stale-source",
+                },
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["status"] = "ok",
+                        ["path"] = RepositoryPathResolver.GetRelativePath(repositoryRoot, latestOpenCliPath),
+                    },
+                },
+            });
+
+        var changed = OpenCliArtifactMetadataRepair.SyncMetadata(
+            repositoryRoot,
+            versionMetadataPath,
+            versionOpenCliPath,
+            "tool-output");
+
+        Assert.True(changed);
+
+        var latestMetadata = ParseJsonObject(latestMetadataPath);
+        var latestOpenCli = ParseJsonObject(latestOpenCliPath);
+
+        Assert.Equal("ok", latestMetadata["status"]?.GetValue<string>());
+        Assert.Equal("index/packages/sample.tool/latest/opencli.json", latestMetadata["artifacts"]?["opencliPath"]?.GetValue<string>());
+        Assert.Equal("tool-output", latestMetadata["artifacts"]?["opencliSource"]?.GetValue<string>());
+        Assert.Equal("fresh-sample", latestOpenCli["info"]?["title"]?.GetValue<string>());
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");

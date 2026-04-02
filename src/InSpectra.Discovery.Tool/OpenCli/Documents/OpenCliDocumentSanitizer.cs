@@ -149,6 +149,13 @@ internal static partial class OpenCliDocumentSanitizer
             }
 
             SanitizeNode(array[index]!, arrayContext);
+
+            if (string.Equals(arrayContext, "options", StringComparison.Ordinal)
+                && array[index] is JsonObject option
+                && !OpenCliOptionSanitizer.HasPublishableOptionTokens(option))
+            {
+                array.RemoveAt(index);
+            }
         }
     }
 

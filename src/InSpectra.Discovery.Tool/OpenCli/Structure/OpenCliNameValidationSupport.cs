@@ -7,11 +7,17 @@ internal static partial class OpenCliNameValidationSupport
     public static bool IsPublishableCommandName(string? name)
         => IsPublishableName(name, LooksLikeNonPublishableCommandName);
 
+    public static bool IsPublishableOptionName(string? name)
+        => IsPublishableName(name, LooksLikeNonPublishableOptionName);
+
     public static bool IsPublishableArgumentName(string? name)
         => IsPublishableName(name, LooksLikeNonPublishableArgumentName);
 
     public static bool TryValidateCommandName(string? name, string path, out string? reason)
         => TryValidateName(name, path, "command", LooksLikeNonPublishableCommandName, out reason);
+
+    public static bool TryValidateOptionName(string? name, string path, out string? reason)
+        => TryValidateName(name, path, "option", LooksLikeNonPublishableOptionName, out reason);
 
     public static bool TryValidateArgumentName(string? name, string path, out string? reason)
         => TryValidateName(name, path, "argument", LooksLikeNonPublishableArgumentName, out reason);
@@ -53,6 +59,14 @@ internal static partial class OpenCliNameValidationSupport
             || ObfuscatedNameRegex().IsMatch(name)
             || EnvironmentAssignmentSnippetRegex().IsMatch(name);
 
+    private static bool LooksLikeNonPublishableOptionName(string name)
+        => ContainsAngleBracketMarkers(name)
+            || ObfuscatedNameRegex().IsMatch(name)
+            || EnvironmentAssignmentSnippetRegex().IsMatch(name)
+            || HeadingLabelRegex().IsMatch(name)
+            || UppercaseSentenceLabelRegex().IsMatch(name)
+            || LooksLikeDecorativeSeparator(name);
+
     private static bool LooksLikeNonPublishableArgumentName(string name)
         => ContainsAngleBracketMarkers(name)
             || ObfuscatedNameRegex().IsMatch(name)
@@ -60,6 +74,57 @@ internal static partial class OpenCliNameValidationSupport
             || HeadingLabelRegex().IsMatch(name)
             || OptionSyntaxRegex().IsMatch(name)
             || UppercaseSentenceLabelRegex().IsMatch(name);
+
+    private static bool LooksLikeDecorativeSeparator(string name)
+    {
+        var trimmed = name.Trim();
+        if (trimmed.Length < 3)
+        {
+            return false;
+        }
+
+        Span<char> significantCharacters = stackalloc char[trimmed.Length];
+        var significantLength = 0;
+        foreach (var ch in trimmed)
+        {
+            if (char.IsWhiteSpace(ch))
+            {
+                continue;
+            }
+
+            if (char.IsLetterOrDigit(ch))
+            {
+                return false;
+            }
+
+            significantCharacters[significantLength++] = ch;
+        }
+
+        if (significantLength < 3)
+        {
+            return false;
+        }
+
+        var distinctCount = 0;
+        Span<char> distinctCharacters = stackalloc char[2];
+        for (var index = 0; index < significantLength; index++)
+        {
+            var current = significantCharacters[index];
+            if (distinctCharacters[..distinctCount].Contains(current))
+            {
+                continue;
+            }
+
+            if (distinctCount == distinctCharacters.Length)
+            {
+                return false;
+            }
+
+            distinctCharacters[distinctCount++] = current;
+        }
+
+        return true;
+    }
 
     private static bool ContainsAngleBracketMarkers(string name)
         => name.Contains('<', StringComparison.Ordinal)

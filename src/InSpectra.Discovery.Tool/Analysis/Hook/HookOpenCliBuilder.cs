@@ -121,11 +121,15 @@ internal static class HookOpenCliBuilder
         var array = new JsonArray();
         foreach (var opt in options)
         {
-            if (opt.Name is null) continue;
+            var optionName = HookCapturedNameSupport.ResolveOptionName(opt);
+            if (string.IsNullOrWhiteSpace(optionName))
+            {
+                continue;
+            }
 
             var node = new JsonObject
             {
-                ["name"] = opt.Name,
+                ["name"] = optionName,
                 ["recursive"] = opt.Recursive,
                 ["hidden"] = opt.IsHidden,
             };
@@ -142,7 +146,7 @@ internal static class HookOpenCliBuilder
             if (opt.IsRequired)
                 node["required"] = true;
 
-            var aliases = BuildAliases(opt.Aliases, opt.Name);
+            var aliases = BuildAliases(HookCapturedNameSupport.ResolveOptionAliases(opt, optionName), optionName);
             if (aliases.Count > 0)
                 node["aliases"] = aliases;
 
@@ -232,7 +236,7 @@ internal static class HookOpenCliBuilder
         return array;
     }
 
-    private static JsonArray BuildAliases(List<string> aliases, string primaryName)
+    private static JsonArray BuildAliases(IEnumerable<string> aliases, string primaryName)
     {
         var array = new JsonArray();
         foreach (var alias in aliases)
