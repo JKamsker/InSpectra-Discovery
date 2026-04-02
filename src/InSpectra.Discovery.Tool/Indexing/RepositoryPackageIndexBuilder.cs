@@ -29,19 +29,26 @@ internal static class RepositoryPackageIndexBuilder
         RepositoryPathResolver.WriteJsonFile(allIndexPath, allIndex);
 
         string? browserIndexPath = null;
+        string? browserMinIndexPath = null;
         if (writeBrowserIndex)
         {
             browserIndexPath = Path.Combine(indexRoot, "index.json");
+            browserMinIndexPath = Path.Combine(indexRoot, "index.min.json");
+            var browserIndex = DocsBrowserIndexSupport.BuildBrowserIndex(
+                allIndex,
+                browserIndexPath,
+                CancellationToken.None,
+                now);
+
             RepositoryPathResolver.WriteJsonFile(
                 browserIndexPath,
-                DocsBrowserIndexSupport.BuildBrowserIndex(
-                    allIndex,
-                    browserIndexPath,
-                    CancellationToken.None,
-                    now));
+                browserIndex);
+            RepositoryPathResolver.WriteJsonFile(
+                browserMinIndexPath,
+                DocsBrowserIndexSupport.BuildMinBrowserIndex(browserIndex));
         }
 
-        return new RepositoryPackageIndexBuildResult(packageSummaries.Count, versionRecordCount, allIndexPath, browserIndexPath);
+        return new RepositoryPackageIndexBuildResult(packageSummaries.Count, versionRecordCount, allIndexPath, browserIndexPath, browserMinIndexPath);
     }
 
     public static string? ToIsoTimestamp(JsonNode? value)
@@ -145,5 +152,9 @@ internal static class RepositoryPackageIndexBuilder
     }
 }
 
-internal sealed record RepositoryPackageIndexBuildResult(int PackageCount, int VersionRecordCount, string AllIndexPath, string? BrowserIndexPath);
-
+internal sealed record RepositoryPackageIndexBuildResult(
+    int PackageCount,
+    int VersionRecordCount,
+    string AllIndexPath,
+    string? BrowserIndexPath,
+    string? BrowserMinIndexPath);

@@ -12,6 +12,7 @@ internal static class DocsGitHubPagesSnapshotSupport
     private static readonly HashSet<string> PublishedFileNames = new(StringComparer.OrdinalIgnoreCase)
     {
         "index.json",
+        "index.min.json",
         "metadata.json",
         "opencli.json",
     };

@@ -17,6 +17,8 @@ internal sealed record BrowserIndexDocument(
 
 internal static class DocsBrowserIndexSupport
 {
+    public const int MinBrowserIndexPackageLimit = 200;
+
     public static BrowserIndexDocument BuildBrowserIndex(
         JsonObject allIndex,
         string outputFile,
@@ -51,6 +53,27 @@ internal static class DocsBrowserIndexSupport
             GeneratedAt: now,
             PackageCount: packages.Count,
             Packages: packages);
+    }
+
+    public static BrowserIndexDocument BuildMinBrowserIndex(
+        BrowserIndexDocument browserIndex,
+        int packageLimit = MinBrowserIndexPackageLimit)
+    {
+        var topPackages = browserIndex.Packages
+            .OrderByDescending(package => GetOptionalInt(package, "commandGroupCount"))
+            .ThenByDescending(package => GetOptionalInt(package, "commandCount"))
+            .ThenByDescending(package => GetOptionalLong(package, "totalDownloads"))
+            .ThenBy(package => package["packageId"]?.GetValue<string>() ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+            .Take(packageLimit)
+            .ToArray();
+
+        return new BrowserIndexDocument(
+            SchemaVersion: browserIndex.SchemaVersion,
+            CreatedAt: browserIndex.CreatedAt,
+            UpdatedAt: browserIndex.UpdatedAt,
+            GeneratedAt: browserIndex.GeneratedAt,
+            PackageCount: topPackages.Length,
+            Packages: topPackages);
     }
 
     private static JsonObject CreatePackageEntry(JsonObject package)
@@ -95,6 +118,12 @@ internal static class DocsBrowserIndexSupport
         }
     }
 
+    private static int GetOptionalInt(JsonObject package, string propertyName)
+        => package[propertyName]?.GetValue<int?>() ?? 0;
+
+    private static long GetOptionalLong(JsonObject package, string propertyName)
+        => package[propertyName]?.GetValue<long?>() ?? 0L;
+
     private static DateTimeOffset ResolveDocumentCreatedAt(string outputFile, string? fallback, DateTimeOffset now)
     {
         var existing = JsonNodeFileLoader.TryLoadJsonObject(outputFile);
@@ -116,4 +145,3 @@ internal static class DocsBrowserIndexSupport
         return now;
     }
 }
-
