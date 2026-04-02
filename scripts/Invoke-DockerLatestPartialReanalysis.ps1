@@ -194,6 +194,12 @@ try {
     for ($i = 0; $i -lt $items.Count; $i++) {
         $item = $items[$i]
         $itemOutputRoot = Join-Path $resolvedWorkingRoot ('results\{0:D4}-{1}-{2}' -f $i, (Normalize-Segment $item.packageId), (Normalize-Segment $item.version))
+        $resultPath = Join-Path $itemOutputRoot 'result.json'
+        if (Test-Path -LiteralPath $resultPath) {
+            Write-Host "Skipping existing result for $($item.packageId) $($item.version)."
+            continue
+        }
+
         & $dockerRunnerPath `
             -ToolRoot $resolvedToolRoot `
             -OutputRoot $itemOutputRoot `
