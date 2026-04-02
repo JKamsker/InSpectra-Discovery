@@ -33,12 +33,14 @@ internal sealed class DocsCommandService
                 versionRecordCount = result.VersionRecordCount,
                 allIndexPath = result.AllIndexPath,
                 browserIndexPath = result.BrowserIndexPath,
+                browserMinIndexPath = result.BrowserMinIndexPath,
             },
             [
                 new SummaryRow("Packages", result.PackageCount.ToString()),
                 new SummaryRow("Version records", result.VersionRecordCount.ToString()),
                 new SummaryRow("All index", result.AllIndexPath),
                 new SummaryRow("Browser index", result.BrowserIndexPath ?? "skipped"),
+                new SummaryRow("Browser min index", result.BrowserMinIndexPath ?? "skipped"),
             ],
             json,
             cancellationToken);
@@ -54,17 +56,28 @@ internal sealed class DocsCommandService
         var root = RepositoryPathResolver.ResolveRepositoryRoot(repositoryRoot);
         var allIndexFile = Path.GetFullPath(Path.Combine(root, allIndexPath));
         var outputFile = Path.GetFullPath(Path.Combine(root, outputPath));
+        var minOutputFile = GetBrowserMinIndexPath(outputFile);
         var allIndex = await JsonNodeFileLoader.TryLoadJsonObjectAsync(allIndexFile, cancellationToken)
             ?? throw new InvalidOperationException($"Manifest '{allIndexFile}' is empty.");
         var browserIndex = DocsBrowserIndexSupport.BuildBrowserIndex(allIndex, outputFile, cancellationToken);
+        var browserMinIndex = DocsBrowserIndexSupport.BuildMinBrowserIndex(browserIndex);
 
         RepositoryPathResolver.WriteJsonFile(outputFile, browserIndex);
+        RepositoryPathResolver.WriteJsonFile(minOutputFile, browserMinIndex);
         var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
-            browserIndex,
+            new
+            {
+                packageCount = browserIndex.PackageCount,
+                outputPath = outputFile,
+                minOutputPath = minOutputFile,
+                minPackageCount = browserMinIndex.PackageCount,
+            },
             [
                 new SummaryRow("Packages", browserIndex.PackageCount.ToString()),
                 new SummaryRow("Output", outputFile),
+                new SummaryRow("Min output", minOutputFile),
+                new SummaryRow("Min packages", browserMinIndex.PackageCount.ToString()),
             ],
             json,
             cancellationToken);
@@ -97,6 +110,18 @@ internal sealed class DocsCommandService
             ],
             json,
             cancellationToken);
+    }
+
+    private static string GetBrowserMinIndexPath(string outputFile)
+    {
+        var directory = Path.GetDirectoryName(outputFile) ?? string.Empty;
+        var extension = Path.GetExtension(outputFile);
+        var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(outputFile);
+        var minFileName = string.IsNullOrWhiteSpace(extension)
+            ? $"{fileNameWithoutExtension}.min.json"
+            : $"{fileNameWithoutExtension}.min{extension}";
+
+        return Path.Combine(directory, minFileName);
     }
 
     public async Task<int> BuildFullyIndexedDocumentationReportAsync(

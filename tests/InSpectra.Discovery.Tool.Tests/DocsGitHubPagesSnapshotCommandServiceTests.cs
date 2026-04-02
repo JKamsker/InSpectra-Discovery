@@ -30,6 +30,18 @@ public sealed class DocsGitHubPagesSnapshotCommandServiceTests
             }
             """);
         RepositoryPathResolver.WriteTextFile(
+            Path.Combine(repositoryRoot, "index", "index.min.json"),
+            """
+            {
+              "schemaVersion": 1,
+              "packages": [
+                {
+                  "packageId": "Sample.Tool"
+                }
+              ]
+            }
+            """);
+        RepositoryPathResolver.WriteTextFile(
             Path.Combine(repositoryRoot, "index", "all.json"),
             """
             {
@@ -73,6 +85,7 @@ public sealed class DocsGitHubPagesSnapshotCommandServiceTests
         var outputRoot = Path.Combine(repositoryRoot, "artifacts", "github-pages");
         Assert.True(File.Exists(Path.Combine(outputRoot, ".nojekyll")));
         Assert.True(File.Exists(Path.Combine(outputRoot, "index.json")));
+        Assert.True(File.Exists(Path.Combine(outputRoot, "index.min.json")));
         Assert.True(File.Exists(Path.Combine(outputRoot, "packages", "sample.tool", "latest", "metadata.json")));
         Assert.True(File.Exists(Path.Combine(outputRoot, "packages", "sample.tool", "latest", "opencli.json")));
         Assert.False(File.Exists(Path.Combine(outputRoot, "all.json")));
@@ -81,6 +94,9 @@ public sealed class DocsGitHubPagesSnapshotCommandServiceTests
         Assert.Equal(
             """{"schemaVersion":1,"packages":[{"packageId":"Sample.Tool"}]}""",
             File.ReadAllText(Path.Combine(outputRoot, "index.json")));
+        Assert.Equal(
+            """{"schemaVersion":1,"packages":[{"packageId":"Sample.Tool"}]}""",
+            File.ReadAllText(Path.Combine(outputRoot, "index.min.json")));
         Assert.Equal(
             """{"packageId":"Sample.Tool","version":"1.2.3"}""",
             File.ReadAllText(Path.Combine(outputRoot, "packages", "sample.tool", "latest", "metadata.json")));

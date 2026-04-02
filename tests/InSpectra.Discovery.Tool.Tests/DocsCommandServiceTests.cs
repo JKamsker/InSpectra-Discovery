@@ -84,12 +84,14 @@ public sealed class DocsCommandServiceTests
 
         Assert.True(File.Exists(Path.Combine(repositoryRoot, "index", "packages", "sample.tool", "latest", "metadata.json")));
         var browserIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "index.json"));
+        var browserMinIndex = ParseJsonObject(Path.Combine(repositoryRoot, "index", "index.min.json"));
         Assert.NotNull(browserIndex["createdAt"]?.GetValue<string>());
         Assert.NotNull(browserIndex["updatedAt"]?.GetValue<string>());
         var browserPackage = browserIndex["packages"]?.AsArray().OfType<JsonObject>().Single()
             ?? throw new InvalidOperationException("Expected one package in browser index.");
         Assert.Equal("2026-03-27T00:30:00.0000000+00:00", browserPackage["createdAt"]?.GetValue<string>());
         Assert.Equal("2026-03-27T00:30:00.0000000+00:00", browserPackage["updatedAt"]?.GetValue<string>());
+        Assert.Single(browserMinIndex["packages"]?.AsArray().OfType<JsonObject>() ?? []);
     }
 
     [Fact]
@@ -181,6 +183,76 @@ public sealed class DocsCommandServiceTests
         Assert.Equal(
             DateTimeOffset.Parse("2026-03-26T00:00:00Z"),
             DateTimeOffset.Parse(package["updatedAt"]?.GetValue<string>() ?? throw new InvalidOperationException("Missing package updatedAt.")));
+
+        var minIndex = JsonNode.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "index", "index.min.json")))?.AsObject()
+            ?? throw new InvalidOperationException("Generated min browser index was empty.");
+        Assert.Equal(1, minIndex["packageCount"]?.GetValue<int>());
+        Assert.Single(minIndex["packages"]?.AsArray().OfType<JsonObject>() ?? []);
+    }
+
+    [Fact]
+    public async Task BuildBrowserIndexAsync_WritesTop200RankedByCommandGroupsThenCommands()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var packages = new JsonArray();
+        for (var i = 0; i < 205; i++)
+        {
+            packages.Add(new JsonObject
+            {
+                ["packageId"] = $"Package.{i:000}",
+                ["latestVersion"] = "1.0.0",
+                ["latestStatus"] = "ok",
+                ["commandCount"] = i % 50,
+                ["commandGroupCount"] = i,
+                ["versions"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["version"] = "1.0.0",
+                        ["command"] = $"pkg{i:000}",
+                        ["publishedAt"] = "2026-03-26T00:00:00Z",
+                        ["evaluatedAt"] = "2026-03-26T00:30:00Z",
+                    },
+                },
+            });
+        }
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(repositoryRoot, "index", "all.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["createdAt"] = "2026-03-20T00:00:00Z",
+                ["generatedAt"] = "2026-03-27T00:00:00Z",
+                ["packageCount"] = packages.Count,
+                ["packages"] = packages,
+            });
+
+        var service = new DocsCommandService();
+        var exitCode = await service.BuildBrowserIndexAsync(
+            repositoryRoot,
+            "index/all.json",
+            "index/index.json",
+            json: true,
+            CancellationToken.None);
+
+        Assert.Equal(0, exitCode);
+
+        var minIndex = JsonNode.Parse(File.ReadAllText(Path.Combine(repositoryRoot, "index", "index.min.json")))?.AsObject()
+            ?? throw new InvalidOperationException("Generated min browser index was empty.");
+        var minPackages = minIndex["packages"]?.AsArray().OfType<JsonObject>().ToArray()
+            ?? throw new InvalidOperationException("Missing min browser index packages.");
+
+        Assert.Equal(200, minIndex["packageCount"]?.GetValue<int>());
+        Assert.Equal(200, minPackages.Length);
+        Assert.Equal("Package.204", minPackages[0]["packageId"]?.GetValue<string>());
+        Assert.Equal("Package.005", minPackages[^1]["packageId"]?.GetValue<string>());
+        Assert.DoesNotContain(minPackages, package => string.Equals(package["packageId"]?.GetValue<string>(), "Package.004", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -977,5 +1049,4 @@ public sealed class DocsCommandServiceTests
         }
     }
 }
-
 
