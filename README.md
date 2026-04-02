@@ -166,6 +166,29 @@ Use these heuristics when triaging results:
 - A root title like `dotnet` or notebook directives such as `#i` / `#!who` can indicate host-shell capture instead of the package CLI.
 - For help-derived artifacts, inspect `crawl.json` alongside `opencli.json` to find the specific help page or list output that polluted the parse.
 
+### Reanalyzing Latest Partials With Docker On Local Windows Hosts
+
+On this host, keep package analysis inside Docker and keep repository writes on the host. Do not bind-mount `index/` or `state/` as the direct output target of in-container analysis.
+
+Use the local replay wrapper to:
+
+1. export an `expected.json` plan from current `latest/metadata.json` partial records
+2. run `analysis run-auto` inside Docker for each selected item into a temporary download root
+3. apply the results on the host with `promotion apply-untrusted`
+
+Example:
+
+```powershell
+./scripts/Invoke-DockerLatestPartialReanalysis.ps1 `
+    -AnalysisMode help `
+    -Classification invalid-opencli-artifact `
+    -MessageContains "does not expose any commands" `
+    -Limit 10 `
+    -KeepWorkingRoot
+```
+
+The wrapper reuses `.github/scripts/run-analysis-in-docker.ps1` for the container invocation and `docs export-latest-partials-plan` for queue selection, so CI can keep its existing non-Docker host behavior while local maintenance stays Docker-only for analysis.
+
 ## CI/CD
 
 | Workflow | Schedule | Purpose |

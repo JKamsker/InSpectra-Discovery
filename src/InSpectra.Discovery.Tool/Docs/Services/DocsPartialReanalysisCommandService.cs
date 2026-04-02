@@ -73,7 +73,7 @@ internal sealed class DocsPartialReanalysisCommandService
         {
             Directory.CreateDirectory(Path.GetDirectoryName(expectedPath)!);
             Directory.CreateDirectory(Path.Combine(resolvedWorkingRoot, "results"));
-            WriteExpectedPlan(expectedPath, resolvedBatchId, selected);
+            LatestPartialMetadataPlanSupport.WriteExpectedPlan(expectedPath, resolvedBatchId, selected);
 
             for (var i = 0; i < selected.Count; i++)
             {
@@ -134,29 +134,6 @@ internal sealed class DocsPartialReanalysisCommandService
                 Directory.Delete(resolvedWorkingRoot, recursive: true);
             }
         }
-    }
-
-    private static void WriteExpectedPlan(
-        string expectedPath,
-        string batchId,
-        IReadOnlyList<LatestPartialMetadataSelection> items)
-    {
-        var expected = new JsonObject
-        {
-            ["schemaVersion"] = 1,
-            ["batchId"] = batchId,
-            ["targetBranch"] = "main",
-            ["items"] = new JsonArray(items
-                .Select(item => new JsonObject
-                {
-                    ["packageId"] = item.PackageId,
-                    ["version"] = item.Version,
-                    ["attempt"] = item.NextAttempt,
-                })
-                .ToArray()),
-        };
-
-        RepositoryPathResolver.WriteJsonFile(expectedPath, expected);
     }
 
     private static string ResolveWorkingRoot(string? workingRoot)

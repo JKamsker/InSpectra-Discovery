@@ -19,6 +19,9 @@ param(
 
     [string]$Source = 'analyze-untrusted-batch',
     [string]$Image = 'mcr.microsoft.com/dotnet/sdk:10.0',
+    [int]$InstallTimeoutSeconds = 300,
+    [int]$AnalysisTimeoutSeconds = 600,
+    [int]$CommandTimeoutSeconds = 60,
     [switch]$Json
 )
 
@@ -88,7 +91,10 @@ $dockerArgs += @(
     '--output-root', $containerOutputRoot,
     '--batch-id', $BatchId,
     '--attempt', $Attempt.ToString([System.Globalization.CultureInfo]::InvariantCulture),
-    '--source', $Source
+    '--source', $Source,
+    '--install-timeout-seconds', $InstallTimeoutSeconds.ToString([System.Globalization.CultureInfo]::InvariantCulture),
+    '--analysis-timeout-seconds', $AnalysisTimeoutSeconds.ToString([System.Globalization.CultureInfo]::InvariantCulture),
+    '--command-timeout-seconds', $CommandTimeoutSeconds.ToString([System.Globalization.CultureInfo]::InvariantCulture)
 )
 
 if ($Json) {

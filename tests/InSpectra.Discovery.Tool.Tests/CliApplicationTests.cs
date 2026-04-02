@@ -43,6 +43,7 @@ public sealed class CliApplicationTests
             new[] { "analysis", "run-untrusted", "--help" },
             new[] { "analysis", "run-hook", "--help" },
             new[] { "docs", "rebuild-indexes", "--help" },
+            new[] { "docs", "export-latest-partials-plan", "--help" },
             new[] { "docs", "regenerate-native-opencli", "--help" },
             new[] { "docs", "regenerate-startup-hook-opencli", "--help" },
             new[] { "docs", "regenerate-static-crawls", "--help" },

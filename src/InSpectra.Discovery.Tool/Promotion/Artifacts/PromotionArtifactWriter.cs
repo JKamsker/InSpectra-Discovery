@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Promotion.Artifacts;
 
+using InSpectra.Discovery.Tool.Infrastructure.Json;
 using InSpectra.Discovery.Tool.Indexing;
 
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
@@ -30,6 +31,7 @@ internal static class PromotionArtifactWriter
         var openCliArtifact = result["artifacts"]?["opencliArtifact"]?.GetValue<string>();
         var crawlArtifact = result["artifacts"]?["crawlArtifact"]?.GetValue<string>();
         var xmlDocArtifact = result["artifacts"]?["xmldocArtifact"]?.GetValue<string>();
+        var existingMetadata = await JsonNodeFileLoader.TryLoadJsonObjectAsync(metadataPath, cancellationToken);
         var openCliArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, openCliArtifact);
         var xmlDocArtifactPath = PromotionArtifactSupport.ResolveOptionalArtifactPath(artifactDirectory, xmlDocArtifact);
         var preparedOpenCliArtifact = await PromotionOpenCliArtifactSupport.PrepareAsync(
@@ -188,6 +190,7 @@ internal static class PromotionArtifactWriter
                 ["xmldocPath"] = preparedOpenCliArtifact.HasXmlDocContent ? RepositoryPathResolver.GetRelativePath(repositoryRoot, xmlDocPath) : null,
             },
         };
+        BackfillStableMetadataFromExisting(metadata, existingMetadata);
 
         RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
 
@@ -204,6 +207,38 @@ internal static class PromotionArtifactWriter
         }
 
         return metadata["artifacts"]!.DeepClone().AsObject();
+    }
+
+    private static void BackfillStableMetadataFromExisting(JsonObject metadata, JsonObject? existingMetadata)
+    {
+        if (existingMetadata is null)
+        {
+            return;
+        }
+
+        foreach (var propertyName in new[]
+        {
+            "cliFramework",
+            "publishedAt",
+            "packageUrl",
+            "totalDownloads",
+            "packageContentUrl",
+            "registrationLeafUrl",
+            "catalogEntryUrl",
+            "projectUrl",
+            "sourceRepositoryUrl",
+            "command",
+            "entryPoint",
+            "runner",
+            "toolSettingsPath",
+            "detection",
+        })
+        {
+            if (metadata[propertyName] is null && existingMetadata[propertyName] is not null)
+            {
+                metadata[propertyName] = existingMetadata[propertyName]!.DeepClone();
+            }
+        }
     }
 }
 
