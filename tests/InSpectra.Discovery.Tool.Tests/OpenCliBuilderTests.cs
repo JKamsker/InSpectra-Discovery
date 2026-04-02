@@ -241,6 +241,109 @@ public sealed class OpenCliBuilderTests
     }
 
     [Fact]
+    public void Does_Not_Emit_Root_Only_Prose_Derived_Commands_For_Option_Tools()
+    {
+        var builder = new OpenCliBuilder();
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "Command line tool for watching and interpreting F# projects",
+                Version: "1.1.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines:
+                [
+                    "<tool> arg .. arg [-- <other-args>]",
+                    "<tool> @args.rsp  [-- <other-args>]",
+                ],
+                Arguments:
+                [
+                    new Item("other-args", false, "All other args are assumed to be extra F# command line arguments"),
+                ],
+                Options:
+                [
+                    new Item("--watch", false, "Watch the source files of the project for changes"),
+                ],
+                Commands:
+                [
+                    new Item("source is a single project file in the current directory.", false, null),
+                    new Item("output is a JSON dump of the PortaCode.", false, null),
+                ]),
+        };
+
+        var document = builder.Build("fabulous-cli", "1.1.0", helpDocuments);
+
+        Assert.Empty(document["commands"]!.AsArray());
+        Assert.Single(document["options"]!.AsArray());
+        Assert.Single(document["arguments"]!.AsArray());
+    }
+
+    [Fact]
+    public void Keeps_Root_Only_Inventory_Shells_When_No_Root_Inputs_Exist()
+    {
+        var builder = new OpenCliBuilder();
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines: [],
+                Arguments: [],
+                Options: [],
+                Commands:
+                [
+                    new Item("build", false, "Build the project"),
+                    new Item("restore", false, "Restore dependencies"),
+                ]),
+        };
+
+        var document = builder.Build("demo", "1.0.0", helpDocuments);
+
+        var commands = document["commands"]!.AsArray();
+        Assert.Equal(2, commands.Count);
+    }
+
+    [Fact]
+    public void Keeps_Explicit_Described_Root_Command_Inventory_On_Mixed_Root_Pages()
+    {
+        var builder = new OpenCliBuilder();
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "demo-md",
+                Version: "1.0.0",
+                ApplicationDescription: null,
+                CommandDescription: null,
+                UsageLines:
+                [
+                    "demo-md build <input>",
+                ],
+                Arguments:
+                [
+                    new Item("value", true, "Input project path"),
+                ],
+                Options:
+                [
+                    new Item("--help", false, "Display this help screen."),
+                ],
+                Commands:
+                [
+                    new Item("build", false, "Build the project"),
+                    new Item("verify", false, "Verify the project"),
+                ]),
+        };
+
+        var document = builder.Build("demo-md", "1.0.0", helpDocuments);
+
+        var commands = document["commands"]!.AsArray();
+        Assert.Equal(2, commands.Count);
+        Assert.Contains(commands, command => string.Equals(command?["name"]?.GetValue<string>(), "build", StringComparison.Ordinal));
+        Assert.Contains(commands, command => string.Equals(command?["name"]?.GetValue<string>(), "verify", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Does_Not_Emit_Option_Metavars_As_Usage_Only_Positional_Arguments()
     {
         var builder = new OpenCliBuilder();

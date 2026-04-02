@@ -126,7 +126,10 @@ internal static class ItemParser
             var inventoryLines = RootCommandInventoryInference.InferLines(preamble);
             if (inventoryLines.Count > 0)
             {
-                var parsedCommands = ParseItems(inventoryLines, ItemKind.Command);
+                var usageArgumentNames = LegacyOptionRowSupport.ExtractUsageArgumentNames(usageLines);
+                var parsedCommands = ParseItems(inventoryLines, ItemKind.Command)
+                    .Where(item => !usageArgumentNames.Contains(item.Key))
+                    .ToArray();
                 var describedCommands = parsedCommands
                     .Where(item => !string.IsNullOrWhiteSpace(item.Description))
                     .ToArray();

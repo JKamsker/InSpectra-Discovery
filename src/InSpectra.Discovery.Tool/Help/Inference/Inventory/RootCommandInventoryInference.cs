@@ -1,5 +1,7 @@
 namespace InSpectra.Discovery.Tool.Help.Inference.Inventory;
 
+using InSpectra.Discovery.Tool.Help.Documents;
+using InSpectra.Discovery.Tool.Help.Parsing;
 using InSpectra.Discovery.Tool.Help.Signatures;
 
 internal static class RootCommandInventoryInference
@@ -96,7 +98,9 @@ internal static class RootCommandInventoryInference
             && !trimmed.Contains('[', StringComparison.Ordinal)
             && !trimmed.Contains('<', StringComparison.Ordinal)
             && !LooksLikeOptionStyleDescription(trimmed)
-            && !trimmed.StartsWith("Copyright", StringComparison.OrdinalIgnoreCase);
+            && !trimmed.StartsWith("Copyright", StringComparison.OrdinalIgnoreCase)
+            && ItemStartParserSupport.TryParseItemStart(rawLine, ItemKind.Command, out var commandKey, out _, out _)
+            && LooksLikeInventoryCommandKey(commandKey);
     }
 
     private static bool LooksLikeOptionRow(string rawLine)
@@ -113,6 +117,17 @@ internal static class RootCommandInventoryInference
 
     private static int GetIndentation(string rawLine)
         => rawLine.TakeWhile(char.IsWhiteSpace).Count();
+
+    private static bool LooksLikeInventoryCommandKey(string commandKey)
+    {
+        if (CommandPrototypeSupport.LooksLikeCommandPrototype(commandKey))
+        {
+            return true;
+        }
+
+        var tokens = commandKey.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return tokens.Length is > 0 and <= 4;
+    }
 
     private static bool LooksLikeOptionStyleDescription(string line)
     {

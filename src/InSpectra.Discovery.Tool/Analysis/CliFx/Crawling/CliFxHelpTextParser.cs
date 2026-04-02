@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx.Crawling;
 
 using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
+using InSpectra.Discovery.Tool.Help.Signatures;
 
 using System.Text.RegularExpressions;
 
@@ -91,11 +92,17 @@ internal sealed partial class CliFxHelpTextParser
             var match = ItemStartRegex().Match(rawLine);
             if (match.Success)
             {
-                FlushItem(items, key, isRequired, description);
-                key = match.Groups["key"].Value.Trim();
-                description = match.Groups["description"].Success ? match.Groups["description"].Value.Trim() : null;
-                isRequired = string.Equals(match.Groups["prefix"].Value, "* ", StringComparison.Ordinal);
-                continue;
+                var candidateKey = match.Groups["key"].Value.Trim();
+                var candidateDescription = match.Groups["description"].Success ? match.Groups["description"].Value.Trim() : null;
+                var candidateIsRequired = string.Equals(match.Groups["prefix"].Value, "* ", StringComparison.Ordinal);
+                if (CanStartItem(candidateKey, candidateDescription))
+                {
+                    FlushItem(items, key, isRequired, description);
+                    key = candidateKey;
+                    description = candidateDescription;
+                    isRequired = candidateIsRequired;
+                    continue;
+                }
             }
 
             if (key is not null)
@@ -110,11 +117,27 @@ internal sealed partial class CliFxHelpTextParser
         return items;
     }
 
+    private static bool CanStartItem(string? key, string? description)
+    {
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return false;
+        }
+
+        if (CommandPrototypeSupport.IsNarrativeBareCommandToken(key))
+        {
+            return false;
+        }
+
+        return !string.IsNullOrWhiteSpace(description)
+            || CommandPrototypeSupport.AllowsBlankDescriptionLine(key);
+    }
+
     private static void FlushItem(ICollection<CliFxHelpItem> items, string? key, bool isRequired, string? description)
     {
-        if (!string.IsNullOrWhiteSpace(key))
+        if (CanStartItem(key, description))
         {
-            items.Add(new CliFxHelpItem(key, isRequired, string.IsNullOrWhiteSpace(description) ? null : description.Trim()));
+            items.Add(new CliFxHelpItem(key!, isRequired, string.IsNullOrWhiteSpace(description) ? null : description.Trim()));
         }
     }
 
@@ -162,4 +185,3 @@ internal sealed partial class CliFxHelpTextParser
     [GeneratedRegex(@"^(?<title>.+?)\s+(?<version>v?\d[\w\.\-\+]*)$", RegexOptions.Compiled)]
     private static partial Regex TitleLineRegex();
 }
-

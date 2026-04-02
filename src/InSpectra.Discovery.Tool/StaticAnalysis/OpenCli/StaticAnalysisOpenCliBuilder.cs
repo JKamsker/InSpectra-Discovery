@@ -7,6 +7,7 @@ using InSpectra.Discovery.Tool.OpenCli.Documents;
 using InSpectra.Discovery.Tool.OpenCli.Structure;
 
 using InSpectra.Discovery.Tool.Help.Documents;
+using InSpectra.Discovery.Tool.Help.Inference.Usage;
 
 using InSpectra.Discovery.Tool.StaticAnalysis.Models;
 
@@ -117,6 +118,7 @@ internal sealed class StaticAnalysisOpenCliBuilder
         var helpCommandKeys = restrictStaticCommands
             ? BuildHelpCommandKeySet(commandName, helpDocuments)
             : null;
+        var includeHelpDerivedCommands = ShouldIncludeHelpDerivedCommands(commandName, staticCommands, helpDocuments);
 
         foreach (var pair in staticCommands.Where(pair => !string.IsNullOrWhiteSpace(pair.Key)))
         {
@@ -135,28 +137,41 @@ internal sealed class StaticAnalysisOpenCliBuilder
             yield return new OpenCliCommandDescriptor(pair.Key, pair.Value.Description);
         }
 
-        foreach (var pair in helpDocuments)
+        if (includeHelpDerivedCommands)
         {
-            if (DocumentInspector.IsBuiltinAuxiliaryInventoryEcho(pair.Key, pair.Value))
+            foreach (var pair in helpDocuments)
             {
-                continue;
-            }
-
-            foreach (var child in pair.Value.Commands)
-            {
-                var childFullName = CommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);
-                if (DocumentInspector.IsBuiltinAuxiliaryCommandPath(childFullName))
+                if (DocumentInspector.IsBuiltinAuxiliaryInventoryEcho(pair.Key, pair.Value))
                 {
                     continue;
                 }
 
-                yield return new OpenCliCommandDescriptor(childFullName, child.Description);
-            }
-        }
+                if (!ShouldIncludeHelpChildCommands(commandName, pair.Key, pair.Value, staticCommands))
+                {
+                    continue;
+                }
 
-        foreach (var pair in helpDocuments.Where(pair => !string.IsNullOrWhiteSpace(pair.Key)))
-        {
-            yield return new OpenCliCommandDescriptor(pair.Key, pair.Value.CommandDescription);
+                foreach (var child in pair.Value.Commands)
+                {
+                    var childFullName = CommandPathSupport.ResolveChildKey(commandName, pair.Key, child.Key);
+                    if (DocumentInspector.IsBuiltinAuxiliaryCommandPath(childFullName))
+                    {
+                        continue;
+                    }
+
+                    yield return new OpenCliCommandDescriptor(childFullName, child.Description);
+                }
+            }
+
+            foreach (var pair in helpDocuments.Where(pair => !string.IsNullOrWhiteSpace(pair.Key)))
+            {
+                if (!ShouldIncludeHelpDocumentCommandSurface(commandName, pair.Key, pair.Value, staticCommands))
+                {
+                    continue;
+                }
+
+                yield return new OpenCliCommandDescriptor(pair.Key, pair.Value.CommandDescription);
+            }
         }
     }
 
@@ -205,6 +220,83 @@ internal sealed class StaticAnalysisOpenCliBuilder
     private static bool ShouldRestrictStaticCommandsToHelpGraph(IReadOnlyDictionary<string, Document> helpDocuments)
         => helpDocuments.TryGetValue(string.Empty, out var rootHelp)
             && rootHelp.Commands.Count > 0;
+
+    private static bool ShouldIncludeHelpDerivedCommands(
+        string commandName,
+        IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands,
+        IReadOnlyDictionary<string, Document> helpDocuments)
+    {
+        if (staticCommands.Count == 0)
+        {
+            return helpDocuments.Keys.Any(key => !string.IsNullOrWhiteSpace(key))
+                || (helpDocuments.TryGetValue(string.Empty, out var helpOnlyRoot)
+                    && UsageCommandInferenceSupport.LooksLikeCommandHub(commandName, helpOnlyRoot.UsageLines));
+        }
+
+        if (staticCommands.Keys.Any(key => !string.IsNullOrWhiteSpace(key)))
+        {
+            return true;
+        }
+
+        if (!helpDocuments.TryGetValue(string.Empty, out var rootHelp))
+        {
+            return helpDocuments.Keys.Any(key => !string.IsNullOrWhiteSpace(key));
+        }
+
+        return UsageCommandInferenceSupport.LooksLikeCommandHub(commandName, rootHelp.UsageLines);
+    }
+
+    private static bool ShouldIncludeHelpChildCommands(
+        string commandName,
+        string commandPath,
+        Document document,
+        IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands)
+    {
+        if (UsageCommandInferenceSupport.LooksLikeCommandHub(commandName, document.UsageLines))
+        {
+            return true;
+        }
+
+        if (staticCommands.Keys.Any(key =>
+                !string.IsNullOrWhiteSpace(key)
+                && key.StartsWith((string.IsNullOrWhiteSpace(commandPath) ? string.Empty : commandPath + " "), StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return document.Options.Count == 0 && document.Arguments.Count == 0;
+    }
+
+    private static bool ShouldIncludeHelpDocumentCommandSurface(
+        string commandName,
+        string commandPath,
+        Document document,
+        IReadOnlyDictionary<string, StaticCommandDefinition> staticCommands)
+    {
+        if (UsageCommandInferenceSupport.LooksLikeCommandHub(commandName, document.UsageLines))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(commandPath))
+        {
+            return document.Options.Count == 0 && document.Arguments.Count == 0;
+        }
+
+        if (staticCommands.ContainsKey(commandPath))
+        {
+            return true;
+        }
+
+        if (staticCommands.Keys.Any(key =>
+                !string.IsNullOrWhiteSpace(key)
+                && key.StartsWith(commandPath + " ", StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+
+        return document.Options.Count == 0 && document.Arguments.Count == 0;
+    }
 
     private static HashSet<string> BuildHelpCommandKeySet(
         string commandName,

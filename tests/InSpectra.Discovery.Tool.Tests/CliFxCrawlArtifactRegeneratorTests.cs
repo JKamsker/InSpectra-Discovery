@@ -678,6 +678,119 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
         Assert.Equal("upload", command["name"]?.GetValue<string>());
     }
 
+    [Fact]
+    public void Regenerator_Does_Not_Publish_Wrapped_Narrative_Paragraphs_As_Command_Trees()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "rember", "0.0.4");
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "metadata.json"),
+            new JsonObject
+            {
+                ["schemaVersion"] = 1,
+                ["packageId"] = "Rember",
+                ["version"] = "0.0.4",
+                ["command"] = "rember",
+                ["cliFramework"] = "CliFx",
+                ["steps"] = new JsonObject
+                {
+                    ["opencli"] = new JsonObject
+                    {
+                        ["artifactSource"] = "crawled-from-clifx-help",
+                    },
+                },
+                ["artifacts"] = new JsonObject
+                {
+                    ["metadataPath"] = "index/packages/rember/0.0.4/metadata.json",
+                    ["opencliPath"] = "index/packages/rember/0.0.4/opencli.json",
+                    ["opencliSource"] = "crawled-from-clifx-help",
+                    ["crawlPath"] = "index/packages/rember/0.0.4/crawl.json",
+                },
+            });
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "crawl.json"),
+            new JsonObject
+            {
+                ["documentCount"] = 2,
+                ["captureCount"] = 2,
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["command"] = null,
+                        ["payload"] =
+                            """
+                            Rember v0.0.4
+
+                            USAGE
+                              rember [command] [...]
+
+                            COMMANDS
+                              init              Creates a pre-push git hook.
+
+                              By default, you will be asked whether you want to run builds and tests which is great if you are using the terminal
+                              but will probably cause issues with GUIs. Be sure to use the -y flag if you are using GUIs.
+                            """,
+                    },
+                    new JsonObject
+                    {
+                        ["command"] = "init",
+                        ["payload"] =
+                            """
+                            Rember v0.0.4
+
+                            USAGE
+                              rember init [options]
+
+                            DESCRIPTION
+                              Creates a pre-push git hook.
+
+                            OPTIONS
+                              -y|--yes          Always runs the tasks without asking you. Default: "False".
+                            """,
+                    },
+                },
+            });
+
+        RepositoryPathResolver.WriteJsonFile(
+            Path.Combine(versionRoot, "opencli.json"),
+            new JsonObject
+            {
+                ["opencli"] = "0.1-draft",
+                ["x-inspectra"] = new JsonObject
+                {
+                    ["artifactSource"] = "crawled-from-clifx-help",
+                    ["cliFramework"] = "CliFx",
+                },
+                ["commands"] = new JsonArray
+                {
+                    new JsonObject
+                    {
+                        ["name"] = "stale",
+                        ["hidden"] = false,
+                    },
+                },
+            });
+
+        var regenerator = new CliFxCrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var regenerated = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        var commands = regenerated["commands"]!.AsArray().OfType<JsonObject>().ToArray();
+        var initCommand = Assert.Single(commands);
+        Assert.Equal("init", initCommand["name"]?.GetValue<string>());
+        Assert.Null(initCommand["commands"]);
+    }
+
     private static JsonObject ParseJsonObject(string path)
         => JsonNode.Parse(File.ReadAllText(path))?.AsObject()
            ?? throw new InvalidOperationException($"JSON file '{path}' is empty.");
@@ -703,5 +816,3 @@ public sealed class CliFxCrawlArtifactRegeneratorTests
         }
     }
 }
-
-

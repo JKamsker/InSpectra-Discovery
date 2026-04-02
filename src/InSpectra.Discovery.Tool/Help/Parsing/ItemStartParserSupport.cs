@@ -112,6 +112,11 @@ internal static partial class ItemStartParserSupport
             {
                 return false;
             }
+
+            if (CommandPrototypeSupport.IsNarrativeBareCommandToken(key))
+            {
+                return false;
+            }
         }
 
         if (kind == ItemKind.Argument)

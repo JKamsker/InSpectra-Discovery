@@ -5,7 +5,9 @@ using System.Text.RegularExpressions;
 internal static partial class CommandPrototypeSupport
 {
     public static bool AllowsBlankDescriptionLine(string key)
-        => LooksLikeCommandPrototype(key) || LooksLikeBareCommandToken(key);
+        => LooksLikeCommandPrototype(key)
+            || LooksLikeBareCommandToken(key)
+            || LooksLikeBlankDescriptionCommandPhrase(key);
 
     public static bool TryParseBareShortLongAliasRow(
         string rawLine,
@@ -42,6 +44,20 @@ internal static partial class CommandPrototypeSupport
             && tokens.Skip(1).All(LooksLikePrototypeToken);
     }
 
+    public static bool LooksLikeBlankDescriptionCommandPhrase(string key)
+    {
+        var tokens = SplitTokens(key);
+        return tokens.Length is > 1 and <= 4
+            && tokens.All(LooksLikeCommandSegment)
+            && tokens.All(token => !LooksLikeNarrativeToken(token));
+    }
+
+    public static bool IsNarrativeBareCommandToken(string key)
+    {
+        var tokens = SplitTokens(key);
+        return tokens.Length == 1 && LooksLikeNarrativeToken(tokens[0]);
+    }
+
     public static bool LooksLikeBareShortLongOptionRow(string rawLine)
         => BareShortLongAliasRowRegex().IsMatch(rawLine);
 
@@ -65,7 +81,9 @@ internal static partial class CommandPrototypeSupport
     private static bool LooksLikeBareCommandToken(string key)
     {
         var tokens = SplitTokens(key);
-        return tokens.Length == 1 && LooksLikeCommandSegment(tokens[0]);
+        return tokens.Length == 1
+            && LooksLikeCommandSegment(tokens[0])
+            && !LooksLikeNarrativeToken(tokens[0]);
     }
 
     private static string[] SplitTokens(string key)
@@ -96,6 +114,41 @@ internal static partial class CommandPrototypeSupport
         => segment.Length > 0
             && char.IsLetter(segment[0])
             && segment.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' or '.' or ':' or '+');
+
+    private static bool LooksLikeNarrativeToken(string token)
+    {
+        var trimmed = token.Trim(',', ':', ';', '.');
+        return trimmed.Length == 0
+            || NarrativeTokens.Contains(trimmed);
+    }
+
+    private static readonly HashSet<string> NarrativeTokens = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "a",
+        "an",
+        "are",
+        "be",
+        "but",
+        "if",
+        "in",
+        "is",
+        "it",
+        "may",
+        "must",
+        "the",
+        "their",
+        "there",
+        "they",
+        "this",
+        "was",
+        "when",
+        "which",
+        "will",
+        "without",
+        "should",
+        "you",
+        "your",
+    };
 
     [GeneratedRegex(@"^\s*(?<short>[A-Za-z0-9\?])\s*,\s*(?<long>[A-Za-z][A-Za-z0-9_.-]*)\s{2,}(?<description>\S.*)$", RegexOptions.Compiled)]
     private static partial Regex BareShortLongAliasRowRegex();

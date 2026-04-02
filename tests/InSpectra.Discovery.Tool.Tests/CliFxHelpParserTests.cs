@@ -114,5 +114,62 @@ public sealed class CliFxHelpParserTests
         Assert.Single(document.Commands);
         Assert.Equal("convert", document.Commands[0].Key);
     }
-}
 
+    [Fact]
+    public void Ignores_Narrative_Paragraph_Rows_In_Commands_Sections()
+    {
+        var parser = new CliFxHelpTextParser();
+        var document = parser.Parse(
+            """
+            Rember v0.0.4
+
+            USAGE
+              rember [command] [...]
+
+            COMMANDS
+              init              Creates a pre-push git hook.
+
+              By default the hook will both build and test your code unless specified otherwise with the -b and -t flags.
+              Alternatively you can point to a config yml file using the -f flag.
+            """);
+
+        var commands = Assert.Single(document.Commands);
+        Assert.Equal("init", commands.Key);
+        Assert.Equal(
+            """
+            Creates a pre-push git hook.
+            By default the hook will both build and test your code unless specified otherwise with the -b and -t flags.
+            Alternatively you can point to a config yml file using the -f flag.
+            """.Replace("\r\n", "\n", StringComparison.Ordinal),
+            commands.Description);
+    }
+
+    [Fact]
+    public void Treats_Wrapped_Narrative_Command_Paragraphs_As_Command_Descriptions()
+    {
+        var parser = new CliFxHelpTextParser();
+        var document = parser.Parse(
+            """
+            Rember v0.0.4
+
+            USAGE
+              rember [command] [...]
+
+            COMMANDS
+              init              Creates a pre-push git hook.
+
+              By default, you will be asked whether you want to run builds and tests which is great if you are using the terminal
+              but will probably cause issues with GUIs. Be sure to use the -y flag if you are using GUIs.
+            """);
+
+        var command = Assert.Single(document.Commands);
+        Assert.Equal("init", command.Key);
+        Assert.Equal(
+            """
+            Creates a pre-push git hook.
+            By default, you will be asked whether you want to run builds and tests which is great if you are using the terminal
+            but will probably cause issues with GUIs. Be sure to use the -y flag if you are using GUIs.
+            """.Replace("\r\n", "\n", StringComparison.Ordinal),
+            command.Description);
+    }
+}

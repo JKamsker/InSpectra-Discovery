@@ -405,6 +405,144 @@ public sealed class StaticAnalysisOpenCliBuilderTests
         Assert.Null(document["arguments"]);
     }
 
+    [Fact]
+    public void Build_Does_Not_Import_Help_Derived_Commands_For_Default_Only_Static_Option_Tools()
+    {
+        var builder = new StaticAnalysisOpenCliBuilder();
+        var staticCommands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Name: null,
+                Description: null,
+                IsDefault: true,
+                IsHidden: false,
+                Values: [],
+                Options:
+                [
+                    new StaticOptionDefinition(
+                        LongName: "project-name",
+                        ShortName: 'p',
+                        IsRequired: false,
+                        IsSequence: false,
+                        IsBoolLike: false,
+                        ClrType: "System.String",
+                        Description: "Project Name",
+                        DefaultValue: null,
+                        MetaValue: null,
+                        AcceptedValues: [],
+                        PropertyName: "ProjectName"),
+                ]),
+        };
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = new(
+                Title: "DotnetAzureNaming",
+                Version: "1.0.0",
+                ApplicationDescription: "This tool will help you name Azure Resources.",
+                CommandDescription: null,
+                UsageLines:
+                [
+                    "azure-naming --component-name Web --environment Development --project-name Titanic --resource-type \"Function app\"",
+                    "azure-naming -c Web -e dev -p Titanic -r func",
+                ],
+                Arguments: [],
+                Options:
+                [
+                    new Item("-p, --project-name", false, "Project Name"),
+                ],
+                Commands:
+                [
+                    new Item("MAY add custom environment specifiers to your", false, null),
+                    new Item("MUST include a project that MAY be the application", false, null),
+                ]),
+        };
+
+        var document = builder.Build(
+            "azure-naming",
+            "1.0.0",
+            "CommandLineParser",
+            staticCommands,
+            helpDocuments);
+
+        Assert.Null(document["commands"]);
+
+        var options = Assert.IsType<JsonArray>(document["options"]);
+        var projectName = Assert.IsType<JsonObject>(Assert.Single(options));
+        Assert.Equal("--project-name", projectName["name"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Build_Does_Not_Import_Help_Child_Commands_For_Static_Verbs_That_Are_Not_Dispatchers()
+    {
+        var builder = new StaticAnalysisOpenCliBuilder();
+        var staticCommands = new Dictionary<string, StaticCommandDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["single-file"] = new(
+                Name: "single-file",
+                Description: "Combines multiple source code files (.cs) into a single one.",
+                IsDefault: false,
+                IsHidden: false,
+                Values: [],
+                Options:
+                [
+                    new StaticOptionDefinition(
+                        LongName: "output",
+                        ShortName: 'o',
+                        IsRequired: false,
+                        IsSequence: false,
+                        IsBoolLike: false,
+                        ClrType: "System.String",
+                        Description: "Output path.",
+                        DefaultValue: null,
+                        MetaValue: "OUTPUT",
+                        AcceptedValues: [],
+                        PropertyName: "Output"),
+                ]),
+            ["zip"] = new(
+                Name: "zip",
+                Description: "Creates a zip file.",
+                IsDefault: false,
+                IsHidden: false,
+                Values: [],
+                Options: []),
+        };
+        var helpDocuments = new Dictionary<string, Document>(StringComparer.OrdinalIgnoreCase)
+        {
+            [""] = CreateHelpDocument(
+                title: "dotnet combine",
+                version: "0.4.0",
+                commands:
+                [
+                    new Item("single-file", false, "Combines multiple source code files (.cs) into a single one."),
+                    new Item("zip", false, "Creates a zip file."),
+                ]),
+            ["single-file"] = CreateHelpDocument(
+                description: "Combines multiple source code files (.cs) into a single one.",
+                options:
+                [
+                    new Item("-o, --output <PATH>", false, "Output path."),
+                ],
+                commands:
+                [
+                    new Item("dir path is provided", false, null),
+                    new Item("filename is provided", false, null),
+                ]),
+            ["zip"] = CreateHelpDocument(
+                description: "Creates a zip file."),
+        };
+
+        var document = builder.Build(
+            "dotnet-combine",
+            "0.4.0",
+            "CommandLineParser",
+            staticCommands,
+            helpDocuments);
+
+        var commands = Assert.IsType<JsonArray>(document["commands"]);
+        var singleFile = Assert.IsType<JsonObject>(commands.OfType<JsonObject>().Single(command => string.Equals(command["name"]?.GetValue<string>(), "single-file", StringComparison.Ordinal)));
+        Assert.Null(singleFile["commands"]);
+    }
+
     private static Document CreateHelpDocument(
         string? title = null,
         string? version = null,

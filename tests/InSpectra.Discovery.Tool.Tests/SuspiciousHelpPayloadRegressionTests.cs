@@ -225,6 +225,57 @@ public sealed class SuspiciousHelpPayloadRegressionTests
         Assert.Null(listCommand!["commands"]);
     }
 
+    [Fact]
+    public void Regenerator_Preserves_Usage_Arguments_And_Does_Not_Promote_Them_To_Commands()
+    {
+        Runtime.Initialize();
+
+        using var tempDirectory = new TemporaryDirectory();
+        var repositoryRoot = tempDirectory.Path;
+        RepositoryPathResolver.WriteTextFile(Path.Combine(repositoryRoot, "InSpectra.Discovery.sln"), string.Empty);
+
+        var versionRoot = Path.Combine(repositoryRoot, "index", "packages", "fsdgencsharp", "2.38.0");
+        WriteMetadata(versionRoot, "FsdGenCSharp", "2.38.0", "fsdgencsharp");
+        WriteCrawl(
+            versionRoot,
+            (null,
+                """
+                Generates C# for a Facility Service Definition.
+
+                Usage: fsdgencsharp input output [options]
+
+                   input
+                      The path to the input file (- for stdin).
+                   output
+                      The path to the output directory.
+
+                   --nullable
+                      Use nullable reference syntax in the generated C#.
+                   --dry-run
+                      Executes the tool without making changes to the file system.
+                """));
+
+        var regenerator = new CrawlArtifactRegenerator();
+        var result = regenerator.RegenerateRepository(repositoryRoot);
+
+        Assert.Equal(1, result.CandidateCount);
+        Assert.Equal(1, result.RewrittenCount);
+
+        var openCli = ParseJsonObject(Path.Combine(versionRoot, "opencli.json"));
+        Assert.True((openCli["commands"]?.AsArray().Count ?? 0) == 0);
+
+        var arguments = openCli["arguments"]?.AsArray().OfType<JsonObject>().ToArray() ?? [];
+        var argumentNames = arguments.Select(argument => argument["name"]?.GetValue<string>()).ToArray();
+        Assert.Collection(
+            argumentNames,
+            name => Assert.Equal("INPUT", name),
+            name => Assert.Equal("OUTPUT", name));
+
+        var optionNames = GetOptionNames(openCli);
+        Assert.Contains("--nullable", optionNames);
+        Assert.Contains("--dry-run", optionNames);
+    }
+
     private static void WriteMetadata(string versionRoot, string packageId, string version, string command)
     {
         RepositoryPathResolver.WriteJsonFile(

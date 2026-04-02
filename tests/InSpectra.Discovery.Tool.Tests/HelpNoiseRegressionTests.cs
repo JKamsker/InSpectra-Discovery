@@ -135,6 +135,65 @@ public sealed class HelpNoiseRegressionTests
     }
 
     [Fact]
+    public void Does_Not_Promote_Option_Description_Prose_Into_Commands()
+    {
+        var parser = new TextParser();
+
+        var document = parser.Parse(
+            """
+            ArmDotConsole [Version 2026.5.0.0]
+            (c) 2004 - 2025 Softanics. All Rights Reserved
+
+            Usage:
+
+            Shows this help:
+            ArmDotConsole --help
+
+            General
+
+            Option                            Description
+
+            --help                            Displays usage.
+
+            --output-assembly <assembly path> If specified, ArmDotConsole writes obfuscated assembly to assembly path.
+                                              If --output-assembly is omitted, ArmDotConsole writes obfuscated assembly
+                                              to the same file.
+
+            --enable-control-flow-obfuscation If specified, ArmDotConsole obfuscates control flow of the assembly specified
+                                              by --input-assembly.
+            """);
+
+        Assert.Empty(document.Commands);
+    }
+
+    [Fact]
+    public void Does_Not_Promote_Default_Source_Prose_Into_Commands()
+    {
+        var parser = new TextParser();
+
+        var document = parser.Parse(
+            """
+            Command line tool for watching and interpreting F# projects
+
+            Usage: <tool> arg .. arg [-- <other-args>]
+                   <tool> @args.rsp  [-- <other-args>]
+                   <tool> ... Project.fsproj ... [-- <other-args>]
+
+            The default source is a single project file in the current directory.
+            The default output is a JSON dump of the PortaCode.
+
+            Arguments:
+               --watch           Watch the source files of the project for changes
+               --webhook:<url>   Send the JSON-encoded contents of the PortaCode to the webhook
+               <other-args>      All other args are assumed to be extra F# command line arguments
+            """);
+
+        Assert.Empty(document.Commands);
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--watch", StringComparison.Ordinal));
+        Assert.Contains(document.Arguments, argument => string.Equals(argument.Key, "other-args", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Keeps_Box_Table_Continuation_Rows_After_Their_Entry_Row()
     {
         var lines = new[]
@@ -621,5 +680,44 @@ public sealed class HelpNoiseRegressionTests
         Assert.True(commands.Length == 0, $"Unexpected commands: {string.Join(", ", commands)}");
         Assert.DoesNotContain("Apache", document.ToJsonString(), StringComparison.Ordinal);
         Assert.DoesNotContain("\"above\"", document.ToJsonString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parses_Bare_Usage_Argument_Rows_Without_Inferring_Commands()
+    {
+        var parser = new TextParser();
+
+        var document = parser.Parse(
+            """
+            Generates C# for a Facility Service Definition.
+
+            Usage: fsdgencsharp input output [options]
+
+               input
+                  The path to the input file (- for stdin).
+               output
+                  The path to the output directory.
+
+               --nullable
+                  Use nullable reference syntax in the generated C#.
+               --dry-run
+                  Executes the tool without making changes to the file system.
+            """);
+
+        Assert.Empty(document.Commands);
+
+        Assert.Collection(
+            document.Arguments,
+            argument =>
+            {
+                Assert.Equal("input", argument.Key);
+            },
+            argument =>
+            {
+                Assert.Equal("output", argument.Key);
+            });
+
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--nullable", StringComparison.Ordinal));
+        Assert.Contains(document.Options, option => string.Equals(option.Key, "--dry-run", StringComparison.Ordinal));
     }
 }

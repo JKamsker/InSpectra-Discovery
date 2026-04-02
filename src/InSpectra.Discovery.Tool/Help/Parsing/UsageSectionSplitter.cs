@@ -54,6 +54,14 @@ internal static partial class UsageSectionSplitter
                     continue;
                 }
 
+                if (TryClassifyBareArgumentUsageLine(lines, index, out nextTarget, out indentation))
+                {
+                    currentTarget = nextTarget;
+                    currentIndentation = indentation;
+                    GetTargetLines(currentTarget, argumentLines, optionLines).Add(rawLine);
+                    continue;
+                }
+
                 if (GetIndentation(rawLine) > currentIndentation)
                 {
                     GetTargetLines(currentTarget, argumentLines, optionLines).Add(rawLine);
@@ -62,6 +70,12 @@ internal static partial class UsageSectionSplitter
             }
 
             if (sawUsageSeparator && TryClassifyStructuredUsageLine(rawLine, out currentTarget, out currentIndentation))
+            {
+                GetTargetLines(currentTarget, argumentLines, optionLines).Add(rawLine);
+                continue;
+            }
+
+            if (sawUsageSeparator && TryClassifyBareArgumentUsageLine(lines, index, out currentTarget, out currentIndentation))
             {
                 GetTargetLines(currentTarget, argumentLines, optionLines).Add(rawLine);
                 continue;
@@ -99,6 +113,46 @@ internal static partial class UsageSectionSplitter
 
         if (PositionalArgumentRowRegex().IsMatch(trimmed))
         {
+            target = UsageSectionTarget.Arguments;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryClassifyBareArgumentUsageLine(
+        IReadOnlyList<string> lines,
+        int index,
+        out UsageSectionTarget target,
+        out int indentation)
+    {
+        target = UsageSectionTarget.Usage;
+        indentation = GetIndentation(lines[index]);
+        var trimmed = lines[index].Trim();
+        if (!LooksLikeBareArgumentKey(trimmed))
+        {
+            return false;
+        }
+
+        for (var nextIndex = index + 1; nextIndex < lines.Count; nextIndex++)
+        {
+            var nextLine = lines[nextIndex];
+            if (string.IsNullOrWhiteSpace(nextLine))
+            {
+                continue;
+            }
+
+            if (GetIndentation(nextLine) <= indentation)
+            {
+                return false;
+            }
+
+            var description = nextLine.Trim();
+            if (!LooksLikeArgumentDescription(description))
+            {
+                return false;
+            }
+
             target = UsageSectionTarget.Arguments;
             return true;
         }
@@ -148,6 +202,38 @@ internal static partial class UsageSectionSplitter
         return letters.Length > 0
             && letters.All(char.IsUpper)
             && line.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_');
+    }
+
+    private static bool LooksLikeBareArgumentKey(string line)
+    {
+        if (string.IsNullOrWhiteSpace(line)
+            || line.EndsWith(":", StringComparison.Ordinal)
+            || line.StartsWith("-", StringComparison.Ordinal)
+            || line.StartsWith("/", StringComparison.Ordinal)
+            || line.Contains('[', StringComparison.Ordinal)
+            || line.Contains('<', StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return line.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .All(token => token.All(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_' or '.'));
+    }
+
+    private static bool LooksLikeArgumentDescription(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            return false;
+        }
+
+        return description.StartsWith("The ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("A ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("An ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Required.", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Optional.", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Arbitrary ", StringComparison.OrdinalIgnoreCase)
+            || description.StartsWith("Signifies ", StringComparison.OrdinalIgnoreCase);
     }
 
     [GeneratedRegex(@"^\S(?:.*?\S)?\s+(?:\(pos\.\s*\d+\)|pos\.\s*\d+)(?:\s+\S.*)?$", RegexOptions.Compiled | RegexOptions.IgnoreCase)]

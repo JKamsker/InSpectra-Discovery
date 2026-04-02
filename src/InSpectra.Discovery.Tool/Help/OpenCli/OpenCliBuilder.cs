@@ -3,6 +3,7 @@ namespace InSpectra.Discovery.Tool.Help.OpenCli;
 using InSpectra.Discovery.Tool.OpenCli.Documents;
 
 using InSpectra.Discovery.Tool.Help.Documents;
+using InSpectra.Discovery.Tool.Help.Inference.Usage;
 
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -20,8 +21,10 @@ internal sealed partial class OpenCliBuilder
     {
         var expandedHelpDocuments = EmbeddedCommandDocumentExpansionSupport.Expand(commandName, helpDocuments);
         expandedHelpDocuments.TryGetValue(string.Empty, out var rootHelp);
-        var rootCommands = new JsonArray(_commandTreeBuilder
-            .Build(commandName, expandedHelpDocuments)
+        var includeHelpDerivedCommands = ShouldIncludeHelpDerivedCommands(commandName, expandedHelpDocuments);
+        var rootCommands = new JsonArray((includeHelpDerivedCommands
+                ? _commandTreeBuilder.Build(commandName, expandedHelpDocuments)
+                : Array.Empty<CommandNode>())
             .Select(node => BuildCommandNode(commandName, node, expandedHelpDocuments))
             .ToArray());
         var document = new JsonObject
@@ -96,6 +99,34 @@ internal sealed partial class OpenCliBuilder
 
         AddIfPresent(info, "description", description);
         return info;
+    }
+
+    private static bool ShouldIncludeHelpDerivedCommands(
+        string commandName,
+        IReadOnlyDictionary<string, Document> helpDocuments)
+    {
+        if (helpDocuments.Keys.Any(key => !string.IsNullOrWhiteSpace(key)))
+        {
+            return true;
+        }
+
+        if (!helpDocuments.TryGetValue(string.Empty, out var rootHelp)
+            || rootHelp.Commands.Count == 0)
+        {
+            return false;
+        }
+
+        if (rootHelp.Options.Count == 0 && rootHelp.Arguments.Count == 0)
+        {
+            return true;
+        }
+
+        if (rootHelp.Commands.Any(command => !string.IsNullOrWhiteSpace(command.Description)))
+        {
+            return true;
+        }
+
+        return UsageCommandInferenceSupport.LooksLikeCommandHub(commandName, rootHelp.UsageLines);
     }
 
     private static bool LooksLikeDescriptionNotTitle(string title, string commandName)

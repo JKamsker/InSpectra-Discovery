@@ -5,6 +5,56 @@ using InSpectra.Discovery.Tool.Help.Signatures;
 
 internal static class UsageCommandInferenceSupport
 {
+    public static bool LooksLikeCommandHub(
+        string rootCommandName,
+        IReadOnlyList<string> usageLines)
+    {
+        if (usageLines.Count == 0)
+        {
+            return false;
+        }
+
+        var rootSegments = SplitSegments(rootCommandName);
+        foreach (var usageLine in usageLines)
+        {
+            var prototype = StripLinePrefix(usageLine);
+            if (ContainsCommandPlaceholder(prototype))
+            {
+                return true;
+            }
+
+            var tokens = TokenizeUsageLine(prototype);
+            if (tokens.Length == 0)
+            {
+                continue;
+            }
+
+            if (rootSegments.Length == 0)
+            {
+                continue;
+            }
+
+            var rootStart = FindTokenSequence(tokens, rootSegments);
+            if (rootStart < 0)
+            {
+                continue;
+            }
+
+            var nextTokenIndex = rootStart + rootSegments.Length;
+            if (nextTokenIndex >= tokens.Length)
+            {
+                continue;
+            }
+
+            if (LooksLikeCommandPlaceholder(tokens[nextTokenIndex]))
+            {
+                return true;
+            }
+        }
+
+        return InferCommands(usageLines).Count > 0;
+    }
+
     public static IReadOnlyList<Item> InferCommands(
         IReadOnlyList<string> usageLines)
     {
@@ -230,6 +280,40 @@ internal static class UsageCommandInferenceSupport
             || prototype.Contains("--", StringComparison.Ordinal)
             || prototype.Contains("...", StringComparison.Ordinal)
             || prototype.Contains('|', StringComparison.Ordinal);
+
+    private static bool ContainsCommandPlaceholder(string prototype)
+    {
+        var normalized = prototype.Trim();
+        return normalized.Contains("[command]", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("<command>", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("[commands]", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("<commands>", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("[subcommand]", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("<subcommand>", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("[subcommands]", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("<subcommands>", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains(" [cmd]", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains(" <cmd>", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains(" [verb]", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains(" <verb>", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikeCommandPlaceholder(string token)
+    {
+        var normalized = token.Trim().Trim(',', ';', ':');
+        return string.Equals(normalized, "[command]", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "<command>", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "[commands]", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "<commands>", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "[subcommand]", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "<subcommand>", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "[subcommands]", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "<subcommands>", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "[cmd]", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "<cmd>", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "[verb]", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(normalized, "<verb>", StringComparison.OrdinalIgnoreCase);
+    }
 
     private static bool LooksLikeDecorativeDescription(string description)
         => description.All(ch => !char.IsLetterOrDigit(ch));

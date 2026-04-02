@@ -59,5 +59,19 @@ public sealed class RootCommandInventoryInferenceTests
 
         Assert.False(looksLikeAliasInventory);
     }
-}
 
+    [Fact]
+    public void InferLines_Does_Not_Treat_Indented_Prose_As_Command_Inventory()
+    {
+        var lines = RootCommandInventoryInference.InferLines(
+            [
+                "The Integration Of Reciprocal Problem",
+                "",
+                " A persistent instability in any inductive test best-practice cannot always help us.  It is recognized that any fundamental dichotomies of the benchmark should not divert attention from The Integration Of Reciprocal Problem'",
+                "",
+                "Based on integral subsystems, the ball-park figures for the flexible manufacturing system provides the bridge between the key area of opportunity and the universe of contemplation.",
+            ]);
+
+        Assert.Empty(lines);
+    }
+}
