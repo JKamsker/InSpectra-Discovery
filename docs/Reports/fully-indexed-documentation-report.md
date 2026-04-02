@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-02 01:08:49+00:00
+Generated: 2026-04-02 04:03:07+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 19
+Packages in scope: 20
 
-Fully documented: 9
+Fully documented: 10
 
 Incomplete: 10
 
@@ -35,6 +35,7 @@ Incomplete: 10
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
 | [DotnetTokenKiller](#pkg-dotnettokenkiller) | 0.5.0 | ok | xml-ready | 21/21 | 36/36 | 8/8 | 18/18 | PASS |
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
+| [ThunderPipe](#pkg-thunderpipe) | 1.0.2 | ok | xml-ready | 10/10 | 24/24 | 13/13 | 7/7 | PASS |
 
 ## Package Details
 
@@ -355,6 +356,23 @@ Incomplete: 10
 - Option documentation: `3/3`
 - Argument documentation: `0/0`
 - Leaf command examples: `1/1`
+- Overall: `PASS`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: None
+
+<a id="pkg-thunderpipe"></a>
+### ThunderPipe
+
+- Version: `1.0.2`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `10/10`
+- Option documentation: `24/24`
+- Argument documentation: `13/13`
+- Leaf command examples: `7/7`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
