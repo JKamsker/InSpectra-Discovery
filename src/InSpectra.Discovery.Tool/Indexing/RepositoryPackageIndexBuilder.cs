@@ -4,6 +4,8 @@ using InSpectra.Discovery.Tool.OpenCli.Documents;
 
 using InSpectra.Discovery.Tool.Docs.Indexing;
 
+using InSpectra.Discovery.Tool.Infrastructure.Json;
+
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
 
 
@@ -39,13 +41,14 @@ internal static class RepositoryPackageIndexBuilder
                 browserIndexPath,
                 CancellationToken.None,
                 now);
+            var minBrowserIndex = DocsBrowserIndexSupport.BuildMinBrowserIndex(browserIndex);
 
             RepositoryPathResolver.WriteJsonFile(
                 browserIndexPath,
-                browserIndex);
+                DocsBrowserIndexSupport.StabilizeVolatileTimestamps(browserIndexPath, browserIndex));
             RepositoryPathResolver.WriteJsonFile(
                 browserMinIndexPath,
-                DocsBrowserIndexSupport.BuildMinBrowserIndex(browserIndex));
+                DocsBrowserIndexSupport.StabilizeVolatileTimestamps(browserMinIndexPath, minBrowserIndex));
         }
 
         return new RepositoryPackageIndexBuildResult(packageSummaries.Count, versionRecordCount, allIndexPath, browserIndexPath, browserMinIndexPath);
@@ -129,7 +132,7 @@ internal static class RepositoryPackageIndexBuilder
         DateTimeOffset now)
     {
         var allIndexTimestamps = RepositoryPackageIndexTimestampSupport.ResolveDocumentTimestamps(allIndexPath, now);
-        return new JsonObject
+        var allIndex = new JsonObject
         {
             ["schemaVersion"] = 1,
             ["createdAt"] = allIndexTimestamps.CreatedAt,
@@ -138,6 +141,14 @@ internal static class RepositoryPackageIndexBuilder
             ["packageCount"] = packageSummaries.Count,
             ["packages"] = new JsonArray(packageSummaries.Select(summary => (JsonNode)summary).ToArray()),
         };
+
+        JsonDocumentStabilitySupport.TryPreserveTopLevelProperties(
+            allIndex,
+            JsonNodeFileLoader.TryLoadJsonObject(allIndexPath),
+            "updatedAt",
+            "generatedAt");
+
+        return allIndex;
     }
 
     private static bool IsLatestMetadataPath(string metadataPath)

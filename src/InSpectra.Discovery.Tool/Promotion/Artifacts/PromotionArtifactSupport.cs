@@ -48,6 +48,52 @@ internal static class PromotionArtifactSupport
         return false;
     }
 
+    public static bool HasSameOptionalArtifactContent(string? artifactDirectory, string? artifactName, string destinationPath)
+    {
+        var sourcePath = ResolveOptionalArtifactPath(artifactDirectory, artifactName);
+        if (sourcePath is null)
+        {
+            return !File.Exists(destinationPath);
+        }
+
+        if (!File.Exists(destinationPath))
+        {
+            return false;
+        }
+
+        return File.ReadAllBytes(sourcePath).AsSpan().SequenceEqual(File.ReadAllBytes(destinationPath));
+    }
+
+    public static bool HasSameJsonObjectContent(string path, JsonObject? document)
+    {
+        if (document is null)
+        {
+            return !File.Exists(path);
+        }
+
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        return JsonNode.DeepEquals(JsonNodeFileLoader.TryLoadJsonObject(path), document);
+    }
+
+    public static bool HasSameTextContent(string path, string? content)
+    {
+        if (content is null)
+        {
+            return !File.Exists(path);
+        }
+
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        return string.Equals(File.ReadAllText(path), content, StringComparison.Ordinal);
+    }
+
     private static bool IsWithinDirectory(string directoryPath, string candidatePath)
     {
         var normalizedDirectory = directoryPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);

@@ -5,6 +5,7 @@ using InSpectra.Discovery.Tool.Infrastructure.Json;
 using InSpectra.Discovery.Tool.Indexing;
 
 
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 internal sealed record BrowserIndexDocument(
@@ -77,6 +78,21 @@ internal static class DocsBrowserIndexSupport
             PackageCount: browserIndex.PackageCount,
             IncludedPackageCount: topPackages.Length,
             Packages: topPackages);
+    }
+
+    public static JsonObject ToJsonObject(BrowserIndexDocument document)
+        => JsonSerializer.SerializeToNode(document, JsonOptions.RepositoryFiles)?.AsObject()
+           ?? throw new InvalidOperationException("Browser index document could not be serialized.");
+
+    public static JsonObject StabilizeVolatileTimestamps(string outputPath, BrowserIndexDocument document)
+    {
+        var json = ToJsonObject(document);
+        JsonDocumentStabilitySupport.TryPreserveTopLevelProperties(
+            json,
+            JsonNodeFileLoader.TryLoadJsonObject(outputPath),
+            "updatedAt",
+            "generatedAt");
+        return json;
     }
 
     private static JsonObject CreatePackageEntry(JsonObject package)

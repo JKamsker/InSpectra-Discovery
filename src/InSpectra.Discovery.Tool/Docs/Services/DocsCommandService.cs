@@ -62,8 +62,8 @@ internal sealed class DocsCommandService
         var browserIndex = DocsBrowserIndexSupport.BuildBrowserIndex(allIndex, outputFile, cancellationToken);
         var browserMinIndex = DocsBrowserIndexSupport.BuildMinBrowserIndex(browserIndex);
 
-        RepositoryPathResolver.WriteJsonFile(outputFile, browserIndex);
-        RepositoryPathResolver.WriteJsonFile(minOutputFile, browserMinIndex);
+        RepositoryPathResolver.WriteJsonFile(outputFile, DocsBrowserIndexSupport.StabilizeVolatileTimestamps(outputFile, browserIndex));
+        RepositoryPathResolver.WriteJsonFile(minOutputFile, DocsBrowserIndexSupport.StabilizeVolatileTimestamps(minOutputFile, browserMinIndex));
         var output = Runtime.CreateOutput();
         return await output.WriteSuccessAsync(
             new
@@ -139,8 +139,9 @@ internal sealed class DocsCommandService
         var manifest = await JsonNodeFileLoader.TryLoadJsonObjectAsync(manifestFile, cancellationToken)
             ?? throw new InvalidOperationException($"Manifest '{manifestFile}' is empty.");
         var report = DocsDocumentationReportSupport.BuildReport(root, manifest, cancellationToken);
+        var reportLines = DocsDocumentationReportStabilitySupport.PreserveGeneratedLineWhenContentIsUnchanged(reportFile, report.Lines);
 
-        RepositoryPathResolver.WriteLines(reportFile, report.Lines);
+        RepositoryPathResolver.WriteLines(reportFile, reportLines);
         var result = new
         {
             packageCount = report.PackageCount,

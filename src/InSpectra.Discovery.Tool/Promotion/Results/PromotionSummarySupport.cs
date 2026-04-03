@@ -52,5 +52,42 @@ internal static class PromotionSummarySupport
             });
         }
     }
-}
 
+    public static void RecordSuccessItem(JsonObject summary, JsonObject? existingPackageIndex, JsonObject result)
+    {
+        if (!string.Equals(result["disposition"]?.GetValue<string>(), "success", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        var packageId = result["packageId"]?.GetValue<string>();
+        var version = result["version"]?.GetValue<string>();
+        if (string.IsNullOrWhiteSpace(packageId) || string.IsNullOrWhiteSpace(version))
+        {
+            return;
+        }
+
+        var item = new JsonObject
+        {
+            ["packageId"] = packageId,
+            ["version"] = version,
+            ["change"] = "unchanged",
+        };
+
+        if (existingPackageIndex is null)
+        {
+            item["change"] = "created";
+        }
+        else
+        {
+            var previousVersion = existingPackageIndex["latestVersion"]?.GetValue<string>();
+            if (!string.Equals(previousVersion, version, StringComparison.OrdinalIgnoreCase))
+            {
+                item["change"] = "updated";
+                item["previousVersion"] = previousVersion;
+            }
+        }
+
+        ((JsonArray)summary["successItems"]!).Add(item);
+    }
+}

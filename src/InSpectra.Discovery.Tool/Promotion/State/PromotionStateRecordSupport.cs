@@ -27,6 +27,11 @@ internal static class PromotionStateRecordSupport
             _ => allowTerminalEscalation && consecutiveFailures >= 3 ? "terminal-failure" : "retryable-failure",
         };
 
+        if (CanPreserveExistingSuccessState(existingState, status, indexedPaths))
+        {
+            return existingState!.DeepClone().AsObject();
+        }
+
         return new JsonObject
         {
             ["schemaVersion"] = 1,
@@ -52,6 +57,13 @@ internal static class PromotionStateRecordSupport
         };
     }
 
+    private static bool CanPreserveExistingSuccessState(JsonObject? existingState, string status, JsonObject? indexedPaths)
+        => existingState is not null
+           && string.Equals(status, "success", StringComparison.Ordinal)
+           && string.Equals(existingState["currentStatus"]?.GetValue<string>(), "success", StringComparison.Ordinal)
+           && string.Equals(existingState["lastDisposition"]?.GetValue<string>(), "success", StringComparison.Ordinal)
+           && JsonNode.DeepEquals(existingState["indexedPaths"], indexedPaths);
+
     private static int GetBackoffHours(int attempt)
         => attempt switch
         {
@@ -60,4 +72,3 @@ internal static class PromotionStateRecordSupport
             _ => 24,
         };
 }
-

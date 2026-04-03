@@ -62,6 +62,7 @@ internal sealed class PromotionApplyCommandService
             ["retryableFailureCount"] = 0,
             ["terminalFailureCount"] = 0,
             ["missingCount"] = 0,
+            ["successItems"] = new JsonArray(),
             ["createdPackages"] = new JsonArray(),
             ["updatedPackages"] = new JsonArray(),
             ["nonSuccessItems"] = new JsonArray(),
@@ -141,6 +142,7 @@ internal sealed class PromotionApplyCommandService
             RepositoryPathResolver.WriteJsonFile(statePath, stateRecord);
 
             PromotionSummarySupport.IncrementSummaryCount(summary, stateRecord["currentStatus"]?.GetValue<string>());
+            PromotionSummarySupport.RecordSuccessItem(summary, existingPackageIndex, result);
             PromotionSummarySupport.UpdatePackageChangeSummary(summary, existingPackageIndex, result);
 
             if (!string.Equals(stateRecord["currentStatus"]?.GetValue<string>(), "success", StringComparison.Ordinal))

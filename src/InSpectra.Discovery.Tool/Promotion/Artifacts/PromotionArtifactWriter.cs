@@ -51,6 +51,15 @@ internal static class PromotionArtifactWriter
             ?? OpenCliArtifactSourceSupport.InferAnalysisMode(openCliDocument?["x-inspectra"]?["artifactSource"]?.GetValue<string>()));
 
         var hasOpenCliOutput = preparedOpenCliArtifact.HasOpenCliOutput;
+        var indexedArtifactsChanged = HaveIndexedArtifactsChanged(
+            artifactDirectory,
+            crawlArtifact,
+            crawlPath,
+            hasOpenCliOutput ? openCliDocument : null,
+            openCliPath,
+            preparedOpenCliArtifact.HasXmlDocContent ? xmlDocContent : null,
+            xmlDocPath);
+
         if (hasOpenCliOutput)
         {
             RepositoryPathResolver.WriteJsonFile(openCliPath, openCliDocument);
@@ -191,6 +200,7 @@ internal static class PromotionArtifactWriter
             },
         };
         BackfillStableMetadataFromExisting(metadata, existingMetadata);
+        PreserveVolatileMetadataForNoOpPromotion(metadata, existingMetadata, indexedArtifactsChanged);
 
         RepositoryPathResolver.WriteJsonFile(metadataPath, metadata);
 
@@ -240,5 +250,37 @@ internal static class PromotionArtifactWriter
             }
         }
     }
+
+    private static void PreserveVolatileMetadataForNoOpPromotion(
+        JsonObject metadata,
+        JsonObject? existingMetadata,
+        bool indexedArtifactsChanged)
+    {
+        if (indexedArtifactsChanged || existingMetadata is null)
+        {
+            return;
+        }
+
+        JsonDocumentStabilitySupport.TryPreserveTopLevelProperties(
+            metadata,
+            existingMetadata,
+            "source",
+            "batchId",
+            "attempt",
+            "evaluatedAt",
+            "timings");
+    }
+
+    private static bool HaveIndexedArtifactsChanged(
+        string? artifactDirectory,
+        string? crawlArtifact,
+        string crawlPath,
+        JsonObject? openCliDocument,
+        string openCliPath,
+        string? xmlDocContent,
+        string xmlDocPath)
+        => !PromotionArtifactSupport.HasSameJsonObjectContent(openCliPath, openCliDocument)
+           || !PromotionArtifactSupport.HasSameOptionalArtifactContent(artifactDirectory, crawlArtifact, crawlPath)
+           || !PromotionArtifactSupport.HasSameTextContent(xmlDocPath, xmlDocContent);
 }
 

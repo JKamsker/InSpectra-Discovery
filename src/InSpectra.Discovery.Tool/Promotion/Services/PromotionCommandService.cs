@@ -59,20 +59,7 @@ internal sealed class PromotionCommandService
         builder.AppendLine($"- Missing artifacts: `{summary["missingCount"]?.GetValue<int?>() ?? 0}`");
         builder.AppendLine();
 
-        AppendPackageSection(builder, "Created packages:", summary["createdPackages"] as JsonArray, item =>
-        {
-            var packageId = item["packageId"]?.GetValue<string>() ?? string.Empty;
-            var version = item["version"]?.GetValue<string>() ?? string.Empty;
-            return $"- {packageId} `{version}`";
-        });
-
-        AppendPackageSection(builder, "Updated packages:", summary["updatedPackages"] as JsonArray, item =>
-        {
-            var packageId = item["packageId"]?.GetValue<string>() ?? string.Empty;
-            var previousVersion = item["previousVersion"]?.GetValue<string>();
-            var version = item["version"]?.GetValue<string>() ?? string.Empty;
-            return $"- {packageId} `{(string.IsNullOrWhiteSpace(previousVersion) ? "?" : previousVersion)}` -> `{version}`";
-        });
+        AppendPackageSection(builder, "Successful packages:", summary["successItems"] as JsonArray, FormatSuccessItem);
 
         builder.AppendLine("Non-success details:");
         var nonSuccessItems = summary["nonSuccessItems"] as JsonArray ?? [];
@@ -135,5 +122,17 @@ internal sealed class PromotionCommandService
 
         builder.AppendLine();
     }
-}
 
+    private static string FormatSuccessItem(JsonObject item)
+    {
+        var packageId = item["packageId"]?.GetValue<string>() ?? string.Empty;
+        var version = item["version"]?.GetValue<string>() ?? string.Empty;
+        var previousVersion = item["previousVersion"]?.GetValue<string>();
+        return item["change"]?.GetValue<string>() switch
+        {
+            "created" => $"- {packageId} `{version}` (created)",
+            "updated" => $"- {packageId} `{(string.IsNullOrWhiteSpace(previousVersion) ? "?" : previousVersion)}` -> `{version}` (updated)",
+            _ => $"- {packageId} `{version}` (unchanged indexed output)",
+        };
+    }
+}
