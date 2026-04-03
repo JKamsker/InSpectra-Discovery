@@ -223,6 +223,22 @@ dotnet build InSpectra.Discovery.sln
 dotnet test
 ```
 
+## Local Git Guard
+
+Enable the repo-local hook guard after cloning:
+
+```powershell
+pwsh ./eng/Enable-RepositoryGuards.ps1
+```
+
+That configures `core.hooksPath` to `.githooks` and blocks local commits or pushes when the repository identity is accidentally set to `github-actions[bot]`.
+
+If the local repo author was already overridden, restore it from your global Git config with:
+
+```powershell
+pwsh ./eng/Enable-RepositoryGuards.ps1 -ResetLocalAuthorToGlobal
+```
+
 ## License
 
 See the main [InSpectra](https://github.com/JKamsker/InSpectra) repository for license information.
