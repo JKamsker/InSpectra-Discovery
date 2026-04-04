@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-03 21:20:11+00:00
+Generated: 2026-04-04 15:17:12+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 18
+Packages in scope: 19
 
-Fully documented: 10
+Fully documented: 11
 
 Incomplete: 8
 
@@ -33,6 +33,7 @@ Incomplete: 8
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
 | [DotnetTokenKiller](#pkg-dotnettokenkiller) | 0.5.0 | ok | xml-ready | 21/21 | 36/36 | 8/8 | 18/18 | PASS |
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
+| [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.1 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.2 | ok | xml-ready | 10/10 | 24/24 | 13/13 | 7/7 | PASS |
 
 ## Package Details
@@ -320,6 +321,23 @@ Incomplete: 8
 - Option documentation: `3/3`
 - Argument documentation: `0/0`
 - Leaf command examples: `1/1`
+- Overall: `PASS`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: None
+
+<a id="pkg-projgraph-cli"></a>
+### ProjGraph.Cli
+
+- Version: `1.0.1`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `4/4`
+- Option documentation: `15/15`
+- Argument documentation: `4/4`
+- Leaf command examples: `4/4`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
