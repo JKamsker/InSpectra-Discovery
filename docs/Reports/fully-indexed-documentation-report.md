@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-06 18:36:47+00:00
+Generated: 2026-04-06 21:29:28+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -20,7 +20,7 @@ Incomplete: 8
 | [CloudAwesome.FolkTune.Reviewer](#pkg-cloudawesome-folktune-reviewer) | 2026.4.1.1635 | ok | xml-ready | 6/6 | 31/31 | 0/0 | 0/5 | FAIL |
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
-| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.48 | ok | xml-ready | 8/8 | 88/88 | 4/4 | 0/5 | FAIL |
+| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.52 | ok | xml-ready | 8/8 | 94/94 | 4/4 | 0/5 | FAIL |
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
@@ -109,12 +109,12 @@ Incomplete: 8
 <a id="pkg-inspectra-gen"></a>
 ### InSpectra.Gen
 
-- Version: `0.0.48`
+- Version: `0.0.52`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
 - Command documentation: `8/8`
-- Option documentation: `88/88`
+- Option documentation: `94/94`
 - Argument documentation: `4/4`
 - Leaf command examples: `0/5`
 - Overall: `FAIL`
