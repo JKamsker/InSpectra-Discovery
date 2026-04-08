@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-08 00:52:45+00:00
+Generated: 2026-04-08 08:42:10+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,14 +8,15 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 21
+Packages in scope: 22
 
 Fully documented: 11
 
-Incomplete: 10
+Incomplete: 11
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [AppleDev.Tools](#pkg-appledev-tools) | 0.8.9 | ok | xml-ready | 26/32 | 139/139 | 19/19 | 26/26 | FAIL |
 | [BellaBaxter.Cli](#pkg-bellabaxter-cli) | 0.1.1-preview.36 | ok | xml-ready | 71/71 | 51/174 | 13/30 | 32/59 | FAIL |
 | [CloudAwesome.FolkTune.Reviewer](#pkg-cloudawesome-folktune-reviewer) | 2026.4.1.1635 | ok | xml-ready | 6/6 | 31/31 | 0/0 | 0/5 | FAIL |
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
@@ -29,7 +30,7 @@ Incomplete: 10
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.1.3 | ok | xml-ready | 2/2 | 12/12 | 2/2 | 2/2 | PASS |
-| [claudomat](#pkg-claudomat) | 2026.4.7.27 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
+| [claudomat](#pkg-claudomat) | 2026.4.8.7 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
@@ -39,6 +40,23 @@ Incomplete: 10
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.2 | ok | xml-ready | 10/10 | 24/24 | 13/13 | 7/7 | PASS |
 
 ## Package Details
+
+<a id="pkg-appledev-tools"></a>
+### AppleDev.Tools
+
+- Version: `0.8.9`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `26/32`
+- Option documentation: `139/139`
+- Argument documentation: `19/19`
+- Leaf command examples: `26/26`
+- Overall: `FAIL`
+- Missing command descriptions: bundleids, bundleids capabilities, certificate, ci, devices, provisioning
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: None
 
 <a id="pkg-bellabaxter-cli"></a>
 ### BellaBaxter.Cli
@@ -264,7 +282,7 @@ Incomplete: 10
 <a id="pkg-claudomat"></a>
 ### claudomat
 
-- Version: `2026.4.7.27`
+- Version: `2026.4.8.7`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
