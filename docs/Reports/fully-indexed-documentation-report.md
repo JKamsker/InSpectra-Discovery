@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-07 16:43:58+00:00
+Generated: 2026-04-08 00:52:45+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 20
+Packages in scope: 21
 
 Fully documented: 11
 
-Incomplete: 9
+Incomplete: 10
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -20,7 +20,8 @@ Incomplete: 9
 | [CloudAwesome.FolkTune.Reviewer](#pkg-cloudawesome-folktune-reviewer) | 2026.4.1.1635 | ok | xml-ready | 6/6 | 31/31 | 0/0 | 0/5 | FAIL |
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
-| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.54 | ok | xml-ready | 8/8 | 109/109 | 4/4 | 0/5 | FAIL |
+| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.55 | ok | xml-ready | 8/8 | 109/109 | 4/4 | 0/5 | FAIL |
+| [jwmv](#pkg-jwmv) | 1.0.0 | ok | xml-ready | 16/16 | 0/18 | 0/7 | 16/16 | FAIL |
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
 | [sqlct](#pkg-sqlct) | 0.2.1 | ok | xml-ready | 9/9 | 0/35 | 0/2 | 0/8 | FAIL |
@@ -28,7 +29,7 @@ Incomplete: 9
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.1.3 | ok | xml-ready | 2/2 | 12/12 | 2/2 | 2/2 | PASS |
-| [claudomat](#pkg-claudomat) | 2026.4.7.24 | ok | xml-ready | 4/4 | 77/77 | 5/5 | 4/4 | PASS |
+| [claudomat](#pkg-claudomat) | 2026.4.7.27 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
@@ -110,7 +111,7 @@ Incomplete: 9
 <a id="pkg-inspectra-gen"></a>
 ### InSpectra.Gen
 
-- Version: `0.0.54`
+- Version: `0.0.55`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -123,6 +124,23 @@ Incomplete: 9
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: render exec html, render exec markdown, render file html, render file markdown, render self
+
+<a id="pkg-jwmv"></a>
+### jwmv
+
+- Version: `1.0.0`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `16/16`
+- Option documentation: `0/18`
+- Argument documentation: `0/7`
+- Leaf command examples: `16/16`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: env --cwd, env --init, env --shell, flush --archives, flush --catalog, flush --temp, install --default, install --refresh, integrate --profile, integrate --shell, list --refresh, selfupdate --check, selfupdate --force, selfupdate --repository, selfupdate --restart, selfupdate --tag, selfupdate --yes, use --shell
+- Missing argument descriptions: default <identifier>, home <identifier>, install <identifier>, list <filter>, uninstall <identifier>, upgrade <identifier>, use <identifier>
+- Missing leaf command examples: None
 
 <a id="pkg-karls-gitflow-tool"></a>
 ### Karls.Gitflow.Tool
@@ -246,12 +264,12 @@ Incomplete: 9
 <a id="pkg-claudomat"></a>
 ### claudomat
 
-- Version: `2026.4.7.24`
+- Version: `2026.4.7.27`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
 - Command documentation: `4/4`
-- Option documentation: `77/77`
+- Option documentation: `78/78`
 - Argument documentation: `5/5`
 - Leaf command examples: `4/4`
 - Overall: `PASS`
