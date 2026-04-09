@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-08 16:48:33+00:00
+Generated: 2026-04-09 00:52:35+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 23
+Packages in scope: 25
 
 Fully documented: 12
 
-Incomplete: 11
+Incomplete: 13
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -21,16 +21,18 @@ Incomplete: 11
 | [CloudAwesome.FolkTune.Reviewer](#pkg-cloudawesome-folktune-reviewer) | 2026.4.1.1635 | ok | xml-ready | 6/6 | 31/31 | 0/0 | 0/5 | FAIL |
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
-| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.57 | ok | xml-ready | 11/11 | 166/166 | 6/6 | 0/7 | FAIL |
+| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.58 | ok | xml-ready | 11/11 | 169/169 | 6/6 | 0/7 | FAIL |
 | [jwmv](#pkg-jwmv) | 1.0.0 | ok | xml-ready | 16/16 | 0/18 | 0/7 | 16/16 | FAIL |
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
+| [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.36 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
 | [sqlct](#pkg-sqlct) | 0.2.1 | ok | xml-ready | 9/9 | 0/35 | 0/2 | 0/8 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
+| [w3ti.OpenBase.CLI](#pkg-w3ti-openbase-cli) | 10.0.20 | ok | xml-ready | 5/5 | 3/3 | 0/0 | 2/5 | FAIL |
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
-| [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.1.3 | ok | xml-ready | 2/2 | 12/12 | 2/2 | 2/2 | PASS |
-| [claudomat](#pkg-claudomat) | 2026.4.8.37 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
+| [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.2.0 | ok | xml-ready | 2/2 | 14/14 | 2/2 | 2/2 | PASS |
+| [claudomat](#pkg-claudomat) | 2026.4.8.43 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
@@ -130,12 +132,12 @@ Incomplete: 11
 <a id="pkg-inspectra-gen"></a>
 ### InSpectra.Gen
 
-- Version: `0.0.57`
+- Version: `0.0.58`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
 - Command documentation: `11/11`
-- Option documentation: `166/166`
+- Option documentation: `169/169`
 - Argument documentation: `6/6`
 - Leaf command examples: `0/7`
 - Overall: `FAIL`
@@ -177,6 +179,23 @@ Incomplete: 11
 - Missing option descriptions: bugfix delete --force, bugfix delete --remote, bugfix finish --fetch, bugfix finish --keep, bugfix finish --push, bugfix finish --quiet, bugfix finish --squash, config save --force, feature delete --force, feature delete --remote, feature finish --fetch, feature finish --keep, feature finish --push, feature finish --quiet, feature finish --squash, hotfix delete --force, hotfix delete --remote, hotfix finish --fetch, hotfix finish --keep, hotfix finish --message, hotfix finish --nobackmerge, hotfix finish --notag, hotfix finish --push, hotfix finish --quiet, hotfix finish --squash, init --bugfix, init --defaults, init --develop, init --feature, init --force, init --hotfix, init --main, init --release, init --save, init --support, init --tag, init --tagmessage, release delete --force, release delete --remote, release finish --fetch, release finish --keep, release finish --message, release finish --nobackmerge, release finish --notag, release finish --push, release finish --quiet, release finish --squash, support delete --force, support delete --remote
 - Missing argument descriptions: bugfix delete <name>, bugfix finish <name>, bugfix publish <name>, bugfix start <base>, bugfix start <name>, bugfix track <name>, config set <key>, config set <value>, feature delete <name>, feature finish <name>, feature publish <name>, feature start <base>, feature start <name>, feature track <name>, hotfix delete <name>, hotfix finish <name>, hotfix publish <name>, hotfix start <base>, hotfix start <name>, hotfix track <name>, release delete <name>, release finish <name>, release publish <name>, release start <base>, release start <name>, release track <name>, support delete <name>, support publish <name>, support track <name>
 - Missing leaf command examples: bugfix delete, bugfix finish, bugfix list, bugfix publish, bugfix start, bugfix track, config list, config save, config set, feature delete, feature finish, feature list, feature publish, feature start, feature track, hotfix delete, hotfix finish, hotfix list, hotfix publish, hotfix start, hotfix track, init, push, release delete, release finish, release list, release publish, release start, release track, support delete, support list, support publish, support start, support track, version
+
+<a id="pkg-nodsoft-moltenobsidian-tool"></a>
+### Nodsoft.MoltenObsidian.Tool
+
+- Version: `1.0.36`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `2/4`
+- Option documentation: `12/12`
+- Argument documentation: `1/1`
+- Leaf command examples: `0/2`
+- Overall: `FAIL`
+- Missing command descriptions: manifest generate, ssg generate
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: manifest generate, ssg generate
 
 <a id="pkg-pptmcp-cli"></a>
 ### PptMcp.CLI
@@ -229,6 +248,23 @@ Incomplete: 11
 - Missing argument descriptions: None
 - Missing leaf command examples: generate
 
+<a id="pkg-w3ti-openbase-cli"></a>
+### w3ti.OpenBase.CLI
+
+- Version: `10.0.20`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `5/5`
+- Option documentation: `3/3`
+- Argument documentation: `0/0`
+- Leaf command examples: `2/5`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: help, update, version
+
 <a id="pkg-atc-kusto"></a>
 ### atc-kusto
 
@@ -266,12 +302,12 @@ Incomplete: 11
 <a id="pkg-blazorlocalization-extractor"></a>
 ### BlazorLocalization.Extractor
 
-- Version: `10.1.3`
+- Version: `10.2.0`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
 - Command documentation: `2/2`
-- Option documentation: `12/12`
+- Option documentation: `14/14`
 - Argument documentation: `2/2`
 - Leaf command examples: `2/2`
 - Overall: `PASS`
@@ -283,7 +319,7 @@ Incomplete: 11
 <a id="pkg-claudomat"></a>
 ### claudomat
 
-- Version: `2026.4.8.37`
+- Version: `2026.4.8.43`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
