@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-09 16:50:35+00:00
+Generated: 2026-04-10 00:56:16+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -21,7 +21,7 @@ Incomplete: 13
 | [CloudAwesome.FolkTune.Reviewer](#pkg-cloudawesome-folktune-reviewer) | 2026.4.1.1635 | ok | xml-ready | 6/6 | 31/31 | 0/0 | 0/5 | FAIL |
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
-| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.58 | ok | xml-ready | 11/11 | 169/169 | 6/6 | 0/7 | FAIL |
+| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.62 | ok | xml-ready | 11/11 | 183/183 | 6/6 | 0/7 | FAIL |
 | [jwmv](#pkg-jwmv) | 1.0.0 | ok | xml-ready | 16/16 | 0/18 | 0/7 | 16/16 | FAIL |
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.36 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
@@ -32,7 +32,7 @@ Incomplete: 13
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.2.0 | ok | xml-ready | 2/2 | 14/14 | 2/2 | 2/2 | PASS |
-| [claudomat](#pkg-claudomat) | 2026.4.9.11 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
+| [claudomat](#pkg-claudomat) | 2026.4.9.18 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
@@ -132,12 +132,12 @@ Incomplete: 13
 <a id="pkg-inspectra-gen"></a>
 ### InSpectra.Gen
 
-- Version: `0.0.58`
+- Version: `0.0.62`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
 - Command documentation: `11/11`
-- Option documentation: `169/169`
+- Option documentation: `183/183`
 - Argument documentation: `6/6`
 - Leaf command examples: `0/7`
 - Overall: `FAIL`
@@ -319,7 +319,7 @@ Incomplete: 13
 <a id="pkg-claudomat"></a>
 ### claudomat
 
-- Version: `2026.4.9.11`
+- Version: `2026.4.9.18`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
