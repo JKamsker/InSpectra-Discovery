@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-10 00:56:16+00:00
+Generated: 2026-04-11 00:54:43+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 25
+Packages in scope: 26
 
-Fully documented: 12
+Fully documented: 13
 
 Incomplete: 13
 
@@ -24,7 +24,7 @@ Incomplete: 13
 | [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.62 | ok | xml-ready | 11/11 | 183/183 | 6/6 | 0/7 | FAIL |
 | [jwmv](#pkg-jwmv) | 1.0.0 | ok | xml-ready | 16/16 | 0/18 | 0/7 | 16/16 | FAIL |
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
-| [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.36 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
+| [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.38 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
 | [sqlct](#pkg-sqlct) | 0.2.1 | ok | xml-ready | 9/9 | 0/35 | 0/2 | 0/8 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
@@ -32,7 +32,7 @@ Incomplete: 13
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.2.0 | ok | xml-ready | 2/2 | 14/14 | 2/2 | 2/2 | PASS |
-| [claudomat](#pkg-claudomat) | 2026.4.9.18 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
+| [claudomat](#pkg-claudomat) | 2026.4.10.7 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
@@ -40,6 +40,7 @@ Incomplete: 13
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
 | [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
 | [Serilog.Sinks.File.Encrypt.Cli](#pkg-serilog-sinks-file-encrypt-cli) | 4.0.0-preview.1 | ok | xml-ready | 2/2 | 8/8 | 1/1 | 2/2 | PASS |
+| [SharpConsoleUI.Host](#pkg-sharpconsoleui-host) | 2.4.53 | ok | xml-ready | 4/4 | 16/16 | 4/4 | 4/4 | PASS |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.2 | ok | xml-ready | 10/10 | 24/24 | 13/13 | 7/7 | PASS |
 
 ## Package Details
@@ -183,7 +184,7 @@ Incomplete: 13
 <a id="pkg-nodsoft-moltenobsidian-tool"></a>
 ### Nodsoft.MoltenObsidian.Tool
 
-- Version: `1.0.36`
+- Version: `1.0.38`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -319,7 +320,7 @@ Incomplete: 13
 <a id="pkg-claudomat"></a>
 ### claudomat
 
-- Version: `2026.4.9.18`
+- Version: `2026.4.10.7`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -446,6 +447,23 @@ Incomplete: 13
 - Option documentation: `8/8`
 - Argument documentation: `1/1`
 - Leaf command examples: `2/2`
+- Overall: `PASS`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: None
+
+<a id="pkg-sharpconsoleui-host"></a>
+### SharpConsoleUI.Host
+
+- Version: `2.4.53`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `4/4`
+- Option documentation: `16/16`
+- Argument documentation: `4/4`
+- Leaf command examples: `4/4`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
