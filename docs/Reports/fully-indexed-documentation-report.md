@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-11 00:54:43+00:00
+Generated: 2026-04-11 16:24:38+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -32,7 +32,7 @@ Incomplete: 13
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.2.0 | ok | xml-ready | 2/2 | 14/14 | 2/2 | 2/2 | PASS |
-| [claudomat](#pkg-claudomat) | 2026.4.10.7 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
+| [claudomat](#pkg-claudomat) | 2026.4.11.9 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
@@ -40,7 +40,7 @@ Incomplete: 13
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
 | [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
 | [Serilog.Sinks.File.Encrypt.Cli](#pkg-serilog-sinks-file-encrypt-cli) | 4.0.0-preview.1 | ok | xml-ready | 2/2 | 8/8 | 1/1 | 2/2 | PASS |
-| [SharpConsoleUI.Host](#pkg-sharpconsoleui-host) | 2.4.53 | ok | xml-ready | 4/4 | 16/16 | 4/4 | 4/4 | PASS |
+| [SharpConsoleUI.Host](#pkg-sharpconsoleui-host) | 2.4.54 | ok | xml-ready | 4/4 | 16/16 | 4/4 | 4/4 | PASS |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.2 | ok | xml-ready | 10/10 | 24/24 | 13/13 | 7/7 | PASS |
 
 ## Package Details
@@ -320,7 +320,7 @@ Incomplete: 13
 <a id="pkg-claudomat"></a>
 ### claudomat
 
-- Version: `2026.4.10.7`
+- Version: `2026.4.11.9`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
@@ -456,7 +456,7 @@ Incomplete: 13
 <a id="pkg-sharpconsoleui-host"></a>
 ### SharpConsoleUI.Host
 
-- Version: `2.4.53`
+- Version: `2.4.54`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`
