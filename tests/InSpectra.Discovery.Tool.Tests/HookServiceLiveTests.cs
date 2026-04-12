@@ -170,7 +170,7 @@ public sealed class HookServiceLiveTests
             return;
         }
 
-        var service = new HookService();
+        var service = new HookService(TestBridgeFactory.CreateBridge());
         var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-hook", Guid.NewGuid().ToString("N"));
 
         try

@@ -1,24 +1,29 @@
 namespace InSpectra.Discovery.Tool.Analysis.Hook;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Infrastructure.Host;
-
-using InSpectra.Discovery.Tool.Infrastructure.Commands;
-
 using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
+using InSpectra.Lib.Contracts;
 
 using System.Text.Json.Nodes;
 
 internal sealed class HookService
 {
     private static readonly NonSpectreAnalysisExecutionDefinition Definition = new(
-        AnalysisMode: "hook",
+        AnalysisMode: AnalysisMode.Hook,
         TempRootPrefix: "inspectra-hook",
         TimeoutLabel: "startup hook analysis",
         DefaultCliFramework: "System.CommandLine",
         InitializeCoverage: false);
 
     private readonly CommandRuntime _runtime = new();
-    private readonly HookInstalledToolAnalysisSupport _installedToolAnalyzer = new();
+    private readonly LibAnalysisBridge _bridge;
+
+    public HookService(LibAnalysisBridge bridge)
+    {
+        _bridge = bridge;
+    }
 
     public Task<int> RunQuietAsync(
         string packageId,
@@ -37,7 +42,7 @@ internal sealed class HookService
             _runtime,
             Definition,
             BootstrapAsync,
-            AnalyzeInstalledToolAsync,
+            (request, ct) => _bridge.AnalyzeAsync(request, AnalysisMode.Hook, ct),
             packageId,
             version,
             commandName,
@@ -69,7 +74,7 @@ internal sealed class HookService
             _runtime,
             Definition,
             BootstrapAsync,
-            AnalyzeInstalledToolAsync,
+            (request, ct) => _bridge.AnalyzeAsync(request, AnalysisMode.Hook, ct),
             packageId,
             version,
             commandName,
@@ -100,18 +105,4 @@ internal sealed class HookService
             commandName,
             cancellationToken);
     }
-
-    private Task AnalyzeInstalledToolAsync(NonSpectreInstalledToolAnalysisRequest request, CancellationToken cancellationToken)
-        => _installedToolAnalyzer.AnalyzeAsync(
-            request.Result,
-            request.PackageId,
-            request.Version,
-            request.CommandName,
-            request.OutputDirectory,
-            request.TempRoot,
-            request.InstallTimeoutSeconds,
-            request.CommandTimeoutSeconds,
-            cancellationToken);
 }
-
-

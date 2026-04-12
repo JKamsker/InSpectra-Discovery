@@ -1,34 +1,26 @@
 namespace InSpectra.Discovery.Tool.Analysis.CliFx;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Infrastructure.Host;
-
-using InSpectra.Discovery.Tool.Analysis.CliFx.OpenCli;
-
-using InSpectra.Discovery.Tool.Analysis.CliFx.Metadata;
-
-using InSpectra.Discovery.Tool.Analysis.CliFx.Execution;
-
 using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
+using InSpectra.Lib.Contracts;
 
 internal sealed class CliFxService
 {
     private static readonly NonSpectreAnalysisExecutionDefinition Definition = new(
-        AnalysisMode: "clifx",
+        AnalysisMode: AnalysisMode.CliFx,
         TempRootPrefix: "inspectra-clifx",
         TimeoutLabel: "CliFx analysis",
         DefaultCliFramework: "CliFx",
         InitializeCoverage: true);
 
-    private readonly CliFxRuntime _runtime = new();
-    private readonly CliFxInstalledToolAnalysisSupport _installedToolAnalyzer;
+    private readonly CommandRuntime _runtime = new();
+    private readonly LibAnalysisBridge _bridge;
 
-    public CliFxService()
+    public CliFxService(LibAnalysisBridge bridge)
     {
-        _installedToolAnalyzer = new CliFxInstalledToolAnalysisSupport(
-            _runtime,
-            new CliFxMetadataInspector(),
-            new CliFxOpenCliBuilder(),
-            new CliFxCoverageClassifier());
+        _bridge = bridge;
     }
 
     public Task<int> RunQuietAsync(
@@ -48,7 +40,7 @@ internal sealed class CliFxService
             _runtime,
             Definition,
             BootstrapAsync,
-            AnalyzeInstalledToolAsync,
+            (request, ct) => _bridge.AnalyzeAsync(request, AnalysisMode.CliFx, ct),
             packageId,
             version,
             commandName,
@@ -80,7 +72,7 @@ internal sealed class CliFxService
             _runtime,
             Definition,
             BootstrapAsync,
-            AnalyzeInstalledToolAsync,
+            (request, ct) => _bridge.AnalyzeAsync(request, AnalysisMode.CliFx, ct),
             packageId,
             version,
             commandName,
@@ -111,18 +103,4 @@ internal sealed class CliFxService
             commandName,
             cancellationToken);
     }
-
-    private Task AnalyzeInstalledToolAsync(NonSpectreInstalledToolAnalysisRequest request, CancellationToken cancellationToken)
-        => _installedToolAnalyzer.AnalyzeAsync(
-            request.Result,
-            request.PackageId,
-            request.Version,
-            request.CommandName,
-            request.OutputDirectory,
-            request.TempRoot,
-            request.InstallTimeoutSeconds,
-            request.CommandTimeoutSeconds,
-            cancellationToken);
 }
-
-

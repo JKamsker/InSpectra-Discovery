@@ -27,7 +27,7 @@ internal static class AutoModeSupport
                 attempts.Add(new AutoAnalysisAttempt("hook", provider.Name));
             }
 
-            if (provider.StaticAnalysisAdapter is not null)
+            if (provider.SupportsStaticAnalysis)
             {
                 attempts.Add(new AutoAnalysisAttempt("static", provider.Name));
             }

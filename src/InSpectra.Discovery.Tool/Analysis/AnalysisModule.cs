@@ -1,5 +1,6 @@
 namespace InSpectra.Discovery.Tool.Analysis;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Analysis.Help.Commands;
 
 using InSpectra.Discovery.Tool.Analysis.Auto.Commands;
@@ -25,6 +26,7 @@ internal static class AnalysisModule
 {
     public static IServiceCollection AddAnalysisModule(this IServiceCollection services)
     {
+        services.AddSingleton<LibAnalysisBridge>();
         services.AddTransient<AutoCommandService>();
         services.AddTransient<HelpService>();
         services.AddTransient<HelpBatchCommandService>();

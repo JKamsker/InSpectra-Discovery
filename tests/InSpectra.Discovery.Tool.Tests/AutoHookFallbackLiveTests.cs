@@ -112,7 +112,7 @@ public sealed class AutoHookFallbackLiveTests
             return;
         }
 
-        var service = new AutoCommandService();
+        var service = new AutoCommandService(TestBridgeFactory.CreateBridge());
         var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-auto-hook-fallback", Guid.NewGuid().ToString("N"));
 
         try
@@ -182,7 +182,7 @@ public sealed class AutoHookFallbackLiveTests
             return;
         }
 
-        var service = new AutoCommandService();
+        var service = new AutoCommandService(TestBridgeFactory.CreateBridge());
         var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-auto-hook-terminal", Guid.NewGuid().ToString("N"));
 
         try

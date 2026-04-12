@@ -1,10 +1,16 @@
 namespace InSpectra.Discovery.Tool.Analysis.Auto.Runners;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Analysis.CliFx;
 
 internal sealed class AutoCliFxRunnerAdapter : IAutoCliFxRunner
 {
-    private readonly CliFxService _service = new();
+    private readonly CliFxService _service;
+
+    public AutoCliFxRunnerAdapter(LibAnalysisBridge bridge)
+    {
+        _service = new CliFxService(bridge);
+    }
 
     public async Task RunAsync(
         string packageId,

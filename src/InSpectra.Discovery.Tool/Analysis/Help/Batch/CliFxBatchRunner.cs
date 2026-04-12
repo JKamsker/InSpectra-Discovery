@@ -1,12 +1,17 @@
 namespace InSpectra.Discovery.Tool.Analysis.Help.Batch;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Analysis.Help.Models;
-
 using InSpectra.Discovery.Tool.Analysis.CliFx;
 
 internal sealed class CliFxBatchRunner : ICliFxBatchRunner
 {
-    private readonly CliFxService _service = new();
+    private readonly CliFxService _service;
+
+    public CliFxBatchRunner(LibAnalysisBridge bridge)
+    {
+        _service = new CliFxService(bridge);
+    }
 
     public Task<int> RunAsync(
         HelpBatchItem item,
