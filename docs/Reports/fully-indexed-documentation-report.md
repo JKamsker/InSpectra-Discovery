@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-11 16:24:38+00:00
+Generated: 2026-04-12 00:54:31+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 26
+Packages in scope: 27
 
 Fully documented: 13
 
-Incomplete: 13
+Incomplete: 14
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -21,6 +21,7 @@ Incomplete: 13
 | [CloudAwesome.FolkTune.Reviewer](#pkg-cloudawesome-folktune-reviewer) | 2026.4.1.1635 | ok | xml-ready | 6/6 | 31/31 | 0/0 | 0/5 | FAIL |
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
+| [DotCraft](#pkg-dotcraft) | 1.0.3 | ok | xml-ready | 2/2 | 7/7 | 0/0 | 0/1 | FAIL |
 | [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.62 | ok | xml-ready | 11/11 | 183/183 | 6/6 | 0/7 | FAIL |
 | [jwmv](#pkg-jwmv) | 1.0.0 | ok | xml-ready | 16/16 | 0/18 | 0/7 | 16/16 | FAIL |
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
@@ -129,6 +130,23 @@ Incomplete: 13
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: tags
+
+<a id="pkg-dotcraft"></a>
+### DotCraft
+
+- Version: `1.0.3`
+- Package status: `ok`
+- OpenCLI classification: `json-ready`
+- XMLDoc classification: `xml-ready`
+- Command documentation: `2/2`
+- Option documentation: `7/7`
+- Argument documentation: `0/0`
+- Leaf command examples: `0/1`
+- Overall: `FAIL`
+- Missing command descriptions: None
+- Missing option descriptions: None
+- Missing argument descriptions: None
+- Missing leaf command examples: new solution
 
 <a id="pkg-inspectra-gen"></a>
 ### InSpectra.Gen
