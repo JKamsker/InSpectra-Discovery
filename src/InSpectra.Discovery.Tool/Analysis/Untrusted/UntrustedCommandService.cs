@@ -1,23 +1,24 @@
 namespace InSpectra.Discovery.Tool.Analysis.Untrusted;
 
-using InSpectra.Discovery.Tool.Frameworks;
-
-using InSpectra.Discovery.Tool.Infrastructure.Paths;
-
-using InSpectra.Discovery.Tool.Infrastructure.Host;
-
-using InSpectra.Discovery.Tool.Analysis.Execution;
-
+using InSpectra.Discovery.Tool.Analysis.Bridge;
+using InSpectra.Discovery.Tool.Analysis.NonSpectre;
 using InSpectra.Discovery.Tool.Analysis.Output;
-
-using InSpectra.Discovery.Tool.Analysis.Tools;
+using InSpectra.Discovery.Tool.Frameworks;
+using InSpectra.Discovery.Tool.Infrastructure.Host;
+using InSpectra.Discovery.Tool.Infrastructure.Paths;
+using InSpectra.Lib.Contracts;
 
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 
 internal sealed class UntrustedCommandService
 {
-    private readonly InstalledToolAnalysisSupport _installedToolAnalyzer = new();
+    private readonly LibAnalysisBridge _bridge;
+
+    public UntrustedCommandService(LibAnalysisBridge bridge)
+    {
+        _bridge = bridge;
+    }
 
     public Task<int> RunQuietAsync(
         string packageId,
@@ -80,23 +81,15 @@ internal sealed class UntrustedCommandService
         CancellationToken cancellationToken)
     {
         var generatedAt = DateTimeOffset.UtcNow;
-        var tempRoot = Path.Combine(Path.GetTempPath(), $"inspectra-untrusted-{packageId.ToLowerInvariant()}-{version.ToLowerInvariant()}-{Guid.NewGuid():N}");
         var outputDirectory = Path.GetFullPath(outputRoot);
         var resultPath = Path.Combine(outputDirectory, "result.json");
         var stopwatch = Stopwatch.StartNew();
         Directory.CreateDirectory(outputDirectory);
-        Directory.CreateDirectory(tempRoot);
 
         var result = ResultSupport.CreateInitialResult(packageId, version, batchId, attempt, source, generatedAt);
 
         try
         {
-            var environment = RuntimeSupport.CreateSandboxEnvironment(tempRoot);
-            foreach (var directory in environment.Directories)
-            {
-                Directory.CreateDirectory(directory);
-            }
-
             using var scope = Runtime.CreateNuGetApiClientScope();
             var (registrationLeaf, catalogLeaf) = await PackageVersionResolver.ResolveAsync(scope.Client, packageId, version, cancellationToken);
 
@@ -127,18 +120,29 @@ internal sealed class UntrustedCommandService
             }
             else
             {
-                await _installedToolAnalyzer.AnalyzeAsync(
-                    result,
-                    scope.Client,
-                    packageId,
-                    version,
-                    outputDirectory,
-                    tempRoot,
-                    environment.Values,
-                    registrationLeaf.PackageContent,
-                    installTimeoutSeconds,
-                    commandTimeoutSeconds,
-                    cancellationToken);
+                var analysisRequest = new NonSpectreInstalledToolAnalysisRequest(
+                    Result: result,
+                    PackageId: packageId,
+                    Version: version,
+                    CommandName: string.Empty,
+                    CliFramework: "Spectre.Console.Cli",
+                    OutputDirectory: outputDirectory,
+                    TempRoot: Path.Combine(Path.GetTempPath(), $"inspectra-untrusted-{Guid.NewGuid():N}"),
+                    InstallTimeoutSeconds: installTimeoutSeconds,
+                    CommandTimeoutSeconds: commandTimeoutSeconds);
+
+                try
+                {
+                    Directory.CreateDirectory(analysisRequest.TempRoot);
+                    await _bridge.AnalyzeAsync(analysisRequest, AnalysisMode.Native, cancellationToken);
+                }
+                finally
+                {
+                    if (Directory.Exists(analysisRequest.TempRoot))
+                    {
+                        try { Directory.Delete(analysisRequest.TempRoot, recursive: true); } catch { }
+                    }
+                }
             }
         }
         catch (Exception ex)
@@ -168,10 +172,6 @@ internal sealed class UntrustedCommandService
             }
 
             RepositoryPathResolver.WriteJsonFile(resultPath, result);
-            if (Directory.Exists(tempRoot))
-            {
-                Directory.Delete(tempRoot, recursive: true);
-            }
         }
 
         if (suppressOutput)
@@ -188,5 +188,3 @@ internal sealed class UntrustedCommandService
             cancellationToken);
     }
 }
-
-

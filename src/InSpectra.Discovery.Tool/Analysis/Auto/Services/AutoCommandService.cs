@@ -28,7 +28,7 @@ internal sealed class AutoCommandService
     public AutoCommandService(LibAnalysisBridge bridge)
         : this(
             new ToolDescriptorResolver(),
-            new AutoNativeRunnerAdapter(),
+            new AutoNativeRunnerAdapter(bridge),
             new AutoHelpRunnerAdapter(bridge),
             new AutoCliFxRunnerAdapter(bridge),
             new AutoStaticRunnerAdapter(bridge),

@@ -1,10 +1,16 @@
 namespace InSpectra.Discovery.Tool.Analysis.Auto.Runners;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Analysis.Untrusted;
 
 internal sealed class AutoNativeRunnerAdapter : IAutoNativeRunner
 {
-    private readonly UntrustedCommandService _service = new();
+    private readonly UntrustedCommandService _service;
+
+    public AutoNativeRunnerAdapter(LibAnalysisBridge bridge)
+    {
+        _service = new UntrustedCommandService(bridge);
+    }
 
     public async Task RunAsync(
         string packageId,
