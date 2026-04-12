@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-12 00:54:31+00:00
+Generated: 2026-04-12 16:23:33+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -41,7 +41,7 @@ Incomplete: 14
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
 | [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
 | [Serilog.Sinks.File.Encrypt.Cli](#pkg-serilog-sinks-file-encrypt-cli) | 4.0.0-preview.1 | ok | xml-ready | 2/2 | 8/8 | 1/1 | 2/2 | PASS |
-| [SharpConsoleUI.Host](#pkg-sharpconsoleui-host) | 2.4.54 | ok | xml-ready | 4/4 | 16/16 | 4/4 | 4/4 | PASS |
+| [SharpConsoleUI.Host](#pkg-sharpconsoleui-host) | 2.4.55 | ok | xml-ready | 4/4 | 16/16 | 4/4 | 4/4 | PASS |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.2 | ok | xml-ready | 10/10 | 24/24 | 13/13 | 7/7 | PASS |
 
 ## Package Details
@@ -474,7 +474,7 @@ Incomplete: 14
 <a id="pkg-sharpconsoleui-host"></a>
 ### SharpConsoleUI.Host
 
-- Version: `2.4.54`
+- Version: `2.4.55`
 - Package status: `ok`
 - OpenCLI classification: `json-ready`
 - XMLDoc classification: `xml-ready`

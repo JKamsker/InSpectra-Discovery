@@ -1,0 +1,546 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Model>
+  <!--MODEL-->
+  <Command Name="model" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <Description>Manage GGUF models from HuggingFace Hub.</Description>
+    <!--SEARCH-->
+    <Command Name="search" IsBranch="false" 
+ClrType="DotLLM.Cli.Commands.ModelSearchCommand" 
+Settings="DotLLM.Cli.Commands.ModelSearchCommand+Settings">
+      <Description>Search HuggingFace for GGUF models.</Description>
+      <Parameters>
+        <Argument Name="query" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>Search query (e.g. 'llama', 'mistral 7b').</Description>
+        </Argument>
+        <Option Short="" Long="limit" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+          <Description>Maximum number of results.</Description>
+        </Option>
+        <Option Short="" Long="sort" Value="NULL" Required="false" Kind="scalar"
+ClrType="System.String">
+          <Description>Sort field: downloads, likes, lastModified.</Description>
+        </Option>
+      </Parameters>
+      <Examples>
+        <Example commandLine="model" />
+        <Example commandLine="search" />
+        <Example commandLine="llama" />
+        <Example commandLine="--limit" />
+        <Example commandLine="5" />
+      </Examples>
+    </Command>
+    <!--PULL-->
+    <Command Name="pull" IsBranch="false" 
+ClrType="DotLLM.Cli.Commands.ModelPullCommand" 
+Settings="DotLLM.Cli.Commands.ModelPullCommand+Settings">
+      <Description>Download a GGUF model from HuggingFace.</Description>
+      <Parameters>
+        <Argument Name="repo-id" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>HuggingFace repository ID (e.g. 
+'TheBloke/Llama-2-7B-GGUF').</Description>
+        </Argument>
+        <Option Short="d" Long="dir" Value="NULL" Required="false" Kind="scalar"
+ClrType="System.String">
+          <Description>Destination directory. Defaults to 
+~/.dotllm/models/.</Description>
+        </Option>
+        <Option Short="f" Long="file" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Specific GGUF filename to download. If omitted, lists 
+available files for selection.</Description>
+        </Option>
+      </Parameters>
+      <Examples>
+        <Example commandLine="model" />
+        <Example commandLine="pull" />
+        <Example commandLine="TheBloke/Llama-2-7B-GGUF" />
+        <Example commandLine="--file" />
+        <Example commandLine="llama-2-7b.Q4_K_M.gguf" />
+      </Examples>
+    </Command>
+    <!--LIST-->
+    <Command Name="list" IsBranch="false" 
+ClrType="DotLLM.Cli.Commands.ModelListCommand" 
+Settings="DotLLM.Cli.Commands.ModelListCommand+Settings">
+      <Description>List locally downloaded models.</Description>
+    </Command>
+    <!--INFO-->
+    <Command Name="info" IsBranch="false" 
+ClrType="DotLLM.Cli.Commands.ModelInfoCommand" 
+Settings="DotLLM.Cli.Commands.ModelInfoCommand+Settings">
+      <Description>Show details for a HuggingFace model 
+repository.</Description>
+      <Parameters>
+        <Argument Name="repo-id" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>HuggingFace repository ID (e.g. 
+'TheBloke/Llama-2-7B-GGUF').</Description>
+        </Argument>
+      </Parameters>
+      <Examples>
+        <Example commandLine="model" />
+        <Example commandLine="info" />
+        <Example commandLine="TheBloke/Llama-2-7B-GGUF" />
+      </Examples>
+    </Command>
+    <!--DELETE-->
+    <Command Name="delete" IsBranch="false" 
+ClrType="DotLLM.Cli.Commands.ModelDeleteCommand" 
+Settings="DotLLM.Cli.Commands.ModelDeleteCommand+Settings">
+      <Description>Delete a locally downloaded model.</Description>
+      <Parameters>
+        <Argument Name="model" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>HuggingFace repo ID (e.g. 
+'Qwen/Qwen2.5-0.5B-Instruct-GGUF') or filename pattern.</Description>
+        </Argument>
+        <Option Short="q" Long="quant" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Quantization filter (e.g. Q4_K_M, Q8_0). Narrows match 
+when repo has multiple files.</Description>
+        </Option>
+        <Option Short="y" Long="yes" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+          <Description>Skip confirmation prompt.</Description>
+        </Option>
+      </Parameters>
+      <Examples>
+        <Example commandLine="model" />
+        <Example commandLine="delete" />
+        <Example commandLine="Qwen/Qwen2.5-0.5B-Instruct-GGUF" />
+      </Examples>
+    </Command>
+  </Command>
+  <!--RUN-->
+  <Command Name="run" IsBranch="false" ClrType="DotLLM.Cli.Commands.RunCommand" 
+Settings="DotLLM.Cli.Commands.RunCommand+Settings">
+    <Description>Run greedy text generation on a GGUF model.</Description>
+    <Parameters>
+      <Argument Name="model" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>Path to a GGUF file or HuggingFace repo ID (e.g., 
+QuantFactory/SmolLM-135M-GGUF).</Description>
+      </Argument>
+      <Option Short="" Long="cache-type-k" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>KV-cache key quantization: f32 (default), q8_0, 
+q4_0.</Description>
+      </Option>
+      <Option Short="" Long="cache-type-v" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>KV-cache value quantization: f32 (default), q8_0, 
+q4_0.</Description>
+      </Option>
+      <Option Short="" Long="cache-window" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Mixed-precision window: recent N tokens in full precision 
+(0 = all quantized). Only used when --cache-type-k or --cache-type-v is 
+set.</Description>
+      </Option>
+      <Option Short="" Long="decode-threads" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of threads for decode. 0 = auto (caps at memory 
+channel count).</Description>
+      </Option>
+      <Option Short="d" Long="device" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Compute device: 'cpu' (default), 'gpu', 'gpu:0', 
+'gpu:1'.</Description>
+      </Option>
+      <Option Short="" Long="gpu-layers" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Number of transformer layers to offload to GPU. 0 = CPU 
+only. Omit for default (0 with --device cpu, all with --device 
+gpu).</Description>
+      </Option>
+      <Option Short="" Long="grammar" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>GBNF grammar string or file path (prefixed with @) for 
+grammar response format.</Description>
+      </Option>
+      <Option Short="" Long="json" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Output result as a single JSON object (suppresses all 
+formatted output).</Description>
+      </Option>
+      <Option Short="n" Long="max-tokens" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Maximum number of tokens to generate.</Description>
+      </Option>
+      <Option Short="" Long="min-p" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Single">
+        <Description>Min-P sampling threshold. 0 = disabled.</Description>
+      </Option>
+      <Option Short="" Long="numa-pin" Value="NULL" Required="false" Kind="flag"
+ClrType="System.Boolean">
+        <Description>Pin workers to NUMA-local cores on multi-socket 
+systems.</Description>
+      </Option>
+      <Option Short="" Long="paged" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Use paged KV-cache with block-based allocation instead of 
+pre-allocated simple cache.</Description>
+      </Option>
+      <Option Short="" Long="pattern" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Regex pattern for regex response format. Entire output must
+match.</Description>
+      </Option>
+      <Option Short="" Long="pcore-only" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Pin workers to P-cores only (Intel hybrid 
+architectures).</Description>
+      </Option>
+      <Option Short="p" Long="prompt" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Input prompt for generation (required).</Description>
+      </Option>
+      <Option Short="q" Long="quant" Value="NULL" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Quantization filter when multiple GGUF files exist (e.g., 
+Q4_K_M, Q8_0).</Description>
+      </Option>
+      <Option Short="" Long="repeat-last-n" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of recent tokens for repetition penalty lookback. 0 
+= full history.</Description>
+      </Option>
+      <Option Short="" Long="repeat-penalty" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Single">
+        <Description>Repetition penalty factor. 1.0 = disabled.</Description>
+      </Option>
+      <Option Short="" Long="response-format" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Constrain model output format: 'text' (default), 
+'json_object', 'json_schema', 'regex', or 'grammar'.</Description>
+      </Option>
+      <Option Short="" Long="schema" Value="NULL" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>JSON Schema string or file path (prefixed with @) for 
+json_schema response format.</Description>
+      </Option>
+      <Option Short="s" Long="seed" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Random seed for reproducible sampling. Omit for 
+non-deterministic.</Description>
+      </Option>
+      <Option Short="" Long="speculative-k" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of draft tokens per speculative step (K). Default 
+5.</Description>
+      </Option>
+      <Option Short="" Long="speculative-model" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path or HuggingFace repo ID for a draft model. Enables 
+speculative decoding for faster generation. Must share vocabulary with the main 
+model.</Description>
+      </Option>
+      <Option Short="t" Long="temp" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Single">
+        <Description>Sampling temperature. 0 = greedy (default).</Description>
+      </Option>
+      <Option Short="" Long="threads" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of CPU threads for inference. 0 = auto/all cores 
+(default), 1 = single-threaded.</Description>
+      </Option>
+      <Option Short="" Long="tools" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Tool definitions: JSON array string or file path (prefixed 
+with @). When provided, the prompt is formatted via the model's chat template 
+with tool definitions.</Description>
+      </Option>
+      <Option Short="" Long="top-k" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Int32">
+        <Description>Top-K sampling. 0 = disabled.</Description>
+      </Option>
+      <Option Short="" Long="top-p" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Single">
+        <Description>Top-P (nucleus) sampling threshold.</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="run" />
+      <Example commandLine="QuantFactory/SmolLM-135M-GGUF" />
+      <Example commandLine="--prompt" />
+      <Example commandLine="The capital of France is" />
+      <Example commandLine="--max-tokens" />
+      <Example commandLine="64" />
+    </Examples>
+  </Command>
+  <!--CHAT-->
+  <Command Name="chat" IsBranch="false" 
+ClrType="DotLLM.Cli.Commands.ChatCommand" 
+Settings="DotLLM.Cli.Commands.ChatCommand+Settings">
+    <Description>Interactive multi-turn chat with a GGUF model.</Description>
+    <Parameters>
+      <Argument Name="model" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+        <Description>Path to a GGUF file or HuggingFace repo ID (e.g., 
+QuantFactory/SmolLM-135M-GGUF).</Description>
+      </Argument>
+      <Option Short="" Long="cache-type-k" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>KV-cache key quantization: f32 (default), q8_0, 
+q4_0.</Description>
+      </Option>
+      <Option Short="" Long="cache-type-v" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>KV-cache value quantization: f32 (default), q8_0, 
+q4_0.</Description>
+      </Option>
+      <Option Short="" Long="cache-window" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Mixed-precision window: recent N tokens in full precision 
+(0 = all quantized). Only used when --cache-type-k or --cache-type-v is 
+set.</Description>
+      </Option>
+      <Option Short="" Long="decode-threads" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of threads for decode. 0 = auto (caps at memory 
+channel count).</Description>
+      </Option>
+      <Option Short="d" Long="device" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Compute device: 'cpu' (default), 'gpu', 'gpu:0', 
+'gpu:1'.</Description>
+      </Option>
+      <Option Short="" Long="gpu-layers" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Number of transformer layers to offload to GPU. 0 = CPU 
+only. Omit for default (0 with --device cpu, all with --device 
+gpu).</Description>
+      </Option>
+      <Option Short="" Long="grammar" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>GBNF grammar string or file path (prefixed with @) for 
+grammar response format.</Description>
+      </Option>
+      <Option Short="n" Long="max-tokens" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Maximum number of tokens to generate per 
+response.</Description>
+      </Option>
+      <Option Short="" Long="min-p" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Single">
+        <Description>Min-P sampling threshold. 0 = disabled.</Description>
+      </Option>
+      <Option Short="" Long="no-prompt-cache" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Disable prompt caching. When enabled (default), KV-cache 
+state is reused across turns.</Description>
+      </Option>
+      <Option Short="" Long="numa-pin" Value="NULL" Required="false" Kind="flag"
+ClrType="System.Boolean">
+        <Description>Pin workers to NUMA-local cores on multi-socket 
+systems.</Description>
+      </Option>
+      <Option Short="" Long="paged" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Use paged KV-cache with block-based allocation instead of 
+pre-allocated simple cache.</Description>
+      </Option>
+      <Option Short="" Long="pattern" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Regex pattern for regex response format. Entire output must
+match.</Description>
+      </Option>
+      <Option Short="" Long="pcore-only" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Pin workers to P-cores only (Intel hybrid 
+architectures).</Description>
+      </Option>
+      <Option Short="" Long="prompt-cache-size" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Maximum number of cached sessions for prompt 
+caching.</Description>
+      </Option>
+      <Option Short="q" Long="quant" Value="NULL" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Quantization filter when multiple GGUF files exist (e.g., 
+Q4_K_M, Q8_0).</Description>
+      </Option>
+      <Option Short="" Long="repeat-last-n" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of recent tokens for repetition penalty lookback. 0 
+= full history.</Description>
+      </Option>
+      <Option Short="" Long="repeat-penalty" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Single">
+        <Description>Repetition penalty factor. 1.0 = disabled.</Description>
+      </Option>
+      <Option Short="" Long="response-format" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Constrain model output format: 'text' (default), 
+'json_object', 'json_schema', 'regex', or 'grammar'.</Description>
+      </Option>
+      <Option Short="" Long="schema" Value="NULL" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>JSON Schema string or file path (prefixed with @) for 
+json_schema response format.</Description>
+      </Option>
+      <Option Short="" Long="seed" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Random seed for reproducible sampling. Omit for 
+non-deterministic.</Description>
+      </Option>
+      <Option Short="s" Long="system" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>System prompt for the conversation.</Description>
+      </Option>
+      <Option Short="t" Long="temp" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Single">
+        <Description>Sampling temperature. 0 = greedy (default).</Description>
+      </Option>
+      <Option Short="" Long="threads" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of CPU threads for inference. 0 = auto/all cores 
+(default).</Description>
+      </Option>
+      <Option Short="" Long="tool-choice" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Tool choice: 'auto' (default), 'none', 'required', or a 
+function name.</Description>
+      </Option>
+      <Option Short="" Long="tools" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Tool definitions: JSON array string or file path (prefixed 
+with @). Each tool: {"name": "...", "description": "...", "parameters": 
+{...}}.</Description>
+      </Option>
+      <Option Short="" Long="top-k" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Int32">
+        <Description>Top-K sampling. 0 = disabled.</Description>
+      </Option>
+      <Option Short="" Long="top-p" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Single">
+        <Description>Top-P (nucleus) sampling threshold.</Description>
+      </Option>
+      <Option Short="v" Long="verbose" Value="NULL" Required="false" Kind="flag"
+ClrType="System.Boolean">
+        <Description>Show debug info: finish reason, raw text before 
+stop-sequence stripping, tool call detection details.</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="chat" />
+      <Example commandLine="QuantFactory/SmolLM-135M-GGUF" />
+      <Example commandLine="--system" />
+      <Example commandLine="You are a helpful assistant." />
+    </Examples>
+  </Command>
+  <!--SERVE-->
+  <Command Name="serve" IsBranch="false" 
+ClrType="DotLLM.Cli.Commands.ServeCommand" 
+Settings="DotLLM.Cli.Commands.ServeCommand+Settings">
+    <Description>Launch API server with built-in web chat UI.</Description>
+    <Parameters>
+      <Argument Name="model" Position="0" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Path to a GGUF file or HuggingFace repo ID. Omit to start 
+without a model (load from UI).</Description>
+      </Argument>
+      <Option Short="" Long="cache-type-k" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>KV-cache key quantization: f32 (default), q8_0, 
+q4_0.</Description>
+      </Option>
+      <Option Short="" Long="cache-type-v" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>KV-cache value quantization: f32 (default), q8_0, 
+q4_0.</Description>
+      </Option>
+      <Option Short="" Long="decode-threads" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of threads for decode. 0 = auto.</Description>
+      </Option>
+      <Option Short="d" Long="device" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Compute device: 'cpu' (default), 'gpu', 'gpu:0', 
+'gpu:1'.</Description>
+      </Option>
+      <Option Short="" Long="gpu-layers" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Nullable`1[[System.Int32, System.Private.CoreLib, 
+Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]">
+        <Description>Number of transformer layers to offload to 
+GPU.</Description>
+      </Option>
+      <Option Short="" Long="host" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.String">
+        <Description>Host address to bind to.</Description>
+      </Option>
+      <Option Short="" Long="no-browser" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Don't auto-open the browser.</Description>
+      </Option>
+      <Option Short="" Long="no-paged" Value="NULL" Required="false" Kind="flag"
+ClrType="System.Boolean">
+        <Description>Disable paged KV-cache. When enabled (default), uses 
+block-based allocation for memory efficiency.</Description>
+      </Option>
+      <Option Short="" Long="no-prompt-cache" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Disable prompt caching. When enabled (default), KV-cache 
+state is reused across turns.</Description>
+      </Option>
+      <Option Short="" Long="no-ui" Value="NULL" Required="false" Kind="flag" 
+ClrType="System.Boolean">
+        <Description>Disable the built-in web chat UI. Only serve API 
+endpoints.</Description>
+      </Option>
+      <Option Short="" Long="no-warmup" Value="NULL" Required="false" 
+Kind="flag" ClrType="System.Boolean">
+        <Description>Disable warm-up passes at startup. When enabled (default), 
+dummy inference runs trigger JIT compilation.</Description>
+      </Option>
+      <Option Short="p" Long="port" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.Int32">
+        <Description>Port to listen on.</Description>
+      </Option>
+      <Option Short="" Long="prompt-cache-size" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Maximum number of cached sessions for prompt 
+caching.</Description>
+      </Option>
+      <Option Short="q" Long="quant" Value="NULL" Required="false" Kind="scalar"
+ClrType="System.String">
+        <Description>Quantization filter when multiple GGUF files exist (e.g., 
+Q4_K_M, Q8_0).</Description>
+      </Option>
+      <Option Short="" Long="speculative-k" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of draft tokens per speculative step (K). Default 
+5.</Description>
+      </Option>
+      <Option Short="" Long="speculative-model" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path or HuggingFace repo ID for a draft model. Enables 
+speculative decoding for faster generation. Must share vocabulary with the main 
+model.</Description>
+      </Option>
+      <Option Short="" Long="threads" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of CPU threads for inference. 0 = 
+auto.</Description>
+      </Option>
+      <Option Short="" Long="warmup-iterations" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.Int32">
+        <Description>Number of warm-up iterations (default: 3). More iterations 
+improve JIT optimization via Dynamic PGO.</Description>
+      </Option>
+    </Parameters>
+    <Examples>
+      <Example commandLine="serve" />
+      <Example commandLine="Qwen/Qwen3-0.6B-GGUF" />
+      <Example commandLine="--port" />
+      <Example commandLine="8080" />
+    </Examples>
+  </Command>
+</Model>
