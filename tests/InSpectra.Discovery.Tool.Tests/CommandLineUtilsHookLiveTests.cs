@@ -141,7 +141,7 @@ public sealed class CommandLineUtilsHookLiveTests
             return;
         }
 
-        var service = new HookService();
+        var service = new HookService(TestBridgeFactory.CreateBridge());
         var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-hook-commandlineutils", Guid.NewGuid().ToString("N"));
 
         try

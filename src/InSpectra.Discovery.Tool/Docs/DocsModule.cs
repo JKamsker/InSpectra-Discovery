@@ -21,8 +21,6 @@ internal static class DocsModule
         services.AddTransient<DocsReanalyzeLatestPartialsCommand>();
         services.AddTransient<DocsRegenerateNativeOpenCliCommand>();
         services.AddTransient<DocsRegenerateStartupHookOpenCliCommand>();
-        services.AddTransient<DocsRegenerateStaticCrawlsCommand>();
-        services.AddTransient<DocsRegenerateCliFxCrawlsCommand>();
         services.AddTransient<DocsRegenerateHelpCrawlsCommand>();
         services.AddTransient<DocsRegenerateXmldocOpenCliCommand>();
         services.AddTransient<DocsBrowserIndexCommand>();
@@ -44,8 +42,6 @@ internal static class DocsModule
             docs.AddCommand<DocsReanalyzeLatestPartialsCommand>("reanalyze-latest-partials").WithDescription("Rerun the latest partial package records through current auto analysis and reapply the results into index/state.");
             docs.AddCommand<DocsRegenerateNativeOpenCliCommand>("regenerate-native-opencli").WithDescription("Resanitize native OpenCLI artifacts from stored opencli.json files.");
             docs.AddCommand<DocsRegenerateStartupHookOpenCliCommand>("regenerate-startup-hook-opencli").WithDescription("Resanitize startup-hook OpenCLI artifacts from stored opencli.json files.");
-            docs.AddCommand<DocsRegenerateStaticCrawlsCommand>("regenerate-static-crawls").WithDescription("Regenerate static-analysis OpenCLI artifacts from stored crawl.json captures.");
-            docs.AddCommand<DocsRegenerateCliFxCrawlsCommand>("regenerate-clifx-crawls").WithDescription("Regenerate CliFx OpenCLI artifacts from stored crawl.json captures.");
             docs.AddCommand<DocsRegenerateHelpCrawlsCommand>("regenerate-help-crawls").WithDescription("Regenerate generic help OpenCLI artifacts from stored crawl.json captures.");
             docs.AddCommand<DocsRegenerateXmldocOpenCliCommand>("regenerate-xmldoc-opencli").WithDescription("Regenerate XMLDoc-synthesized OpenCLI artifacts from stored xmldoc.xml files.");
             docs.AddCommand<DocsBrowserIndexCommand>("browser-index").WithDescription("Build the lightweight browser index from index/all.json.");

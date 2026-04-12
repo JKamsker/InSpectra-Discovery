@@ -6,6 +6,7 @@ using InSpectra.Discovery.Tool.Infrastructure.Host;
 
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Analysis.Help.Models;
 
 using System.Text.Json.Nodes;
@@ -16,8 +17,8 @@ internal sealed class HelpBatchCommandService
     private readonly ICliFxBatchRunner _cliFxRunner;
     private readonly IStaticBatchRunner _staticRunner;
 
-    public HelpBatchCommandService()
-        : this(new HelpBatchRunner(), new CliFxBatchRunner(), new StaticBatchRunner())
+    public HelpBatchCommandService(LibAnalysisBridge bridge)
+        : this(new HelpBatchRunner(bridge), new CliFxBatchRunner(bridge), new StaticBatchRunner(bridge))
     {
     }
 

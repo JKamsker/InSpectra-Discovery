@@ -1,10 +1,16 @@
 namespace InSpectra.Discovery.Tool.Analysis.Auto.Runners;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Analysis.Hook;
 
 internal sealed class AutoHookRunnerAdapter : IAutoHookRunner
 {
-    private readonly HookService _service = new();
+    private readonly HookService _service;
+
+    public AutoHookRunnerAdapter(LibAnalysisBridge bridge)
+    {
+        _service = new HookService(bridge);
+    }
 
     public async Task RunAsync(
         string packageId,

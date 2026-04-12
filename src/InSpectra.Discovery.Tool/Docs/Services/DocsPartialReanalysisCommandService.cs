@@ -1,6 +1,7 @@
 namespace InSpectra.Discovery.Tool.Docs.Services;
 
 using InSpectra.Discovery.Tool.Analysis.Auto.Services;
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.App.Machine;
 using InSpectra.Discovery.Tool.Infrastructure.Host;
 using InSpectra.Discovery.Tool.Infrastructure.Paths;
@@ -14,9 +15,9 @@ internal sealed class DocsPartialReanalysisCommandService
     private readonly AutoCommandService _autoCommandService;
     private readonly PromotionApplyCommandService _promotionApplyCommandService;
 
-    public DocsPartialReanalysisCommandService()
+    public DocsPartialReanalysisCommandService(LibAnalysisBridge bridge)
         : this(
-            new AutoCommandService(),
+            new AutoCommandService(bridge),
             new PromotionApplyCommandService())
     {
     }

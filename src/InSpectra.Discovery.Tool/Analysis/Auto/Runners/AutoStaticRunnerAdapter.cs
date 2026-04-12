@@ -1,10 +1,16 @@
 namespace InSpectra.Discovery.Tool.Analysis.Auto.Runners;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Analysis.Static;
 
 internal sealed class AutoStaticRunnerAdapter : IAutoStaticRunner
 {
-    private readonly StaticService _service = new();
+    private readonly StaticService _service;
+
+    public AutoStaticRunnerAdapter(LibAnalysisBridge bridge)
+    {
+        _service = new StaticService(bridge);
+    }
 
     public async Task RunAsync(
         string packageId,

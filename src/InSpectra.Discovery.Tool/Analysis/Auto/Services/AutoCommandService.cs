@@ -10,6 +10,8 @@ using InSpectra.Discovery.Tool.Analysis.Auto.Results;
 
 using InSpectra.Discovery.Tool.Analysis.Auto.Runners;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
+
 using InSpectra.Discovery.Tool.Analysis.Tools;
 
 using System.Text.Json.Nodes;
@@ -23,14 +25,14 @@ internal sealed class AutoCommandService
     private readonly IAutoStaticRunner _staticRunner;
     private readonly IAutoHookRunner _hookRunner;
 
-    public AutoCommandService()
+    public AutoCommandService(LibAnalysisBridge bridge)
         : this(
             new ToolDescriptorResolver(),
             new AutoNativeRunnerAdapter(),
-            new AutoHelpRunnerAdapter(),
-            new AutoCliFxRunnerAdapter(),
-            new AutoStaticRunnerAdapter(),
-            new AutoHookRunnerAdapter())
+            new AutoHelpRunnerAdapter(bridge),
+            new AutoCliFxRunnerAdapter(bridge),
+            new AutoStaticRunnerAdapter(bridge),
+            new AutoHookRunnerAdapter(bridge))
     {
     }
 

@@ -35,7 +35,7 @@ public sealed class HelpServiceLiveTests
             return;
         }
 
-        var service = new HelpService();
+        var service = new HelpService(TestBridgeFactory.CreateBridge());
         var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-help", Guid.NewGuid().ToString("N"));
 
         try

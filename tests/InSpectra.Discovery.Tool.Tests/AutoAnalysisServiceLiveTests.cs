@@ -30,7 +30,7 @@ public sealed class AutoAnalysisServiceLiveTests
             return;
         }
 
-        var service = new AutoCommandService();
+        var service = new AutoCommandService(TestBridgeFactory.CreateBridge());
         var outputRoot = Path.Combine(Path.GetTempPath(), "inspectra-live-auto", Guid.NewGuid().ToString("N"));
 
         try

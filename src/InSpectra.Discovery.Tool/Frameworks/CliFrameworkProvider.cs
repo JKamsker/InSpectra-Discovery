@@ -1,7 +1,5 @@
 namespace InSpectra.Discovery.Tool.Frameworks;
 
-using InSpectra.Discovery.Tool.StaticAnalysis.Attributes;
-
 
 internal sealed record CliFrameworkProvider(
     string Name,
@@ -11,7 +9,7 @@ internal sealed record CliFrameworkProvider(
     IReadOnlyList<string> RuntimeAssemblyNames,
     bool SupportsCliFxAnalysis,
     bool SupportsHookAnalysis,
-    StaticAnalysisFrameworkAdapter? StaticAnalysisAdapter)
+    bool SupportsStaticAnalysis)
 {
     public bool Matches(IReadOnlySet<string> dependencyIds, IReadOnlySet<string> assemblyNames)
         => DependencyIds.Any(dependencyIds.Contains) || PackageAssemblyNames.Any(assemblyNames.Contains);
@@ -29,8 +27,3 @@ internal sealed record CliFrameworkProvider(
         }
     }
 }
-
-internal sealed record StaticAnalysisFrameworkAdapter(
-    string FrameworkName,
-    string AssemblyName,
-    IStaticAttributeReader Reader);

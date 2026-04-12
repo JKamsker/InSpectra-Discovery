@@ -1,12 +1,17 @@
 namespace InSpectra.Discovery.Tool.Analysis.Help.Batch;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Analysis.Help.Models;
-
 using InSpectra.Discovery.Tool.Analysis.Static;
 
 internal sealed class StaticBatchRunner : IStaticBatchRunner
 {
-    private readonly StaticService _service = new();
+    private readonly StaticService _service;
+
+    public StaticBatchRunner(LibAnalysisBridge bridge)
+    {
+        _service = new StaticService(bridge);
+    }
 
     public Task<int> RunAsync(
         HelpBatchItem item,

@@ -1,7 +1,5 @@
 namespace InSpectra.Discovery.Tool.Frameworks;
 
-using InSpectra.Discovery.Tool.StaticAnalysis.Attributes;
-
 using InSpectra.Discovery.Tool.NuGet;
 
 internal static class CliFrameworkProviderRegistry
@@ -43,7 +41,7 @@ internal static class CliFrameworkProviderRegistry
         => ResolveAnalysisProviders(cliFramework).Any(static provider => provider.SupportsCliFxAnalysis);
 
     public static bool HasStaticAnalysisSupport(string? cliFramework)
-        => ResolveStaticAnalysisAdapter(cliFramework) is not null;
+        => ResolveAnalysisProviders(cliFramework).Any(static provider => provider.SupportsStaticAnalysis);
 
     public static bool HasHookAnalysisSupport(string? cliFramework)
         => ResolveAnalysisProviders(cliFramework).Any(static provider => provider.SupportsHookAnalysis);
@@ -53,19 +51,6 @@ internal static class CliFrameworkProviderRegistry
             .Where(static provider => provider.SupportsHookAnalysis)
             .Select(static provider => provider.Name)
             .FirstOrDefault();
-
-    public static StaticAnalysisFrameworkAdapter? ResolveStaticAnalysisAdapter(string? cliFramework)
-    {
-        foreach (var provider in ResolveAnalysisProviders(cliFramework))
-        {
-            if (provider.StaticAnalysisAdapter is not null)
-            {
-                return provider.StaticAnalysisAdapter;
-            }
-        }
-
-        return null;
-    }
 
     public static bool ShouldReplace(string? existingCliFramework, string? candidateCliFramework)
     {
@@ -153,18 +138,18 @@ internal static class CliFrameworkProviderRegistry
         [
             CreateCatalogOnlyProvider("Spectre.Console.Cli", ["Spectre.Console.Cli"], ["Spectre.Console.Cli.dll"]),
             CreateCliFxProvider(),
-            CreateStaticAnalysisProvider("System.CommandLine", ["System.CommandLine"], ["System.CommandLine.dll"], "System.CommandLine", new SystemCommandLineAttributeReader()),
-            CreateStaticAnalysisProvider("McMaster.Extensions.CommandLineUtils", ["McMaster.Extensions.CommandLineUtils"], ["McMaster.Extensions.CommandLineUtils.dll"], "McMaster.Extensions.CommandLineUtils", new McMasterAttributeReader()),
-            CreateStaticAnalysisProvider("Microsoft.Extensions.CommandLineUtils", ["Microsoft.Extensions.CommandLineUtils"], ["Microsoft.Extensions.CommandLineUtils.dll"], "Microsoft.Extensions.CommandLineUtils", new McMasterAttributeReader()),
-            CreateStaticAnalysisProvider("Argu", ["Argu"], ["Argu.dll"], "Argu", new ArguAttributeReader()),
-            CreateStaticAnalysisProvider("Cocona", ["Cocona"], ["Cocona.dll"], "Cocona", new CoconaAttributeReader()),
+            CreateStaticAnalysisProvider("System.CommandLine", ["System.CommandLine"], ["System.CommandLine.dll"], supportsHook: true),
+            CreateStaticAnalysisProvider("McMaster.Extensions.CommandLineUtils", ["McMaster.Extensions.CommandLineUtils"], ["McMaster.Extensions.CommandLineUtils.dll"], supportsHook: true),
+            CreateStaticAnalysisProvider("Microsoft.Extensions.CommandLineUtils", ["Microsoft.Extensions.CommandLineUtils"], ["Microsoft.Extensions.CommandLineUtils.dll"], supportsHook: true),
+            CreateStaticAnalysisProvider("Argu", ["Argu"], ["Argu.dll"]),
+            CreateStaticAnalysisProvider("Cocona", ["Cocona"], ["Cocona.dll"]),
             CreateCatalogOnlyProvider("DocoptNet", ["DocoptNet"], ["DocoptNet.dll"]),
             CreateCatalogOnlyProvider("ConsoleAppFramework", ["ConsoleAppFramework"], ["ConsoleAppFramework.dll"]),
-            CreateStaticAnalysisProvider("CommandDotNet", ["CommandDotNet"], ["CommandDotNet.dll"], "CommandDotNet", new CommandDotNetAttributeReader()),
-            CreateStaticAnalysisProvider("PowerArgs", ["PowerArgs"], ["PowerArgs.dll"], "PowerArgs", new PowerArgsAttributeReader()),
+            CreateStaticAnalysisProvider("CommandDotNet", ["CommandDotNet"], ["CommandDotNet.dll"]),
+            CreateStaticAnalysisProvider("PowerArgs", ["PowerArgs"], ["PowerArgs.dll"]),
             CreateCatalogOnlyProvider("Oakton", ["Oakton"], ["Oakton.dll"]),
             CreateCatalogOnlyProvider("ManyConsole", ["ManyConsole"], ["ManyConsole.dll"]),
-            CreateStaticAnalysisProvider("CommandLineParser", ["CommandLineParser"], ["CommandLine.dll"], "CommandLine", new CmdParserAttributeReader()),
+            CreateStaticAnalysisProvider("CommandLineParser", ["CommandLineParser"], ["CommandLine.dll"], supportsHook: true),
             CreateCatalogOnlyProvider("Mono.Options / NDesk.Options", ["Mono.Options", "NDesk.Options"], ["Mono.Options.dll", "NDesk.Options.dll"], "Mono.Options", "NDesk.Options"),
         ];
     }
@@ -192,7 +177,7 @@ internal static class CliFrameworkProviderRegistry
             RuntimeAssemblyNames: ["CliFx"],
             SupportsCliFxAnalysis: true,
             SupportsHookAnalysis: false,
-            StaticAnalysisAdapter: null);
+            SupportsStaticAnalysis: false);
 
     private static CliFrameworkProvider CreateCatalogOnlyProvider(
         string name,
@@ -211,26 +196,25 @@ internal static class CliFrameworkProviderRegistry
                 .ToArray(),
             SupportsCliFxAnalysis: false,
             SupportsHookAnalysis: false,
-            StaticAnalysisAdapter: null);
+            SupportsStaticAnalysis: false);
 
     private static CliFrameworkProvider CreateStaticAnalysisProvider(
         string name,
         IReadOnlyList<string> dependencyIds,
         IReadOnlyList<string> packageAssemblyNames,
-        string staticAssemblyName,
-        IStaticAttributeReader reader,
+        bool supportsHook = false,
         params string[] labelAliases)
         => new(
             Name: name,
             LabelAliases: labelAliases,
             DependencyIds: dependencyIds,
             PackageAssemblyNames: packageAssemblyNames,
-            RuntimeAssemblyNames: [staticAssemblyName],
+            RuntimeAssemblyNames: packageAssemblyNames
+                .Select(static assemblyName => Path.GetFileNameWithoutExtension(assemblyName))
+                .Where(static assemblyName => !string.IsNullOrWhiteSpace(assemblyName))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray(),
             SupportsCliFxAnalysis: false,
-            SupportsHookAnalysis:
-                string.Equals(name, "System.CommandLine", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(name, "McMaster.Extensions.CommandLineUtils", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(name, "Microsoft.Extensions.CommandLineUtils", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(name, "CommandLineParser", StringComparison.OrdinalIgnoreCase),
-            StaticAnalysisAdapter: new StaticAnalysisFrameworkAdapter(name, staticAssemblyName, reader));
+            SupportsHookAnalysis: supportsHook,
+            SupportsStaticAnalysis: true);
 }

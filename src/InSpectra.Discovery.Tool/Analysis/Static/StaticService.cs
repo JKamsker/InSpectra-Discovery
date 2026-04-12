@@ -1,32 +1,26 @@
 namespace InSpectra.Discovery.Tool.Analysis.Static;
 
+using InSpectra.Discovery.Tool.Analysis.Bridge;
 using InSpectra.Discovery.Tool.Infrastructure.Host;
-
-using InSpectra.Discovery.Tool.StaticAnalysis.OpenCli;
-
-using InSpectra.Discovery.Tool.StaticAnalysis.Inspection;
-
 using InSpectra.Discovery.Tool.Analysis.NonSpectre;
+using InSpectra.Discovery.Tool.Infrastructure.Commands;
+using InSpectra.Lib.Contracts;
 
 internal sealed class StaticService
 {
     private static readonly NonSpectreAnalysisExecutionDefinition Definition = new(
-        AnalysisMode: "static",
+        AnalysisMode: AnalysisMode.Static,
         TempRootPrefix: "inspectra-static",
         TimeoutLabel: "Static analysis",
         DefaultCliFramework: "CommandLineParser",
         InitializeCoverage: true);
 
-    private readonly StaticAnalysisRuntime _runtime = new();
-    private readonly StaticInstalledToolAnalysisSupport _installedToolAnalyzer;
+    private readonly CommandRuntime _runtime = new();
+    private readonly LibAnalysisBridge _bridge;
 
-    public StaticService()
+    public StaticService(LibAnalysisBridge bridge)
     {
-        _installedToolAnalyzer = new StaticInstalledToolAnalysisSupport(
-            _runtime,
-            new StaticAnalysisAssemblyInspectionSupport(new DnlibAssemblyScanner()),
-            new StaticAnalysisOpenCliBuilder(),
-            new StaticAnalysisCoverageClassifier());
+        _bridge = bridge;
     }
 
     public Task<int> RunQuietAsync(
@@ -46,7 +40,7 @@ internal sealed class StaticService
             _runtime,
             Definition,
             BootstrapAsync,
-            AnalyzeInstalledToolAsync,
+            (request, ct) => _bridge.AnalyzeAsync(request, AnalysisMode.Static, ct),
             packageId,
             version,
             commandName,
@@ -78,7 +72,7 @@ internal sealed class StaticService
             _runtime,
             Definition,
             BootstrapAsync,
-            AnalyzeInstalledToolAsync,
+            (request, ct) => _bridge.AnalyzeAsync(request, AnalysisMode.Static, ct),
             packageId,
             version,
             commandName,
@@ -109,19 +103,4 @@ internal sealed class StaticService
             commandName,
             cancellationToken);
     }
-
-    private Task AnalyzeInstalledToolAsync(NonSpectreInstalledToolAnalysisRequest request, CancellationToken cancellationToken)
-        => _installedToolAnalyzer.AnalyzeAsync(
-            request.Result,
-            request.PackageId,
-            request.Version,
-            request.CommandName,
-            request.CliFramework ?? Definition.DefaultCliFramework ?? string.Empty,
-            request.OutputDirectory,
-            request.TempRoot,
-            request.InstallTimeoutSeconds,
-            request.CommandTimeoutSeconds,
-            cancellationToken);
 }
-
-

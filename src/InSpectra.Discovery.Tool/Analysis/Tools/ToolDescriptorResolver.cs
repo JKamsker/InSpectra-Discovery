@@ -94,7 +94,7 @@ internal sealed class ToolDescriptorResolver : IToolDescriptorResolver
         => packageInspection is not null
             && CliFrameworkProviderRegistry.ResolveAnalysisProviders(cliFramework)
                 .Any(provider =>
-                    provider.StaticAnalysisAdapter is not null
+                    provider.SupportsStaticAnalysis
                     && packageInspection.HasToolAssemblyReferencingCliFramework(provider.Name));
 
     private static string? ResolveHookCliFramework(string? cliFramework, SpectrePackageInspection? packageInspection)
