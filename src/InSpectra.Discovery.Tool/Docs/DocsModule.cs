@@ -21,6 +21,7 @@ internal static class DocsModule
         services.AddTransient<DocsReanalyzeLatestPartialsCommand>();
         services.AddTransient<DocsRegenerateNativeOpenCliCommand>();
         services.AddTransient<DocsRegenerateStartupHookOpenCliCommand>();
+        services.AddTransient<HelpCrawlArtifactRegenerationService>();
         services.AddTransient<DocsRegenerateHelpCrawlsCommand>();
         services.AddTransient<DocsRegenerateXmldocOpenCliCommand>();
         services.AddTransient<DocsBrowserIndexCommand>();
