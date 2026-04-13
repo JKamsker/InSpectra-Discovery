@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-12 16:23:33+00:00
+Generated: 2026-04-13 01:15:17+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 27
+Packages in scope: 24
 
-Fully documented: 13
+Fully documented: 12
 
-Incomplete: 14
+Incomplete: 12
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -22,12 +22,10 @@ Incomplete: 14
 | [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
 | [DotCraft](#pkg-dotcraft) | 1.0.3 | ok | xml-ready | 2/2 | 7/7 | 0/0 | 0/1 | FAIL |
-| [InSpectra.Gen](#pkg-inspectra-gen) | 0.0.62 | ok | xml-ready | 11/11 | 183/183 | 6/6 | 0/7 | FAIL |
 | [jwmv](#pkg-jwmv) | 1.0.0 | ok | xml-ready | 16/16 | 0/18 | 0/7 | 16/16 | FAIL |
 | [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.38 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
-| [sqlct](#pkg-sqlct) | 0.2.1 | ok | xml-ready | 9/9 | 0/35 | 0/2 | 0/8 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
 | [w3ti.OpenBase.CLI](#pkg-w3ti-openbase-cli) | 10.0.20 | ok | xml-ready | 5/5 | 3/3 | 0/0 | 2/5 | FAIL |
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
@@ -41,7 +39,6 @@ Incomplete: 14
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
 | [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
 | [Serilog.Sinks.File.Encrypt.Cli](#pkg-serilog-sinks-file-encrypt-cli) | 4.0.0-preview.1 | ok | xml-ready | 2/2 | 8/8 | 1/1 | 2/2 | PASS |
-| [SharpConsoleUI.Host](#pkg-sharpconsoleui-host) | 2.4.55 | ok | xml-ready | 4/4 | 16/16 | 4/4 | 4/4 | PASS |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.2 | ok | xml-ready | 10/10 | 24/24 | 13/13 | 7/7 | PASS |
 
 ## Package Details
@@ -148,23 +145,6 @@ Incomplete: 14
 - Missing argument descriptions: None
 - Missing leaf command examples: new solution
 
-<a id="pkg-inspectra-gen"></a>
-### InSpectra.Gen
-
-- Version: `0.0.62`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `11/11`
-- Option documentation: `183/183`
-- Argument documentation: `6/6`
-- Leaf command examples: `0/7`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: render dotnet html, render dotnet markdown, render exec html, render exec markdown, render file html, render file markdown, render self
-
 <a id="pkg-jwmv"></a>
 ### jwmv
 
@@ -232,23 +212,6 @@ Incomplete: 14
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: accessibility, animation, background, batch, chart, comment, customshow, design, diag echo, diag ping, diag validate-params, docproperty, export, file, headerfooter, hyperlink, image, master, media, notes, pagesetup, placeholder, printoptions, proofing, section, service start, service status, service stop, session close, session create, session list, session open, session save, shape, shapealign, slide, slideimport, slideshow, slidetable, smartart, tag, text, transition, vba, window
-
-<a id="pkg-sqlct"></a>
-### sqlct
-
-- Version: `0.2.1`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `9/9`
-- Option documentation: `0/35`
-- Argument documentation: `0/2`
-- Leaf command examples: `0/8`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: config --json, config --no-progress, config --project-dir, config --verbose, data list --json, data list --no-progress, data list --project-dir, data list --verbose, data track --json, data track --no-progress, data track --project-dir, data track --verbose, data untrack --json, data untrack --no-progress, data untrack --project-dir, data untrack --verbose, diff --json, diff --no-progress, diff --object, diff --project-dir, diff --target, diff --verbose, init --json, init --no-progress, init --project-dir, init --verbose, pull --json, pull --no-progress, pull --project-dir, pull --verbose, status --json, status --no-progress, status --project-dir, status --target, status --verbose
-- Missing argument descriptions: data track <pattern>, data untrack <pattern>
-- Missing leaf command examples: config, data list, data track, data untrack, diff, init, pull, status
 
 <a id="pkg-terevintosoftware-staticsitegenerator"></a>
 ### TerevintoSoftware.StaticSiteGenerator
@@ -465,23 +428,6 @@ Incomplete: 14
 - Option documentation: `8/8`
 - Argument documentation: `1/1`
 - Leaf command examples: `2/2`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-sharpconsoleui-host"></a>
-### SharpConsoleUI.Host
-
-- Version: `2.4.55`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `4/4`
-- Option documentation: `16/16`
-- Argument documentation: `4/4`
-- Leaf command examples: `4/4`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
