@@ -96,15 +96,15 @@ internal sealed class LibAnalysisBridge
 
         if (outcome.Success && outcome.OpenCliJson is not null)
         {
-            var openCliPath = Path.Combine(request.OutputDirectory, "opencli.json");
-            await File.WriteAllTextAsync(openCliPath, outcome.OpenCliJson, cancellationToken);
-            request.Result["artifacts"]!.AsObject()["opencliArtifact"] = openCliPath;
+            await File.WriteAllTextAsync(
+                Path.Combine(request.OutputDirectory, "opencli.json"), outcome.OpenCliJson, cancellationToken);
+            request.Result["artifacts"]!.AsObject()["opencliArtifact"] = "opencli.json";
 
             if (outcome.CrawlJson is not null)
             {
-                var crawlPath = Path.Combine(request.OutputDirectory, "crawl.json");
-                await File.WriteAllTextAsync(crawlPath, outcome.CrawlJson, cancellationToken);
-                request.Result["artifacts"]!.AsObject()["crawlArtifact"] = crawlPath;
+                await File.WriteAllTextAsync(
+                    Path.Combine(request.OutputDirectory, "crawl.json"), outcome.CrawlJson, cancellationToken);
+                request.Result["artifacts"]!.AsObject()["crawlArtifact"] = "crawl.json";
             }
 
             NonSpectreResultSupport.ApplySuccess(
