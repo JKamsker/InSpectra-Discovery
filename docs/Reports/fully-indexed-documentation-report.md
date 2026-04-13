@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-13 01:15:17+00:00
+Generated: 2026-04-13 08:59:25+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 24
+Packages in scope: 22
 
-Fully documented: 12
+Fully documented: 10
 
 Incomplete: 12
 
@@ -31,14 +31,12 @@ Incomplete: 12
 | [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.2.0 | ok | xml-ready | 2/2 | 14/14 | 2/2 | 2/2 | PASS |
-| [claudomat](#pkg-claudomat) | 2026.4.11.9 | ok | xml-ready | 4/4 | 78/78 | 5/5 | 4/4 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [dotNetTips.Spargine.Dev.Tool](#pkg-dotnettips-spargine-dev-tool) | 2026.10.2.16 | ok | invalid-xml | 2/2 | 12/12 | 0/0 | 2/2 | PASS |
 | [DotnetTokenKiller](#pkg-dotnettokenkiller) | 0.5.0 | ok | xml-ready | 21/21 | 36/36 | 8/8 | 18/18 | PASS |
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
 | [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
-| [Serilog.Sinks.File.Encrypt.Cli](#pkg-serilog-sinks-file-encrypt-cli) | 4.0.0-preview.1 | ok | xml-ready | 2/2 | 8/8 | 1/1 | 2/2 | PASS |
 | [ThunderPipe](#pkg-thunderpipe) | 1.0.2 | ok | xml-ready | 10/10 | 24/24 | 13/13 | 7/7 | PASS |
 
 ## Package Details
@@ -298,23 +296,6 @@ Incomplete: 12
 - Missing argument descriptions: None
 - Missing leaf command examples: None
 
-<a id="pkg-claudomat"></a>
-### claudomat
-
-- Version: `2026.4.11.9`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `4/4`
-- Option documentation: `78/78`
-- Argument documentation: `5/5`
-- Leaf command examples: `4/4`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
 <a id="pkg-cleancli"></a>
 ### CleanCli
 
@@ -411,23 +392,6 @@ Incomplete: 12
 - Option documentation: `15/15`
 - Argument documentation: `4/4`
 - Leaf command examples: `4/4`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-serilog-sinks-file-encrypt-cli"></a>
-### Serilog.Sinks.File.Encrypt.Cli
-
-- Version: `4.0.0-preview.1`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `2/2`
-- Option documentation: `8/8`
-- Argument documentation: `1/1`
-- Leaf command examples: `2/2`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
