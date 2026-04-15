@@ -1,18 +1,22 @@
 name: Install InSpectra.Discovery.Tool
-description: Install the latest published discovery CLI from GitHub Packages.
+description: Install the latest published discovery CLI from GHCR.
 
 inputs:
   github-token:
-    description: Token used to authenticate against GitHub Packages.
+    description: Token used to authenticate against GHCR. Use a token with package read access when needed.
     required: true
   github-actor:
-    description: Actor used as the NuGet username for GitHub Packages.
+    description: Actor used as the GHCR username.
     required: true
   github-owner:
-    description: Owner whose GitHub Packages feed hosts the tool package.
+    description: Owner whose GHCR namespace hosts the tool package.
     required: true
+  package-name:
+    description: GHCR package name that stores the discovery tool nupkg artifact.
+    required: false
+    default: inspectra-discovery-tool
   tool-version:
-    description: Explicit package version to install. When omitted, install the latest pre-release.
+    description: Explicit package version tag to install. When omitted, install the latest tag.
     required: false
     default: ''
 
@@ -24,48 +28,67 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Setup ORAS
+      uses: oras-project/setup-oras@v1
+
     - name: Install discovery tool
       id: install
       shell: pwsh
       run: |
         $toolVersion = '${{ inputs.tool-version }}'
         $toolPath = Join-Path $env:RUNNER_TEMP 'inspectra-discovery'
-        $configPath = Join-Path $env:RUNNER_TEMP 'inspectra-discovery.nuget.config'
-        $packageSource = 'https://nuget.pkg.github.com/${{ inputs.github-owner }}/index.json'
+        $packageRoot = Join-Path $env:RUNNER_TEMP 'inspectra-discovery-package'
+        $owner = '${{ inputs.github-owner }}'.ToLowerInvariant()
+        $artifactTag = if ([string]::IsNullOrWhiteSpace($toolVersion)) {
+          'latest'
+        }
+        else {
+          $toolVersion
+        }
+
+        $packageReference = "ghcr.io/$owner/${{ inputs.package-name }}:$artifactTag"
 
         if (Test-Path $toolPath) {
           Remove-Item $toolPath -Recurse -Force
         }
 
-        @(
-          '<?xml version="1.0" encoding="utf-8"?>'
-          '<configuration>'
-          '  <packageSources>'
-          '    <clear />'
-          '    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />'
-          "    <add key=""github"" value=""$packageSource"" />"
-          '  </packageSources>'
-          '  <packageSourceCredentials>'
-          '    <github>'
-          "      <add key=""Username"" value=""${{ inputs.github-actor }}"" />"
-          "      <add key=""ClearTextPassword"" value=""${{ inputs.github-token }}"" />"
-          '    </github>'
-          '  </packageSourceCredentials>'
-          '</configuration>'
-        ) -join [Environment]::NewLine | Set-Content -Path $configPath -Encoding UTF8NoBOM
-
-        $versionArgs = @()
-        if (-not [string]::IsNullOrWhiteSpace($toolVersion)) {
-          $versionArgs = @('--version', $toolVersion)
+        if (Test-Path $packageRoot) {
+          Remove-Item $packageRoot -Recurse -Force
         }
-        else {
-          $versionArgs = @('--prerelease')
+
+        New-Item -ItemType Directory -Path $packageRoot -Force | Out-Null
+
+        '${{ inputs.github-token }}' | oras login ghcr.io `
+          --username '${{ inputs.github-actor }}' `
+          --password-stdin
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to authenticate to GHCR."
+        }
+
+        oras pull $packageReference --output $packageRoot
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to pull '$packageReference' from GHCR."
+        }
+
+        $nupkgPath = Get-ChildItem -Path $packageRoot -Recurse -Filter '*.nupkg' |
+          Select-Object -First 1 -ExpandProperty FullName
+
+        if ([string]::IsNullOrWhiteSpace($nupkgPath)) {
+          throw "No .nupkg file was found in '$packageReference'."
+        }
+
+        if ([string]::IsNullOrWhiteSpace($toolVersion)) {
+          $toolVersion = [System.IO.Path]::GetFileNameWithoutExtension([System.IO.Path]::GetFileName($nupkgPath)) `
+            -replace '^InSpectra\.Discovery\.Tool\.', ''
         }
 
         dotnet tool install InSpectra.Discovery.Tool `
-          @versionArgs `
+          --version $toolVersion `
           --tool-path $toolPath `
-          --configfile $configPath
+          --add-source ([System.IO.Path]::GetDirectoryName($nupkgPath)) `
+          --ignore-failed-sources
 
         if ($LASTEXITCODE -ne 0) {
           throw "Failed to install InSpectra.Discovery.Tool."
@@ -73,8 +96,5 @@ runs:
 
         $toolPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
-        $installed = dotnet tool list --tool-path $toolPath |
-          Select-String 'inspectra.discovery.tool' |
-          ForEach-Object { ($_ -split '\s+')[1] }
-        "tool_version=$installed" >> $env:GITHUB_OUTPUT
-        Write-Host "Installed InSpectra.Discovery.Tool $installed."
+        "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
+        Write-Host "Installed InSpectra.Discovery.Tool $toolVersion from $packageReference."
