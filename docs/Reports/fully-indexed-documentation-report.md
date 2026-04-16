@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-13 16:49:25+00:00
+Generated: 2026-04-16 08:54:01+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 21
+Packages in scope: 20
 
-Fully documented: 9
+Fully documented: 8
 
 Incomplete: 12
 
@@ -28,7 +28,6 @@ Incomplete: 12
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
 | [w3ti.OpenBase.CLI](#pkg-w3ti-openbase-cli) | 10.0.20 | ok | xml-ready | 5/5 | 3/3 | 0/0 | 2/5 | FAIL |
-| [atc-kusto](#pkg-atc-kusto) | 3.4.0 | ok | xml-ready | 21/21 | 75/75 | 9/9 | 17/17 | PASS |
 | [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.2.0 | ok | xml-ready | 2/2 | 14/14 | 2/2 | 2/2 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
@@ -243,23 +242,6 @@ Incomplete: 12
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: help, update, version
-
-<a id="pkg-atc-kusto"></a>
-### atc-kusto
-
-- Version: `3.4.0`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `21/21`
-- Option documentation: `75/75`
-- Argument documentation: `9/9`
-- Leaf command examples: `17/17`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
 
 <a id="pkg-atc-rest-api-gen"></a>
 ### atc-rest-api-gen
