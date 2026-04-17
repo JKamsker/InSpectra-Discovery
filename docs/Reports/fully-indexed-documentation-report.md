@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-04-16 08:54:01+00:00
+Generated: 2026-04-17 16:44:52+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,11 +8,11 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 20
+Packages in scope: 18
 
-Fully documented: 8
+Fully documented: 7
 
-Incomplete: 12
+Incomplete: 11
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -27,8 +27,6 @@ Incomplete: 12
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.38 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
-| [w3ti.OpenBase.CLI](#pkg-w3ti-openbase-cli) | 10.0.20 | ok | xml-ready | 5/5 | 3/3 | 0/0 | 2/5 | FAIL |
-| [atc-rest-api-gen](#pkg-atc-rest-api-gen) | 1.0.137 | ok | xml-ready | 14/14 | 89/89 | 0/0 | 10/10 | PASS |
 | [BlazorLocalization.Extractor](#pkg-blazorlocalization-extractor) | 10.2.0 | ok | xml-ready | 2/2 | 14/14 | 2/2 | 2/2 | PASS |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
@@ -225,40 +223,6 @@ Incomplete: 12
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: generate
-
-<a id="pkg-w3ti-openbase-cli"></a>
-### w3ti.OpenBase.CLI
-
-- Version: `10.0.20`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `5/5`
-- Option documentation: `3/3`
-- Argument documentation: `0/0`
-- Leaf command examples: `2/5`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: help, update, version
-
-<a id="pkg-atc-rest-api-gen"></a>
-### atc-rest-api-gen
-
-- Version: `1.0.137`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `14/14`
-- Option documentation: `89/89`
-- Argument documentation: `0/0`
-- Leaf command examples: `10/10`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
 
 <a id="pkg-blazorlocalization-extractor"></a>
 ### BlazorLocalization.Extractor
