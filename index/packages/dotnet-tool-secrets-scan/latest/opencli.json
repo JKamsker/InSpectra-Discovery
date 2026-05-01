@@ -1,0 +1,704 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "dotnet-tool-secrets-scan",
+    "version": "1.0.1",
+    "description": ".NET-first hardcoded-secret scanner. Detects secrets in source files and git history; reports location only — never values. Install with: dotnet tool install -g dotnet-tool-secrets-scan. Not to be confused with dotnet user-secrets."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "dotnet-tool-secrets-scan: detects hardcoded secrets in .NET projects."
+  },
+  "options": [
+    {
+      "name": "--path",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to scan (directory or file).",
+      "aliases": [
+        "-p"
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--format",
+      "recursive": false,
+      "hidden": false,
+      "description": "Output format: console | json | sarif.",
+      "aliases": [
+        "-f"
+      ],
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "OutputFormat",
+          "allowedValues": [
+            "Console",
+            "Json",
+            "Sarif"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--severity",
+      "recursive": false,
+      "hidden": false,
+      "description": "Minimum severity to report.",
+      "aliases": [
+        "-s"
+      ],
+      "arguments": [
+        {
+          "name": "SEVERITY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Severity",
+          "allowedValues": [
+            "Low",
+            "Medium",
+            "High",
+            "Critical"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--baseline",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to a baseline file; matching findings are suppressed.",
+      "arguments": [
+        {
+          "name": "BASELINE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--write-baseline",
+      "recursive": false,
+      "hidden": false,
+      "description": "Write a fresh baseline file containing the current findings.",
+      "arguments": [
+        {
+          "name": "WRITE_BASELINE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--watch",
+      "recursive": false,
+      "hidden": false,
+      "description": "Re-scan changed files in real time (300ms debounce).",
+      "arguments": [
+        {
+          "name": "WATCH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--install-hook",
+      "recursive": false,
+      "hidden": false,
+      "description": "Install a pre-commit hook (or print guidance if a known hook manager is in use).",
+      "arguments": [
+        {
+          "name": "INSTALL_HOOK",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--uninstall-hook",
+      "recursive": false,
+      "hidden": false,
+      "description": "Remove the pre-commit hook (only the marker block).",
+      "arguments": [
+        {
+          "name": "UNINSTALL_HOOK",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--force",
+      "recursive": false,
+      "hidden": false,
+      "description": "When installing the hook, overwrite an existing hook (a backup is written).",
+      "arguments": [
+        {
+          "name": "FORCE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--append",
+      "recursive": false,
+      "hidden": false,
+      "description": "When installing the hook, append inside a marker block to an existing hook.",
+      "arguments": [
+        {
+          "name": "APPEND",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": false,
+      "hidden": false,
+      "description": "Write output to a file instead of stdout.",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--include-pii",
+      "recursive": false,
+      "hidden": false,
+      "description": "Include PII fields (author name, user-home paths) in output. Default redacts.",
+      "arguments": [
+        {
+          "name": "INCLUDE_PII",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--include-generated",
+      "recursive": false,
+      "hidden": false,
+      "description": "Include generated files (Migrations, *.Designer.cs, etc.).",
+      "arguments": [
+        {
+          "name": "INCLUDE_GENERATED",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--include-high-entropy",
+      "recursive": false,
+      "hidden": false,
+      "description": "Enable the high-entropy heuristic detector (off by default).",
+      "arguments": [
+        {
+          "name": "INCLUDE_HIGH_ENTROPY",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--follow-symlinks",
+      "recursive": false,
+      "hidden": false,
+      "description": "Follow symlinks during traversal (off by default).",
+      "arguments": [
+        {
+          "name": "FOLLOW_SYMLINKS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--max-file-size",
+      "recursive": false,
+      "hidden": false,
+      "description": "Maximum file size in bytes; larger files are skipped.",
+      "arguments": [
+        {
+          "name": "MAX_FILE_SIZE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int64"
+        }
+      ]
+    },
+    {
+      "name": "--color",
+      "recursive": false,
+      "hidden": false,
+      "description": "Colour output mode: auto | always | never.",
+      "arguments": [
+        {
+          "name": "COLOR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "ColorMode",
+          "allowedValues": [
+            "Auto",
+            "Always",
+            "Never"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--include",
+      "recursive": false,
+      "hidden": false,
+      "description": "Glob pattern(s) to include. Repeatable.",
+      "arguments": [
+        {
+          "name": "INCLUDE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--exclude",
+      "recursive": false,
+      "hidden": false,
+      "description": "Glob pattern(s) to exclude. Repeatable.",
+      "arguments": [
+        {
+          "name": "EXCLUDE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-h",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "/h",
+        "--help",
+        "-?",
+        "/?"
+      ],
+      "arguments": [
+        {
+          "name": "H",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "history",
+      "description": "Scan git commit history for hardcoded secrets. Reports location only — never values.",
+      "options": [
+        {
+          "name": "--path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to scan (directory or file).",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: console | json | sarif.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Console",
+                "Json",
+                "Sarif"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--severity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum severity to report.",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SEVERITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Severity",
+              "allowedValues": [
+                "Low",
+                "Medium",
+                "High",
+                "Critical"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write output to a file instead of stdout.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--include-pii",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include PII fields (author name, user-home paths) in output. Default redacts.",
+          "arguments": [
+            {
+              "name": "INCLUDE_PII",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--color",
+          "recursive": false,
+          "hidden": false,
+          "description": "Colour output mode: auto | always | never.",
+          "arguments": [
+            {
+              "name": "COLOR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "ColorMode",
+              "allowedValues": [
+                "Auto",
+                "Always",
+                "Never"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--branch",
+          "recursive": false,
+          "hidden": false,
+          "description": "Branch to scan; omit to walk all local branches.",
+          "arguments": [
+            {
+              "name": "BRANCH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "ISO 8601 date; only scan commits at or after this instant.",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DateTimeOffset"
+            }
+          ]
+        },
+        {
+          "name": "--max-commits",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of commits (most-recent first).",
+          "arguments": [
+            {
+              "name": "MAX_COMMITS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--all-history",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scan the full reachable history, lifting the --max-commits cap.",
+          "arguments": [
+            {
+              "name": "ALL_HISTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--still-present-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only emit findings whose secret is also present in the working tree.",
+          "arguments": [
+            {
+              "name": "STILL_PRESENT_ONLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--removed-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only emit findings whose secret has been removed from the working tree.",
+          "arguments": [
+            {
+              "name": "REMOVED_ONLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-tags",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip tag refs when enumerating commits.",
+          "arguments": [
+            {
+              "name": "NO_TAGS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--include-unreachable",
+          "recursive": false,
+          "hidden": false,
+          "description": "Walk dangling / unreachable commits (slower).",
+          "arguments": [
+            {
+              "name": "INCLUDE_UNREACHABLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-scan-commit-messages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not apply the pattern library to commit message text.",
+          "arguments": [
+            {
+              "name": "NO_SCAN_COMMIT_MESSAGES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
