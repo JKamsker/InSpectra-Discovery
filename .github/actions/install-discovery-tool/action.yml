@@ -28,8 +28,18 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Setup ORAS
-      uses: oras-project/setup-oras@v1
+    - name: Install ORAS
+      shell: bash
+      env:
+        ORAS_VERSION: 1.3.1
+      run: |
+        set -euo pipefail
+        oras_dir="${RUNNER_TEMP}/oras-bin"
+        mkdir -p "$oras_dir"
+        curl -fsSL "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz" |
+          tar -xz -C "$oras_dir" oras
+        echo "$oras_dir" >> "$GITHUB_PATH"
+        "$oras_dir/oras" version
 
     - name: Install discovery tool
       id: install
