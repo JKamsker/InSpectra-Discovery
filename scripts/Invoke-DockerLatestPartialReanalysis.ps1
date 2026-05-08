@@ -24,8 +24,6 @@ param(
 
     [string]$ToolRoot,
 
-    [string]$Configuration = 'Debug',
-
     [int]$InstallTimeoutSeconds = 120,
 
     [int]$AnalysisTimeoutSeconds = 180,
@@ -54,10 +52,9 @@ else {
 $preserveWorkingRoot = $KeepWorkingRoot -or -not [string]::IsNullOrWhiteSpace($WorkingRoot)
 $expectedPath = Join-Path $resolvedWorkingRoot 'plan\expected.json'
 $summaryPath = Join-Path $resolvedWorkingRoot 'promotion-summary.json'
-$toolProject = Join-Path $repositoryRoot 'src\InSpectra.Discovery.Tool\InSpectra.Discovery.Tool.csproj'
 $dockerRunnerPath = Join-Path $repositoryRoot '.github\scripts\run-analysis-in-docker.ps1'
 $resolvedToolRoot = $null
-$resolvedToolAssemblyPath = $null
+$discoveryInvocation = $null
 
 function Normalize-Segment {
     param([string]$Value)
@@ -76,68 +73,74 @@ function Normalize-Segment {
 
 function Resolve-ToolRoot {
     param(
-        [string]$RepositoryRoot,
-        [string]$ProjectPath,
-        [string]$ConfigurationName,
         [string]$ToolRootPath
     )
 
-    if (-not [string]::IsNullOrWhiteSpace($ToolRootPath)) {
-        return (Resolve-Path -LiteralPath $ToolRootPath).Path
+    if ([string]::IsNullOrWhiteSpace($ToolRootPath)) {
+        throw "ToolRoot is required because the discovery tool source now lives in the InSpectra repository. Provide a tool root containing inspectra-discovery or InSpectra.Discovery.Tool.dll."
     }
 
-    $defaultToolRoot = Join-Path $RepositoryRoot "src\InSpectra.Discovery.Tool\bin\$ConfigurationName\net10.0"
-    $toolAssemblyPath = Join-Path $defaultToolRoot 'InSpectra.Discovery.Tool.dll'
+    $resolvedPath = (Resolve-Path -LiteralPath $ToolRootPath).Path
+    $toolExecutablePath = Join-Path $resolvedPath 'inspectra-discovery'
+    $toolAssemblyPath = Join-Path $resolvedPath 'InSpectra.Discovery.Tool.dll'
+    if (
+        -not (Test-Path -LiteralPath $toolExecutablePath) -and
+        -not (Test-Path -LiteralPath $toolAssemblyPath)
+    ) {
+        throw "Tool root '$resolvedPath' did not contain inspectra-discovery or InSpectra.Discovery.Tool.dll."
+    }
+
+    return $resolvedPath
+}
+
+function Resolve-DiscoveryInvocation {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ToolRootPath
+    )
+
+    $pathCommand = Get-Command inspectra-discovery -ErrorAction SilentlyContinue
+    if ($pathCommand) {
+        return [pscustomobject]@{
+            Command = $pathCommand.Source
+            Prefix = @()
+        }
+    }
+
+    $toolAssemblyPath = Join-Path $ToolRootPath 'InSpectra.Discovery.Tool.dll'
     if (Test-Path -LiteralPath $toolAssemblyPath) {
-        return $defaultToolRoot
+        return [pscustomobject]@{
+            Command = 'dotnet'
+            Prefix = @($toolAssemblyPath)
+        }
     }
 
-    Write-Host "Building discovery tool in $ConfigurationName so Docker analysis can reuse the host output."
-    dotnet build $ProjectPath -c $ConfigurationName --nologo | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-        throw "dotnet build failed with exit code $LASTEXITCODE."
+    $toolExecutablePath = Join-Path $ToolRootPath 'inspectra-discovery'
+    return [pscustomobject]@{
+        Command = $toolExecutablePath
+        Prefix = @()
     }
-
-    if (-not (Test-Path -LiteralPath $toolAssemblyPath)) {
-        throw "Tool build output '$toolAssemblyPath' was not created."
-    }
-
-    return $defaultToolRoot
 }
 
 function Invoke-DiscoveryTool {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$RepositoryRoot,
-
-        [Parameter(Mandatory = $true)]
-        [string]$ProjectPath,
-
-        [Parameter(Mandatory = $true)]
-        [string]$ToolAssemblyPath,
+        $Invocation,
 
         [Parameter(Mandatory = $true)]
         [string[]]$ArgumentList
     )
 
-    if (Test-Path -LiteralPath $ToolAssemblyPath) {
-        & dotnet $ToolAssemblyPath @ArgumentList | Out-Host
-    }
-    else {
-        $runArgs = @('run', '--project', $ProjectPath, '--') + $ArgumentList
-        dotnet @runArgs | Out-Host
-    }
+    $resolvedArguments = @($Invocation.Prefix) + $ArgumentList
+    & $Invocation.Command @resolvedArguments | Out-Host
 
     return $LASTEXITCODE
 }
 
 try {
     $resolvedToolRoot = Resolve-ToolRoot `
-        -RepositoryRoot $repositoryRoot `
-        -ProjectPath $toolProject `
-        -ConfigurationName $Configuration `
         -ToolRootPath $ToolRoot
-    $resolvedToolAssemblyPath = Join-Path $resolvedToolRoot 'InSpectra.Discovery.Tool.dll'
+    $discoveryInvocation = Resolve-DiscoveryInvocation -ToolRootPath $resolvedToolRoot
 
     New-Item -ItemType Directory -Path (Split-Path -Parent $expectedPath) -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $resolvedWorkingRoot 'results') -Force | Out-Null
@@ -176,9 +179,7 @@ try {
     }
 
     $exportExitCode = Invoke-DiscoveryTool `
-        -RepositoryRoot $repositoryRoot `
-        -ProjectPath $toolProject `
-        -ToolAssemblyPath $resolvedToolAssemblyPath `
+        -Invocation $discoveryInvocation `
         -ArgumentList $exportArgs
     if ($exportExitCode -ne 0) {
         throw "Failed to export latest partial plan."
@@ -223,9 +224,7 @@ try {
         '--json'
     )
     $applyExitCode = Invoke-DiscoveryTool `
-        -RepositoryRoot $repositoryRoot `
-        -ProjectPath $toolProject `
-        -ToolAssemblyPath $resolvedToolAssemblyPath `
+        -Invocation $discoveryInvocation `
         -ArgumentList $applyArgs
     if ($applyExitCode -ne 0) {
         throw "Failed to apply untrusted promotion output from '$resolvedWorkingRoot'."

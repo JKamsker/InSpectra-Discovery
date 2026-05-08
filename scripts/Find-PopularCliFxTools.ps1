@@ -67,12 +67,18 @@ function Get-GitHubRepositoryMetadata {
     }
 }
 
-$projectPath = Join-Path $PSScriptRoot '..\src\InSpectra.Discovery.Tool'
 $resolvedInputPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\$InputPath"))
 $resolvedFilteredPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\$FilteredOutputPath"))
 $resolvedPopularPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\$PopularOutputPath"))
 
-dotnet run --project $projectPath -- catalog filter clifx --input $resolvedInputPath --output $resolvedFilteredPath --concurrency $Concurrency | Out-Null
+if (-not (Get-Command inspectra-discovery -ErrorAction SilentlyContinue)) {
+    throw "inspectra-discovery was not found on PATH. Install the discovery tool before running this script."
+}
+
+inspectra-discovery catalog filter clifx --input $resolvedInputPath --output $resolvedFilteredPath --concurrency $Concurrency | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    throw "CliFx filtering failed with exit code $LASTEXITCODE."
+}
 
 $filtered = Get-Content -Raw $resolvedFilteredPath | ConvertFrom-Json
 $packages = @($filtered.packages | Select-Object -First $Top)

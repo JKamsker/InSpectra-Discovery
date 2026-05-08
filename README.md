@@ -64,14 +64,19 @@ fallback to recursive --help crawl"| Results["Analysis results"]
 ## Repository structure
 
 ```
-src/InSpectra.Discovery.Tool/        # .NET 10 tool/CLI (discovery, analysis, promotion)
+.github/actions/install-discovery-tool/
+                                      # Installs the published discovery CLI from GHCR
 scripts/                             # Legacy/manual PowerShell helpers
 .github/workflows/                   # CI/CD pipelines (scheduled discovery, batch analysis)
 docs/Plans/                          # Reusable checked-in analysis plans
 index/                               # Output: analyzed tool index (all.json + per-package artifacts)
 state/                               # Persistent state (catalog cursors, queues, deltas)
-tests/                               # xUnit tests
 ```
+
+The discovery CLI source now lives in the main
+[InSpectra](https://github.com/JKamsker/InSpectra) repository. GitHub Actions
+install the published `inspectra-discovery` tool from GHCR, and the examples
+below assume that command is available on `PATH`.
 
 ## How it works
 
@@ -80,13 +85,13 @@ tests/                               # xUnit tests
 The discovery tool enumerates NuGet's autocomplete and registration APIs to build a snapshot of all dotnet-tool packages, enriched with download counts:
 
 ```bash
-dotnet run --project src/InSpectra.Discovery.Tool -- catalog build --concurrency 16
+inspectra-discovery catalog build --concurrency 16
 ```
 
 Incremental updates use the NuGet catalog cursor to detect only new or changed packages:
 
 ```bash
-dotnet run --project src/InSpectra.Discovery.Tool -- catalog delta discover
+inspectra-discovery catalog delta discover
 ```
 
 ### Filtering
@@ -94,19 +99,19 @@ dotnet run --project src/InSpectra.Discovery.Tool -- catalog delta discover
 Scheduled discovery now queues all changed current dotnet tools for analysis:
 
 ```bash
-dotnet run --project src/InSpectra.Discovery.Tool -- catalog delta queue-all-tools
+inspectra-discovery catalog delta queue-all-tools
 ```
 
 To converge the repository toward full current-version coverage, the scheduler can also build a backlog queue of latest versions that are still missing analysis, retryable, or stuck in legacy native-analysis states:
 
 ```bash
-dotnet run --project src/InSpectra.Discovery.Tool -- queue backfill-current-analysis --current-snapshot state/discovery/dotnet-tools.current.json --output state/discovery/dotnet-tools.current-backfill.queue.json --take 100
+inspectra-discovery queue backfill-current-analysis --current-snapshot state/discovery/dotnet-tools.current.json --output state/discovery/dotnet-tools.current-backfill.queue.json --take 100
 ```
 
 Focused research workflows can still filter to packages that depend on `Spectre.Console.Cli`:
 
 ```bash
-dotnet run --project src/InSpectra.Discovery.Tool -- catalog filter spectre-console-cli --concurrency 16
+inspectra-discovery catalog filter spectre-console-cli --concurrency 16
 ```
 
 ### Analysis
@@ -114,14 +119,14 @@ dotnet run --project src/InSpectra.Discovery.Tool -- catalog filter spectre-cons
 Discovered tools are analyzed via the discovery CLI. The scheduled path prefers native Spectre OpenCLI/XMLDoc extraction, falls back to dedicated `CliFx` analysis when that framework is detected, and otherwise uses generic help crawling for other well-behaving tools:
 
 ```powershell
-dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-auto --package-id JellyfinCli --version 0.1.16 --output-root artifacts/analysis/jellyfincli --batch-id manual
+inspectra-discovery analysis run-auto --package-id JellyfinCli --version 0.1.16 --output-root artifacts/analysis/jellyfincli --batch-id manual
 ```
 
 For non-Spectre tools that do not expose native `--opencli`, the checked-in help batch can run generic-help and `CliFx` representatives and emit a promotion-ready `expected.json`:
 
 ```powershell
-dotnet run --project src/InSpectra.Discovery.Tool -- analysis run-help-batch --plan docs/Plans/validated-generic-help-frameworks.json --output-root artifacts/help-batches/validated-frameworks --source help-index-batch
-dotnet run --project src/InSpectra.Discovery.Tool -- promotion apply-untrusted --download-root artifacts/help-batches/validated-frameworks
+inspectra-discovery analysis run-help-batch --plan docs/Plans/validated-generic-help-frameworks.json --output-root artifacts/help-batches/validated-frameworks --source help-index-batch
+inspectra-discovery promotion apply-untrusted --download-root artifacts/help-batches/validated-frameworks
 ```
 
 The sample plan in [docs/Plans/validated-generic-help-frameworks.json](docs/Plans/validated-generic-help-frameworks.json) covers validated representatives for `CliFx`, `Argu`, `McMaster.Extensions.CommandLineUtils`, `Spectre.Console.Cli`, `Cocona`, `DocoptNet`, `System.CommandLine`, `CommandLineParser`, `Mono.Options / NDesk.Options`, `Microsoft.Extensions.CommandLineUtils`, `ConsoleAppFramework`, `CommandDotNet`, and `PowerArgs`.
@@ -148,7 +153,7 @@ A global manifest at `index/all.json` lists all indexed packages with their late
 The repository also exposes a publish-ready Pages snapshot that keeps only the web-facing JSON artifacts:
 
 ```powershell
-dotnet run --project src/InSpectra.Discovery.Tool -- docs github-pages-snapshot --output-root artifacts/github-pages
+inspectra-discovery docs github-pages-snapshot --output-root artifacts/github-pages
 ```
 
 That command copies only `index.json`, `metadata.json`, and `opencli.json`, preserves their paths relative to `index/`, minifies the JSON payloads, and writes a `.nojekyll` marker for GitHub Pages hosting.
@@ -190,6 +195,7 @@ Example:
 
 ```powershell
 ./scripts/Invoke-DockerLatestPartialReanalysis.ps1 `
+    -ToolRoot C:\path\to\inspectra-discovery-tool `
     -AnalysisMode help `
     -Classification invalid-opencli-artifact `
     -MessageContains "does not expose any commands" `
@@ -197,7 +203,12 @@ Example:
     -KeepWorkingRoot
 ```
 
-The wrapper reuses `.github/scripts/run-analysis-in-docker.ps1` for the container invocation and `docs export-latest-partials-plan` for queue selection, so CI can keep its existing non-Docker host behavior while local maintenance stays Docker-only for analysis.
+`-ToolRoot` must point to a published discovery tool root containing either
+`inspectra-discovery` or `InSpectra.Discovery.Tool.dll`. The wrapper reuses
+`.github/scripts/run-analysis-in-docker.ps1` for the container invocation and
+`docs export-latest-partials-plan` for queue selection, so CI can keep its
+existing non-Docker host behavior while local maintenance stays Docker-only for
+analysis.
 
 ## CI/CD
 
@@ -215,13 +226,14 @@ The wrapper reuses `.github/scripts/run-analysis-in-docker.ps1` for the containe
 
 - .NET 10.0 SDK
 - PowerShell 7+ for legacy/manual scripts only
+- `inspectra-discovery` on `PATH` for local manual commands, or a published
+  tool root passed to scripts that support `-ToolRoot`
 
 ## Building and testing
 
-```bash
-dotnet build InSpectra.Discovery.sln
-dotnet test
-```
+The discovery CLI is built and tested in the main InSpectra repository. This
+repository consumes the published tool through GHCR and verifies that installer
+path in CI.
 
 ## Local Git Guard
 

@@ -176,9 +176,11 @@ function New-ValidationSummary {
 
 $resolvedInputPath = Resolve-RepoPath -RelativePath $InputPath
 $resolvedOutputPath = Resolve-RepoPath -RelativePath $OutputPath
-$projectPath = Resolve-RepoPath -RelativePath 'src/InSpectra.Discovery.Tool'
 $validationRoot = Split-Path -Parent $resolvedOutputPath
 $batchId = 'popular-clifx-validation-' + [DateTimeOffset]::UtcNow.ToString('yyyyMMddHHmmss')
+if (-not (Get-Command inspectra-discovery -ErrorAction SilentlyContinue)) {
+    throw "inspectra-discovery was not found on PATH. Install the discovery tool before running this script."
+}
 
 $index = Get-Content -Raw $resolvedInputPath | ConvertFrom-Json
 $packages = @($index.packages)
@@ -201,7 +203,7 @@ $summaries = foreach ($package in $selectedPackages) {
     $outputRoot = Join-Path $validationRoot (Join-Path $packageSlug ([string]$package.latestVersion))
     New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
 
-    & dotnet run --project $projectPath -- analysis run-clifx `
+    & inspectra-discovery analysis run-clifx `
         --package-id ([string]$package.packageId) `
         --version ([string]$package.latestVersion) `
         --output-root $outputRoot `
