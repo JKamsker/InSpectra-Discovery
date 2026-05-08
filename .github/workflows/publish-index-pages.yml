@@ -2,9 +2,11 @@ name: Publish Index Pages
 
 on:
   push:
+    branches:
+      - main
     paths:
       - index/**
-      - src/InSpectra.Discovery.Tool/**
+      - .github/actions/install-discovery-tool/**
       - .github/workflows/publish-index-pages.yml
   workflow_run:
     workflows:
@@ -18,6 +20,7 @@ on:
 
 permissions:
   contents: write
+  packages: read
 
 concurrency:
   group: publish-index-pages
@@ -41,12 +44,19 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      - name: Install discovery tool
+        uses: ./.github/actions/install-discovery-tool
+        with:
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          github-owner: ${{ github.repository_owner }}
+
       - name: Build GitHub Pages snapshot
         id: snapshot
         shell: pwsh
         run: |
           $publishRoot = Join-Path $env:RUNNER_TEMP 'gh-pages-site'
-          dotnet run --project src/InSpectra.Discovery.Tool/InSpectra.Discovery.Tool.csproj --configuration Release -- `
+          inspectra-discovery `
             docs github-pages-snapshot `
             --repo-root "$PWD" `
             --output-root "$publishRoot"
