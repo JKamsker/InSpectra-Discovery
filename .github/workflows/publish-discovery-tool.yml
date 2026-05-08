@@ -1,28 +1,34 @@
-name: Publish Discovery Tool
+name: Verify Discovery Tool Install
 
 on:
   push:
     paths:
-      - src/**
+      - .github/actions/install-discovery-tool/**
+      - .github/workflows/publish-discovery-tool.yml
   workflow_dispatch:
+    inputs:
+      tool_version:
+        description: Optional explicit discovery tool version tag to install from GHCR
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
-  packages: write
+  packages: read
 
 concurrency:
-  group: publish-discovery-tool-${{ github.ref }}
+  group: verify-discovery-tool-install-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  publish:
+  verify:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Setup .NET
@@ -30,27 +36,17 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Resolve package version
-        id: version
-        shell: pwsh
-        run: |
-          $toolVersion = & "$PWD/eng/Get-DiscoveryToolVersion.ps1"
-          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
-          Write-Host "Publishing InSpectra.Discovery.Tool $toolVersion"
+      - name: Install discovery tool from GHCR
+        id: install_tool
+        uses: ./.github/actions/install-discovery-tool
+        with:
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          github-owner: ${{ github.repository_owner }}
+          tool-version: ${{ inputs.tool_version }}
 
-      - name: Pack discovery tool
+      - name: Verify installed tool
         shell: pwsh
         run: |
-          dotnet pack src/InSpectra.Discovery.Tool/InSpectra.Discovery.Tool.csproj `
-            -c Release `
-            -p:Version='${{ steps.version.outputs.tool_version }}'
-
-      - name: Publish to GitHub Packages
-        shell: pwsh
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          dotnet nuget push artifacts/tool/*.nupkg `
-            --source 'https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json' `
-            --api-key $env:GITHUB_TOKEN `
-            --skip-duplicate
+          inspectra-discovery --version
+          Write-Host "Installed version: ${{ steps.install_tool.outputs.tool_version }}"
