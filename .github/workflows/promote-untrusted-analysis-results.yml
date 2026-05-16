@@ -1,0 +1,198 @@
+name: Promote Untrusted Analysis Results
+run-name: >-
+  Promote Untrusted Analysis Results / ${{ github.event.inputs.analysis_run_id || github.event.workflow_run.id || 'auto' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      analysis_run_id:
+        description: Completed Analyze Untrusted Batch run id to promote
+        required: true
+        type: string
+  workflow_run:
+    workflows:
+      - Analyze Untrusted Batch
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: promote-untrusted-${{ github.event.inputs.analysis_run_id || github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'cancelled' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve analysis run
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $analysisRunId = if ('${{ github.event.inputs.analysis_run_id }}') {
+            '${{ github.event.inputs.analysis_run_id }}'
+          }
+          elseif ('${{ github.event.workflow_run.id }}') {
+            '${{ github.event.workflow_run.id }}'
+          }
+          else {
+            throw 'No analysis run id was provided.'
+          }
+
+          $run = gh run view $analysisRunId `
+            --repo '${{ github.repository }}' `
+            --json databaseId,url,status,conclusion,workflowName,headBranch | ConvertFrom-Json
+
+          if ($run.workflowName -ne 'Analyze Untrusted Batch') {
+            throw "Run '$analysisRunId' is not an Analyze Untrusted Batch run."
+          }
+
+          if ($run.status -ne 'completed') {
+            throw "Analysis run '$analysisRunId' is still '$($run.status)'."
+          }
+
+          if ($run.conclusion -ne 'success') {
+            throw "Analysis run '$analysisRunId' completed with conclusion '$($run.conclusion)'."
+          }
+
+          "analysis_run_id=$analysisRunId" >> $env:GITHUB_OUTPUT
+          "analysis_run_url=$($run.url)" >> $env:GITHUB_OUTPUT
+          "head_branch=$($run.headBranch)" >> $env:GITHUB_OUTPUT
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ steps.source.outputs.head_branch }}
+
+      - name: Download workflow artifacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'untrusted-download'
+          New-Item -ItemType Directory -Path $downloadRoot -Force | Out-Null
+          gh run download ${{ steps.source.outputs.analysis_run_id }} `
+            --repo ${{ github.repository }} `
+            --dir $downloadRoot
+
+      - name: Promote analysis outputs
+        id: promote
+        shell: pwsh
+        run: |
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'untrusted-download'
+          $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
+          $bodyPath = Join-Path $env:RUNNER_TEMP 'promotion-body.md'
+          ./scripts/Invoke-UntrustedAnalysisPromotion.ps1 `
+            -DownloadRoot $downloadRoot `
+            -SummaryOutputPath $summaryPath
+
+          $summary = Get-Content $summaryPath -Raw | ConvertFrom-Json
+          ./scripts/Write-UntrustedPromotionPullRequestBody.ps1 `
+            -SummaryPath $summaryPath `
+            -WorkflowRunUrl '${{ steps.source.outputs.analysis_run_url }}' `
+            -BodyOutputPath $bodyPath
+
+          "batch_id=$($summary.batchId)" >> $env:GITHUB_OUTPUT
+          "success_count=$($summary.successCount)" >> $env:GITHUB_OUTPUT
+          "terminal_negative_count=$($summary.terminalNegativeCount)" >> $env:GITHUB_OUTPUT
+          "retryable_failure_count=$($summary.retryableFailureCount)" >> $env:GITHUB_OUTPUT
+          "terminal_failure_count=$($summary.terminalFailureCount)" >> $env:GITHUB_OUTPUT
+          "missing_count=$($summary.missingCount)" >> $env:GITHUB_OUTPUT
+          "target_branch=$($summary.targetBranch)" >> $env:GITHUB_OUTPUT
+          "body_path=$bodyPath" >> $env:GITHUB_OUTPUT
+          "pr_branch=automation/untrusted-$($summary.batchId)-${{ steps.source.outputs.analysis_run_id }}" >> $env:GITHUB_OUTPUT
+
+      - name: Create pull request
+        id: cpr
+        continue-on-error: true
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.promote.outputs.pr_branch }}
+          base: ${{ steps.promote.outputs.target_branch }}
+          delete-branch: true
+          add-paths: |
+            index/**
+            state/**
+          commit-message: |
+            chore(index): promote untrusted analysis ${{ steps.promote.outputs.batch_id }}
+
+            Promote artifact-only analysis results for an untrusted batch.
+          title: "chore(index): promote untrusted analysis ${{ steps.promote.outputs.batch_id }}"
+          body-path: ${{ steps.promote.outputs.body_path }}
+
+      - name: Resolve pull request
+        id: pr
+        if: ${{ always() }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $outputPath = Join-Path $env:RUNNER_TEMP 'promotion-pr.json'
+          ./scripts/Ensure-UntrustedPromotionPullRequest.ps1 `
+            -Repository '${{ github.repository }}' `
+            -Branch '${{ steps.promote.outputs.pr_branch }}' `
+            -BaseBranch '${{ steps.promote.outputs.target_branch }}' `
+            -Title 'chore(index): promote untrusted analysis ${{ steps.promote.outputs.batch_id }}' `
+            -BodyPath '${{ steps.promote.outputs.body_path }}' `
+            -ExistingPullRequestNumber '${{ steps.cpr.outputs.pull-request-number }}' `
+            -ExistingPullRequestUrl '${{ steps.cpr.outputs.pull-request-url }}' `
+            -OutputPath $outputPath
+
+          $pr = Get-Content $outputPath -Raw | ConvertFrom-Json
+          "pull_request_number=$($pr.number)" >> $env:GITHUB_OUTPUT
+          "pull_request_url=$($pr.url)" >> $env:GITHUB_OUTPUT
+          "pull_request_operation=$($pr.operation)" >> $env:GITHUB_OUTPUT
+
+      - name: Publish non-success follow-up comments
+        id: followups
+        if: ${{ steps.pr.outputs.pull_request_url != '' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
+          $commentIndexPath = Join-Path $env:RUNNER_TEMP 'promotion-comment-index.json'
+          ./scripts/Publish-UntrustedPromotionComments.ps1 `
+            -SummaryPath $summaryPath `
+            -Repository '${{ github.repository }}' `
+            -PullRequestNumber '${{ steps.pr.outputs.pull_request_number }}' `
+            -WorkflowRunUrl '${{ steps.source.outputs.analysis_run_url }}' `
+            -CommentIndexOutputPath $commentIndexPath
+
+          "comment_index_path=$commentIndexPath" >> $env:GITHUB_OUTPUT
+
+      - name: Update pull request body with follow-up links
+        if: ${{ steps.pr.outputs.pull_request_url != '' }}
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
+          $bodyPath = Join-Path $env:RUNNER_TEMP 'promotion-body.md'
+          ./scripts/Write-UntrustedPromotionPullRequestBody.ps1 `
+            -SummaryPath $summaryPath `
+            -WorkflowRunUrl '${{ steps.source.outputs.analysis_run_url }}' `
+            -BodyOutputPath $bodyPath `
+            -CommentIndexPath '${{ steps.followups.outputs.comment_index_path }}'
+
+          gh pr edit '${{ steps.pr.outputs.pull_request_number }}' `
+            --repo '${{ github.repository }}' `
+            --body-file $bodyPath
+
+      - name: Report pull request result
+        shell: pwsh
+        run: |
+          Write-Host "Pull request operation: ${{ steps.pr.outputs.pull_request_operation }}"
+          if ('${{ steps.pr.outputs.pull_request_url }}') {
+            Write-Host "Pull request URL: ${{ steps.pr.outputs.pull_request_url }}"
+          }
