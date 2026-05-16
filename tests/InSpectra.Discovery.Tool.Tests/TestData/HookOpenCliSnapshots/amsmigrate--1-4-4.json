@@ -1,0 +1,743 @@
+{
+  "info": {
+    "title": "Azure Media Services Asset Migration Tool",
+    "version": "1.4.4",
+    "description": "A command line tool to migrate your media assets from Azure Media Services."
+  },
+  "options": [
+    {
+      "name": "--log-level",
+      "description": "The log level for logging",
+      "aliases": [
+        "-v"
+      ],
+      "arguments": [
+        {
+          "name": null,
+          "required": true,
+          "type": "LogLevel",
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "allowedValues": [
+            "Trace",
+            "Debug",
+            "Information",
+            "Warning",
+            "Error",
+            "Critical",
+            "None"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "-l",
+      "description": "The directory where the logs are written. Defaults to the temporary directory",
+      "aliases": [
+        "--log-directory"
+      ],
+      "arguments": [
+        {
+          "name": null,
+          "required": true,
+          "type": "String",
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--subscription",
+      "description": "The azure subscription to use",
+      "aliases": [
+        "-s"
+      ],
+      "arguments": [
+        {
+          "name": null,
+          "required": true,
+          "type": "String",
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--resource-group",
+      "description": "The resource group of the account beging migrated",
+      "aliases": [
+        "-g"
+      ],
+      "arguments": [
+        {
+          "name": null,
+          "required": true,
+          "type": "String",
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--account-name",
+      "description": "The target Azure Media Services or Azure Storage Account being migrated.",
+      "aliases": [
+        "-n"
+      ],
+      "arguments": [
+        {
+          "name": null,
+          "required": true,
+          "type": "String",
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--cloud-type",
+      "description": "The destination cloud you are migrating to.\nFor Azure refer to https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential?view=azure-dotnet\nFor AWS refer to https://docs.aws.amazon.com/sdk-for-net/v3/developer-guide/creds-locate.html\nFor GCP refer to https://cloud.google.com/docs/authentication/application-default-credentials\nDepending on the type of authentcation you may have to set some environment variables.",
+      "aliases": [
+        "-c"
+      ],
+      "arguments": [
+        {
+          "name": null,
+          "type": "CloudType",
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "allowedValues": [
+            "AWS",
+            "Azure",
+            "Custom",
+            "GCP",
+            "Local"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "-d",
+      "description": "Run in daemon mode and do not use ASCII graphics.",
+      "aliases": [
+        "--daemon-mode"
+      ],
+      "arguments": [
+        {
+          "name": null,
+          "type": "Boolean",
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "description": "Show version information",
+      "arguments": [
+        {
+          "name": null,
+          "type": "Boolean",
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          }
+        }
+      ]
+    },
+    {
+      "name": "-h",
+      "description": "Show help and usage information",
+      "aliases": [
+        "/h",
+        "--help",
+        "-?",
+        "/?"
+      ],
+      "arguments": [
+        {
+          "name": null,
+          "type": "Boolean",
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          }
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "analyze",
+      "description": "Analyze assets for migration and generate report.\nExample(s):\namsmigrate analyze -s \u003Csubscriptionid\u003E -g \u003Cresourcegroup\u003E -n \u003Caccount\u003E\nThis will analyze the given media account and produce a summary report.",
+      "options": [
+        {
+          "name": "--batch-size",
+          "description": "Batch size for parallel processing.",
+          "aliases": [
+            "-b"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "Int32",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "-t",
+          "description": "The kind of analysis to do.\nSummary - Summary of migration\nDetailed - A detailed classification of assets,\nReport - A migration report",
+          "aliases": [
+            "--analysis-type"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "AnalysisType",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "allowedValues": [
+                "Summary",
+                "Detailed",
+                "Report"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "assets",
+      "description": "Migrate Assets\nExamples:\namsmigrate assets -s \u003Csubscription id\u003E -g \u003Cresource group\u003E -n \u003Caccount name\u003E -a \u003Cstorage account\u003E -t path-template\nThis migrates the assets to a different storage account in your subscription.",
+      "options": [
+        {
+          "name": "--created-after",
+          "description": "Query entities created after given date.",
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "DateOnly",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--created-before",
+          "description": "Query entities created before given date.",
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "DateOnly",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--filter",
+          "description": "An ODATA condition to filter the resources.\ne.g.: \u0022name eq \u0027asset1\u0027\u0022 to match an asset with name \u0027asset1\u0027.\nVisit https://learn.microsoft.com/en-us/azure/media-services/latest/filter-order-page-entities-how-to for more information.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "String",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "-m",
+          "description": "Mark completed assets by writing metadata on the container",
+          "aliases": [
+            "--mark-complete"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "type": "Boolean",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--skip-migrated",
+          "description": "Skip assets that have been migrated already.",
+          "arguments": [
+            {
+              "name": null,
+              "type": "Boolean",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--packager",
+          "description": "The packager to use.",
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "Packager",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "allowedValues": [
+                "Ffmpeg",
+                "Shaka",
+                "None"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--working-dir",
+          "description": "The working directory to use migration.",
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "String",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--copy-nonstremable",
+          "description": "Copy non-stremable assets (Assets without .ism file) as is.",
+          "arguments": [
+            {
+              "name": null,
+              "type": "Boolean",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--batch-size",
+          "description": "Batch size for parallel processing.",
+          "aliases": [
+            "-b"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "Int32",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--storage-path",
+          "description": "The output storage account or path to upload the migrated assets.\nThis is specific to the cloud you are migrating to.\ne.g: For Azure specify the storage account name or the URL \u003Chttps://accountname.blob.core.windows.net\u003E",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "String",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "-y",
+          "description": "Overwrite the files in the destination.",
+          "aliases": [
+            "--overwrite"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "type": "Boolean",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--path-template",
+          "description": "Path template to determine the final path in the storage where files are uploaded.\nCan use ${AssetName} ${AssetId} ${ContainerName} or ${LocatorId}.\ne.g., videos/${AssetName} will upload to a container named \u0027videos\u0027 with path begining with the asset name.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "type": "String",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--asset-names",
+          "description": "Select specific asset(s) by name. You can specify multiple assets",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "String[]",
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "storage",
+      "description": "Directly migrate the assets from the storage account.\nDoesn\u0027t require the Azure media services to be running.",
+      "options": [
+        {
+          "name": "-m",
+          "description": "Mark completed assets by writing metadata on the container",
+          "aliases": [
+            "--mark-complete"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "type": "Boolean",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--skip-migrated",
+          "description": "Skip assets that have been migrated already.",
+          "arguments": [
+            {
+              "name": null,
+              "type": "Boolean",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--packager",
+          "description": "The packager to use.",
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "Packager",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "allowedValues": [
+                "Ffmpeg",
+                "Shaka",
+                "None"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--working-dir",
+          "description": "The working directory to use migration.",
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "String",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--copy-nonstremable",
+          "description": "Copy non-stremable assets (Assets without .ism file) as is.",
+          "arguments": [
+            {
+              "name": null,
+              "type": "Boolean",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--batch-size",
+          "description": "Batch size for parallel processing.",
+          "aliases": [
+            "-b"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "Int32",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--storage-path",
+          "description": "The output storage account or path to upload the migrated assets.\nThis is specific to the cloud you are migrating to.\ne.g: For Azure specify the storage account name or the URL \u003Chttps://accountname.blob.core.windows.net\u003E",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "String",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "-y",
+          "description": "Overwrite the files in the destination.",
+          "aliases": [
+            "--overwrite"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "type": "Boolean",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--path-template",
+          "description": "Path template to determine the final path in the storage where files are uploaded.\nCan use ${ContainerName}.\ne.g., videos/${ContainerName} will upload to a container named \u0027videos\u0027 with path begining with the asset name.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "type": "String",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "-p",
+          "description": "The prefix for container names to filter",
+          "aliases": [
+            "--prefix"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "String",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "keys",
+      "description": "Migrate asset encryption keys",
+      "options": [
+        {
+          "name": "--key-vault-url",
+          "description": "The vault for migrating keys.\nSpecific to the cloud you are migrating to.\nFor Azure it is \u003Chttps://valutname.azure.net\u003E",
+          "aliases": [
+            "-k"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "Uri",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--secret-template",
+          "description": "Template for the name in the vault with which the key is stored.\nCan use ${KeyId} ${KeyName} in the template.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "type": "String",
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--batch-size",
+          "description": "Batch size for processing.",
+          "aliases": [
+            "-b"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "Int32",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--created-after",
+          "description": "Query entities created after given date.",
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "DateOnly",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--created-before",
+          "description": "Query entities created before given date.",
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "DateOnly",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--filter",
+          "description": "An ODATA condition to filter the resources.\ne.g.: \u0022name eq \u0027asset1\u0027\u0022 to match an asset with name \u0027asset1\u0027.\nVisit https://learn.microsoft.com/en-us/azure/media-services/latest/filter-order-page-entities-how-to for more information.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": null,
+              "required": true,
+              "type": "String",
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "liveevents",
+      "description": "Migrate Live Events"
+    },
+    {
+      "name": "transforms",
+      "description": "Migrate Transforms"
+    }
+  ]
+}

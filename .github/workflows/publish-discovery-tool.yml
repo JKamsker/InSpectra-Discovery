@@ -1,0 +1,56 @@
+name: Publish Discovery Tool
+
+on:
+  push:
+    paths:
+      - src/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-discovery-tool-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Resolve package version
+        id: version
+        shell: pwsh
+        run: |
+          $toolVersion = & "$PWD/eng/Get-DiscoveryToolVersion.ps1"
+          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
+          Write-Host "Publishing InSpectra.Discovery.Tool $toolVersion"
+
+      - name: Pack discovery tool
+        shell: pwsh
+        run: |
+          dotnet pack src/InSpectra.Discovery.Tool/InSpectra.Discovery.Tool.csproj `
+            -c Release `
+            -p:Version='${{ steps.version.outputs.tool_version }}'
+
+      - name: Publish to GitHub Packages
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          dotnet nuget push artifacts/tool/*.nupkg `
+            --source 'https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json' `
+            --api-key $env:GITHUB_TOKEN `
+            --skip-duplicate

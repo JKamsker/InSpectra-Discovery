@@ -1,0 +1,434 @@
+name: Analyze Untrusted Batch
+run-name: >-
+  Analyze Untrusted Batch / ${{ inputs.batch_id || github.event.client_payload.batch_id || 'manual' }}
+
+on:
+  workflow_call:
+    inputs:
+      batch_id:
+        required: false
+        default: ""
+        type: string
+      queue_path:
+        required: false
+        default: ""
+        type: string
+      offset:
+        required: false
+        default: "0"
+        type: string
+      take:
+        required: false
+        default: ""
+        type: string
+      state_branch:
+        required: false
+        default: automation/discovery-state
+        type: string
+      target_branch:
+        required: false
+        default: "main"
+        type: string
+      force_reanalyze:
+        required: false
+        default: "false"
+        type: string
+      queue_artifact_name:
+        required: false
+        default: ""
+        type: string
+      upload_plan_artifact:
+        required: false
+        default: "true"
+        type: string
+      artifact_retention_days:
+        required: false
+        default: "7"
+        type: string
+  workflow_dispatch:
+    inputs:
+      batch_id:
+        description: Logical batch id for the queue slice to execute
+        required: false
+        default: ""
+        type: string
+      queue_path:
+        description: Queue JSON path to slice for this run
+        required: false
+        default: ""
+        type: string
+      offset:
+        description: Queue item offset for queue-driven runs
+        required: false
+        default: "0"
+        type: string
+      take:
+        description: Queue batch size for queue-driven runs
+        required: false
+        default: ""
+        type: string
+      state_branch:
+        description: Branch that stores discovery queue state
+        required: false
+        default: automation/discovery-state
+        type: string
+      target_branch:
+        description: Base branch for the eventual promotion pull request
+        required: false
+        default: "main"
+        type: string
+      force_reanalyze:
+        description: Whether to rerun items even if they already have terminal or successful state
+        required: false
+        default: "false"
+        type: string
+      queue_artifact_name:
+        description: "Internal: uploaded queue artifact name for reusable runs"
+        required: false
+        default: ""
+        type: string
+      upload_plan_artifact:
+        description: "Internal: whether to upload the batch expected.json artifact"
+        required: false
+        default: "true"
+        type: string
+      artifact_retention_days:
+        description: Artifact retention in days
+        required: false
+        default: "7"
+        type: string
+  repository_dispatch:
+    types:
+      - analyze-untrusted-batch
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+
+concurrency:
+  group: analyze-untrusted-${{ inputs.batch_id || github.event.client_payload.batch_id }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      batch_id: ${{ steps.plan.outputs.batch_id }}
+      selected_count: ${{ steps.plan.outputs.selected_count }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install discovery tool
+        id: install_tool
+        uses: ./.github/actions/install-discovery-tool
+        with:
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          github-owner: ${{ github.repository_owner }}
+
+      - name: Download queue artifact
+        if: ${{ inputs.queue_artifact_name != '' }}
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ inputs.queue_artifact_name }}
+          path: ${{ runner.temp }}/queue-artifact
+
+      - name: Build batch plan
+        id: plan
+        shell: pwsh
+        run: |
+          $batchId = if ('${{ inputs.batch_id }}') {
+            '${{ inputs.batch_id }}'
+          }
+          elseif ('${{ github.event.client_payload.batch_id }}') {
+            '${{ github.event.client_payload.batch_id }}'
+          }
+          else {
+            $null
+          }
+
+          $queuePath = if ('${{ inputs.queue_path }}') {
+            '${{ inputs.queue_path }}'
+          }
+          elseif ('${{ github.event.client_payload.queue_path }}') {
+            '${{ github.event.client_payload.queue_path }}'
+          }
+          else {
+            $null
+          }
+
+          $offset = if ('${{ inputs.offset }}') {
+            [int]'${{ inputs.offset }}'
+          }
+          elseif ('${{ github.event.client_payload.offset }}') {
+            [int]'${{ github.event.client_payload.offset }}'
+          }
+          else {
+            0
+          }
+
+          $take = if ('${{ inputs.take }}') {
+            [int]'${{ inputs.take }}'
+          }
+          elseif ('${{ github.event.client_payload.take }}') {
+            [int]'${{ github.event.client_payload.take }}'
+          }
+          else {
+            $null
+          }
+
+          $stateBranch = if ('${{ inputs.state_branch }}') {
+            '${{ inputs.state_branch }}'
+          }
+          elseif ('${{ github.event.client_payload.state_branch }}') {
+            '${{ github.event.client_payload.state_branch }}'
+          }
+          else {
+            'automation/discovery-state'
+          }
+
+          $queueArtifactName = if ('${{ inputs.queue_artifact_name }}') {
+            '${{ inputs.queue_artifact_name }}'
+          }
+          else {
+            $null
+          }
+
+          $targetBranch = if ('${{ inputs.target_branch }}') {
+            '${{ inputs.target_branch }}'
+          }
+          elseif ('${{ github.event.client_payload.target_branch }}') {
+            '${{ github.event.client_payload.target_branch }}'
+          }
+          else {
+            'main'
+          }
+
+          function ConvertTo-BoolOrDefault {
+            param(
+              [AllowNull()][string]$Value,
+              [bool]$Default = $false
+            )
+
+            if ([string]::IsNullOrWhiteSpace($Value)) {
+              return $Default
+            }
+
+            $normalized = $Value.Trim().ToLowerInvariant()
+            if ($normalized -in @('1', 'true', 'yes', 'y', 'on')) {
+              return $true
+            }
+
+            if ($normalized -in @('0', 'false', 'no', 'n', 'off')) {
+              return $false
+            }
+
+            return $Default
+          }
+
+          $forceReanalyze = if ('${{ inputs.force_reanalyze }}') {
+            ConvertTo-BoolOrDefault -Value '${{ inputs.force_reanalyze }}'
+          }
+          elseif ('${{ github.event.client_payload.force_reanalyze }}') {
+            ConvertTo-BoolOrDefault -Value '${{ github.event.client_payload.force_reanalyze }}'
+          }
+          else {
+            $false
+          }
+
+          $planPath = Join-Path $env:RUNNER_TEMP 'expected.json'
+          if ([string]::IsNullOrWhiteSpace($queuePath) -and [string]::IsNullOrWhiteSpace($queueArtifactName)) {
+            throw 'queue_path or queue_artifact_name is required. Checked-in batch manifests were removed; use a queue-driven run.'
+          }
+
+          if ([string]::IsNullOrWhiteSpace($batchId)) {
+            throw 'A queue-driven run requires batch_id.'
+          }
+
+          if (-not [string]::IsNullOrWhiteSpace($queueArtifactName)) {
+            $materializedQueuePath = Get-ChildItem `
+              -Path (Join-Path $env:RUNNER_TEMP 'queue-artifact') `
+              -Filter '*.json' `
+              -Recurse |
+              Select-Object -First 1 -ExpandProperty FullName
+
+            if ([string]::IsNullOrWhiteSpace($materializedQueuePath)) {
+              throw "No queue JSON file was found in artifact '$queueArtifactName'."
+            }
+          }
+          else {
+            git fetch origin $stateBranch --depth=1
+            $queueContent = git show "FETCH_HEAD:$queuePath"
+            $materializedQueuePath = Join-Path $PWD $queuePath
+            $materializedQueueDirectory = Split-Path -Parent $materializedQueuePath
+            if ($materializedQueueDirectory) {
+              New-Item -ItemType Directory -Path $materializedQueueDirectory -Force | Out-Null
+            }
+
+            [System.IO.File]::WriteAllText(
+              $materializedQueuePath,
+              $queueContent + [Environment]::NewLine,
+              [System.Text.UTF8Encoding]::new($false))
+          }
+
+          $arguments = @{
+            QueuePath = $materializedQueuePath
+            BatchId = $batchId
+            OutputPath = $planPath
+            Offset = $offset
+            TargetBranch = $targetBranch
+          }
+
+          if ($null -ne $take) {
+            $arguments.Take = $take
+          }
+
+          if ($forceReanalyze) {
+            $arguments.ForceReanalyze = $true
+          }
+
+          $argumentList = @(
+            'queue', 'untrusted-batch-plan',
+            '--queue', $materializedQueuePath,
+            '--batch-id', $batchId,
+            '--output', $planPath,
+            '--offset', $offset,
+            '--target-branch', $targetBranch,
+            '--json'
+          )
+
+          if ($null -ne $take) {
+            $argumentList += @('--take', $take)
+          }
+
+          if ($forceReanalyze) {
+            $argumentList += '--force-reanalyze'
+          }
+
+          $plan = inspectra-discovery @argumentList | ConvertFrom-Json
+          if (-not $plan.ok) {
+            throw $plan.error.message
+          }
+
+          $plan = $plan.data
+          "batch_id=$($plan.batchId)" >> $env:GITHUB_OUTPUT
+          "selected_count=$($plan.selectedCount)" >> $env:GITHUB_OUTPUT
+          "matrix<<EOF" >> $env:GITHUB_OUTPUT
+          ((@($plan.items) | ConvertTo-Json -Compress -AsArray) ?? '[]') >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Write workflow metadata
+        if: ${{ inputs.upload_plan_artifact != 'false' }}
+        shell: pwsh
+        run: |
+          Set-Content `
+            -Path (Join-Path $env:RUNNER_TEMP 'tool-version.txt') `
+            -Value '${{ steps.install_tool.outputs.tool_version }}' `
+            -Encoding UTF8NoBOM
+
+      - name: Upload expected plan
+        if: ${{ inputs.upload_plan_artifact != 'false' }}
+        uses: actions/upload-artifact@v6
+        with:
+          name: plan-${{ steps.plan.outputs.batch_id }}
+          path: |
+            ${{ runner.temp }}/expected.json
+            ${{ runner.temp }}/tool-version.txt
+          if-no-files-found: error
+          retention-days: ${{ fromJson(inputs.artifact_retention_days || '7') }}
+
+  analyze:
+    needs:
+      - plan
+    if: ${{ needs.plan.outputs.selected_count != '0' }}
+    runs-on: ${{ matrix.runsOn }}
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup legacy .NET SDKs
+        if: ${{ matrix.dotnetSetupMode == 'legacy-multi-sdk' }}
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            5.0.x
+            3.1.x
+            6.0.x
+            7.0.x
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Setup analysis .NET SDK
+        if: ${{ matrix.dotnetSetupMode != 'legacy-multi-sdk' }}
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install required shared runtimes
+        if: ${{ matrix.dotnetSetupMode == 'runtime-only' && toJson(matrix.requiredDotnetRuntimes) != '[]' }}
+        shell: pwsh
+        run: |
+          ./.github/scripts/install-required-dotnet-runtime.ps1 `
+            -RuntimeRequestsJson @'
+          ${{ toJson(matrix.requiredDotnetRuntimes) }}
+          '@
+
+      - name: Show installed .NET runtimes
+        shell: pwsh
+        run: |
+          dotnet --list-sdks
+          dotnet --list-runtimes
+
+      - name: Install discovery tool
+        uses: ./.github/actions/install-discovery-tool
+        with:
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          github-owner: ${{ github.repository_owner }}
+
+      - name: Analyze package
+        shell: pwsh
+        env:
+          RESULT_ROOT: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
+        run: |
+          inspectra-discovery `
+            analysis run-auto `
+            --package-id '${{ matrix.packageId }}' `
+            --version '${{ matrix.version }}' `
+            --output-root $env:RESULT_ROOT `
+            --batch-id '${{ needs.plan.outputs.batch_id }}' `
+            --attempt ${{ matrix.attempt }} `
+            --source 'analyze-untrusted-batch'
+
+      - name: Upload analysis artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifactName }}
+          path: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
+          if-no-files-found: error
+          retention-days: ${{ fromJson(inputs.artifact_retention_days || '7') }}

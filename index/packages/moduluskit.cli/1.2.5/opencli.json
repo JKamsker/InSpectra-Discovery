@@ -1,0 +1,604 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Modulus.Cli",
+    "version": "1.2.5",
+    "description": "CLI tool for scaffolding .NET modular monolith solutions with built-in CQRS mediator, messaging, and Aspire support."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.3.0",
+      "systemCommandLineVersion": "2.0.3.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Modulus - Modular Monolith CLI scaffolding tool"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "description": "Scaffold a new modular monolith solution",
+      "options": [
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output directory (default: current directory)",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--aspire",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include .NET Aspire AppHost and ServiceDefaults projects [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--transport",
+          "recursive": false,
+          "hidden": false,
+          "description": "Messaging transport to pre-configure (inmemory, rabbitmq, azureservicebus) [default: inmemory]",
+          "arguments": [
+            {
+              "name": "TRANSPORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-git",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip git init and initial commit [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "solution-name",
+          "description": "PascalCase name of the solution to create",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "add-module",
+      "description": "Add a new module to an existing Modulus solution",
+      "options": [
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the solution file (default: auto-find in current or parent directories)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-endpoints",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip creating the Api project (for backend-only modules) [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "module-name",
+          "description": "PascalCase name of the module to add",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "add-entity",
+      "description": "Add a new entity to an existing module",
+      "options": [
+        {
+          "name": "--module",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the target module",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MODULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the solution file (default: auto-find in current or parent directories)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--aggregate",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate as AggregateRoot instead of Entity [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--id-type",
+          "recursive": false,
+          "hidden": false,
+          "description": "ID type: guid (default), int, long, string, or a custom StronglyTypedId name [default: guid]",
+          "arguments": [
+            {
+              "name": "ID_TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--properties",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated properties in Name:Type format (e.g. \"Name:string,Email:string,IsActive:bool\")",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROPERTIES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "entity-name",
+          "description": "PascalCase name of the entity to add",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "add-command",
+      "description": "Add a new command with handler and validator to an existing module",
+      "options": [
+        {
+          "name": "--module",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the target module",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MODULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the solution file (default: auto-find in current or parent directories)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--result-type",
+          "recursive": false,
+          "hidden": false,
+          "description": "The result type T in Result<T>. Omit for a void command returning Result.",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "RESULT_TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "command-name",
+          "description": "PascalCase name of the command to add (e.g. CreateProduct)",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "add-query",
+      "description": "Add a new query with handler to an existing module",
+      "options": [
+        {
+          "name": "--module",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the target module",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MODULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--result-type",
+          "recursive": false,
+          "hidden": false,
+          "description": "The result type T in Result<T> (required for queries)",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "RESULT_TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the solution file (default: auto-find in current or parent directories)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "query-name",
+          "description": "PascalCase name of the query to add (e.g. GetProductById)",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "add-endpoint",
+      "description": "Add a new endpoint to a module's endpoint file",
+      "options": [
+        {
+          "name": "--module",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the target module",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MODULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--method",
+          "recursive": false,
+          "hidden": false,
+          "description": "HTTP method: GET, POST, PUT, DELETE (default: GET) [default: GET]",
+          "arguments": [
+            {
+              "name": "METHOD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--route",
+          "recursive": false,
+          "hidden": false,
+          "description": "Route template relative to the module group (default: /) [default: /]",
+          "arguments": [
+            {
+              "name": "ROUTE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--command",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the command to wire up (mutually exclusive with --query)",
+          "arguments": [
+            {
+              "name": "COMMAND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--query",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the query to wire up (mutually exclusive with --command)",
+          "arguments": [
+            {
+              "name": "QUERY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--result-type",
+          "recursive": false,
+          "hidden": false,
+          "description": "The result type T when wiring a query or typed command",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "RESULT_TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the solution file (default: auto-find)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "endpoint-name",
+          "description": "PascalCase name for the endpoint (used in .WithName())",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "list-modules",
+      "description": "List all modules in the current solution"
+    },
+    {
+      "name": "version",
+      "description": "Display the Modulus CLI version"
+    }
+  ]
+}

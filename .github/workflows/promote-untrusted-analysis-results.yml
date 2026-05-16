@@ -1,0 +1,323 @@
+name: Promote Untrusted Analysis Results
+run-name: >-
+  Promote Untrusted Analysis Results / ${{ github.event.inputs.analysis_run_id || github.event.workflow_run.id || 'auto' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      analysis_run_id:
+        description: Completed Analyze Untrusted Batch run id to promote
+        required: true
+        type: string
+  workflow_run:
+    workflows:
+      - Analyze Untrusted Batch
+    types:
+      - completed
+
+permissions:
+  actions: read
+  contents: write
+  packages: read
+
+concurrency:
+  group: promote-untrusted-${{ github.event.inputs.analysis_run_id || github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'cancelled' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve analysis run
+        id: source
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $analysisRunId = if ('${{ github.event.inputs.analysis_run_id }}') {
+            '${{ github.event.inputs.analysis_run_id }}'
+          }
+          elseif ('${{ github.event.workflow_run.id }}') {
+            '${{ github.event.workflow_run.id }}'
+          }
+          else {
+            throw 'No analysis run id was provided.'
+          }
+
+          $run = gh run view $analysisRunId `
+            --repo '${{ github.repository }}' `
+            --json databaseId,url,status,conclusion,workflowName,headBranch,headSha,createdAt | ConvertFrom-Json
+
+          if ($run.workflowName -ne 'Analyze Untrusted Batch') {
+            throw "Run '$analysisRunId' is not an Analyze Untrusted Batch run."
+          }
+
+          if ($run.status -ne 'completed') {
+            throw "Analysis run '$analysisRunId' is still '$($run.status)'."
+          }
+
+          if ($run.conclusion -ne 'success') {
+            throw "Analysis run '$analysisRunId' completed with conclusion '$($run.conclusion)'."
+          }
+
+          "analysis_run_id=$analysisRunId" >> $env:GITHUB_OUTPUT
+          "analysis_run_url=$($run.url)" >> $env:GITHUB_OUTPUT
+          "head_branch=$($run.headBranch)" >> $env:GITHUB_OUTPUT
+          "head_sha=$($run.headSha)" >> $env:GITHUB_OUTPUT
+          "created_at=$($run.createdAt)" >> $env:GITHUB_OUTPUT
+
+      - name: Download workflow artifacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'untrusted-download'
+          New-Item -ItemType Directory -Path $downloadRoot -Force | Out-Null
+          gh run download ${{ steps.source.outputs.analysis_run_id }} `
+            --repo ${{ github.repository }} `
+            --dir $downloadRoot
+
+      - name: Checkout workflow repository for plan resolution
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+          ref: ${{ steps.source.outputs.head_sha }}
+
+      - name: Resolve promotion plan
+        id: plan
+        shell: pwsh
+        run: |
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'untrusted-download'
+          $expectedPath = Get-ChildItem -Path $downloadRoot -Filter 'expected.json' -Recurse |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          if (-not $expectedPath) {
+            throw "expected.json was not found under '$downloadRoot'."
+          }
+
+          $plan = Get-Content $expectedPath -Raw | ConvertFrom-Json
+          $targetBranch = if (
+            $plan.PSObject.Properties.Name -contains 'targetBranch' -and
+            -not [string]::IsNullOrWhiteSpace([string]$plan.targetBranch)
+          ) {
+            [string]$plan.targetBranch
+          }
+          else {
+            'main'
+          }
+
+          $batchId = [string]$plan.batchId
+          $releaseMetadata = & "$PWD/eng/Get-UntrustedAnalysisReleaseMetadata.ps1" `
+            -BatchId $batchId `
+            -AnalysisRunId '${{ steps.source.outputs.analysis_run_id }}' `
+            -FallbackTimestamp '${{ steps.source.outputs.created_at }}' | ConvertFrom-Json
+
+          $toolVersionPath = Get-ChildItem -Path $downloadRoot -Filter 'tool-version.txt' -Recurse |
+            Select-Object -First 1 -ExpandProperty FullName
+
+          $toolVersion = if ($toolVersionPath) {
+            (Get-Content $toolVersionPath -Raw).Trim()
+          }
+          else {
+            ''
+          }
+
+          "batch_id=$batchId" >> $env:GITHUB_OUTPUT
+          "target_branch=$targetBranch" >> $env:GITHUB_OUTPUT
+          "release_tag=$($releaseMetadata.releaseTag)" >> $env:GITHUB_OUTPUT
+          "release_title=$($releaseMetadata.releaseTitle)" >> $env:GITHUB_OUTPUT
+          "release_tag_annotation=$($releaseMetadata.tagAnnotation)" >> $env:GITHUB_OUTPUT
+          "release_timestamp_iso=$($releaseMetadata.releaseTimestampIso)" >> $env:GITHUB_OUTPUT
+          "tool_version=$toolVersion" >> $env:GITHUB_OUTPUT
+
+      - name: Checkout target branch
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          ref: ${{ steps.plan.outputs.target_branch }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Install discovery tool
+        uses: ./.github/actions/install-discovery-tool
+        with:
+          github-token: ${{ github.token }}
+          github-actor: ${{ github.actor }}
+          github-owner: ${{ github.repository_owner }}
+          tool-version: ${{ steps.plan.outputs.tool_version }}
+
+      - name: Promote analysis outputs
+        id: promote
+        shell: pwsh
+        run: |
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'untrusted-download'
+          $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
+          $summary = inspectra-discovery `
+            promotion apply-untrusted `
+            --download-root $downloadRoot `
+            --summary-output $summaryPath `
+            --json | ConvertFrom-Json
+          if (-not $summary.ok) {
+            throw $summary.error.message
+          }
+
+          $summary = Get-Content $summaryPath -Raw | ConvertFrom-Json
+          "success_count=$($summary.successCount)" >> $env:GITHUB_OUTPUT
+          "terminal_negative_count=$($summary.terminalNegativeCount)" >> $env:GITHUB_OUTPUT
+          "retryable_failure_count=$($summary.retryableFailureCount)" >> $env:GITHUB_OUTPUT
+          "terminal_failure_count=$($summary.terminalFailureCount)" >> $env:GITHUB_OUTPUT
+          "missing_count=$($summary.missingCount)" >> $env:GITHUB_OUTPUT
+          "summary_path=$summaryPath" >> $env:GITHUB_OUTPUT
+
+      - name: Write promotion notes
+        id: notes
+        shell: pwsh
+        run: |
+          $summaryPath = Join-Path $env:RUNNER_TEMP 'promotion-summary.json'
+          $bodyPath = Join-Path $env:RUNNER_TEMP 'promotion-notes.md'
+          inspectra-discovery `
+            promotion write-notes `
+            --summary $summaryPath `
+            --workflow-run-url '${{ steps.source.outputs.analysis_run_url }}' `
+            --output $bodyPath
+
+          "body_path=$bodyPath" >> $env:GITHUB_OUTPUT
+
+      - name: Regenerate fully indexed documentation report
+        shell: pwsh
+        run: |
+          inspectra-discovery docs fully-indexed-report
+
+      - name: Commit promoted outputs directly to target branch
+        id: commit
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index state docs/Reports
+
+          git diff --cached --quiet --exit-code
+          if ($LASTEXITCODE -eq 0) {
+            $currentSha = (git rev-parse HEAD).Trim()
+            "commit_created=false" >> $env:GITHUB_OUTPUT
+            "commit_sha=$currentSha" >> $env:GITHUB_OUTPUT
+            Write-Host "No promotion changes to commit on ${{ steps.plan.outputs.target_branch }}."
+            exit 0
+          }
+
+          git commit -m "chore(index): promote untrusted analysis ${{ steps.plan.outputs.batch_id }}"
+          git push origin "HEAD:${{ steps.plan.outputs.target_branch }}"
+
+          $commitSha = (git rev-parse HEAD).Trim()
+          "commit_created=true" >> $env:GITHUB_OUTPUT
+          "commit_sha=$commitSha" >> $env:GITHUB_OUTPUT
+          Write-Host "Pushed promotion commit $commitSha to ${{ steps.plan.outputs.target_branch }}."
+
+      - name: Ensure annotated release tag
+        shell: pwsh
+        run: |
+          $tag = '${{ steps.plan.outputs.release_tag }}'
+          $target = '${{ steps.commit.outputs.commit_sha }}'
+          $annotation = '${{ steps.plan.outputs.release_tag_annotation }}'
+          $tagTimestamp = '${{ steps.plan.outputs.release_timestamp_iso }}'
+
+          git fetch --force --tags origin
+
+          $objectType = @(git for-each-ref "refs/tags/$tag" --format='%(objecttype)')
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to inspect tag '$tag'."
+          }
+
+          $existingType = if ($objectType.Count -gt 0) { [string]$objectType[0] } else { '' }
+          if (-not [string]::IsNullOrWhiteSpace($existingType)) {
+            $existingTarget = (git rev-list -n 1 $tag).Trim()
+            if ($LASTEXITCODE -ne 0) {
+              throw "Failed to resolve the commit for tag '$tag'."
+            }
+
+            if ($existingType -eq 'tag' -and $existingTarget -eq $target) {
+              Write-Host "Annotated tag '$tag' already points to $target."
+              exit 0
+            }
+
+            throw "Existing tag '$tag' is a $existingType object pointing to $existingTarget instead of $target."
+          }
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          $env:GIT_AUTHOR_NAME = 'github-actions[bot]'
+          $env:GIT_AUTHOR_EMAIL = '41898282+github-actions[bot]@users.noreply.github.com'
+          $env:GIT_AUTHOR_DATE = $tagTimestamp
+          $env:GIT_COMMITTER_NAME = 'github-actions[bot]'
+          $env:GIT_COMMITTER_EMAIL = '41898282+github-actions[bot]@users.noreply.github.com'
+          $env:GIT_COMMITTER_DATE = $tagTimestamp
+
+          git tag -a $tag $target -m $annotation
+          git push origin "refs/tags/$tag"
+
+      - name: Create GitHub release
+        id: release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $repository = '${{ github.repository }}'
+          $tag = '${{ steps.plan.outputs.release_tag }}'
+          $title = '${{ steps.plan.outputs.release_title }}'
+          $target = '${{ steps.commit.outputs.commit_sha }}'
+          $bodyPath = '${{ steps.notes.outputs.body_path }}'
+          $summaryPath = '${{ steps.promote.outputs.summary_path }}'
+
+          $existing = $null
+          try {
+            $existing = gh release view $tag --repo $repository --json url | ConvertFrom-Json
+          }
+          catch {
+            $existing = $null
+          }
+
+          if ($existing) {
+            gh release edit $tag `
+              --repo $repository `
+              --tag $tag `
+              --target $target `
+              --title $title `
+              --notes-file $bodyPath | Out-Null
+            $releaseOperation = 'updated'
+          }
+          else {
+            gh release create $tag `
+              --repo $repository `
+              --target $target `
+              --title $title `
+              --notes-file $bodyPath `
+              --verify-tag | Out-Null
+            $releaseOperation = 'created'
+          }
+
+          gh release upload $tag $summaryPath `
+            --repo $repository `
+            --clobber | Out-Null
+
+          $release = gh release view $tag --repo $repository --json url | ConvertFrom-Json
+          "release_url=$($release.url)" >> $env:GITHUB_OUTPUT
+          "release_operation=$releaseOperation" >> $env:GITHUB_OUTPUT
+
+      - name: Report promotion result
+        shell: pwsh
+        run: |
+          Write-Host "Target branch: ${{ steps.plan.outputs.target_branch }}"
+          Write-Host "Commit created: ${{ steps.commit.outputs.commit_created }}"
+          Write-Host "Commit SHA: ${{ steps.commit.outputs.commit_sha }}"
+          if ('${{ steps.release.outputs.release_url }}') {
+            Write-Host "Release operation: ${{ steps.release.outputs.release_operation }}"
+            Write-Host "Release URL: ${{ steps.release.outputs.release_url }}"
+          }

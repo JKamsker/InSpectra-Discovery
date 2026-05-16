@@ -1,0 +1,464 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Undertaker",
+    "version": "1.0.16",
+    "description": "Helps you find dead code and other legacy artifacts across a .NET codebase"
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Helps with dead code detection over a large code base"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "-ra",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to a text file listing assemblies to be treated as roots, one assembly name per line (with or without a .dll extension)",
+      "aliases": [
+        "--root-assemblies"
+      ],
+      "arguments": [
+        {
+          "name": "TEXT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-rs",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to a text file listing symbols accessed through reflection, with each line in the form of `assembly-name:fully-qualified-symbol-name`",
+      "aliases": [
+        "--reflection-symbols"
+      ],
+      "arguments": [
+        {
+          "name": "TEXT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-tma",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to a text file listing all the attributes that can mark a method as a test, one per line",
+      "aliases": [
+        "--test-method-attributes"
+      ],
+      "arguments": [
+        {
+          "name": "TEXT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-rma",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to a text file listing all the attributes that can mark a method as being used from reflection, one per line",
+      "aliases": [
+        "--reflection-marker-attributes"
+      ],
+      "arguments": [
+        {
+          "name": "TEXT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-ds",
+      "recursive": false,
+      "hidden": false,
+      "description": "Directory path where to emit the per-assembly reports on dead symbols",
+      "aliases": [
+        "--dead-symbols"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FOLDER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "-as",
+      "recursive": false,
+      "hidden": false,
+      "description": "Directory path where to emit the per-assembly reports on alive symbols",
+      "aliases": [
+        "--alive-symbols"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FOLDER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "-abts",
+      "recursive": false,
+      "hidden": false,
+      "description": "Directory path where to emit the per-assembly reports on symbols kept alive only by test methods",
+      "aliases": [
+        "--alive-by-test-symbols"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FOLDER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "-nps",
+      "recursive": false,
+      "hidden": false,
+      "description": "Directory path where to emit the per-assembly reports on public symbols which could be made internal",
+      "aliases": [
+        "--needlessly-public-symbols"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FOLDER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "-nivt",
+      "recursive": false,
+      "hidden": false,
+      "description": "Directory path where to emit the per-assembly reports on needless uses of [InternalsVisibleTo]",
+      "aliases": [
+        "--needless-internals-visible-to"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FOLDER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "-ua",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path of the report to produce on completely unreferenced assemblies",
+      "aliases": [
+        "--unreferenced-assemblies"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-uaa",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path of the report to produce on assemblies which were referenced but not analyzed",
+      "aliases": [
+        "--unanalyzed-assemblies"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-da",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path of the report to produce on assemblies which were found multiple times as input",
+      "aliases": [
+        "--duplicate-assemblies"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-urs",
+      "recursive": false,
+      "hidden": false,
+      "description": "Directory path where to emit the per-assembly reports on completely unreferenced symbols",
+      "aliases": [
+        "--unreferenced-symbols"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FOLDER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "-alc",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path of the assembly layer cake to produce",
+      "aliases": [
+        "--assembly-layer-cake"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-dd",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path of the Mermaid-based assembly dependency diagram to produce",
+      "aliases": [
+        "--dependency-diagram"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "-gd",
+      "recursive": false,
+      "hidden": true,
+      "description": "Directory path for the graph dump files to produce",
+      "aliases": [
+        "--graph-dumps"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT FOLDER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "-dm",
+      "recursive": false,
+      "hidden": true,
+      "description": "Show memory usage info [default: False]",
+      "aliases": [
+        "--dump-memory"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-cle",
+      "recursive": false,
+      "hidden": false,
+      "description": "Proceed to the analysis and output phases even if some assemblies didn't load [default: False]",
+      "aliases": [
+        "--continue-on-load-errors"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-v",
+      "recursive": false,
+      "hidden": false,
+      "description": "Enable on-going progress messages [default: False]",
+      "aliases": [
+        "--verbose"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-q",
+      "recursive": false,
+      "hidden": false,
+      "description": "Suppress any console output, except for warnings and errors [default: False]",
+      "aliases": [
+        "--quiet"
+      ],
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-csv",
+      "recursive": false,
+      "hidden": false,
+      "description": "Switch some output files from JSON to CSV format [default: False]",
+      "arguments": [
+        {
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "arguments": [
+    {
+      "name": "input folders",
+      "description": "Paths to folders containing the assemblies to analyze.",
+      "required": false,
+      "arity": {
+        "minimum": 0,
+        "maximum": 100000
+      },
+      "type": "DirectoryInfo[]"
+    }
+  ]
+}

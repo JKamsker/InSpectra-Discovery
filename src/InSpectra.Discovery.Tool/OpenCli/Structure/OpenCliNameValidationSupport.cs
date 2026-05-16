@@ -1,0 +1,150 @@
+namespace InSpectra.Discovery.Tool.OpenCli.Structure;
+
+using System.Text.RegularExpressions;
+
+internal static partial class OpenCliNameValidationSupport
+{
+    public static bool IsPublishableCommandName(string? name)
+        => IsPublishableName(name, LooksLikeNonPublishableCommandName);
+
+    public static bool IsPublishableOptionName(string? name)
+        => IsPublishableName(name, LooksLikeNonPublishableOptionName);
+
+    public static bool IsPublishableArgumentName(string? name)
+        => IsPublishableName(name, LooksLikeNonPublishableArgumentName);
+
+    public static bool TryValidateCommandName(string? name, string path, out string? reason)
+        => TryValidateName(name, path, "command", LooksLikeNonPublishableCommandName, out reason);
+
+    public static bool TryValidateOptionName(string? name, string path, out string? reason)
+        => TryValidateName(name, path, "option", LooksLikeNonPublishableOptionName, out reason);
+
+    public static bool TryValidateArgumentName(string? name, string path, out string? reason)
+        => TryValidateName(name, path, "argument", LooksLikeNonPublishableArgumentName, out reason);
+
+    private static bool TryValidateName(
+        string? name,
+        string path,
+        string kind,
+        Func<string, bool> isNonPublishable,
+        out string? reason)
+    {
+        reason = null;
+
+        var trimmed = name?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return true;
+        }
+
+        if (!isNonPublishable(trimmed))
+        {
+            return true;
+        }
+
+        reason = $"OpenCLI artifact has a non-publishable {kind} name '{trimmed}' at '{path}'.";
+        return false;
+    }
+
+    private static bool IsPublishableName(string? name, Func<string, bool> isNonPublishable)
+    {
+        var trimmed = name?.Trim();
+        return !string.IsNullOrWhiteSpace(trimmed)
+            && !isNonPublishable(trimmed);
+    }
+
+    private static bool LooksLikeNonPublishableCommandName(string name)
+        => PlaceholderCommandNameRegex().IsMatch(name)
+            || ContainsAngleBracketMarkers(name)
+            || ObfuscatedNameRegex().IsMatch(name)
+            || EnvironmentAssignmentSnippetRegex().IsMatch(name);
+
+    private static bool LooksLikeNonPublishableOptionName(string name)
+        => ContainsAngleBracketMarkers(name)
+            || ObfuscatedNameRegex().IsMatch(name)
+            || EnvironmentAssignmentSnippetRegex().IsMatch(name)
+            || HeadingLabelRegex().IsMatch(name)
+            || UppercaseSentenceLabelRegex().IsMatch(name)
+            || LooksLikeDecorativeSeparator(name);
+
+    private static bool LooksLikeNonPublishableArgumentName(string name)
+        => ContainsAngleBracketMarkers(name)
+            || ObfuscatedNameRegex().IsMatch(name)
+            || EnvironmentAssignmentSnippetRegex().IsMatch(name)
+            || HeadingLabelRegex().IsMatch(name)
+            || OptionSyntaxRegex().IsMatch(name)
+            || UppercaseSentenceLabelRegex().IsMatch(name);
+
+    private static bool LooksLikeDecorativeSeparator(string name)
+    {
+        var trimmed = name.Trim();
+        if (trimmed.Length < 3)
+        {
+            return false;
+        }
+
+        Span<char> significantCharacters = stackalloc char[trimmed.Length];
+        var significantLength = 0;
+        foreach (var ch in trimmed)
+        {
+            if (char.IsWhiteSpace(ch))
+            {
+                continue;
+            }
+
+            if (char.IsLetterOrDigit(ch))
+            {
+                return false;
+            }
+
+            significantCharacters[significantLength++] = ch;
+        }
+
+        if (significantLength < 3)
+        {
+            return false;
+        }
+
+        var distinctCount = 0;
+        Span<char> distinctCharacters = stackalloc char[2];
+        for (var index = 0; index < significantLength; index++)
+        {
+            var current = significantCharacters[index];
+            if (distinctCharacters[..distinctCount].Contains(current))
+            {
+                continue;
+            }
+
+            if (distinctCount == distinctCharacters.Length)
+            {
+                return false;
+            }
+
+            distinctCharacters[distinctCount++] = current;
+        }
+
+        return true;
+    }
+
+    private static bool ContainsAngleBracketMarkers(string name)
+        => name.Contains('<', StringComparison.Ordinal)
+            || name.Contains('>', StringComparison.Ordinal);
+
+    [GeneratedRegex(@"^\.\.?$", RegexOptions.Compiled)]
+    private static partial Regex PlaceholderCommandNameRegex();
+
+    [GeneratedRegex(@"^#=[A-Za-z0-9_$+/]+=$", RegexOptions.Compiled)]
+    private static partial Regex ObfuscatedNameRegex();
+
+    [GeneratedRegex(@"^[""']?[A-Z][A-Z0-9_]*=[^""'\s]+[""']?\]?$", RegexOptions.Compiled)]
+    private static partial Regex EnvironmentAssignmentSnippetRegex();
+
+    [GeneratedRegex(@"^[A-Z][A-Z0-9 /_-]*:$", RegexOptions.Compiled)]
+    private static partial Regex HeadingLabelRegex();
+
+    [GeneratedRegex(@"^(?:-{1,2}|/)\S*(?:,\s*(?:-{1,2}|/)\S+)?(?:\s+<[^>]+>?|\.\.\.)?$", RegexOptions.Compiled)]
+    private static partial Regex OptionSyntaxRegex();
+
+    [GeneratedRegex(@"^(?:[A-Z][A-Z0-9]*)(?: [A-Z][A-Z0-9]*){2,}$", RegexOptions.Compiled)]
+    private static partial Regex UppercaseSentenceLabelRegex();
+}

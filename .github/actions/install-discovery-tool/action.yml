@@ -1,0 +1,80 @@
+name: Install InSpectra.Discovery.Tool
+description: Install the latest published discovery CLI from GitHub Packages.
+
+inputs:
+  github-token:
+    description: Token used to authenticate against GitHub Packages.
+    required: true
+  github-actor:
+    description: Actor used as the NuGet username for GitHub Packages.
+    required: true
+  github-owner:
+    description: Owner whose GitHub Packages feed hosts the tool package.
+    required: true
+  tool-version:
+    description: Explicit package version to install. When omitted, install the latest pre-release.
+    required: false
+    default: ''
+
+outputs:
+  tool_version:
+    description: Installed package version.
+    value: ${{ steps.install.outputs.tool_version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install discovery tool
+      id: install
+      shell: pwsh
+      run: |
+        $toolVersion = '${{ inputs.tool-version }}'
+        $toolPath = Join-Path $env:RUNNER_TEMP 'inspectra-discovery'
+        $configPath = Join-Path $env:RUNNER_TEMP 'inspectra-discovery.nuget.config'
+        $packageSource = 'https://nuget.pkg.github.com/${{ inputs.github-owner }}/index.json'
+
+        if (Test-Path $toolPath) {
+          Remove-Item $toolPath -Recurse -Force
+        }
+
+        @(
+          '<?xml version="1.0" encoding="utf-8"?>'
+          '<configuration>'
+          '  <packageSources>'
+          '    <clear />'
+          '    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />'
+          "    <add key=""github"" value=""$packageSource"" />"
+          '  </packageSources>'
+          '  <packageSourceCredentials>'
+          '    <github>'
+          "      <add key=""Username"" value=""${{ inputs.github-actor }}"" />"
+          "      <add key=""ClearTextPassword"" value=""${{ inputs.github-token }}"" />"
+          '    </github>'
+          '  </packageSourceCredentials>'
+          '</configuration>'
+        ) -join [Environment]::NewLine | Set-Content -Path $configPath -Encoding UTF8NoBOM
+
+        $versionArgs = @()
+        if (-not [string]::IsNullOrWhiteSpace($toolVersion)) {
+          $versionArgs = @('--version', $toolVersion)
+        }
+        else {
+          $versionArgs = @('--prerelease')
+        }
+
+        dotnet tool install InSpectra.Discovery.Tool `
+          @versionArgs `
+          --tool-path $toolPath `
+          --configfile $configPath
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to install InSpectra.Discovery.Tool."
+        }
+
+        $toolPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+        $installed = dotnet tool list --tool-path $toolPath |
+          Select-String 'inspectra.discovery.tool' |
+          ForEach-Object { ($_ -split '\s+')[1] }
+        "tool_version=$installed" >> $env:GITHUB_OUTPUT
+        Write-Host "Installed InSpectra.Discovery.Tool $installed."
