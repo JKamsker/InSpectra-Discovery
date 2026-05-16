@@ -1,0 +1,2182 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "AiCodeGraph.Cli",
+    "version": "0.4.0",
+    "description": "Roslyn-based static analysis tool that builds semantic code graphs, detects duplicates, computes complexity, and exposes an MCP server for AI-assisted development."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.2.0",
+      "systemCommandLineVersion": "2.0.2.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "AI Code Graph - Semantic code analysis for .NET"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "analyze",
+      "description": "Analyze a .NET solution and build the code graph",
+      "options": [
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to .sln file (auto-discovered if omitted)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output directory for the database [default: ./ai-code-graph]",
+          "aliases": [
+            "-o",
+            "--db"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose output [default: False]",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--save-baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Save the analysis result as baseline for drift detection [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--embedding-engine",
+          "recursive": false,
+          "hidden": false,
+          "description": "Embedding engine: hash|openai|onnx [default: hash]",
+          "arguments": [
+            {
+              "name": "EMBEDDING_ENGINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--embedding-model",
+          "recursive": false,
+          "hidden": false,
+          "description": "Model name (e.g., text-embedding-3-small for openai, path for onnx)",
+          "arguments": [
+            {
+              "name": "EMBEDDING_MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--embedding-dimensions",
+          "recursive": false,
+          "hidden": false,
+          "description": "Embedding vector dimensions [default: 384]",
+          "arguments": [
+            {
+              "name": "EMBEDDING_DIMENSIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--stages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Analysis stages: core (fast, essential) | full (all features) [default: core]",
+          "arguments": [
+            {
+              "name": "STAGES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "solution",
+          "description": "Path to .sln file (auto-discovered if omitted)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "callgraph",
+      "description": "Explore method call graph",
+      "options": [
+        {
+          "name": "--id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit method ID (takes precedence over pattern)",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--depth",
+          "recursive": false,
+          "hidden": false,
+          "description": "Traversal depth [default: 2]",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DEPTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--direction",
+          "recursive": false,
+          "hidden": false,
+          "description": "callers|callees|both [default: both]",
+          "arguments": [
+            {
+              "name": "DIRECTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "method",
+          "description": "Method name or pattern to search for",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "hotspots",
+      "description": "Show complexity hotspots",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of items to return [default: 20]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--threshold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum complexity score",
+          "arguments": [
+            {
+              "name": "THRESHOLD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--sort",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sort by: complexity|blast-radius|risk [default: complexity]",
+          "arguments": [
+            {
+              "name": "SORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tree",
+      "description": "Display code structure tree",
+      "options": [
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by namespace prefix",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by type name",
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "tree|json [default: tree]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--include-private",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include non-public methods [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--skip-tests",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude *.Tests projects [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--skip-interfaces",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude interface types [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--skip-ns",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude namespaces matching patterns (comma-separated)",
+          "arguments": [
+            {
+              "name": "SKIP_NS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--max-methods",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show first N methods per type, then '... (+X more)'",
+          "arguments": [
+            {
+              "name": "MAX_METHODS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--no-return-types",
+          "recursive": false,
+          "hidden": false,
+          "description": "Omit return type signatures [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--compact",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable compact mode with sensible defaults for LLM context [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "similar",
+      "description": "Find methods with similar intent",
+      "options": [
+        {
+          "name": "--id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit method ID (takes precedence over pattern)",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of items to return [default: 10]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "method",
+          "description": "Method name to find similar methods for",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "duplicates",
+      "description": "Show detected code clones",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of results [default: 20]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--threshold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum hybrid score [default: 0.5]",
+          "arguments": [
+            {
+              "name": "THRESHOLD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Float"
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by clone type: Type1|Type2|Semantic",
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--concept",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by intent cluster label",
+          "arguments": [
+            {
+              "name": "CONCEPT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "table|json [default: table]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "clusters",
+      "description": "Show intent clusters",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "table|json [default: table]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "token-search",
+      "description": "Search code by token overlap (use 'query' command for graph-based retrieval)",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of results [default: 10]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--threshold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum similarity score [default: 0.5]",
+          "arguments": [
+            {
+              "name": "THRESHOLD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Float"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "table|json [default: table]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "query",
+          "description": "Natural language search query",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "semantic-search",
+      "description": "Search code by semantic meaning (fallback when query returns no results)",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of results [default: 10]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "table|json [default: table]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "query",
+          "description": "Natural language search query",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "description": "Export code graph data",
+      "options": [
+        {
+          "name": "--concept",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by concept/cluster label",
+          "arguments": [
+            {
+              "name": "CONCEPT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "json|csv [default: json]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "drift",
+      "description": "Detect architectural drift",
+      "options": [
+        {
+          "name": "--vs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Baseline path or 'baseline' keyword [default: baseline]",
+          "arguments": [
+            {
+              "name": "VS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "compact|table|json (compact=summary, table=detail) [default: table]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--complexity-pct",
+          "recursive": false,
+          "hidden": false,
+          "description": "Complexity percentage threshold [default: 0.25]",
+          "arguments": [
+            {
+              "name": "COMPLEXITY_PCT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--complexity-abs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Complexity absolute threshold [default: 15]",
+          "arguments": [
+            {
+              "name": "COMPLEXITY_ABS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to current graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "context",
+      "description": "Get compact method context (complexity, callers, callees, cluster, duplicates)",
+      "options": [
+        {
+          "name": "--id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit method ID (takes precedence over pattern)",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "method",
+          "description": "Method name or pattern",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "impact",
+      "description": "Show transitive impact of changing a method (all callers)",
+      "options": [
+        {
+          "name": "--id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit method ID (takes precedence over pattern)",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--depth",
+          "recursive": false,
+          "hidden": false,
+          "description": "Max traversal depth (unlimited if omitted)",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DEPTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of items to return [default: 20]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "method",
+          "description": "Method name or pattern to search for",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "dead-code",
+      "description": "Find methods with no callers (potential dead code)",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of items to return [default: 20]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--include-overrides",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include override/abstract methods [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "churn",
+      "description": "Show methods with high change-frequency × complexity (churn hotspots)",
+      "options": [
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Git log time range (e.g. '6 months ago') [default: 6 months ago]",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "table|json [default: table]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of results to show [default: 20]",
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "coupling",
+      "description": "Show afferent/efferent coupling and instability metrics",
+      "options": [
+        {
+          "name": "--level",
+          "recursive": false,
+          "hidden": false,
+          "description": "namespace|type [default: namespace]",
+          "aliases": [
+            "-l"
+          ],
+          "arguments": [
+            {
+              "name": "LEVEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of items to return [default: 20]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "diff",
+      "description": "Compare code graphs between git refs",
+      "options": [
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "Base git ref [default: HEAD~1]",
+          "arguments": [
+            {
+              "name": "FROM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target git ref [default: HEAD]",
+          "arguments": [
+            {
+              "name": "TO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "summary|detail|json [default: summary]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "description": "Run as MCP server (JSON-RPC over stdin/stdout)",
+      "options": [
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "setup-claude",
+      "description": "Scaffold Claude Code slash commands, CLAUDE.md snippet, and MCP config into the current project",
+      "options": [
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db used by commands [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "setup-cursor",
+      "description": "Scaffold Cursor MCP config, rules, and skill for AI Code Graph",
+      "options": [
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db used by Cursor MCP integration [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "setup-codex",
+      "description": "Scaffold Codex MCP config, AGENTS.md guidance, and skill metadata for AI Code Graph",
+      "options": [
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db used by Codex MCP integration [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Show database info and staleness check (alias: db-info)",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "layers",
+      "description": "Display architectural layer assignments for types",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of items to return [default: 50]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--layer",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter by layer (Presentation|Application|Domain|Infrastructure|Shared|Unknown)",
+          "aliases": [
+            "-l"
+          ],
+          "arguments": [
+            {
+              "name": "LAYER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--min-confidence",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum confidence threshold [default: 0]",
+          "arguments": [
+            {
+              "name": "MIN_CONFIDENCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Float"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "query",
+      "description": "Execute a graph query (recommended for agents)",
+      "options": [
+        {
+          "name": "--seed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Quick seed: method pattern or exact ID (e.g., '*Service*' or 'MyApp.UserService.GetUser()')",
+          "arguments": [
+            {
+              "name": "SEED",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--depth",
+          "recursive": false,
+          "hidden": false,
+          "description": "Traversal depth (default: 3) [default: 3]",
+          "arguments": [
+            {
+              "name": "DEPTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--direction",
+          "recursive": false,
+          "hidden": false,
+          "description": "Traversal direction: callers|callees|both|none (default: both) [default: both]",
+          "arguments": [
+            {
+              "name": "DIRECTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--rank",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ranking strategy: blast-radius|complexity|coupling|combined (default: blast-radius) [default: blast-radius]",
+          "arguments": [
+            {
+              "name": "RANK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of items to return [default: 20]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--query-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to JSON file containing the full query",
+          "arguments": [
+            {
+              "name": "QUERY_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Inline JSON query (for complex queries)",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--schema",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output JSON schema for GraphQuery and exit [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "check-deps",
+      "description": "Check for forbidden dependency violations",
+      "options": [
+        {
+          "name": "--rules",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to rules.json file (optional, uses defaults if not provided)",
+          "arguments": [
+            {
+              "name": "RULES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--show-rules",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show loaded rules and exit [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--sample",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate sample rules.json and exit [default: False]",
+          "arguments": [
+            {
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: compact|table|json|csv [default: compact]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to graph.db [default: ./ai-code-graph/graph.db]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

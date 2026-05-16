@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Model>
+  <!--INIT-->
+  <Command Name="init" IsBranch="false" 
+ClrType="Sable.Cli.Commands.InitializeInfrastructureCommand" 
+Settings="Sable.Cli.Commands.InitializeInfrastructureCommand+Settings">
+    <Parameters>
+      <Option Short="c" Long="container-options" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to a JSON file that contains options for buiding a 
+custom Postgres container that is used as the shadow database for migration 
+management.</Description>
+      </Option>
+      <Option Short="d" Long="database" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Which database to use. Defaults to the 'Marten' 
+database.</Description>
+      </Option>
+      <Option Short="p" Long="project" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Path to the project file of the Marten project. Defaults to
+using the project file in the current directory if it's the only one in 
+there.</Description>
+      </Option>
+      <Option Short="s" Long="schema" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+        <Description>Name of the database schema. Defaults to the 'public' 
+schema.</Description>
+      </Option>
+    </Parameters>
+  </Command>
+  <!--MIGRATIONS-->
+  <Command Name="migrations" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <!--ADD-->
+    <Command Name="add" IsBranch="false" 
+ClrType="Sable.Cli.Commands.AddMigrationCommand" 
+Settings="Sable.Cli.Commands.AddMigrationCommand+Settings">
+      <Parameters>
+        <Argument Name="name" Position="0" Required="true" Kind="scalar" 
+ClrType="System.String">
+          <Description>The name of the migration.</Description>
+        </Argument>
+        <Option Short="c" Long="container-options" Value="NULL" Required="false"
+Kind="scalar" ClrType="System.String">
+          <Description>Path to a JSON file that contains options for buiding a 
+custom Postgres container that is used as the shadow database for migration 
+management.</Description>
+        </Option>
+        <Option Short="d" Long="database" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Which database to use. Defaults to the 'Marten' 
+database.</Description>
+        </Option>
+        <Option Short="" Long="no-idempotence-wrapper" Value="NULL" 
+Required="false" Kind="flag" ClrType="System.Boolean">
+          <Description>By default, when embedding a migration as part of a 
+larger, aggregate migration script, Sable will wrap it in an anynomous function 
+block to ensure it is executed idemtotently.However, some Postgres statements 
+must not be executed within such a block. For a migration that contains those 
+type of statements, this flag must be set toavoid running into issues when 
+generating migration scripts. Additionally, given that those statements will 
+execute outside of indempotent context, they must be made to be indempotent 
+(e.g., `CREATE INDEX CONCURRENTLY IF NOT EXISTS my_index ON my_table 
+(column_name);` instead of `CREATE INDEX CONCURRENTLY my_index ON my_table 
+(column_name);`).. This option isreserved for advanced use cases. Do not use it 
+unless you know what you are doing.</Description>
+        </Option>
+        <Option Short="" Long="no-transaction-wrapper" Value="NULL" 
+Required="false" Kind="flag" ClrType="System.Boolean">
+          <Description>By default, when embedding a migration as part of a 
+larger, aggregate migration script, Sable will wrap it in an anynomous function 
+block to ensure it is executed idemtotently.Additionally, that code block will 
+then be wrapped in a trasaction block to ensure the entire migration is executed
+in a single atomic operation.However, some Postgres statements must not be 
+executed within a trasaction. For a migration that contains those type of 
+statements, this flag must be set toavoid running into issues when generating 
+migration scripts. This option isreserved for advanced use cases. Do not use it 
+unless you know what you are doing.</Description>
+        </Option>
+        <Option Short="p" Long="project" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Path to the project file of the Marten project. Defaults 
+to using the project file in the current directory if it's the only one in 
+there.</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--SCRIPT-->
+    <Command Name="script" IsBranch="false" 
+ClrType="Sable.Cli.Commands.CreateMigrationScriptCommand" 
+Settings="Sable.Cli.Commands.CreateMigrationScriptCommand+Settings">
+      <Parameters>
+        <Option Short="d" Long="database" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Which database to use. Defaults to the 'Marten' 
+database.</Description>
+        </Option>
+        <Option Short="f" Long="from" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Id or name of the first migration that should be included
+in the script. Defaults to the first migration that was generated.</Description>
+        </Option>
+        <Option Short="o" Long="output" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Path of the file to save the script to. Defaults to a 
+path within the 'sable' directory tree.</Description>
+        </Option>
+        <Option Short="p" Long="project" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Path to the project file of the Marten project. Defaults 
+to using the project file in the current directory if it's the only one in 
+there.</Description>
+        </Option>
+        <Option Short="t" Long="to" Value="NULL" Required="false" Kind="scalar" 
+ClrType="System.String">
+          <Description>Id or name of the last migration that should be included 
+in the script. Defaults to the last migration that was generated.</Description>
+        </Option>
+      </Parameters>
+    </Command>
+    <!--BACKFILL-->
+    <Command Name="backfill" IsBranch="false" 
+ClrType="Sable.Cli.Commands.BackfillMigrationsCommand" 
+Settings="Sable.Cli.Commands.BackfillMigrationsCommand+Settings">
+      <Parameters>
+        <Option Short="d" Long="database" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Which database to use. Defaults to the 'Marten' 
+database.</Description>
+        </Option>
+        <Option Short="o" Long="output" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Path of the file to save the script to. Defaults to a 
+path within the 'sable' directory tree.</Description>
+        </Option>
+        <Option Short="p" Long="project" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Path to the project file of the Marten project. Defaults 
+to using the project file in the current directory if it's the only one in 
+there.</Description>
+        </Option>
+      </Parameters>
+    </Command>
+  </Command>
+  <!--DATABASE-->
+  <Command Name="database" IsBranch="true" 
+Settings="Spectre.Console.Cli.CommandSettings">
+    <!--UPDATE-->
+    <Command Name="update" IsBranch="false" 
+ClrType="Sable.Cli.Commands.UpdateDatabaseCommand" 
+Settings="Sable.Cli.Commands.UpdateDatabaseCommand+Settings">
+      <Parameters>
+        <Argument Name="connection-string" Position="0" Required="true" 
+Kind="scalar" ClrType="System.String">
+          <Description>Connection string for the database that is to be 
+updated.</Description>
+        </Argument>
+        <Option Short="d" Long="database" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Which database to use. Defaults to the 'Marten' 
+database.</Description>
+        </Option>
+        <Option Short="m" Long="migration" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Id or name of the latest migration that should be 
+applied. Defaults to the last migration that was generated.</Description>
+        </Option>
+        <Option Short="p" Long="project" Value="NULL" Required="false" 
+Kind="scalar" ClrType="System.String">
+          <Description>Path to the project file of the Marten project. Defaults 
+to using the project file in the current directory if it's the only one in 
+there.</Description>
+        </Option>
+      </Parameters>
+    </Command>
+  </Command>
+</Model>

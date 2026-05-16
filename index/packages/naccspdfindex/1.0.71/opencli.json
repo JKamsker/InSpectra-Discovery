@@ -1,0 +1,216 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "NaccsPDFIndex",
+    "version": "1.0.71",
+    "description": "CLI tool to index and search NACCS portal PDF output codes"
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "naccs-pdf-index — NACCS portal PDF output code indexer\n\nCommands:\n  init    Crawl the NACCS portal sitemap and build/update the local SQLite index\n  search  Search the index by code, page title, or output info name (情報名称)\n  errors  Show or retry PDFs that failed during indexing\n\nExamples:\n  naccs-pdf-index init\n  naccs-pdf-index init --force\n  naccs-pdf-index init --parallelism 7  (or -p 7)\n  naccs-pdf-index search SAF004\n  naccs-pdf-index search SAF004 --group\n  naccs-pdf-index search \"輸入 申告\" --title\n  naccs-pdf-index search \"内国貨物\" --name\n  naccs-pdf-index errors\n  naccs-pdf-index errors --retry"
+  },
+  "options": [
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-h",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "/h",
+        "--help",
+        "-?",
+        "/?"
+      ],
+      "arguments": [
+        {
+          "name": "H",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "description": "Crawl the NACCS portal sitemap and build/update the local SQLite index. Resumes automatically if interrupted.",
+      "options": [
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-index all PDFs, ignoring etag/last-modified cache. Also clears the error log.",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--parallelism",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of concurrent page workers (1–7, default 7). Alias: -p",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PARALLELISM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "description": "Search the index by code prefix, page title, or output info name (情報名称)",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output results as JSON instead of a table",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--title",
+          "recursive": false,
+          "hidden": false,
+          "description": "Search page titles with fuzzy multi-word match (e.g. \"輸入 申告\" matches titles containing both words)",
+          "arguments": [
+            {
+              "name": "TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Search output info names 情報名称 (e.g. '内国貨物運送')",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--group",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deduplicate code results by code+PDF — one row per unique code, columns: Code | Message Name | PDF",
+          "arguments": [
+            {
+              "name": "GROUP",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "QUERY",
+          "description": "Search term: code prefix (e.g. SAF004), title keywords, or info name",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "errors",
+      "description": "Show the error log (failed page fetches and PDF downloads). Use --retry to re-process them.",
+      "options": [
+        {
+          "name": "--retry",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-download and re-index all PDFs in the error log. Clears each entry on success.",
+          "arguments": [
+            {
+              "name": "RETRY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

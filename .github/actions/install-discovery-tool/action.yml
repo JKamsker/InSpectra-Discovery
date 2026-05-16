@@ -1,0 +1,149 @@
+name: Install InSpectra.Discovery.Tool
+description: Install the latest published discovery CLI from GHCR.
+
+inputs:
+  github-token:
+    description: Token used to authenticate against GHCR. Use a token with package read access when needed.
+    required: true
+  github-actor:
+    description: Actor used as the GHCR username.
+    required: true
+  github-owner:
+    description: Owner whose GHCR namespace hosts the tool package.
+    required: true
+  package-name:
+    description: GHCR package name that stores the discovery tool nupkg artifact.
+    required: false
+    default: inspectra-discovery-tool
+  tool-version:
+    description: Explicit package version tag to install. When omitted, install the latest tag.
+    required: false
+    default: ''
+  allow-latest-fallback:
+    description: Fall back to the latest tag when an explicit historical version tag is unavailable.
+    required: false
+    default: 'false'
+
+outputs:
+  tool_version:
+    description: Installed package version.
+    value: ${{ steps.install.outputs.tool_version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install ORAS
+      shell: bash
+      env:
+        ORAS_VERSION: 1.3.1
+      run: |
+        set -euo pipefail
+        oras_dir="${RUNNER_TEMP}/oras-bin"
+        mkdir -p "$oras_dir"
+        curl -fsSL "https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz" |
+          tar -xz -C "$oras_dir" oras
+        echo "$oras_dir" >> "$GITHUB_PATH"
+        "$oras_dir/oras" version
+
+    - name: Install discovery tool
+      id: install
+      shell: pwsh
+      run: |
+        $requestedToolVersion = '${{ inputs.tool-version }}'
+        $allowLatestFallback = '${{ inputs.allow-latest-fallback }}'.Equals(
+          'true',
+          [System.StringComparison]::OrdinalIgnoreCase)
+        $toolPath = Join-Path $env:RUNNER_TEMP 'inspectra-discovery'
+        $packageRoot = Join-Path $env:RUNNER_TEMP 'inspectra-discovery-package'
+        $owner = '${{ inputs.github-owner }}'.ToLowerInvariant()
+        $artifactTag = if ([string]::IsNullOrWhiteSpace($requestedToolVersion)) {
+          'latest'
+        }
+        else {
+          $requestedToolVersion
+        }
+
+        function Get-PackageReference([string] $tag) {
+          "ghcr.io/$owner/${{ inputs.package-name }}:$tag"
+        }
+
+        function Reset-PackageRoot([string] $path) {
+          if (Test-Path $path) {
+            Remove-Item $path -Recurse -Force
+          }
+
+          New-Item -ItemType Directory -Path $path -Force | Out-Null
+        }
+
+        $packageReference = Get-PackageReference $artifactTag
+
+        if (Test-Path $toolPath) {
+          Remove-Item $toolPath -Recurse -Force
+        }
+
+        Reset-PackageRoot $packageRoot
+
+        '${{ inputs.github-token }}' | oras login ghcr.io `
+          --username '${{ inputs.github-actor }}' `
+          --password-stdin
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to authenticate to GHCR."
+        }
+
+        oras pull $packageReference --output $packageRoot
+
+        if ($LASTEXITCODE -ne 0) {
+          if ($allowLatestFallback -and $artifactTag -ne 'latest') {
+            Write-Warning "Failed to pull '$packageReference' from GHCR. Falling back to the latest tag."
+            $artifactTag = 'latest'
+            $packageReference = Get-PackageReference $artifactTag
+            Reset-PackageRoot $packageRoot
+            oras pull $packageReference --output $packageRoot
+          }
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Failed to pull '$packageReference' from GHCR."
+          }
+        }
+
+        $nupkgPath = Get-ChildItem -Path $packageRoot -Recurse -Filter '*.nupkg' |
+          Select-Object -First 1 -ExpandProperty FullName
+
+        if ([string]::IsNullOrWhiteSpace($nupkgPath)) {
+          throw "No .nupkg file was found in '$packageReference'."
+        }
+
+        $nupkgFileName = [System.IO.Path]::GetFileNameWithoutExtension(
+          [System.IO.Path]::GetFileName($nupkgPath))
+        $installedToolVersion = $nupkgFileName -replace '^InSpectra\.Discovery\.Tool\.', ''
+
+        if (
+          [string]::IsNullOrWhiteSpace($installedToolVersion) -or
+          $installedToolVersion -eq $nupkgFileName
+        ) {
+          throw "Could not determine the tool version from '$nupkgPath'."
+        }
+
+        dotnet tool install InSpectra.Discovery.Tool `
+          --version $installedToolVersion `
+          --tool-path $toolPath `
+          --add-source ([System.IO.Path]::GetDirectoryName($nupkgPath)) `
+          --ignore-failed-sources
+
+        if ($LASTEXITCODE -ne 0) {
+          throw "Failed to install InSpectra.Discovery.Tool."
+        }
+
+        $toolPath | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+        "tool_version=$installedToolVersion" >> $env:GITHUB_OUTPUT
+        Write-Host "Installed InSpectra.Discovery.Tool $installedToolVersion from $packageReference."
+
+        if (
+          $allowLatestFallback -and
+          -not [string]::IsNullOrWhiteSpace($requestedToolVersion) -and
+          $requestedToolVersion -ne $installedToolVersion
+        ) {
+          Write-Warning "Requested tool version '$requestedToolVersion' was not installed; using '$installedToolVersion'."
+        }

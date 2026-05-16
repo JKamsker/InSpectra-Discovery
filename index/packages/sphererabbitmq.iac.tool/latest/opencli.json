@@ -1,0 +1,1009 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "SphereRabbitMQ IaC Tool",
+    "version": "1.1.4.123",
+    "description": "Command-line entry point for RabbitMQ topology infrastructure as code."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.5.0",
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedTitle": "sprmq",
+    "cliParsedDescription": "RabbitMQ topology infrastructure-as-code for CI/CD and operator automation.\n\nCommands:\n  validate  Validate topology files without contacting RabbitMQ.\n  init      Create a topology YAML template.\n  plan      Compare desired topology with the broker. Never changes broker state.\n  apply     Apply only safe reconciliation operations. Refuses destructive changes.\n  purge     Remove messages from all queues declared by the topology. Requires confirmation unless --auto-approve is used.\n  destroy   Intentionally delete declared virtual hosts. Requires confirmation unless --auto-approve is used.\n  export    Export broker topology to YAML.\n  completion  Print shell completion scripts.\n\nExamples:\n  sprmq init --template minimal --output-file topology.yaml\n  sprmq plan --file samples/minimal-topology.yaml\n  sprmq apply --file samples/minimal-topology.yaml --dry-run\n  sprmq purge --file samples/minimal-topology.yaml --dry-run\n  sprmq destroy --file samples/minimal-topology.yaml --dry-run\n  sprmq destroy --file samples/minimal-topology.yaml --allow-destructive --auto-approve\n  sprmq completion zsh"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "description": "Create a topology YAML file from a built-in template.\n\nExample:\n  sprmq init --template retry-dead-letter --output-file topology.yaml",
+      "options": [
+        {
+          "name": "--template",
+          "recursive": false,
+          "hidden": false,
+          "description": "Template name. Available: debug, minimal, quorum, retry, retry-dead-letter, topic-routing. [default: minimal]",
+          "arguments": [
+            {
+              "name": "TEMPLATE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path for init. Use '-' to write YAML to stdout. [default: -]",
+          "arguments": [
+            {
+              "name": "OUTPUT_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Overwrite the output file when it already exists. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "validate",
+      "description": "Validate topology YAML syntax, normalization, and semantic consistency.\n\nExample:\n  sprmq validate --file samples/minimal-topology.yaml",
+      "options": [
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the topology YAML file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json. [default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "TopologyOutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print detailed execution phases and broker operations. [default: False]",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plan",
+      "description": "Compare desired topology against broker state and print a reconciliation plan.\nThis command never changes broker state.\n\nExample:\n  sprmq plan --file samples/minimal-topology.yaml",
+      "options": [
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the topology YAML file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json. [default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "TopologyOutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--management-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ Management API URL.",
+          "arguments": [
+            {
+              "name": "MANAGEMENT_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--username",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ username.",
+          "arguments": [
+            {
+              "name": "USERNAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--password",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ password.",
+          "arguments": [
+            {
+              "name": "PASSWORD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--vhost",
+          "recursive": false,
+          "hidden": false,
+          "description": "Virtual host filter. Repeat to pass multiple values. [default: System.String[]]",
+          "arguments": [
+            {
+              "name": "VHOST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print detailed execution phases and broker operations. [default: False]",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "apply",
+      "description": "Apply a topology plan to RabbitMQ.\nThis command only performs safe reconciliation and refuses destructive plans unless --migrate is provided.\n\nExample:\n  sprmq apply --file samples/minimal-topology.yaml --dry-run\n  sprmq apply --file samples/minimal-topology.yaml --migrate",
+      "options": [
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the topology YAML file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json. [default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "TopologyOutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--management-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ Management API URL.",
+          "arguments": [
+            {
+              "name": "MANAGEMENT_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--username",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ username.",
+          "arguments": [
+            {
+              "name": "USERNAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--password",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ password.",
+          "arguments": [
+            {
+              "name": "PASSWORD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--vhost",
+          "recursive": false,
+          "hidden": false,
+          "description": "Virtual host filter. Repeat to pass multiple values. [default: System.String[]]",
+          "arguments": [
+            {
+              "name": "VHOST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Compute and print the apply result without changing the broker. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--migrate",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allow supported exchange and queue migrations when immutable broker arguments changed. [default: False]",
+          "arguments": [
+            {
+              "name": "MIGRATE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print detailed execution phases and broker operations. [default: False]",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "purge",
+      "description": "Remove all messages from every queue declared by the normalized topology.\nBy default this includes declared queues plus generated retry, dead-letter, and debug queues.\nUse --debug-only to purge only generated debug queues.\nNon-dry execution requires --allow-destructive and asks for confirmation unless --auto-approve is used.\n\nExamples:\n  sprmq purge --file samples/minimal-topology.yaml --dry-run\n  sprmq purge --file samples/minimal-topology.yaml --dry-run --debug-only\n  sprmq purge --file samples/minimal-topology.yaml --allow-destructive --auto-approve",
+      "options": [
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the topology YAML file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json. [default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "TopologyOutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--management-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ Management API URL.",
+          "arguments": [
+            {
+              "name": "MANAGEMENT_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--username",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ username.",
+          "arguments": [
+            {
+              "name": "USERNAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--password",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ password.",
+          "arguments": [
+            {
+              "name": "PASSWORD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--vhost",
+          "recursive": false,
+          "hidden": false,
+          "description": "Virtual host filter. Repeat to pass multiple values. [default: System.String[]]",
+          "arguments": [
+            {
+              "name": "VHOST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Compute and print the apply result without changing the broker. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print detailed execution phases and broker operations. [default: False]",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--allow-destructive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allow destructive execution for commands that delete broker resources. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_DESTRUCTIVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--auto-approve",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the interactive confirmation prompt for destructive commands. [default: False]",
+          "arguments": [
+            {
+              "name": "AUTO_APPROVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--debug-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Purge only generated debug queues. [default: False]",
+          "arguments": [
+            {
+              "name": "DEBUG_ONLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "destroy",
+      "description": "Intentionally delete every virtual host declared in the YAML file.\nNon-dry execution requires --allow-destructive and asks for confirmation unless --auto-approve is used.\n\nExamples:\n  sprmq destroy --file samples/minimal-topology.yaml --dry-run\n  sprmq destroy --file samples/minimal-topology.yaml --allow-destructive --auto-approve",
+      "options": [
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the topology YAML file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json. [default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "TopologyOutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--management-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ Management API URL.",
+          "arguments": [
+            {
+              "name": "MANAGEMENT_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--username",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ username.",
+          "arguments": [
+            {
+              "name": "USERNAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--password",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ password.",
+          "arguments": [
+            {
+              "name": "PASSWORD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--vhost",
+          "recursive": false,
+          "hidden": false,
+          "description": "Virtual host filter. Repeat to pass multiple values. [default: System.String[]]",
+          "arguments": [
+            {
+              "name": "VHOST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Compute and print the apply result without changing the broker. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print detailed execution phases and broker operations. [default: False]",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--allow-destructive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allow destructive execution for commands that delete broker resources. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_DESTRUCTIVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--auto-approve",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the interactive confirmation prompt for destructive commands. [default: False]",
+          "arguments": [
+            {
+              "name": "AUTO_APPROVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "description": "Export broker topology to YAML.\n\nExample:\n  sprmq export --file samples/minimal-topology.yaml --output-file topology.yaml\n  sprmq export --include-broker --output-file topology.yaml",
+      "options": [
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Optional topology YAML file used as a source for broker connection settings.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json. [default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "TopologyOutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--management-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ Management API URL.",
+          "arguments": [
+            {
+              "name": "MANAGEMENT_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--username",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ username.",
+          "arguments": [
+            {
+              "name": "USERNAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--password",
+          "recursive": false,
+          "hidden": false,
+          "description": "RabbitMQ password.",
+          "arguments": [
+            {
+              "name": "PASSWORD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--vhost",
+          "recursive": false,
+          "hidden": false,
+          "description": "Virtual host filter. Repeat to pass multiple values. [default: System.String[]]",
+          "arguments": [
+            {
+              "name": "VHOST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--output-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path for export. Use '-' to write YAML to stdout. [default: -]",
+          "arguments": [
+            {
+              "name": "OUTPUT_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--include-broker",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include the resolved broker settings in the exported YAML. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_BROKER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print detailed execution phases and broker operations. [default: False]",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "completion",
+      "description": "Print shell completion scripts for bash, zsh, or pwsh.\n\nExample:\n  sprmq completion bash",
+      "arguments": [
+        {
+          "name": "SHELL",
+          "description": "Target shell: bash, zsh, or pwsh.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ]
+}

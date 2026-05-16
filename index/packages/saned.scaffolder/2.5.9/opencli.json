@@ -1,0 +1,665 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Add-CustomController",
+    "version": "2.5.9",
+    "description": "Generic CLI scaffolder that generates CQRS feature slices for any Saned service (HR, Payroll, Attendance, SelfService, …). Auto-detects the service namespace from the project path."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "NawrasHR BFF — RESTful BFF controllers:\n  Add-CustomController -m SanedHR -n EventTest -P true\n  Add-CustomController -en GetSkillByUserId -m SanedHR -s Skills -P true -L true\n\nService repo — CQRS / protos / Add-Feature (sub-command):\n  Add-CustomController Add-CustomService Employee\n  Add-CustomController Add-CustomService Employee -p Name:string -n SanedHR\n  Add-CustomController Add-CustomService -f CreateEmployee -s Employee -c \"Name:string\" -r \"Id:Guid\"\n\nRemove feature:\n  Add-CustomController Add-CustomService remove -f CreateEmployee -s Employee\n\nUninstall this dotnet tool:\n  Add-CustomController remove-tool\n  Add-CustomController remove-tool --no-global --local\n  Add-CustomController remove-tool --tool-manifest C:\\path\\to\\repo"
+  },
+  "options": [
+    {
+      "name": "--module",
+      "recursive": false,
+      "hidden": false,
+      "description": "The module name (e.g. SanedSelfService, Payroll)",
+      "aliases": [
+        "-m"
+      ],
+      "arguments": [
+        {
+          "name": "MODULE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--name",
+      "recursive": false,
+      "hidden": false,
+      "description": "The name of the new controller (e.g. Benefits). Required if creating a new controller.",
+      "aliases": [
+        "-n"
+      ],
+      "arguments": [
+        {
+          "name": "NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--service",
+      "recursive": false,
+      "hidden": false,
+      "description": "The service name of an existing controller (e.g. employee). Required if adding an endpoint.",
+      "aliases": [
+        "-s"
+      ],
+      "arguments": [
+        {
+          "name": "SERVICE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--endpoint",
+      "recursive": false,
+      "hidden": false,
+      "description": "The name of the endpoint to add (e.g. SendToApproval).",
+      "aliases": [
+        "-en"
+      ],
+      "arguments": [
+        {
+          "name": "ENDPOINT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--permissions",
+      "recursive": false,
+      "hidden": false,
+      "description": "Add permissions for that endpoint in permissions.json",
+      "aliases": [
+        "-P"
+      ],
+      "arguments": [
+        {
+          "name": "PERMISSIONS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--lookup",
+      "recursive": false,
+      "hidden": false,
+      "description": "Return the result with appending lookup (WithAppendingLookup)",
+      "aliases": [
+        "-L"
+      ],
+      "arguments": [
+        {
+          "name": "LOOKUP",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": false,
+      "hidden": false,
+      "description": "Output path (NawrasHRBFF root directory)",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-h",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "/h",
+        "--help",
+        "-?",
+        "/?"
+      ],
+      "arguments": [
+        {
+          "name": "H",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "remove-tool",
+      "description": "Uninstall Saned.Scaffolder from this PC (global dotnet tool) and/or from a project manifest (.config/dotnet-tools.json).",
+      "options": [
+        {
+          "name": "--no-global",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip uninstalling the global tool; only use a local manifest if --tool-manifest or --local is set.",
+          "arguments": [
+            {
+              "name": "NO_GLOBAL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--local",
+          "recursive": false,
+          "hidden": false,
+          "description": "Uninstall from a local tool manifest (see --tool-manifest; defaults to current directory).",
+          "aliases": [
+            "-l"
+          ],
+          "arguments": [
+            {
+              "name": "LOCAL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--tool-manifest",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder that contains .config/dotnet-tools.json, or the full path to dotnet-tools.json.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOOL_MANIFEST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Add-CustomService",
+      "description": "Scaffold full entities, protos, and named feature slices inside a Saned service project (not the BFF).",
+      "options": [
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Root namespace / service name (e.g. Payroll, HR, Attendance, SelfService). Auto-detected from a .csproj in the output path when omitted.",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--module",
+          "recursive": false,
+          "hidden": false,
+          "description": "Module / folder name (defaults to entity name + 's', e.g. Employees)",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MODULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Absolute or relative path to the target service root (default: current directory)",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--properties",
+          "recursive": false,
+          "hidden": false,
+          "description": "Entity field definitions: Name:Type or Name=Type pairs, e.g. -p Name:string Age:int",
+          "aliases": [
+            "-p",
+            "--fields"
+          ],
+          "arguments": [
+            {
+              "name": "PROPERTIES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--integration-events",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also generate BuildingBlocks integration-event files",
+          "aliases": [
+            "-ie"
+          ],
+          "arguments": [
+            {
+              "name": "INTEGRATION_EVENTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--bb-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Relative path from --output to the BuildingBlocks ServiceContracts root (default: ../../BuildingBlocks/BuildingBlocks.ServiceContracts)",
+          "arguments": [
+            {
+              "name": "BB_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Preview files that would be created without writing anything",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-protos",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip generating saned-protos .proto files (C# only)",
+          "arguments": [
+            {
+              "name": "NO_PROTOS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip duplicate-name checks (model / result / proto already on disk)",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--feature",
+          "recursive": false,
+          "hidden": false,
+          "description": "Feature name in PascalCase, e.g. CreateEmployee, GetEmployeeById",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FEATURE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--service",
+          "recursive": false,
+          "hidden": false,
+          "description": "Service / entity name in PascalCase, e.g. Employee, Skill",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SERVICE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--command",
+          "recursive": false,
+          "hidden": false,
+          "description": "Command request properties: \"Name:string, Date:DateTime\" (mutually exclusive with -q)",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "COMMAND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--query",
+          "recursive": false,
+          "hidden": false,
+          "description": "Query request properties: \"Id:Guid\" (mutually exclusive with -c)",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUERY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--response",
+          "recursive": false,
+          "hidden": false,
+          "description": "Response properties: \"Id:Guid, Success:bool\"",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "RESPONSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ENTITY_NAME",
+          "description": "PascalCase entity name, e.g. Employee, Department, LeaveRequest",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ],
+      "commands": [
+        {
+          "name": "remove",
+          "description": "Remove a named feature added by Add-Feature",
+          "options": [
+            {
+              "name": "--feature",
+              "recursive": false,
+              "hidden": false,
+              "description": "Feature name to remove, e.g. CreateEmployee",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FEATURE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--service",
+              "recursive": false,
+              "hidden": false,
+              "description": "Service name, e.g. Employee",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SERVICE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Absolute or relative path to the target service root (default: current directory)",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--namespace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Root namespace / service name (e.g. Payroll, HR, Attendance, SelfService). Auto-detected from a .csproj in the output path when omitted.",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAMESPACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Preview what would be removed without deleting anything",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

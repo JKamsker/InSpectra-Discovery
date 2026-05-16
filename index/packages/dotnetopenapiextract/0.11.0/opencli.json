@@ -1,0 +1,807 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "DotNetOpenApiExtract.Cli",
+    "version": "0.11.0",
+    "description": "CLI tool that extracts OpenAPI specifications from compiled .NET assemblies via static reflection — no application startup required"
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.5.0",
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Extract an OpenAPI specification from a compiled .NET assembly without running the application"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--assembly",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to the .NET assembly DLL (produced by dotnet build)",
+      "arguments": [
+        {
+          "name": "ASSEMBLY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": false,
+      "hidden": false,
+      "description": "Output file path [default: swagger.json]",
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--format",
+      "recursive": false,
+      "hidden": false,
+      "description": "Output format: json or yaml [default: json]",
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--title",
+      "recursive": false,
+      "hidden": false,
+      "description": "API title. Defaults to [AssemblyTitle], then [AssemblyProduct], then DLL file name",
+      "arguments": [
+        {
+          "name": "TITLE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Document version [default: v1]",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--description",
+      "recursive": false,
+      "hidden": false,
+      "description": "API description written to the info block",
+      "arguments": [
+        {
+          "name": "DESCRIPTION",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--xml",
+      "recursive": false,
+      "hidden": false,
+      "description": "XML documentation file path (default: auto-detected next to the DLL). If the explicitly-provided file does not exist, a warning is printed to stderr and extraction continues without XML documentation.",
+      "arguments": [
+        {
+          "name": "XML",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--naming-policy",
+      "recursive": false,
+      "hidden": false,
+      "description": "JSON property naming policy: preserve, camelCase (default), snake_case_lower, snake_case_upper, kebab-case-lower, kebab-case-upper",
+      "arguments": [
+        {
+          "name": "NAMING_POLICY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--enum-as-string",
+      "recursive": false,
+      "hidden": false,
+      "description": "Serialize enum values as strings instead of integers [default: False]",
+      "arguments": [
+        {
+          "name": "ENUM_AS_STRING",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--openapi-version",
+      "recursive": false,
+      "hidden": false,
+      "description": "OpenAPI specification version: 3.0, 3.1, or 3.2 [default: 3.0]",
+      "arguments": [
+        {
+          "name": "OPENAPI_VERSION",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--exclude-path",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path prefix to exclude from the generated spec (can be specified multiple times)",
+      "arguments": [
+        {
+          "name": "EXCLUDE_PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--source",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to a specific source file (e.g. entry point). Reserved for future use.",
+      "arguments": [
+        {
+          "name": "SOURCE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--source-root",
+      "recursive": false,
+      "hidden": false,
+      "description": "Project root folder for Roslyn source analysis. When not specified, auto-detected by walking up from the DLL path to the first directory containing a .csproj. Pass explicitly only when sources and build artifacts are in separate directory trees.",
+      "arguments": [
+        {
+          "name": "SOURCE_ROOT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--contact-name",
+      "recursive": false,
+      "hidden": false,
+      "description": "Name of the contact person or organisation (written to info.contact.name)",
+      "arguments": [
+        {
+          "name": "CONTACT_NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--contact-email",
+      "recursive": false,
+      "hidden": false,
+      "description": "Email address of the API contact (written to info.contact.email)",
+      "arguments": [
+        {
+          "name": "CONTACT_EMAIL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--contact-url",
+      "recursive": false,
+      "hidden": false,
+      "description": "URL of the contact information page — must be an absolute URI (info.contact.url)",
+      "arguments": [
+        {
+          "name": "CONTACT_URL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--license-name",
+      "recursive": false,
+      "hidden": false,
+      "description": "SPDX license name, e.g. MIT or Apache-2.0 (written to info.license.name)",
+      "arguments": [
+        {
+          "name": "LICENSE_NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--license-url",
+      "recursive": false,
+      "hidden": false,
+      "description": "URL pointing to the full license text — must be an absolute URI (info.license.url)",
+      "arguments": [
+        {
+          "name": "LICENSE_URL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--terms-of-service",
+      "recursive": false,
+      "hidden": false,
+      "description": "URL to the Terms of Service for the API — must be an absolute URI (info.termsOfService)",
+      "arguments": [
+        {
+          "name": "TERMS_OF_SERVICE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--server",
+      "recursive": false,
+      "hidden": false,
+      "description": "Server base URL to include in the servers array (can be specified multiple times)",
+      "arguments": [
+        {
+          "name": "SERVER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--path-base-emission",
+      "recursive": false,
+      "hidden": false,
+      "description": "How to emit the path base detected via app.UsePathBase(): 'prefix' (default) prepends to every path, 'servers' adds a relative servers[] entry [default: prefix]",
+      "arguments": [
+        {
+          "name": "PATH_BASE_EMISSION",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--no-enum-auto-description",
+      "recursive": false,
+      "hidden": false,
+      "description": "Disable automatic markdown description on enum schemas. When set, schema.description gets only the type-level summary (old behavior). x-enum-descriptions is still emitted when values are documented. [default: False]",
+      "arguments": [
+        {
+          "name": "NO_ENUM_AUTO_DESCRIPTION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--no-enum-varnames",
+      "recursive": false,
+      "hidden": false,
+      "description": "Disable the x-enum-varnames extension on enum schemas. [default: False]",
+      "arguments": [
+        {
+          "name": "NO_ENUM_VARNAMES",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--validate",
+      "recursive": false,
+      "hidden": false,
+      "description": "Enable OpenAPI spec validation. Runs 52 rules — 27 as errors, 17 as warnings, 9 as warnings (off by default). Error severity blocks CI (exit 1). Warnings are reported but do not fail by default. Use --strict to treat all warnings as errors. Off-by-default rules can be enabled with --enable-rule <id>. Rule IDs: spec.no-ref-siblings (error), spec.info-version (error), operation.operation-id-unique (error), path.params-match (error), path.no-empty-declaration (error), parameter.path-required-true (error), schema.array-items (error), operation.parameters-unique (error), operation.summary (error), operation.operation-id (error), operation.description (error), operation.tags (error), operation.has-error-response (warning), operation.security (error), operation.deprecated-has-note (error), parameter.description (error), parameter.schema-type (error), parameter.optional-has-default (warning), response.description (error), response.schema-when-body (error), schema.description (error), schema.property-description (error), schema.property-format (error), schema.required-consistency (error), schema.property-constraints (error), schema.enum-filled (error), enum.type-description (warning), enum.value-description (warning), security.scheme-defined (error), security.scheme-description (warning), spec.info-title (error), spec.info-description (warning), operation.success-response (warning), operation.operation-id-url-safe (warning), path.no-trailing-slash (warning), path.no-query-string (warning), path.no-identical (warning), tag.no-duplicates (warning), operation.tag-defined (warning), schema.typed-enum (warning), schema.no-duplicate-enum (warning), schema.no-required-undefined (warning), spec.servers-defined (warning, off), tag.description (warning, off), component.no-unused (warning, off), spec.no-eval-in-markdown (warning, off), spec.no-script-tags-in-markdown (warning, off), operation.has-required-response-codes (error, off), operation.request-body-description (warning), operation.operation-id-pascal-case (warning, off), schema.additional-properties-explicit (warning, off), response.content-type-json-default (warning, off). Disable individual rules via --skip-rule <id>. [default: False]",
+      "arguments": [
+        {
+          "name": "VALIDATE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--skip-rule",
+      "recursive": false,
+      "hidden": false,
+      "description": "Disable a specific validation rule by ID (can be specified multiple times)",
+      "arguments": [
+        {
+          "name": "SKIP_RULE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--min-description-length",
+      "recursive": false,
+      "hidden": false,
+      "description": "Minimum characters required for description fields in validation rules (default: 5) [default: 5]",
+      "arguments": [
+        {
+          "name": "MIN_DESCRIPTION_LENGTH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--exclude-validation-path",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path prefixes skipped by rules that require error responses (operation.has-error-response) and success responses (operation.success-response). Other rules are not affected. Repeatable. Default: none.",
+      "arguments": [
+        {
+          "name": "EXCLUDE_VALIDATION_PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--validation-report",
+      "recursive": false,
+      "hidden": false,
+      "description": "Write JSON validation report to this file path (if omitted, report is printed to stdout)",
+      "arguments": [
+        {
+          "name": "VALIDATION_REPORT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--strict",
+      "recursive": false,
+      "hidden": false,
+      "description": "Treat all Warning-severity violations as errors (exit 1 on any violation). Equivalent to promoting all warnings to errors. [default: False]",
+      "arguments": [
+        {
+          "name": "STRICT",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--warn-rule",
+      "recursive": false,
+      "hidden": false,
+      "description": "Demote a specific rule from error to warning severity (can be specified multiple times)",
+      "arguments": [
+        {
+          "name": "WARN_RULE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--error-rule",
+      "recursive": false,
+      "hidden": false,
+      "description": "Promote a specific rule from warning to error severity (can be specified multiple times)",
+      "arguments": [
+        {
+          "name": "ERROR_RULE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--enable-rule",
+      "recursive": false,
+      "hidden": false,
+      "description": "Enable a rule that is off by default (can be specified multiple times). Off-by-default rule IDs: spec.servers-defined, tag.description, component.no-unused, spec.no-eval-in-markdown, spec.no-script-tags-in-markdown, operation.has-required-response-codes, operation.operation-id-pascal-case, schema.additional-properties-explicit, response.content-type-json-default",
+      "arguments": [
+        {
+          "name": "ENABLE_RULE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--require-response-code",
+      "recursive": false,
+      "hidden": false,
+      "description": "Required response codes for specific HTTP methods. Format: METHOD:CODE. Method can be: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, mutating (POST/PUT/PATCH/DELETE), safe (GET/HEAD/OPTIONS), or * for any. Repeatable. Activates operation.has-required-response-codes rule (requires --enable-rule). Example: --require-response-code mutating:422 --require-response-code *:401",
+      "arguments": [
+        {
+          "name": "REQUIRE_RESPONSE_CODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--rule-min-length",
+      "recursive": false,
+      "hidden": false,
+      "description": "Override --min-description-length for a specific rule. Format: RULE-ID:N. Repeatable. Applies to rules that check description length. Example: --rule-min-length enum.value-description:5 --rule-min-length operation.description:30",
+      "arguments": [
+        {
+          "name": "RULE_MIN_LENGTH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "validate",
+      "description": "Validate an existing OpenAPI spec file against 52 completeness rules. Off-by-default rules (require --enable-rule): spec.servers-defined, tag.description, component.no-unused, spec.no-eval-in-markdown, spec.no-script-tags-in-markdown, operation.has-required-response-codes, operation.operation-id-pascal-case, schema.additional-properties-explicit, response.content-type-json-default. Rule IDs: spec.no-ref-siblings (error), spec.info-version (error), operation.operation-id-unique (error), path.params-match (error), path.no-empty-declaration (error), parameter.path-required-true (error), schema.array-items (error), operation.parameters-unique (error), operation.summary (error), operation.operation-id (error), operation.description (error), operation.tags (error), operation.has-error-response (warning), operation.security (error), operation.deprecated-has-note (error), parameter.description (error), parameter.schema-type (error), parameter.optional-has-default (warning), response.description (error), response.schema-when-body (error), schema.description (error), schema.property-description (error), schema.property-format (error), schema.required-consistency (error), schema.property-constraints (error), schema.enum-filled (error), enum.type-description (warning), enum.value-description (warning), security.scheme-defined (error), security.scheme-description (warning), spec.info-title (error), spec.info-description (warning), operation.success-response (warning), operation.operation-id-url-safe (warning), path.no-trailing-slash (warning), path.no-query-string (warning), path.no-identical (warning), tag.no-duplicates (warning), operation.tag-defined (warning), schema.typed-enum (warning), schema.no-duplicate-enum (warning), schema.no-required-undefined (warning), spec.servers-defined (warning, off), tag.description (warning, off), component.no-unused (warning, off), spec.no-eval-in-markdown (warning, off), spec.no-script-tags-in-markdown (warning, off), operation.has-required-response-codes (error, off), operation.request-body-description (warning), operation.operation-id-pascal-case (warning, off), schema.additional-properties-explicit (warning, off), response.content-type-json-default (warning, off).",
+      "options": [
+        {
+          "name": "--spec",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the OpenAPI spec file (JSON or YAML)",
+          "arguments": [
+            {
+              "name": "SPEC",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--skip-rule",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable a specific validation rule by ID (can be specified multiple times)",
+          "arguments": [
+            {
+              "name": "SKIP_RULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--min-description-length",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum characters required for description fields (default: 5) [default: 5]",
+          "arguments": [
+            {
+              "name": "MIN_DESCRIPTION_LENGTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--exclude-validation-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path prefixes skipped by rules that require error responses (operation.has-error-response) and success responses (operation.success-response). Other rules are not affected. Repeatable. Default: none.",
+          "arguments": [
+            {
+              "name": "EXCLUDE_VALIDATION_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--validation-report",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write JSON validation report to this file path (if omitted, report is printed to stdout)",
+          "arguments": [
+            {
+              "name": "VALIDATION_REPORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Treat all Warning-severity violations as errors (exit 1 on any violation) [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--warn-rule",
+          "recursive": false,
+          "hidden": false,
+          "description": "Demote a specific rule from error to warning severity (can be specified multiple times)",
+          "arguments": [
+            {
+              "name": "WARN_RULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--error-rule",
+          "recursive": false,
+          "hidden": false,
+          "description": "Promote a specific rule from warning to error severity (can be specified multiple times)",
+          "arguments": [
+            {
+              "name": "ERROR_RULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--enable-rule",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable a rule that is off by default (can be specified multiple times). Off-by-default rule IDs: spec.servers-defined, tag.description, component.no-unused, spec.no-eval-in-markdown, spec.no-script-tags-in-markdown, operation.has-required-response-codes, operation.operation-id-pascal-case, schema.additional-properties-explicit, response.content-type-json-default",
+          "arguments": [
+            {
+              "name": "ENABLE_RULE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--require-response-code",
+          "recursive": false,
+          "hidden": false,
+          "description": "Required response codes for specific HTTP methods. Format: METHOD:CODE. Method can be: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS, mutating (POST/PUT/PATCH/DELETE), safe (GET/HEAD/OPTIONS), or * for any. Repeatable. Activates operation.has-required-response-codes rule (requires --enable-rule). Example: --require-response-code mutating:422 --require-response-code *:401",
+          "arguments": [
+            {
+              "name": "REQUIRE_RESPONSE_CODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--rule-min-length",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override --min-description-length for a specific rule. Format: RULE-ID:N. Repeatable. Applies to rules that check description length. Example: --rule-min-length enum.value-description:5 --rule-min-length operation.description:30",
+          "arguments": [
+            {
+              "name": "RULE_MIN_LENGTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

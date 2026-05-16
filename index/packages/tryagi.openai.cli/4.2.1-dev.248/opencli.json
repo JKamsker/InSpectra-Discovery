@@ -1,0 +1,592 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "tryAGI.OpenAI.CLI",
+    "version": "4.2.1-dev.248",
+    "description": "Command-line interface for the OpenAI API. Run any chat, image, embedding, audio, or model endpoint from the shell. Invoke without install via `dnx tryAGI.OpenAI.CLI <command>`. Built on the tryAGI.OpenAI SDK."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.5.0",
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "tryAGI.OpenAI.CLI — call the OpenAI API from the command line. Run via `dnx tryAGI.OpenAI.CLI <command>`."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--api-key",
+      "recursive": false,
+      "hidden": false,
+      "description": "OpenAI API key. Falls back to $OPENAI_API_KEY and `dotnet user-secrets`.",
+      "aliases": [
+        "-k"
+      ],
+      "arguments": [
+        {
+          "name": "API_KEY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--base-url",
+      "recursive": false,
+      "hidden": false,
+      "description": "Override the OpenAI API base URL. Falls back to $OPENAI_BASE_URL.",
+      "arguments": [
+        {
+          "name": "BASE_URL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--json",
+      "recursive": false,
+      "hidden": false,
+      "description": "Emit raw JSON instead of a human-readable summary. [default: False]",
+      "arguments": [
+        {
+          "name": "JSON",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": false,
+      "hidden": false,
+      "description": "Write response to this file path instead of stdout.",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "auth",
+      "description": "Manage OpenAI API credentials stored in `dotnet user-secrets`.",
+      "commands": [
+        {
+          "name": "set",
+          "description": "Store the OpenAI API key in user-secrets for future `dnx` invocations.",
+          "arguments": [
+            {
+              "name": "API_KEY",
+              "description": "Your OpenAI API key (starts with `sk-`).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Show which credential source is currently resolved."
+        },
+        {
+          "name": "clear",
+          "description": "Remove the API key from user-secrets."
+        }
+      ]
+    },
+    {
+      "name": "chat",
+      "description": "Chat completions.",
+      "commands": [
+        {
+          "name": "complete",
+          "description": "Send a single-turn chat completion request.",
+          "options": [
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Model id (e.g. `gpt-4o-mini`, `gpt-4o`, `o1-mini`). [default: gpt-4o-mini]",
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--system",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional system message prepended to the conversation.",
+              "arguments": [
+                {
+                  "name": "SYSTEM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--max-tokens",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum number of completion tokens to generate.",
+              "arguments": [
+                {
+                  "name": "MAX_TOKENS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PROMPT",
+              "description": "User prompt. Pass `-` to read from stdin or a file path to read from disk.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "images",
+      "description": "Image generation.",
+      "commands": [
+        {
+          "name": "generate",
+          "description": "Generate an image from a text prompt.",
+          "options": [
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Model id. `gpt-image-1-mini` | `gpt-image-1` | `dall-e-3` | `dall-e-2`. [default: gpt-image-1-mini]",
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--size",
+              "recursive": false,
+              "hidden": false,
+              "description": "Image size (e.g. `1024x1024`, `1792x1024`). [default: 1024x1024]",
+              "arguments": [
+                {
+                  "name": "SIZE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--quality",
+              "recursive": false,
+              "hidden": false,
+              "description": "Quality: `low` | `medium` | `high`.",
+              "arguments": [
+                {
+                  "name": "QUALITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--n",
+              "recursive": false,
+              "hidden": false,
+              "description": "Number of images to generate. [default: 1]",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--save-to",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory to save generated images into. Each image is written as `image-N.png`.",
+              "arguments": [
+                {
+                  "name": "SAVE_TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PROMPT",
+              "description": "Text description of the image to generate.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "embeddings",
+      "description": "Text embeddings.",
+      "commands": [
+        {
+          "name": "create",
+          "description": "Create an embedding vector for the given input.",
+          "options": [
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Embedding model id. [default: text-embedding-3-small]",
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dimensions",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target dimensionality (only supported by text-embedding-3-* models).",
+              "arguments": [
+                {
+                  "name": "DIMENSIONS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "INPUT",
+              "description": "Text to embed. Pass `-` for stdin, or a file path.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "audio",
+      "description": "Text-to-speech and speech-to-text.",
+      "commands": [
+        {
+          "name": "speech",
+          "description": "Synthesize speech from text (streaming).",
+          "options": [
+            {
+              "name": "--save-to",
+              "recursive": false,
+              "hidden": false,
+              "description": "File path to write the audio to. [default: speech.mp3]",
+              "arguments": [
+                {
+                  "name": "SAVE_TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "TTS model id. [default: gpt-4o-mini-tts]",
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--voice",
+              "recursive": false,
+              "hidden": false,
+              "description": "Voice id: alloy | ash | ballad | coral | echo | sage | shimmer | verse | fable | onyx | nova. [default: alloy]",
+              "arguments": [
+                {
+                  "name": "VOICE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Audio response format: mp3 | opus | aac | flac | wav | pcm. [default: mp3]",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--speed",
+              "recursive": false,
+              "hidden": false,
+              "description": "Playback speed multiplier (0.25 – 4.0).",
+              "arguments": [
+                {
+                  "name": "SPEED",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TEXT",
+              "description": "Text to synthesize. Pass `-` for stdin or a file path.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "transcribe",
+          "description": "Transcribe an audio file to text.",
+          "options": [
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Transcription model id (e.g. `whisper-1`, `gpt-4o-transcribe`). [default: whisper-1]",
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--language",
+              "recursive": false,
+              "hidden": false,
+              "description": "ISO-639-1 language hint (e.g. `en`, `es`).",
+              "arguments": [
+                {
+                  "name": "LANGUAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--prompt",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional style/phrase hint.",
+              "arguments": [
+                {
+                  "name": "PROMPT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "AUDIO_FILE",
+              "description": "Path to an audio file (mp3, wav, m4a, flac, webm, mp4, mpeg, mpga, oga, ogg).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "models",
+      "description": "List or inspect OpenAI models.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List all models accessible to the API key."
+        }
+      ]
+    },
+    {
+      "name": "skill",
+      "description": "Print a bundled Claude skill file (SKILL.md by default). Pass `list` to see available files, or a file name to print it.",
+      "arguments": [
+        {
+          "name": "NAME",
+          "description": "Which bundled skill file to print: `skill` (default: SKILL.md), `commands`, `auth`, or `list` to enumerate files.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ]
+}

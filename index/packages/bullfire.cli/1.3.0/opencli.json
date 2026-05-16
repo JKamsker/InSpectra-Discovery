@@ -1,0 +1,595 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Bullfire.Cli",
+    "version": "1.3.0",
+    "description": "Command-line tool for Bullfire — inspect queues, retry failed jobs, drain stuck buckets, watch live events, and run admin actions against any Bullfire-backed Redis instance. Install with `dotnet tool install -g Bullfire.Cli` and run `bullfire --help`."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Bullfire CLI — inspect, manage, and observe Bullfire queues."
+  },
+  "options": [
+    {
+      "name": "--redis",
+      "recursive": false,
+      "hidden": false,
+      "description": "Redis connection string (e.g. \"localhost:6379\"). Falls back to BULLFIRE_REDIS env var.",
+      "arguments": [
+        {
+          "name": "REDIS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--prefix",
+      "recursive": false,
+      "hidden": false,
+      "description": "Bullfire key prefix.",
+      "arguments": [
+        {
+          "name": "PREFIX",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--json",
+      "recursive": false,
+      "hidden": false,
+      "description": "Emit JSON instead of human-readable text.",
+      "arguments": [
+        {
+          "name": "JSON",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-h",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "/h",
+        "--help",
+        "-?",
+        "/?"
+      ],
+      "arguments": [
+        {
+          "name": "H",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "ping",
+      "description": "Check that the Redis server is reachable."
+    },
+    {
+      "name": "status",
+      "description": "Show a snapshot of every job-state counter for a queue.",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "watch",
+      "description": "Stream live queue events to stdout (Ctrl-C to stop).",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stream starting position. \"$\" = only new events (default), \"0\" = full history replay.",
+          "arguments": [
+            {
+              "name": "FROM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "jobs",
+      "description": "List job ids in a state (paged).",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--state",
+          "recursive": false,
+          "hidden": false,
+          "description": "Job state (Wait, Paused, Active, Prioritized, Delayed, Completed, Failed)",
+          "arguments": [
+            {
+              "name": "STATE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "JobState",
+              "allowedValues": [
+                "Wait",
+                "Paused",
+                "Active",
+                "Prioritized",
+                "Delayed",
+                "Completed",
+                "Failed"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--limit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Max ids to return",
+          "arguments": [
+            {
+              "name": "LIMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "inspect",
+      "description": "Show one job's full state (hash + options).",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Job id",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "retry",
+      "description": "Re-enqueue a single failed job, or all failed jobs with --all.",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Single job id; omit when using --all",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--all",
+          "recursive": false,
+          "hidden": false,
+          "description": "Retry every job currently in :failed",
+          "arguments": [
+            {
+              "name": "ALL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "promote",
+      "description": "Move a delayed job to :wait immediately, regardless of its scheduled time.",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Job id",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "remove",
+      "description": "Remove a job from every state and delete its hash + lock + logs.",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Job id",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "drain",
+      "description": "Remove every job in selected states (defaults to Wait|Delayed|Prioritized).",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--states",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated states (e.g. Wait,Delayed,Failed) or 'All'.",
+          "arguments": [
+            {
+              "name": "STATES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "JobStates",
+              "allowedValues": [
+                "None",
+                "Wait",
+                "Paused",
+                "Active",
+                "Prioritized",
+                "Delayed",
+                "Completed",
+                "Failed",
+                "All"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pause",
+      "description": "Pause the queue. Workers stop processing until 'resume' is called.",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "resume",
+      "description": "Resume a paused queue.",
+      "options": [
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cron",
+      "description": "Inspect / remove cron schedulers.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List active schedulers for a queue.",
+          "options": [
+            {
+              "name": "--queue",
+              "recursive": false,
+              "hidden": false,
+              "description": "Queue name",
+              "arguments": [
+                {
+                  "name": "QUEUE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "description": "Remove a cron scheduler.",
+          "options": [
+            {
+              "name": "--queue",
+              "recursive": false,
+              "hidden": false,
+              "description": "Queue name",
+              "arguments": [
+                {
+                  "name": "QUEUE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Scheduler id",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "version",
+      "description": "Print the Bullfire library + CLI version."
+    }
+  ]
+}

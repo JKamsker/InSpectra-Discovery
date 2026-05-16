@@ -1,0 +1,985 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "sbtools",
+    "version": "1.5.0",
+    "description": "Command-line tool for Azure Service Bus operations: purge DLQ, resubmit messages, diagnose issues, and monitor queues."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Discovery",
+    "hookCapture": {
+      "cliFramework": "CommandLineParser",
+      "frameworkVersion": "2.9.1.0",
+      "patchTarget": "Parser.ParseArguments"
+    },
+    "cliFramework": "CommandLineParser"
+  },
+  "commands": [
+    {
+      "name": "dump-dlq",
+      "description": "Export DLQ messages to a JSON file",
+      "options": [
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fully qualified Service Bus namespace (e.g., mynamespace.servicebus.windows.net)",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--topic",
+          "recursive": false,
+          "hidden": false,
+          "description": "Topic name",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOPIC",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--subscription",
+          "recursive": false,
+          "hidden": false,
+          "description": "Subscription name",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SUBSCRIPTION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output JSON file path",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT_FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--before",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only include messages enqueued before this UTC datetime (ISO 8601 format)",
+          "arguments": [
+            {
+              "name": "BEFORE_ENQUEUE_TIME",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "DateTime"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Preview message count without writing to file [default: False]"
+        },
+        {
+          "name": "--interactive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Interactive mode: show categories and select which to dump [default: False]",
+          "aliases": [
+            "-i"
+          ]
+        },
+        {
+          "name": "--merge-similar",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merge similar DLQ categories using LCS-based clustering (interactive mode only) [default: False]"
+        },
+        {
+          "name": "--categorize-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Properties to categorize by. #Prop for system (falls back to application properties), $Prop for body. Default: #Subject,#DeadLetterReason",
+          "arguments": [
+            {
+              "name": "CATEGORIZE_BY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "type": "IEnumerable`1"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose output [default: False]",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ]
+    },
+    {
+      "name": "purge-dlq",
+      "description": "Purge messages from a dead letter queue",
+      "options": [
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fully qualified Service Bus namespace (e.g., mynamespace.servicebus.windows.net)",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--topic",
+          "recursive": false,
+          "hidden": false,
+          "description": "Topic name",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOPIC",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--subscription",
+          "recursive": false,
+          "hidden": false,
+          "description": "Subscription name",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SUBSCRIPTION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--before",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only purge messages enqueued before this UTC datetime (ISO 8601 format)",
+          "arguments": [
+            {
+              "name": "BEFORE_ENQUEUE_TIME",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "DateTime"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Preview message count without purging [default: False]"
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose output [default: False]",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--interactive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Interactive mode: show categories and select which to purge [default: False]",
+          "aliases": [
+            "-i"
+          ]
+        },
+        {
+          "name": "--merge-similar",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merge similar DLQ categories using LCS-based clustering (interactive mode only) [default: False]"
+        },
+        {
+          "name": "--categorize-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Properties to categorize by. #Prop for system (falls back to application properties), $Prop for body. Default: #Subject,#DeadLetterReason",
+          "arguments": [
+            {
+              "name": "CATEGORIZE_BY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "type": "IEnumerable`1"
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ]
+    },
+    {
+      "name": "resubmit-dlq",
+      "description": "Resubmit messages from a dead letter queue back to the main queue",
+      "options": [
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fully qualified Service Bus namespace (e.g., mynamespace.servicebus.windows.net)",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--topic",
+          "recursive": false,
+          "hidden": false,
+          "description": "Topic name",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOPIC",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--subscription",
+          "recursive": false,
+          "hidden": false,
+          "description": "Subscription name",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SUBSCRIPTION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--before",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only resubmit messages enqueued before this UTC datetime (ISO 8601 format)",
+          "arguments": [
+            {
+              "name": "BEFORE_ENQUEUE_TIME",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "DateTime"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Preview message count without resubmitting [default: False]"
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose output [default: False]",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--interactive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Interactive mode: show categories and select which to resubmit [default: False]",
+          "aliases": [
+            "-i"
+          ]
+        },
+        {
+          "name": "--target-queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target queue to resubmit messages to (defaults to source queue)",
+          "arguments": [
+            {
+              "name": "TARGET_QUEUE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target-topic",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target topic to resubmit messages to (defaults to source topic)",
+          "arguments": [
+            {
+              "name": "TARGET_TOPIC",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--merge-similar",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merge similar categories by replacing parameterized values (GUIDs, numbers) with wildcards [default: False]"
+        },
+        {
+          "name": "--categorize-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Properties to categorize by. #Prop for system (falls back to application properties), $Prop for body. Default: #Subject,#DeadLetterReason",
+          "arguments": [
+            {
+              "name": "CATEGORIZE_BY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "type": "IEnumerable`1"
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ]
+    },
+    {
+      "name": "diagnose-dlq",
+      "description": "Diagnose DLQ messages by correlating with Application Insights telemetry",
+      "options": [
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fully qualified Service Bus namespace (e.g., mynamespace.servicebus.windows.net)",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--queue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUEUE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--topic",
+          "recursive": false,
+          "hidden": false,
+          "description": "Topic name",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOPIC",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--subscription",
+          "recursive": false,
+          "hidden": false,
+          "description": "Subscription name",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SUBSCRIPTION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app-insights",
+          "recursive": false,
+          "hidden": false,
+          "description": "Application Insights resource ID (e.g., /subscriptions/.../resourceGroups/.../providers/microsoft.insights/components/...). If omitted, basic diagnostic using dead letter reasons is performed.",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "APP_INSIGHTS_RESOURCE_ID",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output JSON file path (optional, prints to console if not specified)",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT_FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--before",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only include messages enqueued before this UTC datetime (ISO 8601 format)",
+          "arguments": [
+            {
+              "name": "BEFORE_ENQUEUE_TIME",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "DateTime"
+            }
+          ]
+        },
+        {
+          "name": "--max-messages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of messages to diagnose [default: 1000]",
+          "arguments": [
+            {
+              "name": "MAX_MESSAGES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--interactive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Interactive mode: show categories and select which to diagnose [default: False]",
+          "aliases": [
+            "-i"
+          ]
+        },
+        {
+          "name": "--merge-similar",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merge similar DLQ categories using LCS-based clustering (interactive mode only) [default: False]"
+        },
+        {
+          "name": "--categorize-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Properties to categorize by. #Prop for system (falls back to application properties), $Prop for body. Default: #Subject,#DeadLetterReason",
+          "arguments": [
+            {
+              "name": "CATEGORIZE_BY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 2147483647
+              },
+              "type": "IEnumerable`1"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose output [default: False]",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ]
+    },
+    {
+      "name": "monitor-queues",
+      "description": "Monitor Service Bus queue statistics in a live-updating console table",
+      "options": [
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fully qualified Service Bus namespace (e.g., mynamespace.servicebus.windows.net)",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--filter",
+          "recursive": false,
+          "hidden": false,
+          "description": "Queue name filter (wildcards * and ? supported, or contains match)",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FILTER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--refresh-interval",
+          "recursive": false,
+          "hidden": false,
+          "description": "Refresh interval in seconds (minimum: 1) [default: 5]",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "REFRESH_INTERVAL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose output [default: False]",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ]
+    },
+    {
+      "name": "monitor-subscriptions",
+      "description": "Monitor Service Bus topic subscription statistics in a live-updating console table",
+      "options": [
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fully qualified Service Bus namespace (e.g., mynamespace.servicebus.windows.net)",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--topic",
+          "recursive": false,
+          "hidden": false,
+          "description": "Topic name filter (wildcards * and ? supported, or contains match)",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TOPIC_FILTER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--subscription",
+          "recursive": false,
+          "hidden": false,
+          "description": "Subscription name filter (wildcards * and ? supported, or contains match)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SUBSCRIPTION_FILTER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--refresh-interval",
+          "recursive": false,
+          "hidden": false,
+          "description": "Refresh interval in seconds (minimum: 1) [default: 5]",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "REFRESH_INTERVAL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose output [default: False]",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4717 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "GauntletCI.Cli",
+    "version": "2.2.0",
+    "description": "GauntletCI is a .NET pre-commit and PR integration gate that evaluates diffs against 42 behavioral-change rules: catching unvalidated changes, missing tests, async deadlock risk, security risks, and resource lifecycle violations before code is committed or merged. Optional local LLM enrichment via Ollama. Built-in MCP server for AI assistant integration. Fully offline: no data leaves your machine. Open source CodeRabbit alternative with deterministic, auditable findings."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "GauntletCI: deterministic pre-commit risk detection engine"
+  },
+  "options": [
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-h",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "/h",
+        "--help",
+        "-?",
+        "/?"
+      ],
+      "arguments": [
+        {
+          "name": "H",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "analyze",
+      "description": "Analyse a git diff for pre-commit risks",
+      "options": [
+        {
+          "name": "--diff",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a .diff file",
+          "arguments": [
+            {
+              "name": "DIFF",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--commit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Commit SHA to analyse",
+          "arguments": [
+            {
+              "name": "COMMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--staged",
+          "recursive": false,
+          "hidden": false,
+          "description": "Analyse staged changes (git diff --cached)",
+          "arguments": [
+            {
+              "name": "STAGED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--unstaged",
+          "recursive": false,
+          "hidden": false,
+          "description": "Analyse unstaged changes (git diff)",
+          "arguments": [
+            {
+              "name": "UNSTAGED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--all-changes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Analyse all local changes: staged + unstaged (git diff HEAD)",
+          "arguments": [
+            {
+              "name": "ALL_CHANGES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repository root (defaults to current directory)",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text, json, or sarif",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-llm",
+          "recursive": false,
+          "hidden": true,
+          "description": "Disable LLM enrichment (deprecated: LLM is now opt-in via --with-llm)",
+          "arguments": [
+            {
+              "name": "NO_LLM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--with-llm",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable LLM enrichment of High-confidence findings (requires 'gauntletci model download', adds latency)",
+          "arguments": [
+            {
+              "name": "WITH_LLM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--ascii",
+          "recursive": false,
+          "hidden": false,
+          "description": "Use ASCII-only output (for terminals without Unicode support)",
+          "arguments": [
+            {
+              "name": "ASCII",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-banner",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable ASCII banner",
+          "arguments": [
+            {
+              "name": "NO_BANNER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--github-annotations",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit GitHub Actions workflow commands for inline PR annotations",
+          "arguments": [
+            {
+              "name": "GITHUB_ANNOTATIONS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--github-pr-comments",
+          "recursive": false,
+          "hidden": false,
+          "description": "Post findings as a GitHub PR review with inline comments (requires pull-requests: write permission)",
+          "arguments": [
+            {
+              "name": "GITHUB_PR_COMMENTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--with-expert-context",
+          "recursive": false,
+          "hidden": false,
+          "description": "Attach matching expert facts from the local vector store to findings (requires 'gauntletci llm seed')",
+          "arguments": [
+            {
+              "name": "WITH_EXPERT_CONTEXT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show Info-severity findings in addition to Warn and Block",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--severity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum severity to display: info, warn, block",
+          "arguments": [
+            {
+              "name": "SEVERITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--sensitivity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Confidence-based filter threshold: strict (Block+High/Medium only), balanced (default: Block-all + Warn+High/Medium), permissive (all Block and Warn)",
+          "arguments": [
+            {
+              "name": "SENSITIVITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ignore the baseline file and show all findings",
+          "arguments": [
+            {
+              "name": "NO_BASELINE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--show-context",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include N surrounding diff lines around each finding evidence",
+          "arguments": [
+            {
+              "name": "SHOW_CONTEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--pr-comment-suggest",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print PR review comment body to stdout; when used without --github-pr-comments this avoids posting to the GitHub API",
+          "arguments": [
+            {
+              "name": "PR_COMMENT_SUGGEST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--notify-slack",
+          "recursive": false,
+          "hidden": false,
+          "description": "Slack Incoming Webhook URL (or set GAUNTLETCI_SLACK_WEBHOOK env var). Posts Block findings to Slack.",
+          "arguments": [
+            {
+              "name": "NOTIFY_SLACK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--notify-teams",
+          "recursive": false,
+          "hidden": false,
+          "description": "Teams Incoming Webhook URL (or set GAUNTLETCI_TEAMS_WEBHOOK env var). Posts Block findings to Teams.",
+          "arguments": [
+            {
+              "name": "NOTIFY_TEAMS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--with-coverage",
+          "recursive": false,
+          "hidden": false,
+          "description": "Correlate findings with Codecov coverage data (requires CODECOV_TOKEN env var)",
+          "arguments": [
+            {
+              "name": "WITH_COVERAGE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--github-checks",
+          "recursive": false,
+          "hidden": false,
+          "description": "Post findings as a GitHub Checks API check run with annotations (requires checks: write permission)",
+          "arguments": [
+            {
+              "name": "GITHUB_CHECKS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--with-ticket-context",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fetch ticket info from Jira/Linear/GitHub Issues and attach to findings (reads branch name and JIRA_*, LINEAR_API_KEY, or GITHUB_TOKEN)",
+          "arguments": [
+            {
+              "name": "WITH_TICKET_CONTEXT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "audit",
+      "description": "Manage the local audit trail of GauntletCI scans",
+      "commands": [
+        {
+          "name": "export",
+          "description": "Export the audit log as JSON or CSV",
+          "options": [
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: json or csv",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write to file instead of stdout",
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--since",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include scans on or after this date (ISO 8601, e.g. 2025-01-01)",
+              "arguments": [
+                {
+                  "name": "SINCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DateTimeOffset"
+                }
+              ]
+            },
+            {
+              "name": "--last",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include only the last N scans",
+              "arguments": [
+                {
+                  "name": "LAST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "stats",
+          "description": "Show a summary of recent scans",
+          "options": [
+            {
+              "name": "--since",
+              "recursive": false,
+              "hidden": false,
+              "description": "Summarise scans on or after this date (ISO 8601)",
+              "arguments": [
+                {
+                  "name": "SINCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DateTimeOffset"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "baseline",
+      "description": "Manage analysis baselines to suppress known findings",
+      "commands": [
+        {
+          "name": "create",
+          "description": "Run analysis on the current diff and record all findings as the new baseline",
+          "options": [
+            {
+              "name": "--diff",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to a .diff file",
+              "arguments": [
+                {
+                  "name": "DIFF",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--commit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Commit SHA to analyse",
+              "arguments": [
+                {
+                  "name": "COMMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--staged",
+              "recursive": false,
+              "hidden": false,
+              "description": "Analyse staged changes (git diff --cached)",
+              "arguments": [
+                {
+                  "name": "STAGED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--unstaged",
+              "recursive": false,
+              "hidden": false,
+              "description": "Analyse unstaged changes (git diff)",
+              "arguments": [
+                {
+                  "name": "UNSTAGED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--all-changes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Analyse all local changes: staged + unstaged",
+              "arguments": [
+                {
+                  "name": "ALL_CHANGES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository root (defaults to current directory)",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "clear",
+          "description": "Delete the current baseline file",
+          "options": [
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository root (defaults to current directory)",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Display the current baseline metadata and fingerprints",
+          "options": [
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository root (defaults to current directory)",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "corpus",
+      "description": "Manage the GauntletCI fixture corpus.\r\n\r\nTypical workflow:\r\n  1. corpus discover --provider gh-search --repo-allowlist owner/repo\r\n  2. corpus batch-hydrate --limit 50\r\n  3. corpus label-all --tier discovery\r\n  4. corpus run-all --tier discovery\r\n  5. corpus score\r\n  6. corpus report",
+      "commands": [
+        {
+          "name": "add-pr",
+          "description": "Hydrate a pull request and add it to the corpus",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "GitHub PR URL (https://github.com/owner/repo/pull/NNN)",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "normalize",
+          "description": "Re-normalize a fixture from its existing raw/ snapshots",
+          "options": [
+            {
+              "name": "--fixture",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fixture ID (e.g. owner_repo_pr1234)",
+              "arguments": [
+                {
+                  "name": "FIXTURE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tier",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fixture tier (gold|silver|discovery)",
+              "arguments": [
+                {
+                  "name": "TIER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repo owner override",
+              "arguments": [
+                {
+                  "name": "OWNER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repo name override",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--pr",
+              "recursive": false,
+              "hidden": false,
+              "description": "PR number override",
+              "arguments": [
+                {
+                  "name": "PR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "Enumerate and filter corpus fixtures",
+          "options": [
+            {
+              "name": "--tier",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by tier (gold|silver|discovery)",
+              "arguments": [
+                {
+                  "name": "TIER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--language",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by language (e.g. cs, py)",
+              "arguments": [
+                {
+                  "name": "LANGUAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tag",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by tag (repeatable or comma-separated)",
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: text or json",
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Inspect a single corpus fixture: metadata, findings, labels, and diff stats",
+          "options": [
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FIXTURE_ID",
+              "description": "Fixture ID to inspect",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "description": "Show overall corpus health: fixture counts, label coverage, run coverage",
+          "options": [
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "batch-hydrate",
+          "description": "Bulk hydrate pending candidates from the corpus database",
+          "options": [
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum number of candidates to hydrate",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--tier",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target tier (gold|silver|discovery)",
+              "arguments": [
+                {
+                  "name": "TIER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print what would be processed without hydrating",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "discover",
+          "description": "Discover pull request candidates and persist them to the corpus database",
+          "options": [
+            {
+              "name": "--provider",
+              "recursive": false,
+              "hidden": false,
+              "description": "Discovery provider: gh-search or gh-archive",
+              "arguments": [
+                {
+                  "name": "PROVIDER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum candidates to fetch",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--language",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by programming language (e.g. cs, python)",
+              "arguments": [
+                {
+                  "name": "LANGUAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-stars",
+              "recursive": false,
+              "hidden": false,
+              "description": "Minimum stars on the repository",
+              "arguments": [
+                {
+                  "name": "MIN_STARS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--min-comments",
+              "recursive": false,
+              "hidden": false,
+              "description": "Minimum review comment count",
+              "arguments": [
+                {
+                  "name": "MIN_COMMENTS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--start-date",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by merge/event date (inclusive, UTC)",
+              "arguments": [
+                {
+                  "name": "START_DATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DateTime"
+                }
+              ]
+            },
+            {
+              "name": "--end-date",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by merge/event date upper bound (inclusive, UTC)",
+              "arguments": [
+                {
+                  "name": "END_DATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DateTime"
+                }
+              ]
+            },
+            {
+              "name": "--repo-blocklist",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repos to exclude in owner/repo format (repeatable)",
+              "arguments": [
+                {
+                  "name": "REPO_BLOCKLIST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--repo-allowlist",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only discover from these repos in owner/repo format (repeatable). Required when --provider gh-search.",
+              "arguments": [
+                {
+                  "name": "REPO_ALLOWLIST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--per-repo-limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Max candidates per repo when using allowlist (0 = unlimited, shared across --limit)",
+              "arguments": [
+                {
+                  "name": "PER_REPO_LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "run",
+          "description": "Run GCI rules against a single corpus fixture",
+          "options": [
+            {
+              "name": "--fixture",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fixture ID to run rules against",
+              "arguments": [
+                {
+                  "name": "FIXTURE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "run-all",
+          "description": "Run GCI rules against all (or filtered) corpus fixtures",
+          "options": [
+            {
+              "name": "--tier",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by tier (gold|silver|discovery)",
+              "arguments": [
+                {
+                  "name": "TIER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "score",
+          "description": "Compute rule scorecards from corpus fixture results",
+          "options": [
+            {
+              "name": "--rule",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by rule ID (e.g. GCI0001)",
+              "arguments": [
+                {
+                  "name": "RULE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tier",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by tier (gold|silver|discovery)",
+              "arguments": [
+                {
+                  "name": "TIER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "report",
+          "description": "Export a markdown scorecard report for all rules",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output file path for the markdown report",
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "label",
+          "description": "Apply silver heuristic labels to a single corpus fixture",
+          "options": [
+            {
+              "name": "--fixture",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fixture ID to label",
+              "arguments": [
+                {
+                  "name": "FIXTURE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--overwrite",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite existing HumanReview/Seed labels with heuristic labels",
+              "arguments": [
+                {
+                  "name": "OVERWRITE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "label-all",
+          "description": "Apply silver heuristic labels to all fixtures in a tier",
+          "options": [
+            {
+              "name": "--tier",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fixture tier to process (gold|silver|discovery)",
+              "arguments": [
+                {
+                  "name": "TIER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--overwrite",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite existing HumanReview/Seed labels with heuristic labels",
+              "arguments": [
+                {
+                  "name": "OVERWRITE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print per-rule label breakdown for each fixture",
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--llm-label",
+              "recursive": false,
+              "hidden": false,
+              "description": "Enable LLM-based Tier 3 labeling",
+              "arguments": [
+                {
+                  "name": "LLM_LABEL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--llm-provider",
+              "recursive": false,
+              "hidden": false,
+              "description": "LLM provider: ollama | anthropic | github-models | none",
+              "arguments": [
+                {
+                  "name": "LLM_PROVIDER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--llm-model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Model override (provider default used if empty)",
+              "arguments": [
+                {
+                  "name": "LLM_MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--llm-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ollama base URL(s). Repeat the flag or pass a comma-separated list. Falls back to corpus.ollamaUrls in .gauntletci.json.",
+              "arguments": [
+                {
+                  "name": "LLM_URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "reset-stats",
+          "description": "Delete rule run, scoring, and evaluation data from the corpus database",
+          "options": [
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--rule",
+              "recursive": false,
+              "hidden": false,
+              "description": "Limit reset to a specific rule ID (e.g. GCI0001)",
+              "arguments": [
+                {
+                  "name": "RULE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--confirm",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required: confirm you want to delete run and scoring data",
+              "arguments": [
+                {
+                  "name": "CONFIRM",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--include-labels",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also clear auto-generated expected_findings (Heuristic, FilePathCorrelation, LlmReview). Preserves HumanReview and Seed labels.",
+              "arguments": [
+                {
+                  "name": "INCLUDE_LABELS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "purge",
+          "description": "Remove low-quality fixtures from the corpus (language mismatch, no review comments, blocklisted repos)",
+          "options": [
+            {
+              "name": "--language",
+              "recursive": false,
+              "hidden": false,
+              "description": "Remove fixtures whose inferred language doesn't match this value. Pass empty to skip language filter.",
+              "arguments": [
+                {
+                  "name": "LANGUAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--require-review-comments",
+              "recursive": false,
+              "hidden": false,
+              "description": "Remove fixtures that have no inline review comments",
+              "arguments": [
+                {
+                  "name": "REQUIRE_REVIEW_COMMENTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--repo-blocklist",
+              "recursive": false,
+              "hidden": false,
+              "description": "Remove fixtures from these owner/repo names (e.g. 'Goob-Station/Goob-Station')",
+              "arguments": [
+                {
+                  "name": "REPO_BLOCKLIST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print what would be purged without making changes",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "errors",
+          "description": "Show recent pipeline errors logged to the corpus database",
+          "options": [
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--step",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by pipeline step (e.g. discover)",
+              "arguments": [
+                {
+                  "name": "STEP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Max rows to show",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "rejected-repos",
+          "description": "List repositories permanently rejected during corpus hydration",
+          "options": [
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--names-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print only owner/repo names, one per line",
+              "arguments": [
+                {
+                  "name": "NAMES_ONLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "doctor",
+          "description": "Check GitHub API connectivity, rate limits, and recent pipeline errors",
+          "options": [
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "GitHub token (overrides GITHUB_TOKEN env var)",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "issues",
+          "description": "GitHub Issues corpus operations",
+          "commands": [
+            {
+              "name": "search",
+              "description": "Search for corpus candidates via closed GitHub issues",
+              "options": [
+                {
+                  "name": "--language",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Programming language filter (e.g. cs, python)",
+                  "arguments": [
+                    {
+                      "name": "LANGUAGE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Maximum candidates to fetch",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--labels",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Comma-separated GitHub issue labels to search for",
+                  "arguments": [
+                    {
+                      "name": "LABELS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "maintainers",
+          "description": "Expert maintainer knowledge acquisition",
+          "commands": [
+            {
+              "name": "fetch",
+              "description": "Fetch high-signal PRs/issues from top OSS contributors",
+              "options": [
+                {
+                  "name": "--output",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Output path for NDJSON records",
+                  "arguments": [
+                    {
+                      "name": "OUTPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--max-per-label",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max search results per label per repo",
+                  "arguments": [
+                    {
+                      "name": "MAX_PER_LABEL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Additional repos to fetch (format: owner/repo). Can specify multiple times.",
+                  "arguments": [
+                    {
+                      "name": "REPO",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 100000
+                      },
+                      "type": "String[]"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "fetch-diffs",
+          "description": "Fetch missing diff.patch files for existing fixtures from GitHub",
+          "options": [
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to corpus SQLite database",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fixtures",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to fixtures root directory",
+              "arguments": [
+                {
+                  "name": "FIXTURES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tier",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fixture tier to process (Silver|discovery|gold)",
+              "arguments": [
+                {
+                  "name": "TIER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum number of diffs to fetch (default: all)",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--delay-ms",
+              "recursive": false,
+              "hidden": false,
+              "description": "Delay in ms between GitHub API requests",
+              "arguments": [
+                {
+                  "name": "DELAY_MS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "List missing diffs without fetching",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "sonarcloud",
+          "description": "SonarCloud external validation operations",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Cross-reference corpus fixtures against SonarCloud open issues",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to fixtures root folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "codescanning",
+          "description": "GitHub Code Scanning (CodeQL) external validation operations",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Cross-reference corpus fixtures against GitHub CodeQL open alerts (requires GITHUB_TOKEN)",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to fixtures root folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "check-repos",
+              "description": "Check which corpus repos have GitHub Code Scanning (CodeQL) enabled",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to fixtures root directory",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier used to determine repo list (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repos",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Additional repos to check (owner/repo), comma-separated",
+                  "arguments": [
+                    {
+                      "name": "REPOS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "String[]"
+                    }
+                  ]
+                },
+                {
+                  "name": "--seed-candidates",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Discover and add this many candidate PRs per CodeQL-enabled repo",
+                  "arguments": [
+                    {
+                      "name": "SEED_CANDIDATES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "dependabot",
+          "description": "Dependabot Tier 1 oracle operations",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Check whether each fixture PR was authored by Dependabot (Tier 1 oracle)",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delay-ms",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Delay between GitHub API calls (ms)",
+                  "arguments": [
+                    {
+                      "name": "DELAY_MS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "discover",
+              "description": "Scan GH Archive to find Dependabot PRs in C# repos and seed them as candidates",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--start-date",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Start date for GH Archive scan (yyyy-MM-dd)",
+                  "arguments": [
+                    {
+                      "name": "START_DATE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--end-date",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "End date for GH Archive scan (yyyy-MM-dd)",
+                  "arguments": [
+                    {
+                      "name": "END_DATE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max Dependabot PR candidates to seed",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "social-signal",
+          "description": "PR review social-signal Tier 2 oracle operations",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Fetch PR review metadata (time, reviewers, comments) and compute social-signal score (Tier 2 oracle)",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delay-ms",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Delay between GitHub API calls (ms)",
+                  "arguments": [
+                    {
+                      "name": "DELAY_MS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "composite-label",
+          "description": "Composite ground-truth labeling operations",
+          "commands": [
+            {
+              "name": "apply",
+              "description": "Combine all enricher signals into composite ground-truth labels (HIGH_RISK_GHOST, DEPENDABOT_FIX, SILENT_LOGIC_CHANGE, etc.)",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to label (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--update-expected-findings",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Seed expected_findings rows from composite labels (INSERT OR IGNORE - never overwrites gold labels)",
+                  "arguments": [
+                    {
+                      "name": "UPDATE_EXPECTED_FINDINGS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "semgrep",
+          "description": "Semgrep scanner enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Run Semgrep C# ruleset against each fixture's added lines (Tier 1 scanner oracle)",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--config",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Semgrep config (e.g. auto, p/default, p/owasp-top-ten)",
+                  "arguments": [
+                    {
+                      "name": "CONFIG",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "structural",
+          "description": "Structural/file-churn enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Detect sensitive file paths and fetch file-level commit churn from GitHub (Tier 3 structural enricher)",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delay-ms",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Delay between GitHub API calls (ms)",
+                  "arguments": [
+                    {
+                      "name": "DELAY_MS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "nuget-advisory",
+          "description": "NuGet advisory GHSA vulnerability enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Query GHSA for NuGet vulnerabilities in changed packages (GraphQL advisory enricher)",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delay-ms",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Delay between GitHub GraphQL API calls (ms)",
+                  "arguments": [
+                    {
+                      "name": "DELAY_MS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "file-churn",
+          "description": "90-day per-file commit churn hotspot enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Fetch 90-day per-file commit churn from GitHub and compute hotspot scores",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delay-ms",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Delay between GitHub API calls (ms)",
+                  "arguments": [
+                    {
+                      "name": "DELAY_MS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "review-nlp",
+          "description": "Review comment NLP taxonomy enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Fetch PR review comments and apply keyword taxonomy to extract rule intent signals",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delay-ms",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Delay between GitHub API calls (ms)",
+                  "arguments": [
+                    {
+                      "name": "DELAY_MS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "test-coverage",
+          "description": "Pure-diff test coverage gap enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Classify changed .cs files as production vs test and detect test coverage gaps",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "diff-entropy",
+          "description": "Pure-diff Kamei entropy signal enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Compute Kamei et al. JIT defect prediction entropy features from diffs",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "ef-migration",
+          "description": "Pure-diff EF Core migration and SQL DDL detection",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Detect EF Core migration files and SQL DDL changes in diffs",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pr-description",
+          "description": "PR description quality enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Fetch PR title/body quality signals (linked issue, WIP keywords, empty body) from GitHub API",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delay-ms",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Delay between GitHub API calls (ms)",
+                  "arguments": [
+                    {
+                      "name": "DELAY_MS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "author-experience",
+          "description": "PR author experience and first-contributor enrichment",
+          "commands": [
+            {
+              "name": "enrich",
+              "description": "Fetch PR author commit history and first-contributor status from GitHub API",
+              "options": [
+                {
+                  "name": "--db",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path to corpus SQLite database",
+                  "arguments": [
+                    {
+                      "name": "DB",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fixtures",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Base path to fixtures folder",
+                  "arguments": [
+                    {
+                      "name": "FIXTURES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tier",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Fixture tier to enrich (Silver|discovery|gold)",
+                  "arguments": [
+                    {
+                      "name": "TIER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Max fixtures to process (0 = all)",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--delay-ms",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Delay between fixture GitHub API calls (ms)",
+                  "arguments": [
+                    {
+                      "name": "DELAY_MS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "doctor",
+      "description": "Check GauntletCI environment: config, rules, Ollama connectivity, and baseline status",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repository root (defaults to current directory)",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "description": "Create a default .gauntletci.json configuration file and install pre-commit hooks",
+      "options": [
+        {
+          "name": "--dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to create .gauntletci.json in",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Overwrite existing hook files if present",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-telemetry",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip telemetry prompt during init",
+          "arguments": [
+            {
+              "name": "NO_TELEMETRY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ignore",
+      "description": "Add a suppression entry to .gauntletci-ignore",
+      "options": [
+        {
+          "name": "--path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Optional glob path pattern to restrict suppression (e.g. src/Generated/**)",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repository root (defaults to current directory)",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "RULE_ID",
+          "description": "The rule ID to suppress (e.g. GCI0003)",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "description": "Model Context Protocol server integration",
+      "commands": [
+        {
+          "name": "serve",
+          "description": "Start the GauntletCI MCP server over stdio",
+          "options": [
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository root path (defaults to current directory)",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ollama-model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ollama model name to use for LLM enrichment of findings (e.g. phi3, llama3.2). Omit to disable enrichment.",
+              "arguments": [
+                {
+                  "name": "OLLAMA_MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ollama-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ollama base URL",
+              "arguments": [
+                {
+                  "name": "OLLAMA_URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "model",
+      "description": "Manage the local LLM model used for finding enrichment",
+      "commands": [
+        {
+          "name": "download",
+          "description": "Download the Phi-4 Mini INT4 ONNX model (~2 GB) for offline enrichment",
+          "options": [
+            {
+              "name": "--dir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory to download the model into",
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "description": "Show whether the local LLM model is downloaded and ready"
+        }
+      ]
+    },
+    {
+      "name": "license",
+      "description": "Inspect the active GauntletCI license",
+      "commands": [
+        {
+          "name": "status",
+          "description": "Show license tier, validity, and subscription status",
+          "options": [
+            {
+              "name": "--offline",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip remote subscription check (for air-gapped environments)",
+              "arguments": [
+                {
+                  "name": "OFFLINE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "renew",
+          "description": "Instructions for renewing or replacing your license token"
+        }
+      ]
+    },
+    {
+      "name": "llm",
+      "description": "Expert knowledge distillation and embedding operations",
+      "commands": [
+        {
+          "name": "seed",
+          "description": "Seed the expert vector store with hand-curated .NET expert facts",
+          "options": [
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to expert embeddings SQLite DB",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--embedding-model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ollama embedding model name",
+              "arguments": [
+                {
+                  "name": "EMBEDDING_MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ollama-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ollama base URL",
+              "arguments": [
+                {
+                  "name": "OLLAMA_URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "distill",
+          "description": "Extract expert facts from maintainer records and store as embeddings",
+          "options": [
+            {
+              "name": "--input",
+              "recursive": false,
+              "hidden": false,
+              "description": "NDJSON file from 'corpus maintainers fetch'",
+              "arguments": [
+                {
+                  "name": "INPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to expert embeddings SQLite DB",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--max",
+              "recursive": false,
+              "hidden": false,
+              "description": "Max records to distil (sorted by reactions)",
+              "arguments": [
+                {
+                  "name": "MAX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--ollama-model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ollama model for fact extraction",
+              "arguments": [
+                {
+                  "name": "OLLAMA_MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--embedding-model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ollama embedding model",
+              "arguments": [
+                {
+                  "name": "EMBEDDING_MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ollama-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ollama base URL",
+              "arguments": [
+                {
+                  "name": "OLLAMA_URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "postmortem",
+      "description": "Analyse a past commit: see what GauntletCI would have caught",
+      "options": [
+        {
+          "name": "--commit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Commit SHA to analyse (required)",
+          "arguments": [
+            {
+              "name": "COMMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repository root (defaults to current directory)",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-banner",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable banner",
+          "arguments": [
+            {
+              "name": "NO_BANNER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--ascii",
+          "recursive": false,
+          "hidden": false,
+          "description": "ASCII-only output",
+          "arguments": [
+            {
+              "name": "ASCII",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "trace",
+      "description": "Post-mortem incident correlation: correlates deploy diff with PagerDuty/Opsgenie incidents",
+      "options": [
+        {
+          "name": "--deploy-tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "Git tag or commit SHA representing the deploy baseline",
+          "arguments": [
+            {
+              "name": "DEPLOY_TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--from-commit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit base commit SHA (alternative to --deploy-tag)",
+          "arguments": [
+            {
+              "name": "FROM_COMMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Time window for incident fetching, e.g. 24h, 7d, 30m (default: 24h)",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repository root (default: current directory)",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--pd-token",
+          "recursive": false,
+          "hidden": false,
+          "description": "PagerDuty API token (or set PAGERDUTY_TOKEN env var)",
+          "arguments": [
+            {
+              "name": "PD_TOKEN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--og-token",
+          "recursive": false,
+          "hidden": false,
+          "description": "Opsgenie API key (or set OPSGENIE_TOKEN env var)",
+          "arguments": [
+            {
+              "name": "OG_TOKEN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--post-to-pd-incident",
+          "recursive": false,
+          "hidden": false,
+          "description": "Post the heatmap as a note on this PagerDuty incident ID",
+          "arguments": [
+            {
+              "name": "POST_TO_PD_INCIDENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-banner",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable banner",
+          "arguments": [
+            {
+              "name": "NO_BANNER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--ascii",
+          "recursive": false,
+          "hidden": false,
+          "description": "ASCII-only output",
+          "arguments": [
+            {
+              "name": "ASCII",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "feedback",
+      "description": "Rate the quality of the last analysis (up = useful, down = too noisy)",
+      "arguments": [
+        {
+          "name": "VOTE",
+          "description": "up or down",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "telemetry",
+      "description": "Manage telemetry preferences",
+      "options": [
+        {
+          "name": "--status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show current telemetry status",
+          "arguments": [
+            {
+              "name": "STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Set telemetry mode: shared, local, or off",
+          "arguments": [
+            {
+              "name": "MODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--enable",
+          "recursive": false,
+          "hidden": false,
+          "description": "Opt in to shared telemetry (alias for --mode shared)",
+          "arguments": [
+            {
+              "name": "ENABLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--disable",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable telemetry (alias for --mode off)",
+          "arguments": [
+            {
+              "name": "DISABLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
