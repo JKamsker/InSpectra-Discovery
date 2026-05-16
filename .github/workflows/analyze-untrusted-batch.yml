@@ -1,0 +1,234 @@
+name: Analyze Untrusted Batch
+run-name: >-
+  Analyze Untrusted Batch / ${{ inputs.batch_id || github.event.client_payload.batch_id || 'manual' }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_id:
+        description: Batch id or generated queue batch id to execute
+        required: false
+        default: ""
+        type: string
+      queue_path:
+        description: Optional queue JSON path to slice instead of a checked-in batch manifest
+        required: false
+        default: ""
+        type: string
+      offset:
+        description: Queue item offset for queue-driven runs
+        required: false
+        default: "0"
+        type: string
+      take:
+        description: Queue batch size for queue-driven runs
+        required: false
+        default: ""
+        type: string
+      state_branch:
+        description: Branch that stores discovery queue state
+        required: false
+        default: automation/discovery-state
+        type: string
+      target_branch:
+        description: Base branch for the eventual promotion pull request
+        required: false
+        default: "main"
+        type: string
+  repository_dispatch:
+    types:
+      - analyze-untrusted-batch
+
+permissions:
+  contents: read
+
+concurrency:
+  group: analyze-untrusted-${{ inputs.batch_id || github.event.client_payload.batch_id }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      batch_id: ${{ steps.plan.outputs.batch_id }}
+      selected_count: ${{ steps.plan.outputs.selected_count }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Build batch plan
+        id: plan
+        shell: pwsh
+        run: |
+          $batchId = if ('${{ inputs.batch_id }}') {
+            '${{ inputs.batch_id }}'
+          }
+          elseif ('${{ github.event.client_payload.batch_id }}') {
+            '${{ github.event.client_payload.batch_id }}'
+          }
+          else {
+            $null
+          }
+
+          $queuePath = if ('${{ inputs.queue_path }}') {
+            '${{ inputs.queue_path }}'
+          }
+          elseif ('${{ github.event.client_payload.queue_path }}') {
+            '${{ github.event.client_payload.queue_path }}'
+          }
+          else {
+            $null
+          }
+
+          $offset = if ('${{ inputs.offset }}') {
+            [int]'${{ inputs.offset }}'
+          }
+          elseif ('${{ github.event.client_payload.offset }}') {
+            [int]'${{ github.event.client_payload.offset }}'
+          }
+          else {
+            0
+          }
+
+          $take = if ('${{ inputs.take }}') {
+            [int]'${{ inputs.take }}'
+          }
+          elseif ('${{ github.event.client_payload.take }}') {
+            [int]'${{ github.event.client_payload.take }}'
+          }
+          else {
+            $null
+          }
+
+          $stateBranch = if ('${{ inputs.state_branch }}') {
+            '${{ inputs.state_branch }}'
+          }
+          elseif ('${{ github.event.client_payload.state_branch }}') {
+            '${{ github.event.client_payload.state_branch }}'
+          }
+          else {
+            'automation/discovery-state'
+          }
+
+          $targetBranch = if ('${{ inputs.target_branch }}') {
+            '${{ inputs.target_branch }}'
+          }
+          elseif ('${{ github.event.client_payload.target_branch }}') {
+            '${{ github.event.client_payload.target_branch }}'
+          }
+          else {
+            'main'
+          }
+
+          $planPath = Join-Path $env:RUNNER_TEMP 'expected.json'
+          if (-not [string]::IsNullOrWhiteSpace($queuePath)) {
+            if ([string]::IsNullOrWhiteSpace($batchId)) {
+              throw 'A queue-driven run requires batch_id.'
+            }
+
+            git fetch origin $stateBranch --depth=1
+            $queueContent = git show "FETCH_HEAD:$queuePath"
+            $materializedQueuePath = Join-Path $PWD $queuePath
+            $materializedQueueDirectory = Split-Path -Parent $materializedQueuePath
+            if ($materializedQueueDirectory) {
+              New-Item -ItemType Directory -Path $materializedQueueDirectory -Force | Out-Null
+            }
+
+            [System.IO.File]::WriteAllText(
+              $materializedQueuePath,
+              $queueContent + [Environment]::NewLine,
+              [System.Text.UTF8Encoding]::new($false))
+
+            $arguments = @{
+              QueuePath = $materializedQueuePath
+              BatchId = $batchId
+              OutputPath = $planPath
+              Offset = $offset
+              TargetBranch = $targetBranch
+            }
+
+            if ($null -ne $take) {
+              $arguments.Take = $take
+            }
+
+            ./scripts/Export-UntrustedBatchPlan.ps1 @arguments
+          }
+          else {
+            if ([string]::IsNullOrWhiteSpace($batchId)) {
+              throw 'No batch_id was provided.'
+            }
+
+            ./scripts/Export-UntrustedBatchPlan.ps1 `
+              -BatchPath "config/untrusted-batches/$batchId.json" `
+              -OutputPath $planPath `
+              -TargetBranch $targetBranch
+          }
+
+          $plan = Get-Content $planPath -Raw | ConvertFrom-Json
+          "batch_id=$($plan.batchId)" >> $env:GITHUB_OUTPUT
+          "selected_count=$($plan.selectedCount)" >> $env:GITHUB_OUTPUT
+          "matrix<<EOF" >> $env:GITHUB_OUTPUT
+          ((@($plan.items) | ConvertTo-Json -Compress -AsArray) ?? '[]') >> $env:GITHUB_OUTPUT
+          "EOF" >> $env:GITHUB_OUTPUT
+
+      - name: Upload expected plan
+        uses: actions/upload-artifact@v6
+        with:
+          name: plan-${{ steps.plan.outputs.batch_id }}
+          path: ${{ runner.temp }}/expected.json
+          if-no-files-found: error
+          retention-days: 7
+
+  analyze:
+    needs: plan
+    if: ${{ needs.plan.outputs.selected_count != '0' }}
+    runs-on: ${{ matrix.runsOn }}
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        include: ${{ fromJson(needs.plan.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Analyze package
+        shell: pwsh
+        env:
+          RESULT_ROOT: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
+        run: |
+          ./scripts/Invoke-UntrustedToolAnalysis.ps1 `
+            -PackageId '${{ matrix.packageId }}' `
+            -Version '${{ matrix.version }}' `
+            -OutputRoot $env:RESULT_ROOT `
+            -BatchId '${{ needs.plan.outputs.batch_id }}' `
+            -Attempt ${{ matrix.attempt }} `
+            -Source 'analyze-untrusted-batch'
+
+      - name: Upload analysis artifact
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.artifactName }}
+          path: ${{ runner.temp }}/analysis/${{ matrix.artifactName }}
+          if-no-files-found: error
+          retention-days: 7
