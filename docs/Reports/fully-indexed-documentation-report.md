@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-05-10 16:41:47+00:00
+Generated: 2026-05-20 17:35:47+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,16 +8,15 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 14
+Packages in scope: 13
 
 Fully documented: 5
 
-Incomplete: 9
+Incomplete: 8
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [CloudAwesome.FolkTune.Reviewer](#pkg-cloudawesome-folktune-reviewer) | 2026.4.1.1635 | ok | xml-ready | 6/6 | 31/31 | 0/0 | 0/5 | FAIL |
-| [cute](#pkg-cute) | 2.15.0 | ok | requires-interactive-authentication | 36/36 | 413/413 | 0/0 | 0/31 | FAIL |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
 | [DotCraft](#pkg-dotcraft) | 1.0.3 | ok | xml-ready | 2/2 | 7/7 | 0/0 | 0/1 | FAIL |
 | [jwmv](#pkg-jwmv) | 1.0.0 | ok | xml-ready | 16/16 | 0/18 | 0/7 | 16/16 | FAIL |
@@ -49,23 +48,6 @@ Incomplete: 9
 - Missing option descriptions: None
 - Missing argument descriptions: None
 - Missing leaf command examples: admin id-init, pick, review, session, stats
-
-<a id="pkg-cute"></a>
-### cute
-
-- Version: `2.15.0`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `requires-interactive-authentication`
-- Command documentation: `36/36`
-- Option documentation: `413/413`
-- Argument documentation: `0/0`
-- Leaf command examples: `0/31`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: app generate, chat, content delete, content download, content edit, content generate, content generate-test, content join, content publish, content replace, content set-default, content sync-api, content translate, content unpublish, content upload, eval content-generator, eval content-translator, eval naming, info, login, logout, server scheduler, server webhooks, type clone, type delete, type diff, type export, type import, type rename, type scaffold, version
 
 <a id="pkg-difflog"></a>
 ### DiffLog
