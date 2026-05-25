@@ -1,0 +1,845 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "YoutrackConsole",
+    "version": "1.1.0",
+    "description": "Out-of-the-box developer CLI for YouTrack: issues, search, comments, attachments, boards, sprints, and activity history."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "CLI client for the YouTrack REST API. Supports issue CRUD, comments, search, attachments, boards, sprints, projects, tags, and activity history. All commands accept --format (text|json|csv) and --json/--json-file for structured input."
+  },
+  "options": [
+    {
+      "name": "--format",
+      "recursive": false,
+      "hidden": false,
+      "description": "Output format: text or json.",
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "recursive": false,
+      "hidden": false,
+      "description": "Write diagnostic messages to standard error.",
+      "arguments": [
+        {
+          "name": "VERBOSE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--json",
+      "recursive": false,
+      "hidden": false,
+      "description": "JSON object with command parameters. Use '-' to read from stdin.",
+      "arguments": [
+        {
+          "name": "JSON",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--json-file",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to a UTF-8 JSON file with command parameters. Prefer this over --json when the payload contains non-ASCII characters (diacritics, bullets, em dashes), since host shells may lossy-encode piped stdin or inline JSON arguments.",
+      "arguments": [
+        {
+          "name": "JSON_FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "-h",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "/h",
+        "--help",
+        "-?",
+        "/?"
+      ],
+      "arguments": [
+        {
+          "name": "H",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "issue",
+      "description": "Issue operations: get, create, update, delete, search, attach files, manage attachments, link issues, run commands, and view history.",
+      "commands": [
+        {
+          "name": "get",
+          "description": "Show issue details including summary, description, custom fields, and links.",
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "create",
+          "description": "Create a new issue in a project with summary and optional description.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project short name (e.g. ACME).",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--summary",
+              "recursive": false,
+              "hidden": false,
+              "description": "Issue summary/title.",
+              "arguments": [
+                {
+                  "name": "SUMMARY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--description",
+              "recursive": false,
+              "hidden": false,
+              "description": "Issue description (markdown).",
+              "arguments": [
+                {
+                  "name": "DESCRIPTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "update",
+          "description": "Update a single issue field (summary, description, State, Priority, Assignee, etc.).",
+          "options": [
+            {
+              "name": "--field",
+              "recursive": false,
+              "hidden": false,
+              "description": "Field name (summary, description, State, Priority, Assignee).",
+              "arguments": [
+                {
+                  "name": "FIELD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--value",
+              "recursive": false,
+              "hidden": false,
+              "description": "New value.",
+              "arguments": [
+                {
+                  "name": "VALUE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "delete",
+          "description": "Permanently delete an issue. This action cannot be undone.",
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "attach",
+          "description": "Upload a file attachment to an issue.",
+          "options": [
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the file to attach.",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "attachments",
+          "description": "List and download file attachments on issues.",
+          "commands": [
+            {
+              "name": "list",
+              "description": "List all attachments on an issue with name, size, type, and author.",
+              "arguments": [
+                {
+                  "name": "ISSUE_ID",
+                  "description": "Issue readable id or database id.",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "download",
+              "description": "Download an attachment by name to a local file.",
+              "options": [
+                {
+                  "name": "--name",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Attachment file name or id.",
+                  "arguments": [
+                    {
+                      "name": "NAME",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--output",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Output file path (defaults to attachment name).",
+                  "arguments": [
+                    {
+                      "name": "OUTPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "ISSUE_ID",
+                  "description": "Issue readable id or database id.",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "link",
+          "description": "Manage issue relationships (relates to, parent for, depends on, etc.).",
+          "commands": [
+            {
+              "name": "add",
+              "description": "Add a relationship to another issue.",
+              "options": [
+                {
+                  "name": "--type",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Relationship label, such as 'relates to' or 'parent for'.",
+                  "arguments": [
+                    {
+                      "name": "TYPE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--target",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Target issue readable id or database id.",
+                  "arguments": [
+                    {
+                      "name": "TARGET",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "ISSUE_ID",
+                  "description": "Issue readable id or database id.",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "remove",
+              "description": "Remove a relationship to another issue.",
+              "options": [
+                {
+                  "name": "--type",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Relationship label, such as 'relates to' or 'parent for'.",
+                  "arguments": [
+                    {
+                      "name": "TYPE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--target",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Target issue readable id or database id.",
+                  "arguments": [
+                    {
+                      "name": "TARGET",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "ISSUE_ID",
+                  "description": "Issue readable id or database id.",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "search",
+          "description": "Search issues using YouTrack query syntax. Supports --format csv for export.",
+          "options": [
+            {
+              "name": "--query",
+              "recursive": false,
+              "hidden": false,
+              "description": "YouTrack search query string.",
+              "arguments": [
+                {
+                  "name": "QUERY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "command",
+          "description": "Execute a YouTrack command on one or more issues (e.g. 'State Done', 'tag MyTag', 'Assignee me').",
+          "options": [
+            {
+              "name": "--command",
+              "recursive": false,
+              "hidden": false,
+              "description": "YouTrack command string (e.g. \"State Duplicate tag consolidated\").",
+              "arguments": [
+                {
+                  "name": "COMMAND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE_IDS",
+              "description": "One or more issue ids, comma-separated (e.g. ACME-1002,ACME-1019).",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "history",
+          "description": "Show the full activity log for an issue: field changes, comments, links, and attachments.",
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "comment",
+      "description": "Add, list, update, and delete comments on issues.",
+      "commands": [
+        {
+          "name": "add",
+          "description": "Add a comment.",
+          "options": [
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comment body.",
+              "arguments": [
+                {
+                  "name": "TEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List comments (first page).",
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "update",
+          "description": "Update a comment.",
+          "options": [
+            {
+              "name": "--comment-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comment id.",
+              "arguments": [
+                {
+                  "name": "COMMENT_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "New comment text.",
+              "arguments": [
+                {
+                  "name": "TEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "delete",
+          "description": "Delete a comment.",
+          "options": [
+            {
+              "name": "--comment-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comment id.",
+              "arguments": [
+                {
+                  "name": "COMMENT_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "Issue readable id or database id.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "board",
+      "description": "Agile board operations: list sprints and query sprint issues.",
+      "commands": [
+        {
+          "name": "sprints",
+          "description": "List sprints for the board.",
+          "options": [
+            {
+              "name": "--latest",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only show the latest relevant sprint: current sprint if present, otherwise the newest non-archived sprint.",
+              "arguments": [
+                {
+                  "name": "LATEST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "BOARD_ID",
+              "description": "YouTrack agile board id from /api/agiles.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "issues",
+          "description": "List issues from the selected sprint (first page).",
+          "options": [
+            {
+              "name": "--current-sprint-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only list issues from the active current sprint. Do not fall back to another non-archived sprint.",
+              "arguments": [
+                {
+                  "name": "CURRENT_SPRINT_ONLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "BOARD_ID",
+              "description": "YouTrack agile board id from /api/agiles.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "user",
+      "description": "User operations: identify current user and list your sprint tickets.",
+      "commands": [
+        {
+          "name": "me",
+          "description": "Show the current authenticated user."
+        },
+        {
+          "name": "tickets",
+          "description": "List your unresolved tickets across visible boards (current sprint, with fallback to latest).",
+          "options": [
+            {
+              "name": "--status",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional exact YouTrack state filter.",
+              "arguments": [
+                {
+                  "name": "STATUS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "project",
+      "description": "Project operations: list all accessible YouTrack projects.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List all accessible projects."
+        }
+      ]
+    },
+    {
+      "name": "tag",
+      "description": "Tag operations: list all accessible issue tags.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List all accessible tags."
+        }
+      ]
+    }
+  ]
+}
