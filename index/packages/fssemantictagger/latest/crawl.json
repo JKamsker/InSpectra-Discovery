@@ -1,0 +1,116 @@
+{
+  "commands": [
+    {
+      "command": null,
+      "helpInvocation": "--help",
+      "result": {
+        "status": "ok",
+        "timedOut": false,
+        "exitCode": 0,
+        "durationMs": 125,
+        "stdout": "Usage: fssemantictagger <command>\n\nSemantic versioning with API change detection\n\nCommands:\n  init             Initialize semantic-tagger.json by scanning for packable .fsproj files\n  extract-api <dll> Print the public API signatures of a built DLL\n  check-api <old-dll> <new-dll> Compare two DLLs and report breaking vs additive API changes\n  release          Bump version and tag based on API diff vs the last release\n  alpha            Start an alpha pre-release cycle (X.Y.Z-alpha.N)\n  beta             Promote the current pre-release to beta (X.Y.Z-beta.N)\n  rc               Promote the current pre-release to release candidate (X.Y.Z-rc.N)\n  stable           Promote the current pre-release to a stable release (X.Y.Z)\n\nConfig file (semantic-tagger.json), produced by 'init':\n  {\n    \"Packages\": [\n      {\n        \"Name\": \"MyTool\",\n        \"Fsproj\": \"src/MyTool/MyTool.fsproj\",\n        \"DllPath\": \"src/MyTool/bin/Release/net10.0/MyTool.dll\",\n        \"TagPrefix\": \"mytool-v\",\n        \"FsProjsSharingSameTag\": []\n      }\n    ],\n    \"ReservedVersions\": [],\n    \"PreBuildCmds\": []\n  }\n\n  - TagPrefix is \"v\" in single-package repos and \"<name>-v\" in\n    multi-package repos.\n  - FsProjsSharingSameTag lets multiple .fsproj files version together\n    under one tag.\n  - PreBuildCmds run before the build that produces DllPath.\n\nExamples:\n  fssemantictagger init\n  fssemantictagger extract-api src/MyTool/bin/Release/net10.0/MyTool.dll\n  fssemantictagger check-api old.dll new.dll\n  fssemantictagger release --dry-run\n  fssemantictagger alpha\n  fssemantictagger stable\n\nRun 'fssemantictagger <command> --help' for command-specific details.",
+        "stderr": null,
+        "outputLimitExceeded": false
+      },
+      "parsed": true,
+      "payload": "Usage: fssemantictagger <command>\n\nSemantic versioning with API change detection\n\nCommands:\n  init             Initialize semantic-tagger.json by scanning for packable .fsproj files\n  extract-api <dll> Print the public API signatures of a built DLL\n  check-api <old-dll> <new-dll> Compare two DLLs and report breaking vs additive API changes\n  release          Bump version and tag based on API diff vs the last release\n  alpha            Start an alpha pre-release cycle (X.Y.Z-alpha.N)\n  beta             Promote the current pre-release to beta (X.Y.Z-beta.N)\n  rc               Promote the current pre-release to release candidate (X.Y.Z-rc.N)\n  stable           Promote the current pre-release to a stable release (X.Y.Z)\n\nConfig file (semantic-tagger.json), produced by 'init':\n  {\n    \"Packages\": [\n      {\n        \"Name\": \"MyTool\",\n        \"Fsproj\": \"src/MyTool/MyTool.fsproj\",\n        \"DllPath\": \"src/MyTool/bin/Release/net10.0/MyTool.dll\",\n        \"TagPrefix\": \"mytool-v\",\n        \"FsProjsSharingSameTag\": []\n      }\n    ],\n    \"ReservedVersions\": [],\n    \"PreBuildCmds\": []\n  }\n\n  - TagPrefix is \"v\" in single-package repos and \"<name>-v\" in\n    multi-package repos.\n  - FsProjsSharingSameTag lets multiple .fsproj files version together\n    under one tag.\n  - PreBuildCmds run before the build that produces DllPath.\n\nExamples:\n  fssemantictagger init\n  fssemantictagger extract-api src/MyTool/bin/Release/net10.0/MyTool.dll\n  fssemantictagger check-api old.dll new.dll\n  fssemantictagger release --dry-run\n  fssemantictagger alpha\n  fssemantictagger stable\n\nRun 'fssemantictagger <command> --help' for command-specific details.",
+      "terminalNonHelp": false
+    },
+    {
+      "command": "init",
+      "helpInvocation": "init --help",
+      "result": {
+        "status": "ok",
+        "timedOut": false,
+        "exitCode": 0,
+        "durationMs": 117,
+        "stdout": "Usage: fssemantictagger init\n\nInitialize semantic-tagger.json by scanning for packable .fsproj files\n\nScans the current directory for .fsproj files with a <PackageId> element\nand creates semantic-tagger.json with one entry per packable project. In\nmulti-package repos, each project gets its own tag prefix (<name>-v...);\nsingle-package repos use plain v... tags. Skips silently if the file\nalready exists.",
+        "stderr": null,
+        "outputLimitExceeded": false
+      },
+      "parsed": true,
+      "payload": "Usage: fssemantictagger init\n\nInitialize semantic-tagger.json by scanning for packable .fsproj files\n\nScans the current directory for .fsproj files with a <PackageId> element\nand creates semantic-tagger.json with one entry per packable project. In\nmulti-package repos, each project gets its own tag prefix (<name>-v...);\nsingle-package repos use plain v... tags. Skips silently if the file\nalready exists.",
+      "terminalNonHelp": false
+    },
+    {
+      "command": "release",
+      "helpInvocation": "release --help",
+      "result": {
+        "status": "ok",
+        "timedOut": false,
+        "exitCode": 0,
+        "durationMs": 118,
+        "stdout": "Usage: fssemantictagger release [options]\n\nBump version and tag based on API diff vs the last release\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+        "stderr": null,
+        "outputLimitExceeded": false
+      },
+      "parsed": true,
+      "payload": "Usage: fssemantictagger release [options]\n\nBump version and tag based on API diff vs the last release\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+      "terminalNonHelp": false
+    },
+    {
+      "command": "alpha",
+      "helpInvocation": "alpha --help",
+      "result": {
+        "status": "ok",
+        "timedOut": false,
+        "exitCode": 0,
+        "durationMs": 120,
+        "stdout": "Usage: fssemantictagger alpha [options]\n\nStart an alpha pre-release cycle (X.Y.Z-alpha.N)\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+        "stderr": null,
+        "outputLimitExceeded": false
+      },
+      "parsed": true,
+      "payload": "Usage: fssemantictagger alpha [options]\n\nStart an alpha pre-release cycle (X.Y.Z-alpha.N)\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+      "terminalNonHelp": false
+    },
+    {
+      "command": "beta",
+      "helpInvocation": "beta --help",
+      "result": {
+        "status": "ok",
+        "timedOut": false,
+        "exitCode": 0,
+        "durationMs": 119,
+        "stdout": "Usage: fssemantictagger beta [options]\n\nPromote the current pre-release to beta (X.Y.Z-beta.N)\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+        "stderr": null,
+        "outputLimitExceeded": false
+      },
+      "parsed": true,
+      "payload": "Usage: fssemantictagger beta [options]\n\nPromote the current pre-release to beta (X.Y.Z-beta.N)\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+      "terminalNonHelp": false
+    },
+    {
+      "command": "rc",
+      "helpInvocation": "rc --help",
+      "result": {
+        "status": "ok",
+        "timedOut": false,
+        "exitCode": 0,
+        "durationMs": 118,
+        "stdout": "Usage: fssemantictagger rc [options]\n\nPromote the current pre-release to release candidate (X.Y.Z-rc.N)\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+        "stderr": null,
+        "outputLimitExceeded": false
+      },
+      "parsed": true,
+      "payload": "Usage: fssemantictagger rc [options]\n\nPromote the current pre-release to release candidate (X.Y.Z-rc.N)\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+      "terminalNonHelp": false
+    },
+    {
+      "command": "stable",
+      "helpInvocation": "stable --help",
+      "result": {
+        "status": "ok",
+        "timedOut": false,
+        "exitCode": 0,
+        "durationMs": 119,
+        "stdout": "Usage: fssemantictagger stable [options]\n\nPromote the current pre-release to a stable release (X.Y.Z)\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+        "stderr": null,
+        "outputLimitExceeded": false
+      },
+      "parsed": true,
+      "payload": "Usage: fssemantictagger stable [options]\n\nPromote the current pre-release to a stable release (X.Y.Z)\n\nOptions:\n  --publish, -p                Build and pack locally instead of pushing tags for CI\n  --dry-run, -d                Preview version bumps without modifying files or creating tags\n\nReads semantic-tagger.json, locates each package's prior release tag,\nextracts the public API from the cached NuGet package for that version,\ndiffs it against the current build, and bumps the version accordingly.\n\nModes (one chosen per invocation):\n  release  auto-pick patch / minor / major based on the API diff\n  alpha    start a new alpha pre-release (X.Y.Z-alpha.N)\n  beta     promote the current pre-release to beta\n  rc       promote the current pre-release to release candidate\n  stable   promote the current pre-release to a stable release\n\nFlags:\n  --dry-run  print what would happen without writing or tagging\n  --publish  build & pack locally instead of pushing tags (CI normally\n             reacts to the pushed tag and does the pack itself)",
+      "terminalNonHelp": false
+    }
+  ]
+}
