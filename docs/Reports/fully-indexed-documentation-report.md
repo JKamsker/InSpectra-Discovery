@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-05-23 01:08:56+00:00
+Generated: 2026-06-01 01:17:46+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,18 +8,17 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 12
+Packages in scope: 11
 
 Fully documented: 5
 
-Incomplete: 7
+Incomplete: 6
 
 | Package | Version | Status | XML | Cmd Docs | Opt Docs | Arg Docs | Leaf Examples | Overall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [DiffLog](#pkg-difflog) | 0.0.2 | ok | requires-configuration | 3/3 | 24/24 | 0/0 | 2/3 | FAIL |
 | [DotCraft](#pkg-dotcraft) | 1.0.3 | ok | xml-ready | 2/2 | 7/7 | 0/0 | 0/1 | FAIL |
 | [jwmv](#pkg-jwmv) | 1.0.0 | ok | xml-ready | 16/16 | 0/18 | 0/7 | 16/16 | FAIL |
-| [Karls.Gitflow.Tool](#pkg-karls-gitflow-tool) | 0.0.13 | ok | xml-ready | 41/41 | 0/49 | 2/31 | 0/35 | FAIL |
 | [Nodsoft.MoltenObsidian.Tool](#pkg-nodsoft-moltenobsidian-tool) | 1.0.38 | ok | xml-ready | 2/4 | 12/12 | 1/1 | 0/2 | FAIL |
 | [PptMcp.CLI](#pkg-pptmcp-cli) | 1.0.3 | ok | xml-ready | 48/48 | 350/350 | 35/35 | 0/45 | FAIL |
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
@@ -81,23 +80,6 @@ Incomplete: 7
 - Missing option descriptions: env --cwd, env --init, env --shell, flush --archives, flush --catalog, flush --temp, install --default, install --refresh, integrate --profile, integrate --shell, list --refresh, selfupdate --check, selfupdate --force, selfupdate --repository, selfupdate --restart, selfupdate --tag, selfupdate --yes, use --shell
 - Missing argument descriptions: default <identifier>, home <identifier>, install <identifier>, list <filter>, uninstall <identifier>, upgrade <identifier>, use <identifier>
 - Missing leaf command examples: None
-
-<a id="pkg-karls-gitflow-tool"></a>
-### Karls.Gitflow.Tool
-
-- Version: `0.0.13`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `41/41`
-- Option documentation: `0/49`
-- Argument documentation: `2/31`
-- Leaf command examples: `0/35`
-- Overall: `FAIL`
-- Missing command descriptions: None
-- Missing option descriptions: bugfix delete --force, bugfix delete --remote, bugfix finish --fetch, bugfix finish --keep, bugfix finish --push, bugfix finish --quiet, bugfix finish --squash, config save --force, feature delete --force, feature delete --remote, feature finish --fetch, feature finish --keep, feature finish --push, feature finish --quiet, feature finish --squash, hotfix delete --force, hotfix delete --remote, hotfix finish --fetch, hotfix finish --keep, hotfix finish --message, hotfix finish --nobackmerge, hotfix finish --notag, hotfix finish --push, hotfix finish --quiet, hotfix finish --squash, init --bugfix, init --defaults, init --develop, init --feature, init --force, init --hotfix, init --main, init --release, init --save, init --support, init --tag, init --tagmessage, release delete --force, release delete --remote, release finish --fetch, release finish --keep, release finish --message, release finish --nobackmerge, release finish --notag, release finish --push, release finish --quiet, release finish --squash, support delete --force, support delete --remote
-- Missing argument descriptions: bugfix delete <name>, bugfix finish <name>, bugfix publish <name>, bugfix start <base>, bugfix start <name>, bugfix track <name>, config set <key>, config set <value>, feature delete <name>, feature finish <name>, feature publish <name>, feature start <base>, feature start <name>, feature track <name>, hotfix delete <name>, hotfix finish <name>, hotfix publish <name>, hotfix start <base>, hotfix start <name>, hotfix track <name>, release delete <name>, release finish <name>, release publish <name>, release start <base>, release start <name>, release track <name>, support delete <name>, support publish <name>, support track <name>
-- Missing leaf command examples: bugfix delete, bugfix finish, bugfix list, bugfix publish, bugfix start, bugfix track, config list, config save, config set, feature delete, feature finish, feature list, feature publish, feature start, feature track, hotfix delete, hotfix finish, hotfix list, hotfix publish, hotfix start, hotfix track, init, push, release delete, release finish, release list, release publish, release start, release track, support delete, support list, support publish, support start, support track, version
 
 <a id="pkg-nodsoft-moltenobsidian-tool"></a>
 ### Nodsoft.MoltenObsidian.Tool
