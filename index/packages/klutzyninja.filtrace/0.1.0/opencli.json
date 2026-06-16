@@ -1,0 +1,1211 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "filtrace",
+    "version": "0.1.0",
+    "description": "Agent-shaped CLI for analyzing .NET CPU, allocation, thread-time, GC, JIT, and event traces."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 16
+  },
+  "commands": [
+    {
+      "name": "alloc",
+      "hidden": false,
+      "description": "Rank allocation hotspots by bytes; the shortcut for 'rank --metric alloc'.",
+      "options": [
+        {
+          "name": "--measure",
+          "recursive": false,
+          "hidden": false,
+          "description": "Which measure to report: self (the allocating site) or inclusive (its subtree). [Default: Self]",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MEASURE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Substring scoping the ranking to the subtree under a frame. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of rows to return. [Default: 25]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--fold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Extra leaf-frame fold regexes (comma-separated); omit to use the built-in defaults. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--benchmark",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scope to the BenchmarkDotNet measured-workload subtree (preset root); for BDN captures."
+        }
+      ]
+    },
+    {
+      "name": "callers",
+      "hidden": false,
+      "description": "Report the immediate callers of a frame; the drill-down after 'rank' finds a hot frame.",
+      "options": [
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Substring scoping the analysis to the subtree under a frame. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of caller rows to return. [Default: 25]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--symbols",
+          "recursive": false,
+          "hidden": false,
+          "description": "Build-output directory whose embedded PDBs resolve managed frames. [Default: null]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit 3 when symbol resolution is below the trusted threshold."
+        },
+        {
+          "name": "--process",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scope to the process tree whose name contains this; omit to auto-scope to the busiest. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all-processes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read every process instead of auto-scoping to the busiest (multi-process captures)."
+        }
+      ]
+    },
+    {
+      "name": "classify",
+      "hidden": false,
+      "description": "Summarize CPU self-time by runtime work category - zeroing, copying, GC,\nwrite-barrier, JIT, or other - answering \"where did the time go: zeroing memory?\ncopying strings? in the GC?\". Pair with --native-symbols so the native runtime\nwork resolves; without it the native leaves fall in 'other'."
+    },
+    {
+      "name": "clean",
+      "hidden": false,
+      "description": "Remove the ETLX conversion cache beside a trace to force a rebuild on next read."
+    },
+    {
+      "name": "convert",
+      "hidden": false,
+      "description": "Build the ETLX conversion cache up front so the first analysis query is fast."
+    },
+    {
+      "name": "cpu",
+      "hidden": false,
+      "description": "Rank CPU-time hotspots; the shortcut for 'rank --metric cpu'."
+    },
+    {
+      "name": "diff",
+      "hidden": false,
+      "description": "Compare two traces and report what got slower or faster between them.",
+      "options": [
+        {
+          "name": "--measure",
+          "recursive": false,
+          "hidden": false,
+          "description": "Which measure to compare: self (leaf time, helpers folded) or inclusive. [Default: Self]",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MEASURE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Substring scoping both rankings to the subtree under a frame. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of changed rows to return. [Default: 25]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--fold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Extra leaf-frame fold regexes (comma-separated); omit to use the built-in defaults. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--symbols",
+          "recursive": false,
+          "hidden": false,
+          "description": "Build-output directory whose embedded PDBs resolve managed frames. [Default: null]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit 3 when either trace's symbol resolution is below the trusted threshold."
+        }
+      ]
+    },
+    {
+      "name": "events",
+      "hidden": false,
+      "description": "Query the trace's raw events by name, with paging and a per-event payload cap.",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Case-insensitive substring matched against provider/event; omit to match every event. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--skip",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of matches to skip, for paging. [Default: 0]",
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--take",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of matches to return on this page. [Default: 50]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max-payload",
+          "recursive": false,
+          "hidden": false,
+          "description": "Per-event payload character cap; 0 omits payloads. [Default: 200]",
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "exceptions",
+      "hidden": false,
+      "description": "Rank exception throw sites by count; the shortcut for 'rank --metric exceptions'.",
+      "options": [
+        {
+          "name": "--measure",
+          "recursive": false,
+          "hidden": false,
+          "description": "Which measure to report: self (the throw site) or inclusive (its subtree). [Default: Self]",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MEASURE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Substring scoping the ranking to the subtree under a frame. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of rows to return. [Default: 25]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--fold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Extra leaf-frame fold regexes (comma-separated); omit to use the built-in defaults. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--benchmark",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scope to the BenchmarkDotNet measured-workload subtree (preset root); for BDN captures."
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "hidden": false,
+      "description": "Export a trace to a flame-graph file for speedscope or chrome://tracing.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Flame-graph format: speedscope or chromium. [Default: Speedscope]",
+          "arguments": [
+            {
+              "name": "EXPORTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path; omit to write to standard output. [Default: null]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--symbols",
+          "recursive": false,
+          "hidden": false,
+          "description": "Build-output directory whose embedded PDBs resolve managed frames. [Default: null]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Profile name shown in the viewer. [Default: @\"filtrace\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--process",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scope to the process tree whose name contains this; omit to auto-scope to the busiest. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all-processes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read every process instead of auto-scoping to the busiest (multi-process captures)."
+        }
+      ]
+    },
+    {
+      "name": "gcstats",
+      "hidden": false,
+      "description": "Report garbage-collection behavior: counts by generation, pause-time summary, and per-collection detail.",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of per-collection rows to show, ranked by pause time. [Default: 50]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "heatmap",
+      "hidden": false,
+      "description": "Build a per-line heat map for a source file.",
+      "options": [
+        {
+          "name": "--fold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Extra leaf-frame fold regexes (comma-separated); omit to use the built-in defaults. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--symbols",
+          "recursive": false,
+          "hidden": false,
+          "description": "Build-output directory whose embedded PDBs resolve managed frames. [Default: null]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit 3 when symbol resolution is below the trusted threshold."
+        },
+        {
+          "name": "--process",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scope to the process tree whose name contains this; omit to auto-scope to the busiest. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all-processes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read every process instead of auto-scoping to the busiest (multi-process captures)."
+        }
+      ]
+    },
+    {
+      "name": "jitstats",
+      "hidden": false,
+      "description": "Report just-in-time compilation: method count, compile-time summary, and per-method detail.",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of per-method rows to show, ranked by compile time. [Default: 25]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lines",
+      "hidden": false,
+      "description": "Rank the hottest source lines of the scoped methods.",
+      "options": [
+        {
+          "name": "--method",
+          "recursive": false,
+          "hidden": false,
+          "description": "Substring scoping the ranking to matching methods; omit for every method. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of rows to return. [Default: 25]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--fold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Extra leaf-frame fold regexes (comma-separated); omit to use the built-in defaults. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--symbols",
+          "recursive": false,
+          "hidden": false,
+          "description": "Build-output directory whose embedded PDBs resolve managed frames. [Default: null]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit 3 when symbol resolution is below the trusted threshold."
+        },
+        {
+          "name": "--process",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scope to the process tree whose name contains this; omit to auto-scope to the busiest. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all-processes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read every process instead of auto-scoping to the busiest (multi-process captures)."
+        }
+      ]
+    },
+    {
+      "name": "processes",
+      "hidden": false,
+      "description": "List the processes in a trace, ranked by CPU-sample weight, so a multi-process\ncapture can be scoped to the right one with the --process option on the other\nverbs.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "VERBS",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "rank",
+      "hidden": false,
+      "description": "Rank the hottest frames in a trace by self- or inclusive-time."
+    },
+    {
+      "name": "threadtime",
+      "hidden": false,
+      "description": "Rank where wall-clock time went - running and blocked - by elapsed\nmilliseconds; the shortcut for 'rank --metric threadtime'.",
+      "options": [
+        {
+          "name": "--measure",
+          "recursive": false,
+          "hidden": false,
+          "description": "Which measure to report: self (the leaf state) or inclusive (its subtree). [Default: Self]",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MEASURE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Substring scoping the ranking to the subtree under a frame. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of rows to return. [Default: 25]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--fold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Extra leaf-frame fold regexes (comma-separated); omit to use the built-in defaults. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--process",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scope to the process tree whose name contains this; omit to auto-scope to the busiest. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all-processes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read every process instead of auto-scoping to the busiest."
+        },
+        {
+          "name": "--benchmark",
+          "recursive": false,
+          "hidden": false,
+          "description": "Scope to the BenchmarkDotNet measured-workload subtree (preset root); for BDN captures."
+        }
+      ]
+    },
+    {
+      "name": "tree",
+      "hidden": false,
+      "description": "Show the top-down call tree, following the hot path from the root into its callees.",
+      "options": [
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Substring scoping the tree to the subtree under a frame. [Default: @\"\"]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max-depth",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of frame levels to expand below the root. [Default: 10]",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--min-pct",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum share of the scoped total (percent) a node must have to appear; 0 shows all. [Default: 1]",
+          "arguments": [
+            {
+              "name": "DOUBLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--fold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Extra leaf-frame fold regexes (comma-separated); omit to use the built-in defaults. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--symbols",
+          "recursive": false,
+          "hidden": false,
+          "description": "Build-output directory whose embedded PDBs resolve managed frames. [Default: null]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Render format: text or json. [Default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUTFORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit 3 when symbol resolution is below the trusted threshold."
+        }
+      ]
+    }
+  ]
+}
