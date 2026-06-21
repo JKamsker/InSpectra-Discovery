@@ -1,0 +1,1707 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "AccessHarvester — extract Access DB metadata and translate into a JSON knowledge base.",
+    "version": "1.2.0",
+    "description": "Dabbler Access Harvester CLI. Harvests Microsoft Access (.accdb/.mdb) metadata — forms, reports, queries, macros, ribbons, tables, modules — into structured JSON a downstream AI can interpret and document. The extract/run/report-baseline subcommands are COM-based and require Windows + Microsoft Access; parse/translate/generate-docs/validate/generate-migration are file-to-file and run anywhere the .NET 10 runtime does."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 12
+  },
+  "commands": [
+    {
+      "name": "classify",
+      "hidden": false,
+      "description": "--in <file.accdb> --out <output-dir> [--exclude-cleanup <path>] [--json-status]",
+      "options": [
+        {
+          "name": "--in",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Access database (.accdb / .mdb).",
+          "arguments": [
+            {
+              "name": "IN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output directory; classification.json is written to\n<out>/<database-slug>/classification.json.",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout (human text on stderr).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "OUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DATABASE_SLUG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "extract",
+      "hidden": false,
+      "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]",
+      "options": [
+        {
+          "name": "--types",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated category filter. Valid categories:\nForms, Reports, Macros, ModulesAndClasses,\nQueries, Tables, Relationships, Navigation\nDefault: all. An unknown value (or a filter that\nselects nothing) is a usage error (exit 1), not a\nsilent empty success.",
+          "arguments": [
+            {
+              "name": "TYPES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-clean",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the default per-tier clean. By default `run`/`extract`/`translate`\ndelete the target tier directory (raw/ for extract, kb/ for translate,\nraw+kb+ir for run) before writing, so a re-harvest of a database whose\nsource objects have been removed does not leave orphan files behind.\nPass --no-clean to merge-overwrite the prior output in place (the\nlegacy file-by-file overwrite behaviour); orphan files from objects\nremoved since the prior run will remain.\nIMPORTANT: --types combined with the default clean deletes the entire\ntier directory before writing, INCLUDING previously-harvested\nunselected categories. For example, `run --types Forms` against an\nexisting output tree clears raw/, kb/, and ir/ wholesale and then\nrepopulates only Forms-related content; Reports / Queries / Tables\netc. from prior runs disappear. To do an incremental partial re-harvest\nthat preserves prior categories, pass --no-clean alongside --types.",
+          "arguments": [
+            {
+              "name": "NO_CLEAN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--include-pdf",
+          "recursive": false,
+          "hidden": false,
+          "description": "(report-baseline only) Also render each successfully aggregated\nreport to output.pdf via DoCmd.OutputTo, into the non-gated\nreports-baseline-spot-check/ sibling (NOT the byte-diffed corpus).\nOff by default: the default capture is the deterministic\naggregates.json alone. The PDF is a non-deterministic binary\nintended for human visual review only and never enters the\nregression gate; a render failure is non-blocking and recorded on\nspot-check-manifest.json without affecting the report's gated status.",
+          "arguments": [
+            {
+              "name": "INCLUDE_PDF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout at end (human messages go to stderr).\nFor run/extract/translate the envelope carries provenance fields:\nHarvesterVersion (deterministic), StartedAt (UTC ISO-8601,\nnon-deterministic), DurationMs (non-deterministic), Clean (the\neffective per-tier clean mode for this invocation).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCE_FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_ROOT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DBNAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CATEGORY",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "classify",
+          "hidden": false,
+          "description": "--in <file.accdb> --out <output-dir> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "generate-docs",
+          "hidden": false,
+          "description": "--in <manifest.json> --out <output-dir>"
+        },
+        {
+          "name": "generate-migration",
+          "hidden": false
+        },
+        {
+          "name": "identify-cleanup",
+          "hidden": false,
+          "description": "[--harvest-date <YYYY-MM-DD>] [--threshold-days <N>] [--no-com] [--json-status]"
+        },
+        {
+          "name": "identify-usage",
+          "hidden": false,
+          "description": "--in <harvested-output-root> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "parse",
+          "hidden": false,
+          "description": "--in <source-file>"
+        },
+        {
+          "name": "report-baseline",
+          "hidden": false
+        },
+        {
+          "name": "run",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "sanitize",
+          "hidden": false,
+          "description": "--classification <classification.json> --in <file.accdb> --out <output-dir> [--json-status]"
+        },
+        {
+          "name": "translate",
+          "hidden": false,
+          "description": "--in <raw-dir>    --out <kb-dir>          [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "validate",
+          "hidden": false,
+          "description": "--manifest <manifest.json> [--json-status]"
+        }
+      ]
+    },
+    {
+      "name": "generate-docs",
+      "hidden": false,
+      "description": "--in <manifest.json> --out <output-dir>",
+      "options": [
+        {
+          "name": "--types",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated category filter. Valid categories:\nForms, Reports, Macros, ModulesAndClasses,\nQueries, Tables, Relationships, Navigation\nDefault: all. An unknown value (or a filter that\nselects nothing) is a usage error (exit 1), not a\nsilent empty success.",
+          "arguments": [
+            {
+              "name": "TYPES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-clean",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the default per-tier clean. By default `run`/`extract`/`translate`\ndelete the target tier directory (raw/ for extract, kb/ for translate,\nraw+kb+ir for run) before writing, so a re-harvest of a database whose\nsource objects have been removed does not leave orphan files behind.\nPass --no-clean to merge-overwrite the prior output in place (the\nlegacy file-by-file overwrite behaviour); orphan files from objects\nremoved since the prior run will remain.\nIMPORTANT: --types combined with the default clean deletes the entire\ntier directory before writing, INCLUDING previously-harvested\nunselected categories. For example, `run --types Forms` against an\nexisting output tree clears raw/, kb/, and ir/ wholesale and then\nrepopulates only Forms-related content; Reports / Queries / Tables\netc. from prior runs disappear. To do an incremental partial re-harvest\nthat preserves prior categories, pass --no-clean alongside --types.",
+          "arguments": [
+            {
+              "name": "NO_CLEAN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--include-pdf",
+          "recursive": false,
+          "hidden": false,
+          "description": "(report-baseline only) Also render each successfully aggregated\nreport to output.pdf via DoCmd.OutputTo, into the non-gated\nreports-baseline-spot-check/ sibling (NOT the byte-diffed corpus).\nOff by default: the default capture is the deterministic\naggregates.json alone. The PDF is a non-deterministic binary\nintended for human visual review only and never enters the\nregression gate; a render failure is non-blocking and recorded on\nspot-check-manifest.json without affecting the report's gated status.",
+          "arguments": [
+            {
+              "name": "INCLUDE_PDF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout at end (human messages go to stderr).\nFor run/extract/translate the envelope carries provenance fields:\nHarvesterVersion (deterministic), StartedAt (UTC ISO-8601,\nnon-deterministic), DurationMs (non-deterministic), Clean (the\neffective per-tier clean mode for this invocation).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCE_FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_ROOT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DBNAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CATEGORY",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "classify",
+          "hidden": false,
+          "description": "--in <file.accdb> --out <output-dir> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "extract",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "generate-migration",
+          "hidden": false
+        },
+        {
+          "name": "identify-cleanup",
+          "hidden": false,
+          "description": "[--harvest-date <YYYY-MM-DD>] [--threshold-days <N>] [--no-com] [--json-status]"
+        },
+        {
+          "name": "identify-usage",
+          "hidden": false,
+          "description": "--in <harvested-output-root> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "parse",
+          "hidden": false,
+          "description": "--in <source-file>"
+        },
+        {
+          "name": "report-baseline",
+          "hidden": false
+        },
+        {
+          "name": "run",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "sanitize",
+          "hidden": false,
+          "description": "--classification <classification.json> --in <file.accdb> --out <output-dir> [--json-status]"
+        },
+        {
+          "name": "translate",
+          "hidden": false,
+          "description": "--in <raw-dir>    --out <kb-dir>          [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "validate",
+          "hidden": false,
+          "description": "--manifest <manifest.json> [--json-status]"
+        }
+      ]
+    },
+    {
+      "name": "generate-migration",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output directory; schema.sql, data.sql, and a\nmigration-manifest.json are written to <out>/<database-slug>/.",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--in",
+          "recursive": false,
+          "hidden": false,
+          "description": "Harvested output root (the directory containing ir/, e.g. a\n`run` --out root's AccessMetaData/<dbName>/ — or the ir/\ndirectory itself). ir/Tables + ir/Relationships are the schema source.",
+          "arguments": [
+            {
+              "name": "IN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--classification",
+          "recursive": false,
+          "hidden": false,
+          "description": "Reviewed classification.json (schema v1.0). Supplies multi-value /\npreserve decisions; optional but recommended."
+        },
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "The `sanitize` subcommand's CSV-per-table output directory\n(<sanitize-out>/<database-slug>/). Optional: when omitted, schema.sql\nis still emitted and every table is flagged as missing data.",
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout (human text on stderr).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "DBNAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DATABASE_SLUG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "SANITIZE_OUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "identify-cleanup",
+      "hidden": false,
+      "description": "[--harvest-date <YYYY-MM-DD>] [--threshold-days <N>] [--no-com] [--json-status]",
+      "options": [
+        {
+          "name": "--in",
+          "recursive": false,
+          "hidden": false,
+          "description": "Root directory produced by `run` or `translate` (contains ir/ subdirectory).",
+          "arguments": [
+            {
+              "name": "IN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--manifest",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a single manifest.json (output dir is inferred as its parent).",
+          "arguments": [
+            {
+              "name": "MANIFEST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--harvest-date",
+          "recursive": false,
+          "hidden": false,
+          "description": "Calendar date anchoring the date-signal threshold (YYYY-MM-DD; default: today)."
+        },
+        {
+          "name": "--threshold-days",
+          "recursive": false,
+          "hidden": false,
+          "description": "Date-signal threshold in days, integer >= 1 (default: 90).",
+          "arguments": [
+            {
+              "name": "THRESHOLD_DAYS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-com",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip COM date sampling; rely on DAO LastUpdated fallback."
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout.",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "identify-usage",
+      "hidden": false,
+      "description": "--in <harvested-output-root> [--exclude-cleanup <path>] [--json-status]",
+      "options": [
+        {
+          "name": "--types",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated category filter. Valid categories:\nForms, Reports, Macros, ModulesAndClasses,\nQueries, Tables, Relationships, Navigation\nDefault: all. An unknown value (or a filter that\nselects nothing) is a usage error (exit 1), not a\nsilent empty success.",
+          "arguments": [
+            {
+              "name": "TYPES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-clean",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the default per-tier clean. By default `run`/`extract`/`translate`\ndelete the target tier directory (raw/ for extract, kb/ for translate,\nraw+kb+ir for run) before writing, so a re-harvest of a database whose\nsource objects have been removed does not leave orphan files behind.\nPass --no-clean to merge-overwrite the prior output in place (the\nlegacy file-by-file overwrite behaviour); orphan files from objects\nremoved since the prior run will remain.\nIMPORTANT: --types combined with the default clean deletes the entire\ntier directory before writing, INCLUDING previously-harvested\nunselected categories. For example, `run --types Forms` against an\nexisting output tree clears raw/, kb/, and ir/ wholesale and then\nrepopulates only Forms-related content; Reports / Queries / Tables\netc. from prior runs disappear. To do an incremental partial re-harvest\nthat preserves prior categories, pass --no-clean alongside --types.",
+          "arguments": [
+            {
+              "name": "NO_CLEAN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--include-pdf",
+          "recursive": false,
+          "hidden": false,
+          "description": "(report-baseline only) Also render each successfully aggregated\nreport to output.pdf via DoCmd.OutputTo, into the non-gated\nreports-baseline-spot-check/ sibling (NOT the byte-diffed corpus).\nOff by default: the default capture is the deterministic\naggregates.json alone. The PDF is a non-deterministic binary\nintended for human visual review only and never enters the\nregression gate; a render failure is non-blocking and recorded on\nspot-check-manifest.json without affecting the report's gated status.",
+          "arguments": [
+            {
+              "name": "INCLUDE_PDF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout at end (human messages go to stderr).\nFor run/extract/translate the envelope carries provenance fields:\nHarvesterVersion (deterministic), StartedAt (UTC ISO-8601,\nnon-deterministic), DurationMs (non-deterministic), Clean (the\neffective per-tier clean mode for this invocation).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCE_FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_ROOT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DBNAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CATEGORY",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "classify",
+          "hidden": false,
+          "description": "--in <file.accdb> --out <output-dir> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "extract",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "generate-docs",
+          "hidden": false,
+          "description": "--in <manifest.json> --out <output-dir>"
+        },
+        {
+          "name": "generate-migration",
+          "hidden": false
+        },
+        {
+          "name": "identify-cleanup",
+          "hidden": false,
+          "description": "[--harvest-date <YYYY-MM-DD>] [--threshold-days <N>] [--no-com] [--json-status]"
+        },
+        {
+          "name": "parse",
+          "hidden": false,
+          "description": "--in <source-file>"
+        },
+        {
+          "name": "report-baseline",
+          "hidden": false
+        },
+        {
+          "name": "run",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "sanitize",
+          "hidden": false,
+          "description": "--classification <classification.json> --in <file.accdb> --out <output-dir> [--json-status]"
+        },
+        {
+          "name": "translate",
+          "hidden": false,
+          "description": "--in <raw-dir>    --out <kb-dir>          [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "validate",
+          "hidden": false,
+          "description": "--manifest <manifest.json> [--json-status]"
+        }
+      ]
+    },
+    {
+      "name": "parse",
+      "hidden": false,
+      "description": "--in <source-file>"
+    },
+    {
+      "name": "report-baseline",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--types",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated category filter. Valid categories:\nForms, Reports, Macros, ModulesAndClasses,\nQueries, Tables, Relationships, Navigation\nDefault: all. An unknown value (or a filter that\nselects nothing) is a usage error (exit 1), not a\nsilent empty success.",
+          "arguments": [
+            {
+              "name": "TYPES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-clean",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the default per-tier clean. By default `run`/`extract`/`translate`\ndelete the target tier directory (raw/ for extract, kb/ for translate,\nraw+kb+ir for run) before writing, so a re-harvest of a database whose\nsource objects have been removed does not leave orphan files behind.\nPass --no-clean to merge-overwrite the prior output in place (the\nlegacy file-by-file overwrite behaviour); orphan files from objects\nremoved since the prior run will remain.\nIMPORTANT: --types combined with the default clean deletes the entire\ntier directory before writing, INCLUDING previously-harvested\nunselected categories. For example, `run --types Forms` against an\nexisting output tree clears raw/, kb/, and ir/ wholesale and then\nrepopulates only Forms-related content; Reports / Queries / Tables\netc. from prior runs disappear. To do an incremental partial re-harvest\nthat preserves prior categories, pass --no-clean alongside --types.",
+          "arguments": [
+            {
+              "name": "NO_CLEAN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--include-pdf",
+          "recursive": false,
+          "hidden": false,
+          "description": "(report-baseline only) Also render each successfully aggregated\nreport to output.pdf via DoCmd.OutputTo, into the non-gated\nreports-baseline-spot-check/ sibling (NOT the byte-diffed corpus).\nOff by default: the default capture is the deterministic\naggregates.json alone. The PDF is a non-deterministic binary\nintended for human visual review only and never enters the\nregression gate; a render failure is non-blocking and recorded on\nspot-check-manifest.json without affecting the report's gated status.",
+          "arguments": [
+            {
+              "name": "INCLUDE_PDF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout at end (human messages go to stderr).\nFor run/extract/translate the envelope carries provenance fields:\nHarvesterVersion (deterministic), StartedAt (UTC ISO-8601,\nnon-deterministic), DurationMs (non-deterministic), Clean (the\neffective per-tier clean mode for this invocation).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCE_FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_ROOT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DBNAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CATEGORY",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "classify",
+          "hidden": false,
+          "description": "--in <file.accdb> --out <output-dir> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "extract",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "generate-docs",
+          "hidden": false,
+          "description": "--in <manifest.json> --out <output-dir>"
+        },
+        {
+          "name": "generate-migration",
+          "hidden": false
+        },
+        {
+          "name": "identify-cleanup",
+          "hidden": false,
+          "description": "[--harvest-date <YYYY-MM-DD>] [--threshold-days <N>] [--no-com] [--json-status]"
+        },
+        {
+          "name": "identify-usage",
+          "hidden": false,
+          "description": "--in <harvested-output-root> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "parse",
+          "hidden": false,
+          "description": "--in <source-file>"
+        },
+        {
+          "name": "run",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "sanitize",
+          "hidden": false,
+          "description": "--classification <classification.json> --in <file.accdb> --out <output-dir> [--json-status]"
+        },
+        {
+          "name": "translate",
+          "hidden": false,
+          "description": "--in <raw-dir>    --out <kb-dir>          [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "validate",
+          "hidden": false,
+          "description": "--manifest <manifest.json> [--json-status]"
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "hidden": false,
+      "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]",
+      "options": [
+        {
+          "name": "--types",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated category filter. Valid categories:\nForms, Reports, Macros, ModulesAndClasses,\nQueries, Tables, Relationships, Navigation\nDefault: all. An unknown value (or a filter that\nselects nothing) is a usage error (exit 1), not a\nsilent empty success.",
+          "arguments": [
+            {
+              "name": "TYPES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-clean",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the default per-tier clean. By default `run`/`extract`/`translate`\ndelete the target tier directory (raw/ for extract, kb/ for translate,\nraw+kb+ir for run) before writing, so a re-harvest of a database whose\nsource objects have been removed does not leave orphan files behind.\nPass --no-clean to merge-overwrite the prior output in place (the\nlegacy file-by-file overwrite behaviour); orphan files from objects\nremoved since the prior run will remain.\nIMPORTANT: --types combined with the default clean deletes the entire\ntier directory before writing, INCLUDING previously-harvested\nunselected categories. For example, `run --types Forms` against an\nexisting output tree clears raw/, kb/, and ir/ wholesale and then\nrepopulates only Forms-related content; Reports / Queries / Tables\netc. from prior runs disappear. To do an incremental partial re-harvest\nthat preserves prior categories, pass --no-clean alongside --types.",
+          "arguments": [
+            {
+              "name": "NO_CLEAN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--include-pdf",
+          "recursive": false,
+          "hidden": false,
+          "description": "(report-baseline only) Also render each successfully aggregated\nreport to output.pdf via DoCmd.OutputTo, into the non-gated\nreports-baseline-spot-check/ sibling (NOT the byte-diffed corpus).\nOff by default: the default capture is the deterministic\naggregates.json alone. The PDF is a non-deterministic binary\nintended for human visual review only and never enters the\nregression gate; a render failure is non-blocking and recorded on\nspot-check-manifest.json without affecting the report's gated status.",
+          "arguments": [
+            {
+              "name": "INCLUDE_PDF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout at end (human messages go to stderr).\nFor run/extract/translate the envelope carries provenance fields:\nHarvesterVersion (deterministic), StartedAt (UTC ISO-8601,\nnon-deterministic), DurationMs (non-deterministic), Clean (the\neffective per-tier clean mode for this invocation).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCE_FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_ROOT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DBNAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CATEGORY",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "classify",
+          "hidden": false,
+          "description": "--in <file.accdb> --out <output-dir> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "extract",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "generate-docs",
+          "hidden": false,
+          "description": "--in <manifest.json> --out <output-dir>"
+        },
+        {
+          "name": "generate-migration",
+          "hidden": false
+        },
+        {
+          "name": "identify-cleanup",
+          "hidden": false,
+          "description": "[--harvest-date <YYYY-MM-DD>] [--threshold-days <N>] [--no-com] [--json-status]"
+        },
+        {
+          "name": "identify-usage",
+          "hidden": false,
+          "description": "--in <harvested-output-root> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "parse",
+          "hidden": false,
+          "description": "--in <source-file>"
+        },
+        {
+          "name": "report-baseline",
+          "hidden": false
+        },
+        {
+          "name": "sanitize",
+          "hidden": false,
+          "description": "--classification <classification.json> --in <file.accdb> --out <output-dir> [--json-status]"
+        },
+        {
+          "name": "translate",
+          "hidden": false,
+          "description": "--in <raw-dir>    --out <kb-dir>          [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "validate",
+          "hidden": false,
+          "description": "--manifest <manifest.json> [--json-status]"
+        }
+      ]
+    },
+    {
+      "name": "sanitize",
+      "hidden": false,
+      "description": "--classification <classification.json> --in <file.accdb> --out <output-dir> [--json-status]",
+      "options": [
+        {
+          "name": "--in",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the source Access database (.accdb / .mdb).",
+          "arguments": [
+            {
+              "name": "IN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output directory; per-table CSVs and a\nsanitization-report.json are written to\n<out>/<database-slug>/.",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--classification",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the reviewed classification.json (schema v1.0).",
+          "arguments": [
+            {
+              "name": "CLASSIFICATION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout (human text on stderr).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "OUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DATABASE_SLUG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "translate",
+      "hidden": false,
+      "description": "--in <raw-dir>    --out <kb-dir>          [--types ...] [--no-clean] [--json-status]",
+      "options": [
+        {
+          "name": "--types",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated category filter. Valid categories:\nForms, Reports, Macros, ModulesAndClasses,\nQueries, Tables, Relationships, Navigation\nDefault: all. An unknown value (or a filter that\nselects nothing) is a usage error (exit 1), not a\nsilent empty success.",
+          "arguments": [
+            {
+              "name": "TYPES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-clean",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the default per-tier clean. By default `run`/`extract`/`translate`\ndelete the target tier directory (raw/ for extract, kb/ for translate,\nraw+kb+ir for run) before writing, so a re-harvest of a database whose\nsource objects have been removed does not leave orphan files behind.\nPass --no-clean to merge-overwrite the prior output in place (the\nlegacy file-by-file overwrite behaviour); orphan files from objects\nremoved since the prior run will remain.\nIMPORTANT: --types combined with the default clean deletes the entire\ntier directory before writing, INCLUDING previously-harvested\nunselected categories. For example, `run --types Forms` against an\nexisting output tree clears raw/, kb/, and ir/ wholesale and then\nrepopulates only Forms-related content; Reports / Queries / Tables\netc. from prior runs disappear. To do an incremental partial re-harvest\nthat preserves prior categories, pass --no-clean alongside --types.",
+          "arguments": [
+            {
+              "name": "NO_CLEAN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--include-pdf",
+          "recursive": false,
+          "hidden": false,
+          "description": "(report-baseline only) Also render each successfully aggregated\nreport to output.pdf via DoCmd.OutputTo, into the non-gated\nreports-baseline-spot-check/ sibling (NOT the byte-diffed corpus).\nOff by default: the default capture is the deterministic\naggregates.json alone. The PDF is a non-deterministic binary\nintended for human visual review only and never enters the\nregression gate; a render failure is non-blocking and recorded on\nspot-check-manifest.json without affecting the report's gated status.",
+          "arguments": [
+            {
+              "name": "INCLUDE_PDF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout at end (human messages go to stderr).\nFor run/extract/translate the envelope carries provenance fields:\nHarvesterVersion (deterministic), StartedAt (UTC ISO-8601,\nnon-deterministic), DurationMs (non-deterministic), Clean (the\neffective per-tier clean mode for this invocation).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCE_FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_ROOT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DBNAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CATEGORY",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "classify",
+          "hidden": false,
+          "description": "--in <file.accdb> --out <output-dir> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "extract",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "generate-docs",
+          "hidden": false,
+          "description": "--in <manifest.json> --out <output-dir>"
+        },
+        {
+          "name": "generate-migration",
+          "hidden": false
+        },
+        {
+          "name": "identify-cleanup",
+          "hidden": false,
+          "description": "[--harvest-date <YYYY-MM-DD>] [--threshold-days <N>] [--no-com] [--json-status]"
+        },
+        {
+          "name": "identify-usage",
+          "hidden": false,
+          "description": "--in <harvested-output-root> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "parse",
+          "hidden": false,
+          "description": "--in <source-file>"
+        },
+        {
+          "name": "report-baseline",
+          "hidden": false
+        },
+        {
+          "name": "run",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "sanitize",
+          "hidden": false,
+          "description": "--classification <classification.json> --in <file.accdb> --out <output-dir> [--json-status]"
+        },
+        {
+          "name": "validate",
+          "hidden": false,
+          "description": "--manifest <manifest.json> [--json-status]"
+        }
+      ]
+    },
+    {
+      "name": "validate",
+      "hidden": false,
+      "description": "--manifest <manifest.json> [--json-status]",
+      "options": [
+        {
+          "name": "--types",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated category filter. Valid categories:\nForms, Reports, Macros, ModulesAndClasses,\nQueries, Tables, Relationships, Navigation\nDefault: all. An unknown value (or a filter that\nselects nothing) is a usage error (exit 1), not a\nsilent empty success.",
+          "arguments": [
+            {
+              "name": "TYPES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-clean",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the default per-tier clean. By default `run`/`extract`/`translate`\ndelete the target tier directory (raw/ for extract, kb/ for translate,\nraw+kb+ir for run) before writing, so a re-harvest of a database whose\nsource objects have been removed does not leave orphan files behind.\nPass --no-clean to merge-overwrite the prior output in place (the\nlegacy file-by-file overwrite behaviour); orphan files from objects\nremoved since the prior run will remain.\nIMPORTANT: --types combined with the default clean deletes the entire\ntier directory before writing, INCLUDING previously-harvested\nunselected categories. For example, `run --types Forms` against an\nexisting output tree clears raw/, kb/, and ir/ wholesale and then\nrepopulates only Forms-related content; Reports / Queries / Tables\netc. from prior runs disappear. To do an incremental partial re-harvest\nthat preserves prior categories, pass --no-clean alongside --types.",
+          "arguments": [
+            {
+              "name": "NO_CLEAN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--include-pdf",
+          "recursive": false,
+          "hidden": false,
+          "description": "(report-baseline only) Also render each successfully aggregated\nreport to output.pdf via DoCmd.OutputTo, into the non-gated\nreports-baseline-spot-check/ sibling (NOT the byte-diffed corpus).\nOff by default: the default capture is the deterministic\naggregates.json alone. The PDF is a non-deterministic binary\nintended for human visual review only and never enters the\nregression gate; a render failure is non-blocking and recorded on\nspot-check-manifest.json without affecting the report's gated status.",
+          "arguments": [
+            {
+              "name": "INCLUDE_PDF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json-status",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit a JSON summary to stdout at end (human messages go to stderr).\nFor run/extract/translate the envelope carries provenance fields:\nHarvesterVersion (deterministic), StartedAt (UTC ISO-8601,\nnon-deterministic), DurationMs (non-deterministic), Clean (the\neffective per-tier clean mode for this invocation).",
+          "arguments": [
+            {
+              "name": "JSON_STATUS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCE_FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT_ROOT_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DBNAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CATEGORY",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "classify",
+          "hidden": false,
+          "description": "--in <file.accdb> --out <output-dir> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "extract",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "generate-docs",
+          "hidden": false,
+          "description": "--in <manifest.json> --out <output-dir>"
+        },
+        {
+          "name": "generate-migration",
+          "hidden": false
+        },
+        {
+          "name": "identify-cleanup",
+          "hidden": false,
+          "description": "[--harvest-date <YYYY-MM-DD>] [--threshold-days <N>] [--no-com] [--json-status]"
+        },
+        {
+          "name": "identify-usage",
+          "hidden": false,
+          "description": "--in <harvested-output-root> [--exclude-cleanup <path>] [--json-status]"
+        },
+        {
+          "name": "parse",
+          "hidden": false,
+          "description": "--in <source-file>"
+        },
+        {
+          "name": "report-baseline",
+          "hidden": false
+        },
+        {
+          "name": "run",
+          "hidden": false,
+          "description": "--db <file.accdb> --out <output-root-dir> [--types ...] [--no-clean] [--json-status]"
+        },
+        {
+          "name": "sanitize",
+          "hidden": false,
+          "description": "--classification <classification.json> --in <file.accdb> --out <output-dir> [--json-status]"
+        },
+        {
+          "name": "translate",
+          "hidden": false,
+          "description": "--in <raw-dir>    --out <kb-dir>          [--types ...] [--no-clean] [--json-status]"
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--types",
+      "recursive": false,
+      "hidden": false,
+      "description": "Comma-separated category filter. Valid categories:\nForms, Reports, Macros, ModulesAndClasses,\nQueries, Tables, Relationships, Navigation\nDefault: all. An unknown value (or a filter that\nselects nothing) is a usage error (exit 1), not a\nsilent empty success.",
+      "arguments": [
+        {
+          "name": "TYPES",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--no-clean",
+      "recursive": false,
+      "hidden": false,
+      "description": "Skip the default per-tier clean. By default `run`/`extract`/`translate`\ndelete the target tier directory (raw/ for extract, kb/ for translate,\nraw+kb+ir for run) before writing, so a re-harvest of a database whose\nsource objects have been removed does not leave orphan files behind.\nPass --no-clean to merge-overwrite the prior output in place (the\nlegacy file-by-file overwrite behaviour); orphan files from objects\nremoved since the prior run will remain.\nIMPORTANT: --types combined with the default clean deletes the entire\ntier directory before writing, INCLUDING previously-harvested\nunselected categories. For example, `run --types Forms` against an\nexisting output tree clears raw/, kb/, and ir/ wholesale and then\nrepopulates only Forms-related content; Reports / Queries / Tables\netc. from prior runs disappear. To do an incremental partial re-harvest\nthat preserves prior categories, pass --no-clean alongside --types.",
+      "arguments": [
+        {
+          "name": "NO_CLEAN",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--include-pdf",
+      "recursive": false,
+      "hidden": false,
+      "description": "(report-baseline only) Also render each successfully aggregated\nreport to output.pdf via DoCmd.OutputTo, into the non-gated\nreports-baseline-spot-check/ sibling (NOT the byte-diffed corpus).\nOff by default: the default capture is the deterministic\naggregates.json alone. The PDF is a non-deterministic binary\nintended for human visual review only and never enters the\nregression gate; a render failure is non-blocking and recorded on\nspot-check-manifest.json without affecting the report's gated status.",
+      "arguments": [
+        {
+          "name": "INCLUDE_PDF",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--json-status",
+      "recursive": false,
+      "hidden": false,
+      "description": "Emit a JSON summary to stdout at end (human messages go to stderr).\nFor run/extract/translate the envelope carries provenance fields:\nHarvesterVersion (deterministic), StartedAt (UTC ISO-8601,\nnon-deterministic), DurationMs (non-deterministic), Clean (the\neffective per-tier clean mode for this invocation).",
+      "arguments": [
+        {
+          "name": "JSON_STATUS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ],
+  "arguments": [
+    {
+      "name": "SOURCE_FILE",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "OUTPUT_DIR",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "OUTPUT_ROOT_DIR",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "DBNAME",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "CATEGORY",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    }
+  ]
+}
