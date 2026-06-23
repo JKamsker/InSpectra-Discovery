@@ -1,0 +1,1460 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "sharpi-cli",
+    "version": "0.1.0"
+  },
+  "options": [
+    {
+      "name": "--backend",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "GPU backend: auto, vulkan, cuda. Default: auto (prefers  CUDA when -g is set and CUDA is available, otherwise Vulkan).",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--cpu-moe",
+      "aliases": [
+        "--cmoe"
+      ],
+      "description": "MoE: keep ALL routed expert weights on the CPU (llama.cpp  --cpu-moe). Sets SHARPI_CPU_MOE=1, overriding the VRAM-fit auto-select;  SHARPI_CPU_MOE=0 in the env still forces on-GPU experts. Alias --cmoe  (llama.cpp's single-dash -cmoe isn't representable: Spectre short  options must be one character).",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--ctx-size",
+      "aliases": [
+        "-c"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Context size / max sequence length (0 = model default)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--device",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "GPU device to offload to: index (0,1,…), name (CUDA0, Vulkan1), or 'none' for CPU. Default: auto. Single-device only (no  multi-GPU split). Mirrors llama.cpp's --device.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--draft-lookup",
+      "description": "Speculative decoding via prompt-lookup (n-gram) drafting  — proposes tokens by matching the generated tail against  prompt+history; no draft model needed (greedy only, requires --temp 0)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--expert-stats",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "MoE: write GPU expert-cache (SLRU) hit-rate stats to this  file on exit. Env: SHARPI_EXPERT_STATS.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--file",
+      "aliases": [
+        "-f"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "Read the prompt from a file (llama.cpp -f/--file).  Overrides -p when both are given; useful for prompts longer than the  shell's command-line limit.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--hide-thinking",
+      "description": "Hide reasoning output (the model still reasons; only the  answer is shown)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--image",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String[]"
+            }
+          ]
+        }
+      ],
+      "description": "Path to a PNG image for multimodal input (Gemma 4  encoder-free vision). Repeatable for multiple images; reference each with an  <image> marker in -p (left-to-right), or omit markers to prepend them. Requires --mmproj and a text prompt (-p). Runs on CPU, CUDA (full + partial offload), and Vulkan (full offload).",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--kv-type",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "KV-cache element type for the CUDA backend: fp32  (default), bf16 (half the KV VRAM → ~2x context), or q8_0 (quarter →  ~4x). Like llama.cpp --cache-type-k/v. Env: SHARPI_KV_DTYPE.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--max-thinking-tokens",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Maximum reasoning tokens before forcing  </think>. 0 = unlimited (default). Not honored on the  speculative-decode path.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--min-batch-blas",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Minimum batch size to use OpenBLAS SGEMM in MatMulBatched  (default: 16, crossover for Q4_K_M weights). Also settable via  SHARPI_MIN_BATCH_BLAS env var.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--min-p",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Single"
+            }
+          ]
+        }
+      ],
+      "description": "Min-p sampling (default: 0.05)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--mmproj",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "Path to the multimodal projector GGUF (mmproj-*.gguf).  Required with --image. Mirrors llama.cpp's --mmproj.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--model",
+      "aliases": [
+        "-m"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "Path to GGUF model file",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--model-draft",
+      "aliases": [
+        "--draft-model"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "Path to a smaller draft model for speculative decoding  (greedy only, requires --temp 0). Mirrors llama.cpp's --model-draft.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--moe-warmpin",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Nullable<System.Int32>"
+            }
+          ]
+        }
+      ],
+      "description": "MoE: also pin the top-N hottest experts per layer into the GPU cache after warmup (default 0 = off; frequency-aware eviction already  retains hot experts). Env: SHARPI_MOE_WARMPIN.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--moe-warmpin-after",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int64"
+            }
+          ]
+        }
+      ],
+      "description": "MoE: expert accesses to observe before warm-pinning  selects the hot set (default 512). Only used with --moe-warmpin. Env:  SHARPI_MOE_WARMPIN_AFTER.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--n-cpu-moe",
+      "aliases": [
+        "--ncmoe"
+      ],
+      "arguments": [
+        {
+          "name": "N",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Nullable<System.Int32>"
+            }
+          ]
+        }
+      ],
+      "description": "MoE: keep the routed experts of N layers on the CPU  (llama.cpp --n-cpu-moe). DEFERRED / not yet supported —  SharpInference's expert placement is all-or-nothing (no per-layer split in  the engine), so passing any value errors with that rationale. Use --cpu-moe (all on CPU) or omit (auto).",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--n-predict",
+      "aliases": [
+        "-n"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Number of tokens to predict (default: 512)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--ngl",
+      "aliases": [
+        "--gpu-layers",
+        "--n-gpu-layers",
+        "-g"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Layers on GPU (0=CPU only, -1=all, default: 0). Mirrors  llama.cpp's --n-gpu-layers/--ngl.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--no-display-prompt",
+      "description": "Don't echo the prompt",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--no-moe-predict-prefetch",
+      "description": "MoE: disable next-layer predictive expert prefetch  (Vulkan; on by default). Env: SHARPI_MOE_PREDICT_PREFETCH=0.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--no-thinking",
+      "description": "Disable reasoning mode (sets enable_thinking=false in the  chat template)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--prefill-dequant-cache-mb",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int64"
+            }
+          ]
+        }
+      ],
+      "description": "Dequant-once BLAS weight-cache budget in MiB for CPU  prefill (issue #189): caches the F32 dequant per projection weight so chunked  prefill re-pays no dequant (bit-identical). Auto (env SHARPI_PREFILL_DEQUANT_MB  / fit-25%-RAM) by default; 0 = off, negative = unlimited. CPU only.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--prompt",
+      "aliases": [
+        "-p"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "Input prompt (default: interactive chat)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--repeat-penalty",
+      "aliases": [
+        "--rep-penalty"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Single"
+            }
+          ]
+        }
+      ],
+      "description": "Repetition penalty (1.0 = disabled, >1.0 penalizes  repeated tokens, default: 1.1). Mirrors llama.cpp's --repeat-penalty.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--seed",
+      "aliases": [
+        "-s"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "RNG seed (-1 = random, default: -1)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--single-turn",
+      "description": "Generate one response and exit",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--spec-draft-n-max",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Max draft tokens per MTP step (issue #30 batched verify).  Unset resolves via SHARPI_MTP_DRAFT_N, then defaults to 1 (a 2-token verify  batch — the measured optimum). Values > 1 also need snapshot-ring  slots: set SHARPI_MTP_BATCH_MAX >= drafts+1 (default 2; each extra  slot costs ~150 MiB VRAM on 27B). Mirrors llama.cpp.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--spec-draft-n-min",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Min draft tokens per MTP step (default: 0). Mirrors  llama.cpp. Currently rejected at parse time when > 0 since N=1 is the only  supported draft length; issue #37.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--spec-draft-p-min",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Single"
+            }
+          ]
+        }
+      ],
+      "description": "Min draft probability for MTP probabilistic accept  (default: 1.0 = strict argmax-match, byte-identical to no-MTP baseline). 0.75  mirrors llama.cpp; values in (0, 1) accept drafts whose softmax probability  under the verifier meets the threshold even when they aren't argmax (issue  #38).",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--spec-lookahead",
+      "aliases": [
+        "--draft-tokens"
+      ],
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Number of draft tokens per speculative step with  --draft-model (default: 4)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--spec-type",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "Speculative decoding type: auto (default; enables MTP when supported), none, mtp (alias: draft-mtp). Mirrors llama.cpp.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--system-prompt",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.String"
+            }
+          ]
+        }
+      ],
+      "description": "System prompt",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--temp",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Single"
+            }
+          ]
+        }
+      ],
+      "description": "Temperature (0 = greedy, default: 0.7)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--thinking",
+      "description": "Enable reasoning mode (sets enable_thinking=true). Needed  for Gemma 4 reasoning finetunes, which default off because stock Gemma 4  instruct models aren't reasoning-trained.",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--top-k",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ],
+      "description": "Top-k sampling (0 = disabled, default: 40)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--top-p",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Single"
+            }
+          ]
+        }
+      ],
+      "description": "Top-p nucleus sampling (default: 0.95)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--tq",
+      "description": "Enable TurboQuant KV cache compression (3-bit, reduces  VRAM ~5x)",
+      "recursive": false,
+      "hidden": false
+    },
+    {
+      "name": "--verbose-prompt",
+      "description": "Print token IDs before generating",
+      "recursive": false,
+      "hidden": false
+    }
+  ],
+  "commands": [
+    {
+      "name": "image",
+      "options": [
+        {
+          "name": "--backend",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(Z-Image) Force compute backend: auto (default), cuda, vulkan, cpu",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--cfg-scale",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Single"
+                }
+              ]
+            }
+          ],
+          "description": "Guidance scale — not used for Z-Image  (distilled), 1.0 for FLUX schnell (default: auto)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--clip-l",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(FLUX) Path to CLIP-L encoder safetensors",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--clip-tokenizer",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(FLUX) Path to CLIP tokenizer.json",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--device",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(Z-Image) GPU to use: auto (default), none/cpu, an  index (0, 1), or a named device (CUDA0, Vulkan1)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--height",
+          "aliases": [
+            "-H"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Int32"
+                }
+              ]
+            }
+          ],
+          "description": "Output image height in pixels — must be divisible by 16 (default: 512)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--model",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Path to diffusion model GGUF or safetensors directory  (FLUX.1, Z-Image-Turbo, …)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--negative-prompt",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Negative prompt — what to avoid in the generated  image",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--ngl",
+          "aliases": [
+            "--gpu-layers",
+            "--n-gpu-layers",
+            "-g"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Int32"
+                }
+              ]
+            }
+          ],
+          "description": "(Z-Image) GPU acceleration: -1 = auto  (CUDA→Vulkan→CPU, default), 0 = CPU only",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--output",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Output PNG file path (default: output.png)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--prompt",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Text prompt describing the image to generate",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--qwen-encoder",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(Z-Image) Path to Qwen3-4B GGUF text encoder (from  Qwen/Qwen3-4B-GGUF)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--qwen-tokenizer",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(Z-Image) Path to Qwen3 tokenizer.json",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--sd-cli",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Path to sd-cli executable used when --use-sdcpp is set (overrides SHARPI_SDCPP env var)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--seed",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Int32"
+                }
+              ]
+            }
+          ],
+          "description": "RNG seed (-1 = random, default: -1)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--steps",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Int32"
+                }
+              ]
+            }
+          ],
+          "description": "Denoising steps (default: 4 for Z-Image-Turbo, 4 for  FLUX schnell, 20 for dev)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--t5-tokenizer",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(FLUX) Path to T5 tokenizer.json",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--t5xxl",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(FLUX) Path to T5-XXL encoder safetensors",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--text-encoder",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "(sd-cli mode only) Path to LLM-style text encoder  GGUF",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--upscale-blend",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Single"
+                }
+              ]
+            }
+          ],
+          "description": "Blend factor for the upscaled result (0.0–1.0).  1.0 = full RRDB (sharpest), <1.0 softens by blending with bicubic. Default  1.0.",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--upscaler",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Path to ESRGAN/Real-ESRGAN upscaler weights  (.safetensors). Upscales the generated image by ×2 or ×4 before  saving.",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--use-sdcpp",
+          "description": "Delegate to stable-diffusion.cpp sd-cli instead of  native pipeline (for comparison)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--vae",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Path to VAE safetensors file or directory  (ae.safetensors or vae/ dir)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--verbose",
+          "aliases": [
+            "-v"
+          ],
+          "description": "Show per-step timing and progress",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--width",
+          "aliases": [
+            "-W"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Int32"
+                }
+              ]
+            }
+          ],
+          "description": "Output image width in pixels — must be divisible  by 16 (default: 512)",
+          "recursive": false,
+          "hidden": false
+        }
+      ],
+      "description": "Generate an image from a text prompt using a native FLUX  or Z-Image-Turbo diffusion pipeline (VAE + CLIP-L + T5-XXL + DiT  GGUF). See 'sharpi-cli image --help' for required model paths.",
+      "hidden": false
+    },
+    {
+      "name": "list-metadata",
+      "options": [
+        {
+          "name": "--model",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Path to GGUF model file",
+          "recursive": false,
+          "hidden": false
+        }
+      ],
+      "description": "Print all GGUF metadata key/value pairs from a model  file",
+      "hidden": false
+    },
+    {
+      "name": "list-tensors",
+      "options": [
+        {
+          "name": "--filter",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Case-insensitive substring filter on tensor name",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--layer",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Nullable<System.Int32>"
+                }
+              ]
+            }
+          ],
+          "description": "Show only tensors for this layer index (matches  blk.<N>.*)",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--model",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Path to GGUF model file",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--summary",
+          "description": "Group tensors by name suffix; show count and total  bytes per group",
+          "recursive": false,
+          "hidden": false
+        }
+      ],
+      "description": "Print the tensor index (name, dtype, shape, bytes) from a  model file",
+      "hidden": false
+    }
+  ],
+  "x-inspectra": {
+    "artifactSource": "lib-native",
+    "cliFramework": "Spectre.Console.Cli"
+  }
+}
