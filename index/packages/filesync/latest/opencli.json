@@ -1,0 +1,1178 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "FileSync",
+    "version": "5.0.0",
+    "description": "Sync/back up local files to a directory or Azure Blob storage, driven by a .filesync config (JSON or YAML) or inline options. Commands: sync, clean, watch, init; with dry-run, confirmation prompts, glob filters, and a preloaded REPL."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Sync and back up files to a local directory or Azure Blob storage"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "arguments": [
+    {
+      "name": "CONFIG",
+      "description": "A .filesync file (or a directory containing one) to load into an interactive session.",
+      "required": false,
+      "arity": {
+        "minimum": 0,
+        "maximum": 1
+      },
+      "type": "String"
+    }
+  ],
+  "commands": [
+    {
+      "name": "sync",
+      "description": "Sync/upload source files to the destination (directory or Azure).",
+      "options": [
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show what would be added/updated without writing anything. [default: False]",
+          "aliases": [
+            "--dry"
+          ],
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--confirm",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print a summary and prompt for go-ahead before syncing. [default: False]",
+          "arguments": [
+            {
+              "name": "CONFIRM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--src",
+          "recursive": false,
+          "hidden": false,
+          "description": "Source directory (inline mode).",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SRC",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dest",
+          "recursive": false,
+          "hidden": false,
+          "description": "Destination: a directory, or for cloud the sub-path after the container.",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DEST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target type: directory (default) | azure (ftp/amazon not yet implemented).",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--filter",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include glob, repeatable: --filter \"**/*.js\" --filter \"**/*.css\".",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FILTER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude glob, repeatable.",
+          "aliases": [
+            "-x"
+          ],
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--container",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud container / bucket name.",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONTAINER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--account-name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud storage account name.",
+          "arguments": [
+            {
+              "name": "ACCOUNT_NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--account-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud storage account key.",
+          "arguments": [
+            {
+              "name": "ACCOUNT_KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--creds",
+          "recursive": false,
+          "hidden": false,
+          "description": "Inline credentials (e.g. an Azure connection string).",
+          "arguments": [
+            {
+              "name": "CREDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--creds-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a file holding credentials.",
+          "arguments": [
+            {
+              "name": "CREDS_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ignore source files older than this age: 1h, 10m, 2.5d.",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Root that relative inline paths resolve against (default: current directory).",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--parallel",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run uploads in parallel (default true)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PARALLEL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Verbose logging. [default: False]",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress the pre-op report (the work log still prints). [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-color",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable colored output. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_COLOR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "description": "Path to a .filesync file, or a directory containing one. If omitted (and no --src is given), a .filesync in the current directory is used.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "clean",
+      "description": "Delete destination files that no longer exist in the source (orphans).",
+      "options": [
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "List orphaned destination files without deleting them. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--noconfirm",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the delete confirmation prompt. [default: False]",
+          "aliases": [
+            "-y"
+          ],
+          "arguments": [
+            {
+              "name": "NOCONFIRM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--src",
+          "recursive": false,
+          "hidden": false,
+          "description": "Source directory (inline mode).",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SRC",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dest",
+          "recursive": false,
+          "hidden": false,
+          "description": "Destination: a directory, or for cloud the sub-path after the container.",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DEST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target type: directory (default) | azure (ftp/amazon not yet implemented).",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--filter",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include glob, repeatable: --filter \"**/*.js\" --filter \"**/*.css\".",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FILTER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude glob, repeatable.",
+          "aliases": [
+            "-x"
+          ],
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--container",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud container / bucket name.",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONTAINER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--account-name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud storage account name.",
+          "arguments": [
+            {
+              "name": "ACCOUNT_NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--account-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud storage account key.",
+          "arguments": [
+            {
+              "name": "ACCOUNT_KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--creds",
+          "recursive": false,
+          "hidden": false,
+          "description": "Inline credentials (e.g. an Azure connection string).",
+          "arguments": [
+            {
+              "name": "CREDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--creds-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a file holding credentials.",
+          "arguments": [
+            {
+              "name": "CREDS_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ignore source files older than this age: 1h, 10m, 2.5d.",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Root that relative inline paths resolve against (default: current directory).",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--parallel",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run uploads in parallel (default true)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PARALLEL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Verbose logging. [default: False]",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress the pre-op report (the work log still prints). [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-color",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable colored output. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_COLOR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "description": "Path to a .filesync file, or a directory containing one. If omitted (and no --src is given), a .filesync in the current directory is used.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "watch",
+      "description": "Watch the source and auto-sync changes until stopped (Ctrl+C).",
+      "options": [
+        {
+          "name": "--src",
+          "recursive": false,
+          "hidden": false,
+          "description": "Source directory (inline mode).",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SRC",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dest",
+          "recursive": false,
+          "hidden": false,
+          "description": "Destination: a directory, or for cloud the sub-path after the container.",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DEST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target type: directory (default) | azure (ftp/amazon not yet implemented).",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--filter",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include glob, repeatable: --filter \"**/*.js\" --filter \"**/*.css\".",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FILTER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude glob, repeatable.",
+          "aliases": [
+            "-x"
+          ],
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--container",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud container / bucket name.",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONTAINER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--account-name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud storage account name.",
+          "arguments": [
+            {
+              "name": "ACCOUNT_NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--account-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud storage account key.",
+          "arguments": [
+            {
+              "name": "ACCOUNT_KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--creds",
+          "recursive": false,
+          "hidden": false,
+          "description": "Inline credentials (e.g. an Azure connection string).",
+          "arguments": [
+            {
+              "name": "CREDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--creds-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a file holding credentials.",
+          "arguments": [
+            {
+              "name": "CREDS_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ignore source files older than this age: 1h, 10m, 2.5d.",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Root that relative inline paths resolve against (default: current directory).",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--parallel",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run uploads in parallel (default true)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PARALLEL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Verbose logging. [default: False]",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress the pre-op report (the work log still prints). [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-color",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable colored output. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_COLOR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "description": "Path to a .filesync file, or a directory containing one. If omitted (and no --src is given), a .filesync in the current directory is used.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "description": "Scaffold a sample .filesync config file.",
+      "options": [
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sample target type: directory | azure (default directory).",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sample format: yaml | json (default yaml).",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "description": "Directory or file to write the sample to (default: ./.filesync).",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "migrate",
+      "description": "Migrate an old .filesync config to the new format (writes a new file; never overwrites).",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: yaml | json (default yaml).",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "description": "The old .filesync file to migrate (or a directory containing one).",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ]
+}
