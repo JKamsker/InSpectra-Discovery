@@ -1,0 +1,2836 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "sipsorcery-diags",
+    "version": "0.1.0-beta",
+    "description": "Diagnostics and benchmarking CLI for SIP and WebRTC, built on the SIPSorcery library: OPTIONS pings, test calls, registration and load, STUN/TURN/ICE connectivity probes, WHEP/WHIP and echo-test peers, and video pipeline benchmarks. Probe/test tooling (not a general softphone); human and agent friendly with JSON output and meaningful exit codes. For routing streams and the Cloudflare/LiveKit/OpenAI fabric verbs see the SIPSorcery.Cli tool."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.0.0",
+      "systemCommandLineVersion": "2.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "SIP and WebRTC diagnostics from the command line, built on the SIPSorcery library."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "sip",
+      "description": "SIP operations: send requests, make test calls, registrations.",
+      "commands": [
+        {
+          "name": "options",
+          "description": "Send a SIP OPTIONS request and report the response (SIP ping).",
+          "options": [
+            {
+              "name": "--hep",
+              "recursive": false,
+              "hidden": false,
+              "description": "Mirror the SIP traffic to a HEPv3 capture server (HOMER/heplify-server) so the call shows up as a ladder diagram, as host[:port][;password[;agentId]]. The port defaults to 9060. HOMER's default capture password is \"myHep\"; omit it if the server does not use one.",
+              "arguments": [
+                {
+                  "name": "HEP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 5]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DESTINATION",
+              "description": "The SIP destination in the form [sip:|sips:|udp:|tcp:|tls:|ws:|wss:][user@]host[:port][;transport=x], e.g. music@iptel.org, tcp:sip.example.com:5060, sips:secure.example.com.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "call",
+          "description": "Place a SIP call, send a test audio source and report on the media received.",
+          "options": [
+            {
+              "name": "--play",
+              "recursive": false,
+              "hidden": false,
+              "description": "The audio to send: music, tone, silence, or the path to a 8/16KHz 16 bit mono PCM WAV file. [default: music]",
+              "arguments": [
+                {
+                  "name": "PLAY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--audio",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to send the received audio: \"play\" to render with ffplay, a .wav file path, or \"-\" for raw s16le PCM on stdout (the result then moves to stderr).",
+              "arguments": [
+                {
+                  "name": "AUDIO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Render a live frequency spectrum and level meter for the received audio on stderr. Composes with any --audio mode. [default: False]",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--send-dtmf",
+              "recursive": false,
+              "hidden": false,
+              "description": "DTMF digits (0-9, * and #) to send once the call is answered.",
+              "arguments": [
+                {
+                  "name": "SEND_DTMF",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--username",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional username for authenticating the call.",
+              "aliases": [
+                "-u"
+              ],
+              "arguments": [
+                {
+                  "name": "USERNAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--password",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional password for authenticating the call.",
+              "arguments": [
+                {
+                  "name": "PASSWORD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to stay on the call after it is answered. The call also ends if the remote party hangs up. [default: 10]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--hep",
+              "recursive": false,
+              "hidden": false,
+              "description": "Mirror the SIP traffic to a HEPv3 capture server (HOMER/heplify-server) so the call shows up as a ladder diagram, as host[:port][;password[;agentId]]. The port defaults to 9060. HOMER's default capture password is \"myHep\"; omit it if the server does not use one.",
+              "arguments": [
+                {
+                  "name": "HEP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 30]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DESTINATION",
+              "description": "The SIP destination in the form [sip:|sips:|udp:|tcp:|tls:][user@]host[:port][;transport=x], e.g. music@iptel.org.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "register",
+          "description": "Register a SIP account with a registrar and report the result (sipcmdline reg).",
+          "options": [
+            {
+              "name": "--username",
+              "recursive": false,
+              "hidden": false,
+              "description": "The account username to register. Defaults to the user part of the destination if present.",
+              "aliases": [
+                "-u"
+              ],
+              "arguments": [
+                {
+                  "name": "USERNAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--password",
+              "recursive": false,
+              "hidden": false,
+              "description": "The account password used to authenticate the registration.",
+              "arguments": [
+                {
+                  "name": "PASSWORD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--expiry",
+              "recursive": false,
+              "hidden": false,
+              "description": "The requested registration expiry in seconds. [default: 120]",
+              "arguments": [
+                {
+                  "name": "EXPIRY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "Seconds to hold the registration active (refreshing as needed) before removing it. 0 registers then removes immediately. [default: 0]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--keep",
+              "recursive": false,
+              "hidden": false,
+              "description": "Leave the registration in place on exit instead of removing it with a zero expiry re-register. [default: False]",
+              "arguments": [
+                {
+                  "name": "KEEP",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--hep",
+              "recursive": false,
+              "hidden": false,
+              "description": "Mirror the SIP traffic to a HEPv3 capture server (HOMER/heplify-server) so the call shows up as a ladder diagram, as host[:port][;password[;agentId]]. The port defaults to 9060. HOMER's default capture password is \"myHep\"; omit it if the server does not use one.",
+              "arguments": [
+                {
+                  "name": "HEP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 10]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DESTINATION",
+              "description": "The registrar in the form [sip:|sips:|udp:|tcp:|tls:]host[:port], e.g. sipsorcery.com, tls:sip.example.com.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "load",
+          "description": "Generate concurrent SIP OPTIONS load and report aggregate statistics (sipcmdline load).",
+          "options": [
+            {
+              "name": "--count",
+              "recursive": false,
+              "hidden": false,
+              "description": "The total number of OPTIONS requests to send. [default: 1]",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "COUNT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--concurrent",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of requests to keep in flight concurrently. [default: 1]",
+              "aliases": [
+                "-x"
+              ],
+              "arguments": [
+                {
+                  "name": "CONCURRENT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--period",
+              "recursive": false,
+              "hidden": false,
+              "description": "Seconds each worker waits between successful requests. [default: 0]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PERIOD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--break-on-fail",
+              "recursive": false,
+              "hidden": false,
+              "description": "Stop the run as soon as a single request fails. [default: False]",
+              "aliases": [
+                "-b"
+              ],
+              "arguments": [
+                {
+                  "name": "BREAK_ON_FAIL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--source-port",
+              "recursive": false,
+              "hidden": false,
+              "description": "The local SIP port to send from. 0 uses an ephemeral port. [default: 0]",
+              "arguments": [
+                {
+                  "name": "SOURCE_PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--ipv6",
+              "recursive": false,
+              "hidden": false,
+              "description": "Prefer IPv6 when resolving the destination. [default: False]",
+              "arguments": [
+                {
+                  "name": "IPV6",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--hep",
+              "recursive": false,
+              "hidden": false,
+              "description": "Mirror the SIP traffic to a HEPv3 capture server (HOMER/heplify-server) so the call shows up as a ladder diagram, as host[:port][;password[;agentId]]. The port defaults to 9060. HOMER's default capture password is \"myHep\"; omit it if the server does not use one.",
+              "arguments": [
+                {
+                  "name": "HEP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 5]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DESTINATION",
+              "description": "The SIP destination to send OPTIONS requests to, e.g. iptel.org, tcp:sip.example.com:5060.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stun",
+      "description": "STUN operations: public address lookups, NAT diagnostics.",
+      "commands": [
+        {
+          "name": "lookup",
+          "description": "Send a STUN binding request and report this machine's public IP address and port.",
+          "options": [
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 5]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "SERVER",
+              "description": "The STUN server in the form [stun:]host[:port], e.g. stun.cloudflare.com, stun:stun.l.google.com:19302. The port defaults to 3478.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ice",
+      "description": "ICE operations: candidate gathering, STUN/TURN connectivity probes.",
+      "commands": [
+        {
+          "name": "gather",
+          "description": "Gather ICE candidates and report them. Fails if a requested STUN/TURN server produces no candidate.",
+          "options": [
+            {
+              "name": "--stun",
+              "recursive": false,
+              "hidden": false,
+              "description": "A STUN server to gather server reflexive candidates from, format stun:host[:port]. May be specified multiple times.",
+              "arguments": [
+                {
+                  "name": "STUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--turn",
+              "recursive": false,
+              "hidden": false,
+              "description": "A TURN server to gather relay candidates from, format \"turn:host[:port];username;password\". May be specified multiple times.",
+              "arguments": [
+                {
+                  "name": "TURN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--relay-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only gather relay candidates (sets the ICE transport policy to relay). [default: False]",
+              "arguments": [
+                {
+                  "name": "RELAY_ONLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--key-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN key ID. Defaults to the CLOUDFLARE_TURN_KEY_ID environment variable.",
+              "arguments": [
+                {
+                  "name": "KEY_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN key API token. Defaults to the CLOUDFLARE_API_TOKEN environment variable.",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ttl",
+              "recursive": false,
+              "hidden": false,
+              "description": "Requested TURN credential lifetime in seconds. [default: 120]",
+              "arguments": [
+                {
+                  "name": "TTL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--transport",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN transport: tls (turns:443), udp or tcp (turn:3478). [default: tls]",
+              "arguments": [
+                {
+                  "name": "TRANSPORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 10]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "turn",
+      "description": "TURN operations: relay allocation checks.",
+      "commands": [
+        {
+          "name": "allocate",
+          "description": "Allocate a relay socket on a single TURN server and report it. Fails if no relay candidate is obtained.",
+          "options": [
+            {
+              "name": "--username",
+              "recursive": false,
+              "hidden": false,
+              "description": "The TURN username (long term credential). Not needed with Cloudflare credentials.",
+              "aliases": [
+                "-u"
+              ],
+              "arguments": [
+                {
+                  "name": "USERNAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--password",
+              "recursive": false,
+              "hidden": false,
+              "description": "The TURN password/credential. Not needed with Cloudflare credentials.",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PASSWORD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--key-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN key ID. Defaults to the CLOUDFLARE_TURN_KEY_ID environment variable.",
+              "arguments": [
+                {
+                  "name": "KEY_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN key API token. Defaults to the CLOUDFLARE_API_TOKEN environment variable.",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ttl",
+              "recursive": false,
+              "hidden": false,
+              "description": "Requested TURN credential lifetime in seconds. [default: 120]",
+              "arguments": [
+                {
+                  "name": "TTL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--transport",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN transport: tls (turns:443), udp or tcp (turn:3478). [default: tls]",
+              "arguments": [
+                {
+                  "name": "TRANSPORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 10]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "description": "The TURN server URL, e.g. turn:turn.example.com:3478, turns:turn.example.com:5349 or turn:host:3478?transport=tcp. Optional when Cloudflare credentials are supplied.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "webrtc",
+      "description": "WebRTC operations: full connection probes with ICE, DTLS and media.",
+      "commands": [
+        {
+          "name": "whep",
+          "description": "Connect to a WHEP endpoint (full ICE/DTLS/SRTP) and verify media is received.",
+          "options": [
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional bearer token for the Authorization header. For Broadcast Box this is the stream key.",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to receive media for after the connection is established. [default: 5]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--video",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to send the received video: \"play\" to render in an ffplay window, a file path (H264 is written as Annex B, VP8 in an IVF container), \"-\" for the bitstream on stdout (the result then moves to stderr), e.g. pipe to \"mpv --vo=tct -\" for video in the terminal, or \"null\" to discard it (headless throughput measurement, e.g. with --decode).",
+              "arguments": [
+                {
+                  "name": "VIDEO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--decode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Decode the received frames in-process with the SIPSorcery (FFmpeg) video decoder and send raw RGB to the --video sink, instead of passing the encoded bitstream through for the consumer to decode (the default). Requires the FFmpeg shared libraries and a --video sink. [default: False]",
+              "arguments": [
+                {
+                  "name": "DECODE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--ffmpeg-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory containing the FFmpeg shared libraries for --decode. Defaults to the system path.",
+              "arguments": [
+                {
+                  "name": "FFMPEG_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 10]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "description": "The WHEP endpoint URL, e.g. https://b.siobud.com/api/whep.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "whip",
+          "description": "Publish a test pattern to a WHIP endpoint using the SIPSorcery stack (full send pipeline: encode, RTP/SRTP, ICE/DTLS).",
+          "options": [
+            {
+              "name": "--preset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Resolution preset (360p, 480p, 720p, 1080p, 1440p or 4k). Ignored if --size is given. [default: 720p]",
+              "arguments": [
+                {
+                  "name": "PRESET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--size",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit frame size WxH (e.g. 1280x720), overriding --preset.",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SIZE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fps",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target frame rate to publish at (ignored with --max-rate). [default: 30]",
+              "arguments": [
+                {
+                  "name": "FPS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--encoder",
+              "recursive": false,
+              "hidden": false,
+              "description": "Video encoder: vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg). [default: vp8.net]",
+              "arguments": [
+                {
+                  "name": "ENCODER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--codec",
+              "recursive": false,
+              "hidden": false,
+              "description": "Codec for the ffmpeg encoder: h264 (default), h265, vp8, vp9 or av1. Ignored for vp8.net, which is always VP8.",
+              "arguments": [
+                {
+                  "name": "CODEC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--bitrate",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target encoder bitrate in bits per second (ffmpeg encoder only). 0 (default) derives it from the resolution and frame rate.",
+              "arguments": [
+                {
+                  "name": "BITRATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--max-rate",
+              "recursive": false,
+              "hidden": false,
+              "description": "Send as fast as the encoder and transport allow (ignores --fps) to measure the send pipeline ceiling. Use only against a local receiver, never a remote ingest. [default: False]",
+              "arguments": [
+                {
+                  "name": "MAX_RATE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--ffmpeg-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory containing the FFmpeg shared libraries for --encoder ffmpeg. Defaults to the system path.",
+              "arguments": [
+                {
+                  "name": "FFMPEG_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional bearer token for the WHIP endpoint Authorization header.",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to publish for after the connection is established. [default: 10]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 15]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "description": "The WHIP endpoint URL to publish to, e.g. http://localhost:8080/whip.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "whip-server",
+          "description": "Act as a WHIP endpoint: accept a publisher's offer (e.g. from ffmpeg or OBS) and report on the received media.",
+          "options": [
+            {
+              "name": "--listen",
+              "recursive": false,
+              "hidden": false,
+              "description": "The HTTP URL to accept WHIP publish offers on. Defaults to http://localhost:8080/whip. [default: http://localhost:8080/whip]",
+              "arguments": [
+                {
+                  "name": "LISTEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional bearer token publishers must supply in the Authorization header.",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to receive media for after the connection is established. [default: 10]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--video",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to send the received video: \"play\" to render in an ffplay window, a file path (H264 is written as Annex B, VP8 in an IVF container), \"-\" for the bitstream on stdout (the result then moves to stderr), e.g. pipe to \"mpv --vo=tct -\" for video in the terminal, or \"null\" to discard it (headless throughput measurement, e.g. with --decode).",
+              "arguments": [
+                {
+                  "name": "VIDEO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--decode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Decode the received frames in-process (see --decoder) and send raw RGB to the --video sink, instead of passing the encoded bitstream through for the consumer to decode (the default). Requires a --video sink. [default: False]",
+              "arguments": [
+                {
+                  "name": "DECODE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--decoder",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --decode: the decoder, ffmpeg (SIPSorceryMedia.FFmpeg, any codec) or vp8.net (managed Vpx.Net, VP8 only). [default: ffmpeg]",
+              "arguments": [
+                {
+                  "name": "DECODER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ffmpeg-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory containing the FFmpeg shared libraries for the ffmpeg --decoder. Defaults to the system path.",
+              "arguments": [
+                {
+                  "name": "FFMPEG_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 60]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "loopback",
+          "description": "Publish a test pattern to an in-process WHIP receiver and report on it: a self-contained encode, network and decode loop in one process.",
+          "options": [
+            {
+              "name": "--listen",
+              "recursive": false,
+              "hidden": false,
+              "description": "The local HTTP URL the in-process receiver binds and the publisher targets. Defaults to http://localhost:8080/whip. [default: http://localhost:8080/whip]",
+              "arguments": [
+                {
+                  "name": "LISTEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional bearer token shared between the in-process publisher and receiver.",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to run the loop for after the connection is established. [default: 10]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--video",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to send the received video: \"play\" to render in an ffplay window, a file path (H264 is written as Annex B, VP8 in an IVF container), \"-\" for the bitstream on stdout (the result then moves to stderr), or \"null\" to discard it (headless throughput measurement, e.g. with --decode).",
+              "arguments": [
+                {
+                  "name": "VIDEO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--decode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Decode the received frames in-process (see --decoder) and send raw RGB to the --video sink, instead of passing the encoded bitstream through for the consumer to decode (the default). Requires a --video sink. [default: False]",
+              "arguments": [
+                {
+                  "name": "DECODE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--decoder",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --decode: the decoder, ffmpeg (SIPSorceryMedia.FFmpeg, any codec) or vp8.net (managed Vpx.Net, VP8 only). [default: ffmpeg]",
+              "arguments": [
+                {
+                  "name": "DECODER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ffmpeg-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory containing the FFmpeg shared libraries for the ffmpeg encoder and/or ffmpeg --decoder. Defaults to the system path.",
+              "arguments": [
+                {
+                  "name": "FFMPEG_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--encoder",
+              "recursive": false,
+              "hidden": false,
+              "description": "Video encoder: vp8.net (managed Vpx.Net VP8, no native deps) or ffmpeg (SIPSorceryMedia.FFmpeg). [default: ffmpeg]",
+              "arguments": [
+                {
+                  "name": "ENCODER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--preset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Resolution preset (360p, 480p, 720p, 1080p, 1440p or 4k). Ignored if --size is given. [default: 720p]",
+              "arguments": [
+                {
+                  "name": "PRESET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--size",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit frame size WxH (e.g. 1280x720), overriding --preset.",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SIZE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fps",
+              "recursive": false,
+              "hidden": false,
+              "description": "Frame rate to publish at. [default: 30]",
+              "arguments": [
+                {
+                  "name": "FPS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--codec",
+              "recursive": false,
+              "hidden": false,
+              "description": "Codec for the ffmpeg encoder: h264 (default), h265, vp8, vp9 or av1. Ignored for vp8.net, which is always VP8.",
+              "arguments": [
+                {
+                  "name": "CODEC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--bitrate",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target encoder bitrate in bits per second (ffmpeg encoder only). 0 (default) derives it from the resolution and frame rate.",
+              "arguments": [
+                {
+                  "name": "BITRATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--pre-encode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Encode this many frames once before connecting and replay the encoded bitstream in a loop, so no encoding runs during the send window. Use it to isolate the receive/decode stage (e.g. with --decode) from the encoder. 0 (default) encodes live in the send loop.",
+              "arguments": [
+                {
+                  "name": "PRE_ENCODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--max-rate",
+              "recursive": false,
+              "hidden": false,
+              "description": "Send as fast as the encoder/replay and transport allow (ignores --fps), to measure the pipeline ceiling. Pair with --pre-encode and no --decode to get the pure transport (packetise/SRTP) ceiling. [default: False]",
+              "arguments": [
+                {
+                  "name": "MAX_RATE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 60]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "echo",
+          "description": "Run a WebRTC echo test against an echo server and verify the data channel round trips (webrtccmdline --echoclient).",
+          "options": [
+            {
+              "name": "--stun",
+              "recursive": false,
+              "hidden": false,
+              "description": "A STUN or TURN server for the peer connection, format \"(stun|turn):host[:port][;username;password]\".",
+              "arguments": [
+                {
+                  "name": "STUN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--relay-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only use relay (TURN) candidates (sets the ICE transport policy to relay). [default: False]",
+              "arguments": [
+                {
+                  "name": "RELAY_ONLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-audio",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not include an audio track in the offer. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_AUDIO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-data",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not include a data channel (then the connection state is the only success signal). [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_DATA",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--key-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN key ID. Defaults to the CLOUDFLARE_TURN_KEY_ID environment variable.",
+              "arguments": [
+                {
+                  "name": "KEY_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN key API token. Defaults to the CLOUDFLARE_API_TOKEN environment variable.",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ttl",
+              "recursive": false,
+              "hidden": false,
+              "description": "Requested TURN credential lifetime in seconds. [default: 120]",
+              "arguments": [
+                {
+                  "name": "TTL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--transport",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN transport: tls (turns:443), udp or tcp (turn:3478). [default: tls]",
+              "arguments": [
+                {
+                  "name": "TRANSPORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 15]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "description": "The echo server's offer endpoint, e.g. http://localhost:8080/offer.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "echo-server",
+          "description": "Act as a WebRTC echo test server: answer offers, echo RTP and data channel messages (webrtccmdline --echoserver).",
+          "options": [
+            {
+              "name": "--listen",
+              "recursive": false,
+              "hidden": false,
+              "description": "The HTTP URL to accept echo offers on (the /offer endpoint). Defaults to http://localhost:8080/. [default: http://localhost:8080/]",
+              "arguments": [
+                {
+                  "name": "LISTEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "Seconds to run the server before exiting. 0 runs until cancelled with ctrl-c. [default: 0]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--relay-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Answer with relay (TURN) candidates only, so the server is reachable through the relay rather than its host addresses. Requires Cloudflare TURN credentials. [default: False]",
+              "arguments": [
+                {
+                  "name": "RELAY_ONLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--key-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN key ID. Defaults to the CLOUDFLARE_TURN_KEY_ID environment variable.",
+              "arguments": [
+                {
+                  "name": "KEY_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--token",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN key API token. Defaults to the CLOUDFLARE_API_TOKEN environment variable.",
+              "arguments": [
+                {
+                  "name": "TOKEN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ttl",
+              "recursive": false,
+              "hidden": false,
+              "description": "Requested TURN credential lifetime in seconds. [default: 120]",
+              "arguments": [
+                {
+                  "name": "TTL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--transport",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cloudflare TURN transport: tls (turns:443), udp or tcp (turn:3478). [default: tls]",
+              "arguments": [
+                {
+                  "name": "TRANSPORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to wait for the operation to complete. [default: 0]",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "video-bench",
+          "description": "Benchmark the video send pipeline (packetisation/encoding) against a target resolution and frame rate.",
+          "options": [
+            {
+              "name": "--preset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Resolution preset (360p, 480p, 720p, 1080p, 1440p or 4k); overrides --width/--height when set.",
+              "arguments": [
+                {
+                  "name": "PRESET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--width",
+              "recursive": false,
+              "hidden": false,
+              "description": "The frame width in pixels. [default: 1920]",
+              "aliases": [
+                "-w"
+              ],
+              "arguments": [
+                {
+                  "name": "WIDTH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--height",
+              "recursive": false,
+              "hidden": false,
+              "description": "The frame height in pixels. [default: 1080]",
+              "arguments": [
+                {
+                  "name": "HEIGHT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--fps",
+              "recursive": false,
+              "hidden": false,
+              "description": "The target frame rate to test against. [default: 30]",
+              "arguments": [
+                {
+                  "name": "FPS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of seconds to run the benchmark for. [default: 5]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--bitrate",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target encoded bitrate in bits per second; sets the per-frame size for the packetise stage. 0 (default) derives it from the resolution and frame rate. [default: 0]",
+              "arguments": [
+                {
+                  "name": "BITRATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--encoder",
+              "recursive": false,
+              "hidden": false,
+              "description": "The pipeline stage to test: none (packetise only), ffmpeg (SIPSorceryMedia.FFmpeg in-process encoder), ffmpeg-piped (external ffmpeg process) or vp8.net (managed Vpx.Net codec). The none stage packetises a frame sized from --bitrate/--fps, so it is independent of resolution (width/height are reported for context only). [default: none]",
+              "arguments": [
+                {
+                  "name": "ENCODER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--codec",
+              "recursive": false,
+              "hidden": false,
+              "description": "The video codec to encode/packetise as: vp8, vp9, h264, h265 (alias hevc) or av1. The in-process ffmpeg encoder supports all five; vp8.net is VP8 only and ffmpeg-piped supports vp8 and vp9 (IVF) only. [default: vp8]",
+              "arguments": [
+                {
+                  "name": "CODEC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ffmpeg-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory containing the FFmpeg shared libraries for the --encoder ffmpeg stage. Defaults to the system path.",
+              "arguments": [
+                {
+                  "name": "FFMPEG_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--deadline",
+              "recursive": false,
+              "hidden": false,
+              "description": "libvpx deadline for the ffmpeg stages: realtime, good or best. [default: realtime]",
+              "arguments": [
+                {
+                  "name": "DEADLINE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--cpu-used",
+              "recursive": false,
+              "hidden": false,
+              "description": "libvpx cpu-used (speed) for the ffmpeg stages. Higher is faster/lower quality (VP8 realtime 0-16). -1 leaves it unset. [default: 5]",
+              "arguments": [
+                {
+                  "name": "CPU_USED",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--threads",
+              "recursive": false,
+              "hidden": false,
+              "description": "Encoder thread count for the ffmpeg stages. 0 lets the encoder decide. [default: 0]",
+              "arguments": [
+                {
+                  "name": "THREADS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--av1-encoder",
+              "recursive": false,
+              "hidden": false,
+              "description": "FFmpeg AV1 encoder for the in-process ffmpeg stage: libsvtav1 (fastest for realtime), libaom-av1, librav1e, or a hardware encoder (av1_nvenc, av1_qsv). Applies to --codec av1 and --all. [default: libsvtav1]",
+              "arguments": [
+                {
+                  "name": "AV1_ENCODER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--av1-preset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Speed preset for the AV1 encoder, higher is faster (libsvtav1 preset 0-13). -1 uses the encoder's realtime default. [default: -1]",
+              "arguments": [
+                {
+                  "name": "AV1_PRESET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--all",
+              "recursive": false,
+              "hidden": false,
+              "description": "Benchmark every video codec (vp8, vp9, h265, av1) with the in-process ffmpeg encoder and report each. Overrides --encoder and --codec. [default: False]",
+              "aliases": [
+                "--extended"
+              ],
+              "arguments": [
+                {
+                  "name": "ALL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the result to stdout as a single JSON object instead of human readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write diagnostic logs, including protocol traces, to stderr. [default: False]",
+              "aliases": [
+                "-v"
+              ],
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
