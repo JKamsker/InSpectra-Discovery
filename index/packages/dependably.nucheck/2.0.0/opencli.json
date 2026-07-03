@@ -1,0 +1,138 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "nucheck - NuGet vulnerability auditor",
+    "version": "2.0.0",
+    "description": "Audits .NET NuGet dependencies (packages.config / packages.lock.json) for known vulnerabilities via the GitHub Advisory Database, similar to npm audit."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 1
+  },
+  "commands": [],
+  "options": [
+    {
+      "name": "--source",
+      "recursive": false,
+      "hidden": false,
+      "description": "Advisory source: github (default), osv",
+      "arguments": [
+        {
+          "name": "NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--format",
+      "recursive": false,
+      "hidden": false,
+      "description": "Output format: human, table, json (default: human)",
+      "arguments": [
+        {
+          "name": "TYPE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--severity",
+      "recursive": false,
+      "hidden": false,
+      "description": "Filter by severity: critical, high, moderate, low, info",
+      "arguments": [
+        {
+          "name": "LEVEL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--config",
+      "recursive": false,
+      "hidden": false,
+      "description": "Path to a .dependably-check config file. When omitted, the\nfile is discovered by walking up from the audited file's directory.",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--fail-on",
+      "recursive": false,
+      "hidden": false,
+      "description": "CI gate (repeatable). Without it, ANY vulnerability or policy\nerror fails the build (exit 1) — the default. Each rule below\nREPLACES that default; the build fails if ANY rule trips:\nseverity=<critical|high|moderate|low|info>\nfail only when a finding is at-or-above this level\n(relaxes/raises the gate, e.g. severity=high ignores\nmoderate/low vulns for gating — they still print).\ncount=<N>\nfail when the vulnerability count exceeds N. This rule\ngoverns vulnerabilities only; policy errors (see below)\nstill gate, so count=0 fails on any vulnerability OR any\nuntrusted source.\nPolicy errors are only relaxed by an explicit severity rule\n(which governs policy findings too, e.g. severity=critical).\nDistinct from --severity, which only filters what is printed.",
+      "arguments": [
+        {
+          "name": "KEY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--rest",
+      "recursive": false,
+      "hidden": false,
+      "description": "Use the GitHub REST API instead of GraphQL (github source)"
+    },
+    {
+      "name": "--verbose",
+      "recursive": false,
+      "hidden": false,
+      "description": "Write progress to stderr",
+      "aliases": [
+        "-v"
+      ]
+    },
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show this help message",
+      "aliases": [
+        "-h"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Print the tool version and exit\nPolicy checks:\nIn addition to vulnerabilities, nucheck flags any configured NuGet package\nsource whose host is not public (api.nuget.org / nuget.org) and not allowlisted\nin .dependably-check (the union of the common.allowedRegistryHosts and\nnuget.allowedRegistryHosts lists).\nAn untrusted source is an error and exits non-zero.\nLocal folder feeds (relative paths or file:// URIs) declared inside the repo\nare also errors by default, because a committed feed can smuggle tampered\npackages past a restore. Trust one explicitly via allowedLocalFeeds:\n{\n\"common\": { \"allowedLocalFeeds\": [\"./local-packages\"] },\n\"nuget\":  { \"allowedLocalFeeds\": [\"file:///opt/mirror\"] }\n}\nWhen nucheck cannot find a repository boundary (.git), NuGet config in parent\ndirectories is not audited; nucheck then emits an info finding naming the\nexcluded config so the fail-open is visible.\nUnused-package check (advisory only, never exits non-zero):\nnucheck heuristically detects packages declared as direct <PackageReference>\nin *.csproj files under the scan root (the audited file's directory) whose\nnamespace does not appear in any .cs source file. Build-tool, analyzer, MSBuild-\ntask, and PrivateAssets packages commonly trigger false positives. Suppress\nindividual packages via ignoreUnusedPackages in .dependably-check:\n\"common\": { \"ignoreUnusedPackages\": [\"StyleCop.Analyzers\"] },\n\"nuget\":  { \"ignoreUnusedPackages\": [\"Microsoft.CodeAnalysis.Analyzers\"] }\nEnvironment Variables:\nGITHUB_TOKEN               GitHub personal access token (required for the github source)"
+    }
+  ],
+  "arguments": [
+    {
+      "name": "PATH_TO_PACKAGES_FILE",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      },
+      "description": "Path to packages.config, packages.lock.json, or a\n.csproj / Directory.Packages.props\n(PackageReference / Central Package Management).\nNote: .csproj / .props are parsed statically (no MSBuild\nevaluation); version ranges & floating versions are audited\nat their declared LOWER BOUND, not the restored version. For\nexact resolved versions, point at a packages.lock.json."
+    }
+  ]
+}
