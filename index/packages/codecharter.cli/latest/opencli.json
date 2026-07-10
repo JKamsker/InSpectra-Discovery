@@ -1,0 +1,2301 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "codecharter",
+    "version": "1.3.8",
+    "description": "Deterministic code quality analysis for .NET. Define rules in a LINQ-like DSL, store them as .cgr files, and run them from the command line. Requires a valid CodeCharter license / API key at runtime."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.5.0",
+      "systemCommandLineVersion": "2.0.5.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "CodeCharter - Deterministic code quality analysis for .NET"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "analyze",
+      "description": "Analyze a solution or project",
+      "options": [
+        {
+          "name": "--rules",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory containing .ccr rule files. When omitted, looks for ./rules in the current directory and falls back to the bundled samples next to the CLI.",
+          "arguments": [
+            {
+              "name": "RULES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format, optionally with a destination as format:path. Formats: console, github-annotations (stdout, no path), json, sarif. Repeatable to emit several formats from one run, e.g. --output github-annotations --output json:codecharter.json --output sarif:codecharter.sarif. File formats (json, sarif) require a path when combined; at most one stdout format per run. Defaults to console.",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--output-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write output to file instead of stdout (single-output form; combine with a single --output format)",
+          "arguments": [
+            {
+              "name": "OUTPUT_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--severity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum severity to display: error, warn, info [default: info]",
+          "arguments": [
+            {
+              "name": "SEVERITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--fail-on",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit code 1 if any violation at this level: error, warn, info",
+          "arguments": [
+            {
+              "name": "FAIL_ON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-color",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable ANSI color codes [default: False]",
+          "arguments": [
+            {
+              "name": "NO_COLOR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress [default: False]",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--progress",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show live progress (per-project and per-rule) on stderr while analyzing. Can be combined with --verbose. [default: False]",
+          "arguments": [
+            {
+              "name": "PROGRESS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--workspace-root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Strip this path prefix from file paths (used with github-annotations format)",
+          "arguments": [
+            {
+              "name": "WORKSPACE_ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--diff",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report only findings on lines added/modified by this unified diff. Pass a path to a diff file, or '-' to read the diff from stdin. Mutually exclusive with --git-ref.",
+          "arguments": [
+            {
+              "name": "DIFF",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--git-ref",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report only findings on lines changed in this git ref range (e.g. main..HEAD); runs 'git diff <range> --unified=0'. Mutually exclusive with --diff.",
+          "arguments": [
+            {
+              "name": "GIT_REF",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--write-baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run the analysis and write the current findings' fingerprints to this baseline file, then exit without reporting findings or failing. Use the file later with --baseline to gate only on new findings.",
+          "arguments": [
+            {
+              "name": "WRITE_BASELINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress findings recorded in this baseline file so output and --fail-on apply only to new findings. A missing file analyzes everything (with a warning). Generate the file with --write-baseline.",
+          "arguments": [
+            {
+              "name": "BASELINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--telemetry",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable opt-in telemetry: after the run, send one anonymous usage event (tool name, latency bucket, per-rule finding counts, hashed workspace id) to the CodeCharter endpoint. Off by default; no source, paths, or code are ever sent. [default: False]",
+          "arguments": [
+            {
+              "name": "TELEMETRY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--telemetry-endpoint",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override the telemetry ingestion endpoint (default: https://codecharter.tools).",
+          "arguments": [
+            {
+              "name": "TELEMETRY_ENDPOINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "description": "Path to .sln, .slnx, or .csproj file. When omitted, the working directory is searched and the shallowest .sln/.slnx (or .csproj as a fallback) is analyzed.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "validate",
+      "description": "Parse and type-check a .ccr file",
+      "options": [
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FILE",
+          "description": "Path to .ccr file",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "description": "Run a rule's spec (hit/miss cases) and report pass/fail with a CI-friendly exit code",
+      "options": [
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: console (default) or json [default: console]",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-color",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable ANSI color codes [default: False]",
+          "arguments": [
+            {
+              "name": "NO_COLOR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--scaffold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate a .spec.md skeleton next to the given .ccr rule (does not overwrite an existing spec) [default: False]",
+          "arguments": [
+            {
+              "name": "SCAFFOLD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "description": "A .ccr rule file, a .spec.md file, or a directory of rules. Runs each rule's .spec.md hit/miss cases through the engine.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "description": "Create a rules directory with example .ccr files",
+      "options": [
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lsp",
+      "description": "Start the CodeCharter DSL language server (stdio LSP for .ccr files)",
+      "options": [
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "config-lsp",
+      "description": "Start the CodeCharter config language server (stdio LSP for .codecharter/config.yml)",
+      "options": [
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "description": "Start the CodeCharter MCP server (Model Context Protocol for AI coding tools)",
+      "options": [
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--transport",
+          "recursive": false,
+          "hidden": false,
+          "description": "Transport to use: stdio (default) or http [default: stdio]",
+          "arguments": [
+            {
+              "name": "TRANSPORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--port",
+          "recursive": false,
+          "hidden": false,
+          "description": "TCP port for the HTTP transport (default 7777) [default: 7777]",
+          "arguments": [
+            {
+              "name": "PORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--bind",
+          "recursive": false,
+          "hidden": false,
+          "description": "IP address to bind the HTTP transport to (default 127.0.0.1) [default: 127.0.0.1]",
+          "arguments": [
+            {
+              "name": "BIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--token",
+          "recursive": false,
+          "hidden": false,
+          "description": "Bearer token for HTTP transport auth (literal value)",
+          "arguments": [
+            {
+              "name": "TOKEN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--token-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a file whose content is used as the Bearer token",
+          "arguments": [
+            {
+              "name": "TOKEN_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--allow-public",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allow binding to a non-loopback address (emits a security warning) [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_PUBLIC",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--cors-origin",
+          "recursive": false,
+          "hidden": false,
+          "description": "CORS origin to whitelist (can be repeated; default is same-origin only)",
+          "arguments": [
+            {
+              "name": "CORS_ORIGIN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--telemetry",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable opt-in telemetry (sends anonymous usage data to the CodeCharter telemetry endpoint) [default: False]",
+          "arguments": [
+            {
+              "name": "TELEMETRY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--telemetry-endpoint",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override the telemetry ingestion endpoint (default: https://codecharter.tools)",
+          "arguments": [
+            {
+              "name": "TELEMETRY_ENDPOINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "install",
+          "description": "Install the CodeCharter MCP server into an AI coding tool's config file",
+          "options": [
+            {
+              "name": "--client",
+              "recursive": false,
+              "hidden": false,
+              "description": "AI coding tool to configure: claude-code, cursor, claude-desktop, windsurf, gemini",
+              "arguments": [
+                {
+                  "name": "CLIENT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Config file scope: project (default) or user [default: project]",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the diff without writing any files [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite an existing CodeCharter entry without prompting [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--license",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+              "arguments": [
+                {
+                  "name": "LICENSE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "docs",
+      "description": "Show rule-writing documentation",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: md (default), plain, json [default: md]",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "TOPIC",
+          "description": "Doc topic: getting-started, dsl-grammar, predicates, rule-examples. Omit to list all topics.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "restore",
+      "description": "Download and restore rule bundles into the local cache from codecharter.lock.json",
+      "options": [
+        {
+          "name": "--lockfile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to codecharter.lock.json. Defaults to .codecharter/codecharter.lock.json in the current repository.",
+          "arguments": [
+            {
+              "name": "LOCKFILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--cache-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Local bundle cache directory. Defaults to ~/.codecharter/cache.",
+          "arguments": [
+            {
+              "name": "CACHE_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress non-error output (for CI). [default: False]",
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--refresh-license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force a fresh license fetch from the portal, even if the cached codecharter.license still has plenty of remaining validity. Use this after a portal-side license change. [default: False]",
+          "arguments": [
+            {
+              "name": "REFRESH_LICENSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "update",
+      "description": "Re-resolve profiles against the portal and rewrite codecharter.lock.json",
+      "options": [
+        {
+          "name": "--all",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-resolve all profiles (same as omitting the profile argument). [default: False]",
+          "arguments": [
+            {
+              "name": "ALL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to codecharter.yml. Defaults to ./codecharter.yml in the current directory.",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--lockfile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to codecharter.lock.json. Defaults to .codecharter/codecharter.lock.json in the current repository.",
+          "arguments": [
+            {
+              "name": "LOCKFILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--portal-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "Base URL of the portal. Defaults to the hosted portal; pass this only for a self-hosted portal. [default: https://codecharter.tools]",
+          "arguments": [
+            {
+              "name": "PORTAL_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--api-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "Bearer API key for portal authentication. Optional: defaults to the installed license when omitted.",
+          "arguments": [
+            {
+              "name": "API_KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--refresh-license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force a fresh license fetch from the portal, even if the cached codecharter.license still has plenty of remaining validity. Use this after a portal-side license change. [default: False]",
+          "arguments": [
+            {
+              "name": "REFRESH_LICENSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PROFILE",
+          "description": "Profile slug to update. When omitted, all profiles are updated.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "verify",
+      "description": "Verify the local bundle cache against codecharter.lock.json",
+      "options": [
+        {
+          "name": "--lockfile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to codecharter.lock.json. Defaults to .codecharter/codecharter.lock.json in the current repository.",
+          "arguments": [
+            {
+              "name": "LOCKFILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--cache-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Local bundle cache directory. Defaults to ~/.codecharter/cache.",
+          "arguments": [
+            {
+              "name": "CACHE_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--against-portal",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also call POST /api/v1/lockfile/verify on the portal to detect server-side changes. [default: False]",
+          "arguments": [
+            {
+              "name": "AGAINST_PORTAL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--portal-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "Base URL of the portal used with --against-portal. Defaults to the hosted portal; pass this only for a self-hosted portal. [default: https://codecharter.tools]",
+          "arguments": [
+            {
+              "name": "PORTAL_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--api-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "Bearer API key for portal authentication with --against-portal. Optional: defaults to the installed license when omitted.",
+          "arguments": [
+            {
+              "name": "API_KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress per-entry output. Exit code still reflects the result. [default: False]",
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "push",
+      "description": "Upload .ccr rule files as drafts and create a profile draft on the portal",
+      "options": [
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Profile slug to create a draft for.",
+          "arguments": [
+            {
+              "name": "PROFILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "SemVer version for the profile draft.",
+          "arguments": [
+            {
+              "name": "VERSION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--portal-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "Base URL of the portal. Defaults to the hosted portal; pass this only for a self-hosted portal. [default: https://codecharter.tools]",
+          "arguments": [
+            {
+              "name": "PORTAL_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--api-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "Bearer API key for portal authentication (needs the write:rules scope). Optional: defaults to the installed license when omitted.",
+          "arguments": [
+            {
+              "name": "API_KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print what would be uploaded without making any changes. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--license",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+          "arguments": [
+            {
+              "name": "LICENSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "DIR",
+          "description": "Directory to scan recursively for .ccr rule files.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Commands for inspecting and validating .codecharter/config.yml.",
+      "commands": [
+        {
+          "name": "explain",
+          "description": "Show the effective .codecharter/config.yml settings for a given source file, with provenance.",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit machine-readable JSON instead of human-readable text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "description": "Path to the source file whose effective configuration should be shown.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "validate",
+          "description": "Validate .codecharter/config.yml for structural errors, unknown rules, bad params, and dead config entries.",
+          "options": [
+            {
+              "name": "--workspace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the workspace root (directory) or any file inside the repo. When omitted, the current directory is used to locate .codecharter/config.yml.",
+              "arguments": [
+                {
+                  "name": "WORKSPACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--rules",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory containing .ccr rule files, used to validate referenced rule ids. When omitted, ./rules and the bundled rules are tried (same discovery as analyze); if no rule set is found, rule-id validation is skipped with a warning.",
+              "arguments": [
+                {
+                  "name": "RULES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "schema",
+          "description": "Generate a JSON Schema (draft-07) describing .codecharter/config.yml, enriched with rule slugs and typed parameter declarations from the loaded rule set.",
+          "options": [
+            {
+              "name": "--rules",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory containing .ccr rule files used to enrich the schema with rule slugs and typed parameter declarations. When omitted, only the static skeleton is emitted.",
+              "arguments": [
+                {
+                  "name": "RULES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--out",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the JSON Schema to this file instead of stdout.",
+              "arguments": [
+                {
+                  "name": "OUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "description": "Print the raw base-layer (or --scope) value of a config key.",
+          "options": [
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Read the value from the scope whose match equals this glob, instead of the base layer.",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "Dotted key to read: params.<rule>.<name>, overrides.<rule>.severity, or profiles.<slug>.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List config sections, or the entries of one section.",
+          "arguments": [
+            {
+              "name": "SECTION",
+              "description": "Optional section to list (profiles, params, overrides, ignore, include, exclude, scopes). When omitted, a summary of all sections is printed.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "set",
+          "description": "Set a config value (base layer or --scope).",
+          "options": [
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write into the scope whose match equals this glob (created at the end if absent), instead of the base layer.",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--local",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target .codecharter/config.local.yml instead of config.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "LOCAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the unified diff instead of writing the file. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--rules",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory of .ccr rule files used to validate referenced rule slugs.",
+              "arguments": [
+                {
+                  "name": "RULES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "Dotted key: params.<rule>.<name>, overrides.<rule>.severity, or profiles.<slug>.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VALUE",
+              "description": "The value to set.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "unset",
+          "description": "Remove a params or overrides entry (base layer).",
+          "options": [
+            {
+              "name": "--local",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target .codecharter/config.local.yml instead of config.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "LOCAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the unified diff instead of writing the file. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "Dotted key to remove (params or overrides).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "add",
+          "description": "Add an exclude/profile/ignore/include entry (base layer or --scope).",
+          "options": [
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Add/remove a local bundle profile by file path instead of a slug.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--in",
+              "recursive": false,
+              "hidden": false,
+              "description": "Namespace filter for an ignore/include entry.",
+              "arguments": [
+                {
+                  "name": "IN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--match",
+              "recursive": false,
+              "hidden": false,
+              "description": "Entity-name glob filter for an ignore/include entry.",
+              "arguments": [
+                {
+                  "name": "MATCH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write into the scope whose match equals this glob (created at the end if absent), instead of the base layer.",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--local",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target .codecharter/config.local.yml instead of config.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "LOCAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the unified diff instead of writing the file. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--rules",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory of .ccr rule files used to validate referenced rule slugs.",
+              "arguments": [
+                {
+                  "name": "RULES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "SECTION",
+              "description": "Section to add to: exclude or profiles.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VALUE",
+              "description": "The glob (exclude) or slug@version (profiles) to add.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "description": "Remove an exclude/profile/ignore/include entry (base layer or --scope).",
+          "options": [
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Add/remove a local bundle profile by file path instead of a slug.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--in",
+              "recursive": false,
+              "hidden": false,
+              "description": "Namespace filter for an ignore/include entry.",
+              "arguments": [
+                {
+                  "name": "IN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--match",
+              "recursive": false,
+              "hidden": false,
+              "description": "Entity-name glob filter for an ignore/include entry.",
+              "arguments": [
+                {
+                  "name": "MATCH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write into the scope whose match equals this glob (created at the end if absent), instead of the base layer.",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--local",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target .codecharter/config.local.yml instead of config.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "LOCAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the unified diff instead of writing the file. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "SECTION",
+              "description": "Section to remove from: exclude or profiles.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VALUE",
+              "description": "The glob (exclude) or slug (profiles) to remove.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "init",
+          "description": "Create a minimal .codecharter/config.yml.",
+          "options": [
+            {
+              "name": "--at",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory to create .codecharter/config.yml in. Defaults to the current directory.",
+              "arguments": [
+                {
+                  "name": "AT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--profiles",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated profile references to seed (slug@version).",
+              "arguments": [
+                {
+                  "name": "PROFILES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--minimal",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write only 'version: 1' (the default). [default: False]",
+              "arguments": [
+                {
+                  "name": "MINIMAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--local",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target .codecharter/config.local.yml instead of config.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "LOCAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite an existing config file. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the unified diff instead of writing the file. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "tidy",
+          "description": "Remove empty sections from the config file.",
+          "options": [
+            {
+              "name": "--local",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target .codecharter/config.local.yml instead of config.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "LOCAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the unified diff instead of writing the file. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "local",
+          "description": "Manage the config.local.yml overlay (clone / diff / clear).",
+          "commands": [
+            {
+              "name": "clone",
+              "description": "Copy config.yml to config.local.yml (full overlay).",
+              "options": [
+                {
+                  "name": "--force",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Overwrite an existing config.local.yml. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "FORCE",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--dry-run",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Print the unified diff instead of writing the file. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "DRY_RUN",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "diff",
+              "description": "Show what config.local.yml overrides vs config.yml."
+            },
+            {
+              "name": "clear",
+              "description": "Delete config.local.yml, or remove specific keys from it.",
+              "options": [
+                {
+                  "name": "--dry-run",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Print the unified diff instead of writing the file. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "DRY_RUN",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "KEYS",
+                  "description": "Dotted keys to clear from the overlay; when omitted the whole config.local.yml is deleted.",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "promote",
+          "description": "Move a setting from config.local.yml into config.yml.",
+          "options": [
+            {
+              "name": "--all",
+              "recursive": false,
+              "hidden": false,
+              "description": "Promote the entire overlay, then clear config.local.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--keep",
+              "recursive": false,
+              "hidden": false,
+              "description": "Copy instead of move (leave the entry in config.local.yml). [default: False]",
+              "arguments": [
+                {
+                  "name": "KEEP",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the unified diff instead of writing the file. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--rules",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory of .ccr rule files used to validate referenced rule slugs.",
+              "arguments": [
+                {
+                  "name": "RULES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "Dotted key to promote (params/overrides/profiles).",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "demote",
+          "description": "Copy a committed setting into config.local.yml.",
+          "options": [
+            {
+              "name": "--all",
+              "recursive": false,
+              "hidden": false,
+              "description": "Copy the entire committed config into config.local.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the unified diff instead of writing the file. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--rules",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory of .ccr rule files used to validate referenced rule slugs.",
+              "arguments": [
+                {
+                  "name": "RULES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "Dotted key to demote (params/overrides/profiles).",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
