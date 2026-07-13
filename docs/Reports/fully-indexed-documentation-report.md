@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-06-01 01:17:46+00:00
+Generated: 2026-07-13 03:16:11+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 11
+Packages in scope: 10
 
-Fully documented: 5
+Fully documented: 4
 
 Incomplete: 6
 
@@ -24,7 +24,6 @@ Incomplete: 6
 | [TerevintoSoftware.StaticSiteGenerator](#pkg-terevintosoftware-staticsitegenerator) | 10.0.1 | ok | requires-configuration | 1/1 | 9/9 | 1/1 | 0/1 | FAIL |
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
-| [DotnetTokenKiller](#pkg-dotnettokenkiller) | 0.5.0 | ok | xml-ready | 21/21 | 36/36 | 8/8 | 18/18 | PASS |
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
 | [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
 
@@ -160,23 +159,6 @@ Incomplete: 6
 - Option documentation: `15/15`
 - Argument documentation: `2/2`
 - Leaf command examples: `4/4`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-dotnettokenkiller"></a>
-### DotnetTokenKiller
-
-- Version: `0.5.0`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `21/21`
-- Option documentation: `36/36`
-- Argument documentation: `8/8`
-- Leaf command examples: `18/18`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
