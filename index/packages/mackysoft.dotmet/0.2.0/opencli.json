@@ -1,0 +1,1681 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "dotmet",
+    "version": "0.2.0",
+    "description": "Deterministic .NET code analysis and review tooling for structured JSON feedback."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 18
+  },
+  "commands": [
+    {
+      "name": "analyze",
+      "hidden": false,
+      "description": "Analyzes the resolved target and writes an AnalysisReport JSON. Use current-only mode for inventory and Git mode for change-aware review. Exit code 0 is process success, not a clean pass; read JSON verdict and completeness.",
+      "options": [
+        {
+          "name": "--solutionPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Solution target: .sln or .slnx file inside --repositoryRoot. Mutually exclusive with --projectPath. Omit both target options to auto-discover one target. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--projectPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Project target inside --repositoryRoot: .csproj file, .NET directory with one .sln/.slnx or .csproj, Unity project directory, or Godot project directory. Mutually exclusive with --solutionPath. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--targetSet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target set JSON file inside --repositoryRoot. Mutually exclusive with --solutionPath, --projectPath, and explicit --targetKind values. Omit target options to use .dotmet/targets.json when present. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--targetKind",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: auto, dotnet, unity, godot. auto detects the adapter from the resolved target; explicit values limit adapter selection to that kind. [Default: Auto]",
+          "arguments": [
+            {
+              "name": "TARGETKIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--rulesPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rules JSON file path inside --repositoryRoot. Omit to use .dotmet/rules.json or built-in defaults; invalid explicit or discovered rules do not fall back. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--repositoryRoot",
+          "recursive": false,
+          "hidden": false,
+          "description": "Existing repository root directory. Omit to resolve from the selected target and current working directory. Relative report paths and repository-relative filters use this root. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--comparisonMode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: none, git. none runs current-only inventory; git requires --comparisonBase and adds change-aware review signals when that explicit base can be evaluated. [Default: None]",
+          "arguments": [
+            {
+              "name": "COMPARISONMODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--comparisonBase",
+          "recursive": false,
+          "hidden": false,
+          "description": "Local Git revision used as the before source. Valid only with --comparisonMode git; dotmet does not fetch or mutate refs. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--cacheMode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: off, read, write, readWrite. Default readWrite allows both cache reads and writes. Cache state is audit context and does not change verdict semantics. [Default: ReadWrite]",
+          "arguments": [
+            {
+              "name": "ANALYZECACHEMODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--restoreMode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: auto, none. auto runs dotnet restore for .NET targets before workspace loading; none disables restore and reports missing assets. [Default: Auto]",
+          "arguments": [
+            {
+              "name": "ANALYZERESTOREMODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-restore",
+          "recursive": false,
+          "hidden": false,
+          "description": "Alias for --restoreMode none.",
+          "aliases": [
+            "--noRestore"
+          ]
+        },
+        {
+          "name": "--outputPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path. Omit to write JSON to standard output. Relative paths use the current working directory; parent directories are created and existing files are replaced. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--changeScope",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: all, changed, introduced. Omit to include all findings. changed and introduced require an effective Git comparison with changes. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--minReviewPriority",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: low, medium, high, critical. Hides lower-priority visible items but does not change analysis scope or unfiltered counts. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--category",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: dependency-policy, cycle, complexity, public-surface, completeness. Repeated or comma-separated values are allowed. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--ruleId",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rule-id code filter from dotmet codes list, such as METRIC_CYCLOMATIC_COMPLEXITY. Repeated or comma-separated values are allowed. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--verdictImpact",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: fail, warn, none. Repeated or comma-separated values are allowed. Hidden fail-impact findings remain counted in execution.filters. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pathPrefix",
+          "recursive": false,
+          "hidden": false,
+          "description": "Review-view repository-relative path prefix using '/' separators, such as src/. Does not narrow analysis, restore, target scope, or unfiltered counts. Repeated or comma-separated values are allowed. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--maxFindings",
+          "recursive": false,
+          "hidden": false,
+          "description": "Non-negative maximum visible finding count after deterministic sorting. 0 is allowed. Omitted counts remain in execution.filters. [Default: null]",
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--maxSymbolResults",
+          "recursive": false,
+          "hidden": false,
+          "description": "Non-negative maximum visible symbol result count after deterministic sorting. 0 is allowed. Omitted counts remain in execution.filters. [Default: null]",
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--maxReviewTargets",
+          "recursive": false,
+          "hidden": false,
+          "description": "Non-negative maximum visible top review target count after deterministic sorting. 0 is allowed. Omitted counts remain in execution.filters. [Default: null]",
+          "arguments": [
+            {
+              "name": "INT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pretty",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write indented JSON. Omit to write compact JSON."
+        }
+      ]
+    },
+    {
+      "name": "codes",
+      "hidden": false,
+      "commands": [
+        {
+          "name": "describe",
+          "hidden": false,
+          "description": "Describes one machine-readable code, including where it may appear and how it affects verdict interpretation, as CodeDescription JSON.",
+          "options": [
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write indented JSON. Omit to write compact JSON."
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "hidden": false,
+          "description": "Lists reserved machine-readable codes, their JSON locations, and verdict semantics as CodesCatalog JSON.",
+          "options": [
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write indented JSON. Omit to write compact JSON."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "diff",
+      "hidden": false,
+      "description": "Compares the resolved current target with an explicit local Git revision and writes a DiffReport JSON. Exit code 0 is process success, not a clean pass; read JSON verdict and summary.",
+      "options": [
+        {
+          "name": "--solutionPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Solution target: .sln or .slnx file inside --repositoryRoot. Mutually exclusive with --projectPath. Omit both target options to auto-discover one target. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--projectPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Project target inside --repositoryRoot: .csproj file, .NET directory with one .sln/.slnx or .csproj, Unity project directory, or Godot project directory. Mutually exclusive with --solutionPath. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--targetKind",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: auto, dotnet, unity, godot. auto detects the adapter from the resolved target; explicit values limit adapter selection to that kind. [Default: Auto]",
+          "arguments": [
+            {
+              "name": "TARGETKIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--targetSet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target set JSON file path inside --repositoryRoot. Mutually exclusive with --solutionPath, --projectPath, and explicit --targetKind. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--rulesPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rules JSON file path inside --repositoryRoot. Omit to use .dotmet/rules.json or built-in defaults; invalid explicit or discovered rules do not fall back. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--repositoryRoot",
+          "recursive": false,
+          "hidden": false,
+          "description": "Existing repository root directory. Omit to resolve from the selected target and current working directory. Relative report paths use this root. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--comparisonBase",
+          "recursive": false,
+          "hidden": false,
+          "description": "local Git revision used as the before source. dotmet does not fetch or mutate refs. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--cacheMode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: off, read, write, readWrite. Default readWrite allows both cache reads and writes. Cache state is audit context and does not change verdict semantics. [Default: ReadWrite]",
+          "arguments": [
+            {
+              "name": "ANALYZECACHEMODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--restoreMode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: auto, none. auto runs dotnet restore for .NET targets before workspace loading; none disables restore and reports missing assets. [Default: Auto]",
+          "arguments": [
+            {
+              "name": "ANALYZERESTOREMODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-restore",
+          "recursive": false,
+          "hidden": false,
+          "description": "Alias for --restoreMode none.",
+          "aliases": [
+            "--noRestore"
+          ]
+        },
+        {
+          "name": "--outputPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path. Omit to write JSON to standard output. Relative paths use the current working directory; parent directories are created and existing files are replaced. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pretty",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write indented JSON. Omit to write compact JSON."
+        }
+      ]
+    },
+    {
+      "name": "doctor",
+      "hidden": false,
+      "description": "Diagnoses target, workspace, rules, comparison, and generated-code prerequisites as a DoctorReport JSON. Exit code 1 can still include a usable report; read diagnostics for the next action.",
+      "options": [
+        {
+          "name": "--solutionPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Solution target: .sln or .slnx file inside --repositoryRoot. Mutually exclusive with --projectPath. Omit both target options to auto-discover one target. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--projectPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Project target inside --repositoryRoot: .csproj file, .NET directory with one .sln/.slnx or .csproj, Unity project directory, or Godot project directory. Mutually exclusive with --solutionPath. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--targetSet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target set JSON file inside --repositoryRoot. Mutually exclusive with --solutionPath, --projectPath, and explicit --targetKind values. Omit target options to use .dotmet/targets.json when present. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--targetKind",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: auto, dotnet, unity, godot. auto detects the adapter from the resolved target; explicit values limit adapter selection to that kind. [Default: Auto]",
+          "arguments": [
+            {
+              "name": "TARGETKIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--rulesPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rules JSON file path inside --repositoryRoot. Omit to use .dotmet/rules.json or built-in defaults; invalid explicit or discovered rules do not fall back. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--repositoryRoot",
+          "recursive": false,
+          "hidden": false,
+          "description": "Existing repository root directory. Omit to resolve from the selected target and current working directory. Used for target, rules, and comparison diagnostics. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--comparisonMode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allowed: none, git. none skips Git diagnostics; git verifies change-aware review prerequisites. [Default: None]",
+          "arguments": [
+            {
+              "name": "COMPARISONMODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--comparisonBase",
+          "recursive": false,
+          "hidden": false,
+          "description": "Local Git revision to verify as the before source. Valid only with --comparisonMode git; dotmet does not fetch or mutate refs. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--outputPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path. Omit to write JSON to standard output. Relative paths use the current working directory; parent directories are created and existing files are replaced. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pretty",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write indented JSON. Omit to write compact JSON."
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "hidden": false,
+      "description": "Creates or checks repository-local dotmet scaffold for .dotmet/local/ ignore settings. This command never creates .dotmet/rules.json or .dotmet/local/.",
+      "options": [
+        {
+          "name": "--check",
+          "recursive": false,
+          "hidden": false,
+          "description": "Diagnose scaffold state without writing files."
+        },
+        {
+          "name": "--repositoryRoot",
+          "recursive": false,
+          "hidden": false,
+          "description": "Existing repository root directory. Omit to use the current working directory. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--outputPath",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path. Omit to write JSON to standard output. Relative paths use the current working directory; parent directories are created and existing files are replaced. [Default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pretty",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write indented JSON. Omit to write compact JSON."
+        }
+      ]
+    },
+    {
+      "name": "rules",
+      "hidden": false,
+      "commands": [
+        {
+          "name": "create",
+          "hidden": false,
+          "description": "Writes a repository-independent rules document skeleton. Allowed kind values are template and standard.",
+          "options": [
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "Allowed: template, standard. template writes an empty editing skeleton; standard writes dotmet.standard@1 thresholds explicitly. [Default: Template]",
+              "arguments": [
+                {
+                  "name": "RULESCREATEKIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--outputPath",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output file path. Omit to write JSON to standard output. Relative paths use the current working directory; parent directories are created and existing files are replaced. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write indented JSON. Omit to write compact JSON."
+            }
+          ]
+        },
+        {
+          "name": "graph",
+          "hidden": false,
+          "description": "Writes a Mermaid flowchart for the dependency policy section of a valid rules file.",
+          "options": [
+            {
+              "name": "--repositoryRoot",
+              "recursive": false,
+              "hidden": false,
+              "description": "Existing repository root directory used to validate repository-relative rule paths. Omit to resolve from the rules path. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--outputPath",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output file path. Omit to write Mermaid text to standard output. Relative paths use the current working directory; parent directories are created and existing files are replaced. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "schema",
+          "hidden": false,
+          "description": "Writes the repository rules JSON Schema document without resolving a repository root, rules file, project, or workspace.",
+          "options": [
+            {
+              "name": "--outputPath",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output file path. Omit to write JSON to standard output. Relative paths use the current working directory; parent directories are created and existing files are replaced. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write indented JSON. Omit to write compact JSON."
+            }
+          ]
+        },
+        {
+          "name": "validate",
+          "hidden": false,
+          "description": "Validates a rules file without loading a workspace and writes a RulesValidationReport JSON. Validation failures use status ok, verdict fail, and exit code 1.",
+          "options": [
+            {
+              "name": "--repositoryRoot",
+              "recursive": false,
+              "hidden": false,
+              "description": "Existing repository root directory used to validate repository-relative rule paths. Omit to resolve from the rules path. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--outputPath",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output file path. Omit to write JSON to standard output. Relative paths use the current working directory; parent directories are created and existing files are replaced. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write indented JSON. Omit to write compact JSON."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "skills",
+      "hidden": false,
+      "commands": [
+        {
+          "name": "doctor",
+          "hidden": false,
+          "description": "Diagnoses installed Agent Skills.",
+          "options": [
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--skill",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--repositoryRoot",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project root. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--targetDir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Host target directory override. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "export",
+          "hidden": false,
+          "description": "Exports Agent Skills.",
+          "options": [
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--skill",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "install",
+          "hidden": false,
+          "description": "Installs Agent Skills.",
+          "options": [
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--skill",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--repositoryRoot",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project root. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--targetDir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Host target directory override. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dryRun",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report planned changes without writing files."
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false
+            },
+            {
+              "name": "--printDiff",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include file diffs in the operation report."
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "hidden": false,
+          "description": "Lists Agent Skills.",
+          "options": [
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--skill",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "prune",
+          "hidden": false,
+          "description": "Prunes removed Agent Skills.",
+          "options": [
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--skill",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--repositoryRoot",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project root. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--targetDir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Host target directory override. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dryRun",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report planned changes without writing files."
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "uninstall",
+          "hidden": false,
+          "description": "Uninstalls Agent Skills.",
+          "options": [
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--skill",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--repositoryRoot",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project root. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--targetDir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Host target directory override. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dryRun",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report planned changes without writing files."
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "update",
+          "hidden": false,
+          "description": "Updates Agent Skills.",
+          "options": [
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--skill",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "[Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--repositoryRoot",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project root. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--targetDir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Host target directory override. [Default: null]",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dryRun",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report planned changes without writing files."
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false
+            },
+            {
+              "name": "--printDiff",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include file diffs in the operation report."
+            },
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
