@@ -1,6 +1,6 @@
 # Fully Indexed Package Documentation Report
 
-Generated: 2026-07-13 03:16:11+00:00
+Generated: 2026-08-08 02:07:21+00:00
 
 Scope: latest package entries with status ok, whose OpenCLI classification is json-ready or json-ready-with-nonzero-exit, and whose resolved OpenCLI provenance is tool-output.
 
@@ -8,9 +8,9 @@ Completeness rule: visible commands, options, and arguments must all have non-em
 
 Hidden commands, options, and arguments are excluded from the score.
 
-Packages in scope: 10
+Packages in scope: 9
 
-Fully documented: 4
+Fully documented: 3
 
 Incomplete: 6
 
@@ -25,7 +25,6 @@ Incomplete: 6
 | [CleanCli](#pkg-cleancli) | 1.0.2 | ok | xml-ready | 1/1 | 0/0 | 0/0 | 1/1 | PASS |
 | [DeadCode](#pkg-deadcode) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 2/2 | 4/4 | PASS |
 | [GeoMapCli](#pkg-geomapcli) | 0.0.8-beta | ok | xml-ready | 1/1 | 3/3 | 0/0 | 1/1 | PASS |
-| [ProjGraph.Cli](#pkg-projgraph-cli) | 1.0.2 | ok | xml-ready | 4/4 | 15/15 | 4/4 | 4/4 | PASS |
 
 ## Package Details
 
@@ -176,23 +175,6 @@ Incomplete: 6
 - Option documentation: `3/3`
 - Argument documentation: `0/0`
 - Leaf command examples: `1/1`
-- Overall: `PASS`
-- Missing command descriptions: None
-- Missing option descriptions: None
-- Missing argument descriptions: None
-- Missing leaf command examples: None
-
-<a id="pkg-projgraph-cli"></a>
-### ProjGraph.Cli
-
-- Version: `1.0.2`
-- Package status: `ok`
-- OpenCLI classification: `json-ready`
-- XMLDoc classification: `xml-ready`
-- Command documentation: `4/4`
-- Option documentation: `15/15`
-- Argument documentation: `4/4`
-- Leaf command examples: `4/4`
 - Overall: `PASS`
 - Missing command descriptions: None
 - Missing option descriptions: None
