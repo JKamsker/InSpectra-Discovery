@@ -1,0 +1,1446 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "nuget-cooldown — fail the build when a NuGet package version is younger than N days.",
+    "version": "1.1.0",
+    "description": "Dependency cooldown for NuGet: fail the build when any resolved package version — direct or transitive — is younger than N days. Malicious package versions are usually detected and removed within days of publication; a cooldown window means your builds never resolve them. Checks project.assets.json against NuGet publish dates, flags unlisted (withdrawn) versions, supports allow lists, JSON output for CI, and an offline cache. Companion package NuGetCooldown.MSBuild enforces the policy automatically on every build."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 4,
+    "cliParsedDescription": "Newly published package versions are where supply-chain attacks live: malicious\nuploads are usually detected and removed within days. A cooldown window means\nyour restored dependency graph never contains a version younger than N days."
+  },
+  "commands": [
+    {
+      "name": "check",
+      "hidden": false,
+      "description": "check a directory, solution, project,",
+      "options": [
+        {
+          "name": "--days",
+          "recursive": false,
+          "hidden": false,
+          "description": "cooldown window in days (default: 7)",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--hours",
+          "recursive": false,
+          "hidden": false,
+          "description": "cooldown window in hours (added to --days; use for sub-day windows)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "config file (default: nearest nuget-cooldown.json, walking up)",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-config",
+          "recursive": false,
+          "hidden": false,
+          "description": "ignore config files",
+          "arguments": [
+            {
+              "name": "NO_CONFIG",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "NuGet V3 service index; repeatable or ';'-separated\n(default: https://api.nuget.org/v3/index.json)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--allow",
+          "recursive": false,
+          "hidden": false,
+          "description": "exempt packages: 'Id', 'Id@Version', '*' wildcards;\nrepeatable or ';'-separated (e.g. --allow \"MyCompany.*\")",
+          "arguments": [
+            {
+              "name": "PATTERN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--scope",
+          "recursive": false,
+          "hidden": false,
+          "description": "which packages to check (default: all, incl. transitive)",
+          "arguments": [
+            {
+              "name": "SCOPE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-unknown",
+          "recursive": false,
+          "hidden": false,
+          "description": "undeterminable publish date: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_UNKNOWN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-unlisted",
+          "recursive": false,
+          "hidden": false,
+          "description": "unlisted (withdrawn) version: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_UNLISTED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-feed-error",
+          "recursive": false,
+          "hidden": false,
+          "description": "source query failure: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_FEED_ERROR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-not-restored",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "--error"
+          ],
+          "arguments": [
+            {
+              "name": "ON_NOT_RESTORED",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--warn-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "report findings but always exit 0"
+        },
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "per-request feed timeout (default: 30)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max-parallel",
+          "recursive": false,
+          "hidden": false,
+          "description": "max concurrent feed lookups, 1-32 (default: 8)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "also list packages that passed",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only findings; nothing on a clean run",
+          "aliases": [
+            "-q"
+          ]
+        },
+        {
+          "name": "--offline",
+          "recursive": false,
+          "hidden": false,
+          "description": "use only the local cache; no network"
+        },
+        {
+          "name": "--no-cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "bypass the local cache; always query sources"
+        },
+        {
+          "name": "--cache-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "cache location (default: %LOCALAPPDATA%/NuGetCooldown,\nor $NUGET_COOLDOWN_CACHE_DIR)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--msbuild",
+          "recursive": false,
+          "hidden": false,
+          "description": "emit MSBuild-canonical errors/warnings for <project>",
+          "arguments": [
+            {
+              "name": "PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--stamp-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "write an up-to-date stamp after a clean check",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "ID",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "VERSION",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "clear-cache",
+          "hidden": false,
+          "description": "delete the local publish-date cache"
+        },
+        {
+          "name": "info",
+          "hidden": false,
+          "description": "show when a package version was published"
+        }
+      ]
+    },
+    {
+      "name": "clear-cache",
+      "hidden": false,
+      "description": "delete the local publish-date cache",
+      "options": [
+        {
+          "name": "--days",
+          "recursive": false,
+          "hidden": false,
+          "description": "cooldown window in days (default: 7)",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--hours",
+          "recursive": false,
+          "hidden": false,
+          "description": "cooldown window in hours (added to --days; use for sub-day windows)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "config file (default: nearest nuget-cooldown.json, walking up)",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-config",
+          "recursive": false,
+          "hidden": false,
+          "description": "ignore config files",
+          "arguments": [
+            {
+              "name": "NO_CONFIG",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "NuGet V3 service index; repeatable or ';'-separated\n(default: https://api.nuget.org/v3/index.json)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--allow",
+          "recursive": false,
+          "hidden": false,
+          "description": "exempt packages: 'Id', 'Id@Version', '*' wildcards;\nrepeatable or ';'-separated (e.g. --allow \"MyCompany.*\")",
+          "arguments": [
+            {
+              "name": "PATTERN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--scope",
+          "recursive": false,
+          "hidden": false,
+          "description": "which packages to check (default: all, incl. transitive)",
+          "arguments": [
+            {
+              "name": "SCOPE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-unknown",
+          "recursive": false,
+          "hidden": false,
+          "description": "undeterminable publish date: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_UNKNOWN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-unlisted",
+          "recursive": false,
+          "hidden": false,
+          "description": "unlisted (withdrawn) version: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_UNLISTED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-feed-error",
+          "recursive": false,
+          "hidden": false,
+          "description": "source query failure: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_FEED_ERROR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-not-restored",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "--error"
+          ],
+          "arguments": [
+            {
+              "name": "ON_NOT_RESTORED",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--warn-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "report findings but always exit 0"
+        },
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "per-request feed timeout (default: 30)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max-parallel",
+          "recursive": false,
+          "hidden": false,
+          "description": "max concurrent feed lookups, 1-32 (default: 8)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "also list packages that passed",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only findings; nothing on a clean run",
+          "aliases": [
+            "-q"
+          ]
+        },
+        {
+          "name": "--offline",
+          "recursive": false,
+          "hidden": false,
+          "description": "use only the local cache; no network"
+        },
+        {
+          "name": "--no-cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "bypass the local cache; always query sources"
+        },
+        {
+          "name": "--cache-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "cache location (default: %LOCALAPPDATA%/NuGetCooldown,\nor $NUGET_COOLDOWN_CACHE_DIR)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--msbuild",
+          "recursive": false,
+          "hidden": false,
+          "description": "emit MSBuild-canonical errors/warnings for <project>",
+          "arguments": [
+            {
+              "name": "PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--stamp-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "write an up-to-date stamp after a clean check",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "ID",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "VERSION",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "check",
+          "hidden": false,
+          "description": "check a directory, solution, project,"
+        },
+        {
+          "name": "info",
+          "hidden": false,
+          "description": "show when a package version was published"
+        }
+      ]
+    },
+    {
+      "name": "info",
+      "hidden": false,
+      "description": "show when a package version was published",
+      "options": [
+        {
+          "name": "--days",
+          "recursive": false,
+          "hidden": false,
+          "description": "cooldown window in days (default: 7)",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--hours",
+          "recursive": false,
+          "hidden": false,
+          "description": "cooldown window in hours (added to --days; use for sub-day windows)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "config file (default: nearest nuget-cooldown.json, walking up)",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-config",
+          "recursive": false,
+          "hidden": false,
+          "description": "ignore config files",
+          "arguments": [
+            {
+              "name": "NO_CONFIG",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "NuGet V3 service index; repeatable or ';'-separated\n(default: https://api.nuget.org/v3/index.json)",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--allow",
+          "recursive": false,
+          "hidden": false,
+          "description": "exempt packages: 'Id', 'Id@Version', '*' wildcards;\nrepeatable or ';'-separated (e.g. --allow \"MyCompany.*\")",
+          "arguments": [
+            {
+              "name": "PATTERN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--scope",
+          "recursive": false,
+          "hidden": false,
+          "description": "which packages to check (default: all, incl. transitive)",
+          "arguments": [
+            {
+              "name": "SCOPE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-unknown",
+          "recursive": false,
+          "hidden": false,
+          "description": "undeterminable publish date: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_UNKNOWN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-unlisted",
+          "recursive": false,
+          "hidden": false,
+          "description": "unlisted (withdrawn) version: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_UNLISTED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-feed-error",
+          "recursive": false,
+          "hidden": false,
+          "description": "source query failure: warn|error|ignore (default: warn)",
+          "arguments": [
+            {
+              "name": "ON_FEED_ERROR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--on-not-restored",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "--error"
+          ],
+          "arguments": [
+            {
+              "name": "ON_NOT_RESTORED",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--warn-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "report findings but always exit 0"
+        },
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "per-request feed timeout (default: 30)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max-parallel",
+          "recursive": false,
+          "hidden": false,
+          "description": "max concurrent feed lookups, 1-32 (default: 8)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "also list packages that passed",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only findings; nothing on a clean run",
+          "aliases": [
+            "-q"
+          ]
+        },
+        {
+          "name": "--offline",
+          "recursive": false,
+          "hidden": false,
+          "description": "use only the local cache; no network"
+        },
+        {
+          "name": "--no-cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "bypass the local cache; always query sources"
+        },
+        {
+          "name": "--cache-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "cache location (default: %LOCALAPPDATA%/NuGetCooldown,\nor $NUGET_COOLDOWN_CACHE_DIR)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--msbuild",
+          "recursive": false,
+          "hidden": false,
+          "description": "emit MSBuild-canonical errors/warnings for <project>",
+          "arguments": [
+            {
+              "name": "PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--stamp-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "write an up-to-date stamp after a clean check",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "ID",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "VERSION",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "check",
+          "hidden": false,
+          "description": "check a directory, solution, project,"
+        },
+        {
+          "name": "clear-cache",
+          "hidden": false,
+          "description": "delete the local publish-date cache"
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--days",
+      "recursive": false,
+      "hidden": false,
+      "description": "cooldown window in days (default: 7)",
+      "aliases": [
+        "-d"
+      ],
+      "arguments": [
+        {
+          "name": "N",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--hours",
+      "recursive": false,
+      "hidden": false,
+      "description": "cooldown window in hours (added to --days; use for sub-day windows)",
+      "arguments": [
+        {
+          "name": "N",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--config",
+      "recursive": false,
+      "hidden": false,
+      "description": "config file (default: nearest nuget-cooldown.json, walking up)",
+      "aliases": [
+        "-c"
+      ],
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--no-config",
+      "recursive": false,
+      "hidden": false,
+      "description": "ignore config files",
+      "arguments": [
+        {
+          "name": "NO_CONFIG",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--source",
+      "recursive": false,
+      "hidden": false,
+      "description": "NuGet V3 service index; repeatable or ';'-separated\n(default: https://api.nuget.org/v3/index.json)",
+      "aliases": [
+        "-s"
+      ],
+      "arguments": [
+        {
+          "name": "URL",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--allow",
+      "recursive": false,
+      "hidden": false,
+      "description": "exempt packages: 'Id', 'Id@Version', '*' wildcards;\nrepeatable or ';'-separated (e.g. --allow \"MyCompany.*\")",
+      "arguments": [
+        {
+          "name": "PATTERN",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--scope",
+      "recursive": false,
+      "hidden": false,
+      "description": "which packages to check (default: all, incl. transitive)",
+      "arguments": [
+        {
+          "name": "SCOPE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--on-unknown",
+      "recursive": false,
+      "hidden": false,
+      "description": "undeterminable publish date: warn|error|ignore (default: warn)",
+      "arguments": [
+        {
+          "name": "ON_UNKNOWN",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--on-unlisted",
+      "recursive": false,
+      "hidden": false,
+      "description": "unlisted (withdrawn) version: warn|error|ignore (default: warn)",
+      "arguments": [
+        {
+          "name": "ON_UNLISTED",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--on-feed-error",
+      "recursive": false,
+      "hidden": false,
+      "description": "source query failure: warn|error|ignore (default: warn)",
+      "arguments": [
+        {
+          "name": "ON_FEED_ERROR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--on-not-restored",
+      "recursive": false,
+      "hidden": false,
+      "aliases": [
+        "--error"
+      ],
+      "arguments": [
+        {
+          "name": "ON_NOT_RESTORED",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--warn-only",
+      "recursive": false,
+      "hidden": false,
+      "description": "report findings but always exit 0"
+    },
+    {
+      "name": "--timeout",
+      "recursive": false,
+      "hidden": false,
+      "description": "per-request feed timeout (default: 30)",
+      "arguments": [
+        {
+          "name": "SECONDS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--max-parallel",
+      "recursive": false,
+      "hidden": false,
+      "description": "max concurrent feed lookups, 1-32 (default: 8)",
+      "arguments": [
+        {
+          "name": "N",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--format",
+      "recursive": false,
+      "hidden": false,
+      "aliases": [
+        "-f"
+      ],
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "recursive": false,
+      "hidden": false,
+      "description": "also list packages that passed",
+      "aliases": [
+        "-v"
+      ]
+    },
+    {
+      "name": "--quiet",
+      "recursive": false,
+      "hidden": false,
+      "description": "print only findings; nothing on a clean run",
+      "aliases": [
+        "-q"
+      ]
+    },
+    {
+      "name": "--offline",
+      "recursive": false,
+      "hidden": false,
+      "description": "use only the local cache; no network"
+    },
+    {
+      "name": "--no-cache",
+      "recursive": false,
+      "hidden": false,
+      "description": "bypass the local cache; always query sources"
+    },
+    {
+      "name": "--cache-dir",
+      "recursive": false,
+      "hidden": false,
+      "description": "cache location (default: %LOCALAPPDATA%/NuGetCooldown,\nor $NUGET_COOLDOWN_CACHE_DIR)",
+      "arguments": [
+        {
+          "name": "DIR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--msbuild",
+      "recursive": false,
+      "hidden": false,
+      "description": "emit MSBuild-canonical errors/warnings for <project>",
+      "arguments": [
+        {
+          "name": "PROJECT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--stamp-file",
+      "recursive": false,
+      "hidden": false,
+      "description": "write an up-to-date stamp after a clean check",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}
