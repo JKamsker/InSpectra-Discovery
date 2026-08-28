@@ -1,0 +1,2355 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "db-lens",
+    "version": "0.0.0-alpha.0.3",
+    "description": "A read-only command-line analyzer for Microsoft SQL Server: ranks queries by what they cost the server, shows execution plans, inventories indexes with their real usage, and reports unused, duplicate, redundant and missing indexes — plus wait statistics, live blocking chains, statistics freshness and deadlock history. Emits a stable JSON contract or a table. Never writes to your database."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.10.0",
+      "systemCommandLineVersion": "2.0.10.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedTitle": "dblens",
+    "cliParsedDescription": "db-lens 0.0.0-alpha.0.3 — read-only MSSQL query and index analyzer.\n\nReads query statistics (Query Store or plan cache), index inventory and usage, and\nexecution plans; reports unused, duplicate and missing indexes. Every statement it\nruns is a SELECT over system views — it never issues DDL or DML. Suggested changes\nare printed as T-SQL for you to review.\n\nOutput is a stable JSON envelope when stdout is not a terminal, so the tool composes\nwith scripts and agents; use --format to choose explicitly.\n\nRequired permissions: VIEW SERVER STATE on the instance, VIEW DATABASE STATE per database."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--connection-string",
+      "recursive": true,
+      "hidden": false,
+      "description": "ADO.NET connection string. Falls back to --profile, then $DBLENS_CONNECTION_STRING.",
+      "aliases": [
+        "-c"
+      ],
+      "arguments": [
+        {
+          "name": "CONNECTION_STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--profile",
+      "recursive": true,
+      "hidden": false,
+      "description": "Name of a saved connection profile (see: dblens config list).",
+      "aliases": [
+        "-p"
+      ],
+      "arguments": [
+        {
+          "name": "PROFILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--timeout",
+      "recursive": true,
+      "hidden": false,
+      "description": "Command timeout in seconds for every query db-lens runs. [default: 30]",
+      "arguments": [
+        {
+          "name": "TIMEOUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--db",
+      "recursive": true,
+      "hidden": false,
+      "description": "Database to inspect; repeat for several. Defaults to the connection's catalog, or every accessible database.",
+      "arguments": [
+        {
+          "name": "DB",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--format",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output format: json, table, csv, markdown. Defaults to table on a terminal and json otherwise.",
+      "aliases": [
+        "-f"
+      ],
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "OutputFormat",
+          "allowedValues": [
+            "Json",
+            "Table",
+            "Csv",
+            "Markdown"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": true,
+      "hidden": false,
+      "description": "Write the result to this file instead of stdout.",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "--no-color",
+      "recursive": true,
+      "hidden": false,
+      "description": "Disable colours and box drawing in table output. [default: False]",
+      "arguments": [
+        {
+          "name": "NO_COLOR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "queries",
+      "description": "Rank queries by how much they cost the server.\n\nReads Query Store when the target databases have it enabled, and the plan cache otherwise;\nthe envelope's \"source\" field always says which. Each row carries the plan id to hand to\n'dblens plan', so the ranking and the plan investigation chain together.",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many queries to return. Defaults to 25. [default: 25]",
+          "aliases": [
+            "-t",
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--order-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ranking metric. One of: cpu, duration, reads, writes, executions, avg-duration, avg-cpu, avg-reads, memory-grant. [default: Cpu]",
+          "arguments": [
+            {
+              "name": "ORDER_BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "QueryOrderBy",
+              "allowedValues": [
+                "Cpu",
+                "Duration",
+                "Reads",
+                "Writes",
+                "Executions",
+                "AvgDuration",
+                "AvgCpu",
+                "AvgReads",
+                "MemoryGrant"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Statistics source. auto uses Query Store when every target database has it enabled, otherwise the plan cache. One of: auto, query-store, plan-cache. [default: Auto]",
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "StatsSourcePreference",
+              "allowedValues": [
+                "Auto",
+                "QueryStore",
+                "PlanCache"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only count activity after this point: a relative offset (30m, 24h, 7d, 2w) or an ISO-8601 timestamp.",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--until",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only count activity before this point. Same formats as --since.",
+          "arguments": [
+            {
+              "name": "UNTIL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--object",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries belonging to a module whose schema.name contains this text.",
+          "arguments": [
+            {
+              "name": "OBJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--text-contains",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries whose text contains this substring (matched on the server).",
+          "arguments": [
+            {
+              "name": "TEXT_CONTAINS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--regex",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries whose text matches this regular expression (applied after collection).",
+          "arguments": [
+            {
+              "name": "REGEX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--min-executions",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip queries executed fewer times than this.",
+          "arguments": [
+            {
+              "name": "MIN_EXECUTIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        },
+        {
+          "name": "--min-avg-duration-ms",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip queries whose average duration is below this many milliseconds.",
+          "arguments": [
+            {
+              "name": "MIN_AVG_DURATION_MS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--query-hash",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only the query with this query_hash (0x...).",
+          "arguments": [
+            {
+              "name": "QUERY_HASH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--query-id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only this Query Store query_id.",
+          "arguments": [
+            {
+              "name": "QUERY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        },
+        {
+          "name": "--include-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep system databases and db-lens' own collection queries, which are excluded by default. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--full-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "Return the whole query text instead of truncating it. [default: False]",
+          "arguments": [
+            {
+              "name": "FULL_TEXT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--max-text-length",
+          "recursive": false,
+          "hidden": false,
+          "description": "Truncate query text to this many characters. Keeps one call from flooding a caller's context. [default: 4000]",
+          "arguments": [
+            {
+              "name": "MAX_TEXT_LENGTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--analyze",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fetch the plan for each returned query and report what is wrong with it. Costs one extra query per row, so it is bounded by --top and off by default. [default: False]",
+          "arguments": [
+            {
+              "name": "ANALYZE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "query",
+      "description": "Show one query in full: its text, its aggregate cost, and every plan behind it.\n\nMore than one plan row means the optimizer chose differently at some point; compare the\naverage duration per plan to tell a harmless recompile from a regression, then pass the\nplan id to 'dblens plan'.",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many queries to return. Defaults to 25. [default: 25]",
+          "aliases": [
+            "-t",
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--order-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ranking metric. One of: cpu, duration, reads, writes, executions, avg-duration, avg-cpu, avg-reads, memory-grant. [default: Cpu]",
+          "arguments": [
+            {
+              "name": "ORDER_BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "QueryOrderBy",
+              "allowedValues": [
+                "Cpu",
+                "Duration",
+                "Reads",
+                "Writes",
+                "Executions",
+                "AvgDuration",
+                "AvgCpu",
+                "AvgReads",
+                "MemoryGrant"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Statistics source. auto uses Query Store when every target database has it enabled, otherwise the plan cache. One of: auto, query-store, plan-cache. [default: Auto]",
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "StatsSourcePreference",
+              "allowedValues": [
+                "Auto",
+                "QueryStore",
+                "PlanCache"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only count activity after this point: a relative offset (30m, 24h, 7d, 2w) or an ISO-8601 timestamp.",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--until",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only count activity before this point. Same formats as --since.",
+          "arguments": [
+            {
+              "name": "UNTIL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--object",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries belonging to a module whose schema.name contains this text.",
+          "arguments": [
+            {
+              "name": "OBJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--text-contains",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries whose text contains this substring (matched on the server).",
+          "arguments": [
+            {
+              "name": "TEXT_CONTAINS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--regex",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries whose text matches this regular expression (applied after collection).",
+          "arguments": [
+            {
+              "name": "REGEX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--min-executions",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip queries executed fewer times than this.",
+          "arguments": [
+            {
+              "name": "MIN_EXECUTIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        },
+        {
+          "name": "--min-avg-duration-ms",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip queries whose average duration is below this many milliseconds.",
+          "arguments": [
+            {
+              "name": "MIN_AVG_DURATION_MS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--query-hash",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only the query with this query_hash (0x...).",
+          "arguments": [
+            {
+              "name": "QUERY_HASH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--query-id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only this Query Store query_id.",
+          "arguments": [
+            {
+              "name": "QUERY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        },
+        {
+          "name": "--include-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep system databases and db-lens' own collection queries, which are excluded by default. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--full-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "Return the whole query text instead of truncating it. [default: False]",
+          "arguments": [
+            {
+              "name": "FULL_TEXT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--max-text-length",
+          "recursive": false,
+          "hidden": false,
+          "description": "Truncate query text to this many characters. Keeps one call from flooding a caller's context. [default: 4000]",
+          "arguments": [
+            {
+              "name": "MAX_TEXT_LENGTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ID",
+          "description": "Query Store query_id (a number) or a query_hash (0x...), as printed by dblens queries.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "plan",
+      "description": "Show the execution plan behind a plan id.\n\nThe operator tree is flattened with indentation, so it reads the same as a table, as CSV\nand as JSON. Cost % is the operator's own cost with its children subtracted, which is\nwhat \"the expensive operator\" actually means. Missing indexes and optimizer warnings the\nplan carries are reported alongside it.",
+      "options": [
+        {
+          "name": "--raw-xml",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit the ShowplanXML unchanged. With -o plan.sqlplan the file opens in SSMS or Azure Data Studio. [default: False]",
+          "arguments": [
+            {
+              "name": "RAW_XML",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--all-statements",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show every statement in the plan. By default only the costliest one is shown, which is what a procedure plan is usually about. [default: False]",
+          "arguments": [
+            {
+              "name": "ALL_STATEMENTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ID",
+          "description": "Query Store plan_id (a number) or a plan_handle (0x..., a leading prefix is enough).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "indexes",
+      "description": "List indexes with their definition, size and usage.\n\nUsage counters accumulate since the instance started, so the result carries a warning\nwhenever uptime is too short to support a conclusion. An index with no row at all in\nsys.dm_db_index_usage_stats is reported as having no data rather than zero reads -- the\ndifference is what separates a safe drop from an outage.",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many rows to return. Defaults to 100. [default: 100]",
+          "aliases": [
+            "-t",
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--order-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ranking metric. One of: size, reads, writes, rows, name. [default: Size]",
+          "arguments": [
+            {
+              "name": "ORDER_BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "IndexOrderBy",
+              "allowedValues": [
+                "Size",
+                "Reads",
+                "Writes",
+                "Rows",
+                "Name"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--schema",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only objects in this schema (exact match).",
+          "arguments": [
+            {
+              "name": "SCHEMA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--table",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only tables whose name contains this text.",
+          "arguments": [
+            {
+              "name": "TABLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only indexes whose name contains this text.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--min-size-mb",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip indexes smaller than this many megabytes.",
+          "arguments": [
+            {
+              "name": "MIN_SIZE_MB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--include-heaps",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include heaps (tables with no clustered index) in the inventory. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_HEAPS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--min-uptime-days",
+          "recursive": false,
+          "hidden": false,
+          "description": "Days of instance uptime required before \"never read\" counts as evidence rather than noise. [default: 7]",
+          "arguments": [
+            {
+              "name": "MIN_UPTIME_DAYS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "unused",
+          "description": "Find indexes nothing reads but every write maintains.\n\nUsage counters reset when the instance restarts, and an index with no row in the usage DMV\nhas not been observed at all rather than observed idle. Both cases are reported at Info\nseverity: still worth reviewing, not safe to act on from this evidence alone. Raise the bar\nwith --min-uptime-days, or relax what counts as unused with --max-reads and --min-writes.",
+          "options": [
+            {
+              "name": "--top",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many rows to return. Defaults to 100. [default: 100]",
+              "aliases": [
+                "-t",
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "TOP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--order-by",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ranking metric. One of: size, reads, writes, rows, name. [default: Size]",
+              "arguments": [
+                {
+                  "name": "ORDER_BY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "IndexOrderBy",
+                  "allowedValues": [
+                    "Size",
+                    "Reads",
+                    "Writes",
+                    "Rows",
+                    "Name"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--schema",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only objects in this schema (exact match).",
+              "arguments": [
+                {
+                  "name": "SCHEMA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--table",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only tables whose name contains this text.",
+              "arguments": [
+                {
+                  "name": "TABLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only indexes whose name contains this text.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-size-mb",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip indexes smaller than this many megabytes.",
+              "arguments": [
+                {
+                  "name": "MIN_SIZE_MB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--include-heaps",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include heaps (tables with no clustered index) in the inventory. [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_HEAPS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--min-uptime-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "Days of instance uptime required before \"never read\" counts as evidence rather than noise. [default: 7]",
+              "arguments": [
+                {
+                  "name": "MIN_UPTIME_DAYS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--max-reads",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reads at or below this count still count as unused. 0 is the strict reading. [default: 0]",
+              "arguments": [
+                {
+                  "name": "MAX_READS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--min-writes",
+              "recursive": false,
+              "hidden": false,
+              "description": "An unread index is only worth dropping if it costs at least this many writes to maintain. [default: 1]",
+              "arguments": [
+                {
+                  "name": "MIN_WRITES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "duplicates",
+          "description": "Find indexes another index already covers.\n\nReports exact duplicates (same keys, same includes, same filter) and redundant indexes whose\nkeys are a leading prefix of a wider index that also covers their included columns. This\nneeds no usage data -- a duplicate is redundant by its definition -- so a recently restarted\ninstance does not weaken the result. Unique indexes and constraint-backing indexes are never\nproposed for removal.",
+          "options": [
+            {
+              "name": "--top",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many rows to return. Defaults to 100. [default: 100]",
+              "aliases": [
+                "-t",
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "TOP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--order-by",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ranking metric. One of: size, reads, writes, rows, name. [default: Size]",
+              "arguments": [
+                {
+                  "name": "ORDER_BY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "IndexOrderBy",
+                  "allowedValues": [
+                    "Size",
+                    "Reads",
+                    "Writes",
+                    "Rows",
+                    "Name"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--schema",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only objects in this schema (exact match).",
+              "arguments": [
+                {
+                  "name": "SCHEMA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--table",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only tables whose name contains this text.",
+              "arguments": [
+                {
+                  "name": "TABLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only indexes whose name contains this text.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-size-mb",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip indexes smaller than this many megabytes.",
+              "arguments": [
+                {
+                  "name": "MIN_SIZE_MB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--include-heaps",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include heaps (tables with no clustered index) in the inventory. [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_HEAPS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--min-uptime-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "Days of instance uptime required before \"never read\" counts as evidence rather than noise. [default: 7]",
+              "arguments": [
+                {
+                  "name": "MIN_UPTIME_DAYS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "missing",
+          "description": "List the indexes the optimizer wished existed, ranked by estimated impact.\n\nThese come straight from the missing-index DMVs, which never account for the write cost\nof an index and never notice that an existing index almost covers the need. Treat them\nas candidates; 'dblens indexes suggest' reconciles them against what is already there.",
+          "options": [
+            {
+              "name": "--top",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many rows to return. Defaults to 100. [default: 100]",
+              "aliases": [
+                "-t",
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "TOP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--order-by",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ranking metric. One of: size, reads, writes, rows, name. [default: Size]",
+              "arguments": [
+                {
+                  "name": "ORDER_BY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "IndexOrderBy",
+                  "allowedValues": [
+                    "Size",
+                    "Reads",
+                    "Writes",
+                    "Rows",
+                    "Name"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--schema",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only objects in this schema (exact match).",
+              "arguments": [
+                {
+                  "name": "SCHEMA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--table",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only tables whose name contains this text.",
+              "arguments": [
+                {
+                  "name": "TABLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only indexes whose name contains this text.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-size-mb",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip indexes smaller than this many megabytes.",
+              "arguments": [
+                {
+                  "name": "MIN_SIZE_MB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--include-heaps",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include heaps (tables with no clustered index) in the inventory. [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_HEAPS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--min-uptime-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "Days of instance uptime required before \"never read\" counts as evidence rather than noise. [default: 7]",
+              "arguments": [
+                {
+                  "name": "MIN_UPTIME_DAYS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "suggest",
+          "description": "Every index finding at once: unused, duplicate, redundant, missing, widenable, unindexed\nforeign keys and disabled indexes.\n\nMissing-index recommendations are reconciled against what already exists -- ones an index\nalready serves are dropped, and where an existing index only needs to be wider that is what\nis proposed, rather than a second index on the same leading column.\n\nWith -o fixes.sql the findings are written as a reviewable T-SQL script instead of a table.",
+          "options": [
+            {
+              "name": "--top",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many rows to return. Defaults to 100. [default: 100]",
+              "aliases": [
+                "-t",
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "TOP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--order-by",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ranking metric. One of: size, reads, writes, rows, name. [default: Size]",
+              "arguments": [
+                {
+                  "name": "ORDER_BY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "IndexOrderBy",
+                  "allowedValues": [
+                    "Size",
+                    "Reads",
+                    "Writes",
+                    "Rows",
+                    "Name"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--schema",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only objects in this schema (exact match).",
+              "arguments": [
+                {
+                  "name": "SCHEMA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--table",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only tables whose name contains this text.",
+              "arguments": [
+                {
+                  "name": "TABLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only indexes whose name contains this text.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-size-mb",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip indexes smaller than this many megabytes.",
+              "arguments": [
+                {
+                  "name": "MIN_SIZE_MB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--include-heaps",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include heaps (tables with no clustered index) in the inventory. [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_HEAPS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--min-uptime-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "Days of instance uptime required before \"never read\" counts as evidence rather than noise. [default: 7]",
+              "arguments": [
+                {
+                  "name": "MIN_UPTIME_DAYS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--max-reads",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reads at or below this count still count as unused. 0 is the strict reading. [default: 0]",
+              "arguments": [
+                {
+                  "name": "MAX_READS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--min-writes",
+              "recursive": false,
+              "hidden": false,
+              "description": "An unread index is only worth dropping if it costs at least this many writes to maintain. [default: 1]",
+              "arguments": [
+                {
+                  "name": "MIN_WRITES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--script",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit the findings as a reviewable T-SQL script instead of a table. Implied by -o with a .sql file. [default: False]",
+              "arguments": [
+                {
+                  "name": "SCRIPT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "stats",
+          "description": "Find statistics the optimizer should no longer trust.\n\nReports statistics whose modification counter has passed the auto-update threshold\n(stale), old statistics with churn below it (nothing will ever refresh them), NORECOMPUTE\nflags, and thin samples on large tables. Stale statistics are the usual cause behind\nskewed row estimates -- if queries here show QRY006 findings, this is where to look.\n\nSuggested UPDATE STATISTICS commands are printed for review, never executed.",
+          "options": [
+            {
+              "name": "--top",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many findings to return, worst first. Defaults to 50. [default: 50]",
+              "aliases": [
+                "-t",
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "TOP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--stale-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report statistics older than this many days when rows have changed underneath them. [default: 30]",
+              "arguments": [
+                {
+                  "name": "STALE_DAYS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "waits",
+      "description": "What the server has been waiting on since it started.\n\nReads the cumulative wait statistics (sys.dm_os_wait_stats; the database-scoped\nequivalent on Azure SQL Database) with the benign background waits filtered out, and\nreports the profile: CPU pressure, parallelism, buffer IO, locking, memory grants and\nlog writes each get a finding when their share is high enough to matter.\n\nThe counters accumulate from instance start, so this answers \"what does this server\nwait on\" -- for \"what is blocking right now\", use: dblens blocking.",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many wait types to return, ranked by total wait time. Defaults to 25. [default: 25]",
+          "aliases": [
+            "-t",
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "blocking",
+      "description": "Who is blocking whom, right now.\n\nTakes one snapshot of every active request plus every idle session that still holds an\nopen transaction — the classic invisible head blocker — and reports the chains: which\nsession sits at the head, how many others are queued behind it, and idle transactions\nwhose locks outlive their work.\n\nThis is a point-in-time picture. An empty result means nothing was blocked at this\ninstant, not that blocking never happens; for the cumulative view, use: dblens waits.",
+      "options": [
+        {
+          "name": "--long-running-minutes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report an unblocked request as long-running past this many minutes. [default: 5]",
+          "arguments": [
+            {
+              "name": "LONG_RUNNING_MINUTES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "deadlocks",
+      "description": "Recent deadlocks, from the system_health Extended Events session.\n\nSQL Server has been recording every deadlock there since 2012 — no trace flag, no\nsetup. Each event is parsed into who fought over what: the victim, both statements,\nthe contested objects and lock modes. When the same objects keep deadlocking, that\nrepetition is reported as its own finding, because a recurring pattern is a design\nproblem rather than bad luck.\n\nReads the server's .xel files, so the result is capped by --top. Not available on\nAzure SQL Database (no file target there); works on box installs and Managed Instance.",
+      "options": [
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many of the most recent deadlock events to read. Defaults to 20. [default: 20]",
+          "aliases": [
+            "-t",
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "description": "Run every check at once and report what was found.\n\nRanks the costliest queries, analyzes the plan behind each, adds the full index and\nstatistics analysis, and reads the server diagnostics: wait profile, current blocking,\nand recent deadlocks. Sections a login or edition cannot answer degrade to warnings.\n\nWith --format markdown the result is a written report; with --format json it is the same\ndata structured, which is the form to hand to another tool.",
+      "options": [
+        {
+          "name": "--skip-queries",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report only on indexes and diagnostics. Useful where no statistics source is available. [default: False]",
+          "arguments": [
+            {
+              "name": "SKIP_QUERIES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--skip-diagnostics",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the waits, blocking and deadlock sections. [default: False]",
+          "arguments": [
+            {
+              "name": "SKIP_DIAGNOSTICS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many queries to return. Defaults to 25. [default: 25]",
+          "aliases": [
+            "-t",
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--order-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ranking metric. One of: cpu, duration, reads, writes, executions, avg-duration, avg-cpu, avg-reads, memory-grant. [default: Cpu]",
+          "arguments": [
+            {
+              "name": "ORDER_BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "QueryOrderBy",
+              "allowedValues": [
+                "Cpu",
+                "Duration",
+                "Reads",
+                "Writes",
+                "Executions",
+                "AvgDuration",
+                "AvgCpu",
+                "AvgReads",
+                "MemoryGrant"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Statistics source. auto uses Query Store when every target database has it enabled, otherwise the plan cache. One of: auto, query-store, plan-cache. [default: Auto]",
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "StatsSourcePreference",
+              "allowedValues": [
+                "Auto",
+                "QueryStore",
+                "PlanCache"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only count activity after this point: a relative offset (30m, 24h, 7d, 2w) or an ISO-8601 timestamp.",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--until",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only count activity before this point. Same formats as --since.",
+          "arguments": [
+            {
+              "name": "UNTIL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--object",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries belonging to a module whose schema.name contains this text.",
+          "arguments": [
+            {
+              "name": "OBJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--text-contains",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries whose text contains this substring (matched on the server).",
+          "arguments": [
+            {
+              "name": "TEXT_CONTAINS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--regex",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only queries whose text matches this regular expression (applied after collection).",
+          "arguments": [
+            {
+              "name": "REGEX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--min-executions",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip queries executed fewer times than this.",
+          "arguments": [
+            {
+              "name": "MIN_EXECUTIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        },
+        {
+          "name": "--min-avg-duration-ms",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip queries whose average duration is below this many milliseconds.",
+          "arguments": [
+            {
+              "name": "MIN_AVG_DURATION_MS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--query-hash",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only the query with this query_hash (0x...).",
+          "arguments": [
+            {
+              "name": "QUERY_HASH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--query-id",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only this Query Store query_id.",
+          "arguments": [
+            {
+              "name": "QUERY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        },
+        {
+          "name": "--include-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep system databases and db-lens' own collection queries, which are excluded by default. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--full-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "Return the whole query text instead of truncating it. [default: False]",
+          "arguments": [
+            {
+              "name": "FULL_TEXT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--max-text-length",
+          "recursive": false,
+          "hidden": false,
+          "description": "Truncate query text to this many characters. Keeps one call from flooding a caller's context. [default: 4000]",
+          "arguments": [
+            {
+              "name": "MAX_TEXT_LENGTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--schema",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only objects in this schema (exact match).",
+          "arguments": [
+            {
+              "name": "SCHEMA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--table",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only tables whose name contains this text.",
+          "arguments": [
+            {
+              "name": "TABLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only indexes whose name contains this text.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--min-size-mb",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip indexes smaller than this many megabytes.",
+          "arguments": [
+            {
+              "name": "MIN_SIZE_MB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--include-heaps",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include heaps (tables with no clustered index) in the inventory. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_HEAPS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--min-uptime-days",
+          "recursive": false,
+          "hidden": false,
+          "description": "Days of instance uptime required before \"never read\" counts as evidence rather than noise. [default: 7]",
+          "arguments": [
+            {
+              "name": "MIN_UPTIME_DAYS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--max-reads",
+          "recursive": false,
+          "hidden": false,
+          "description": "Reads at or below this count still count as unused. 0 is the strict reading. [default: 0]",
+          "arguments": [
+            {
+              "name": "MAX_READS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        },
+        {
+          "name": "--min-writes",
+          "recursive": false,
+          "hidden": false,
+          "description": "An unread index is only worth dropping if it costs at least this many writes to maintain. [default: 1]",
+          "arguments": [
+            {
+              "name": "MIN_WRITES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "schema",
+      "description": "Print the JSON Schema of the shapes db-lens returns.\n\nGenerated from the types that do the serializing, so it describes the real output rather\nthan a hand-written copy of it. Every command wraps its result in the envelope; the\nper-command data field carries the shapes listed here.",
+      "arguments": [
+        {
+          "name": "TYPE",
+          "description": "Which shape to describe: envelope, error, query-stat, query-plan-stat, index, missing-index, finding, plan-statement, plan-node. Omit for all of them.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Manage connection profiles and check what the target instance exposes.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List saved connection profiles (passwords redacted)."
+        },
+        {
+          "name": "set",
+          "description": "Save or replace a connection profile.",
+          "options": [
+            {
+              "name": "--description",
+              "recursive": false,
+              "hidden": false,
+              "description": "Free-text note shown by config list.",
+              "arguments": [
+                {
+                  "name": "DESCRIPTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--default",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use this profile when neither --profile nor $DBLENS_CONNECTION_STRING is set. [default: False]",
+              "arguments": [
+                {
+                  "name": "DEFAULT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "Profile name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "CONNECTION_STRING",
+              "description": "ADO.NET connection string.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "description": "Delete a saved connection profile.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "Profile name to remove.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "test",
+          "description": "Connect and report version, permissions and per-database Query Store state. Run this first when something fails."
+        }
+      ]
+    }
+  ]
+}
