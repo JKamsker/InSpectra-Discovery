@@ -1,0 +1,1424 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "QuickER.Cli",
+    "version": "0.1.0",
+    "description": "The QuickER CLI as a dotnet tool: C# code generation from an ER diagram JSON (generate), database-direct diagram scaffolding (scaffold), C# reverse import (reverse), and a stdio MCP server for AI agents (mcp). QuickER is an ER diagram designer that turns a single reviewed model into DDL, C# data access, and documentation."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.11.0",
+      "systemCommandLineVersion": "2.0.11.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "QuickER - a CLI that generates C# code from an ER diagram or database"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "generate",
+      "description": "Generate C# code from an ER diagram JSON",
+      "options": [
+        {
+          "name": "--schema",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input ER diagram JSON file (the app's save format)",
+          "arguments": [
+            {
+              "name": "SCHEMA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output folder for the generated code",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generation option settings file (quicker.json)",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target database type (default: sqlserver) [default: sqlserver]",
+          "arguments": [
+            {
+              "name": "PROVIDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--domain-layer-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Domain layer folder for layered output, relative to --out (default: Domain; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "DOMAIN_LAYER_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--presentation-layer-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Presentation layer folder for layered output, relative to --out (default: Presentation; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "PRESENTATION_LAYER_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--infrastructure-layer-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Infrastructure layer folder for layered output, relative to --out (default: Infrastructure; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "INFRASTRUCTURE_LAYER_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--server-layer-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Server layer folder for layered output, relative to --out; only used with remote services (default: Server; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "SERVER_LAYER_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--code-subdir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output subfolder for the generated code, one level below the layer folder (or below --out without layered output); blank = no subfolder; never affects namespaces (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "CODE_SUBDIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--root-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Root namespace of the generated code (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "ROOT_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--runtime-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for the shared runtime (fixed code) when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "RUNTIME_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--entity-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for Entity classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "ENTITY_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--edit-model-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for EditModel classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "EDIT_MODEL_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--mapper-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for Mapper classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "MAPPER_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--repository-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for Repository classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "REPOSITORY_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--value-object-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for value object classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "VALUE_OBJECT_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--api-docs-subdir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output subfolder for the API reference Markdown, relative to the output directory (e.g. docs; blank = the output directory itself; requires --generate-api-docs) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "API_DOCS_SUBDIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--api-docs-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "File name for the API reference Markdown (the extension is normalized to .g.md; the Japanese version reuses the base name; blank = derived from the output file name, or ApiDocs.g.md when files are split; requires --generate-api-docs) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "API_DOCS_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file name for single-file output; only the file name part is used and the output directory is always --out (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "OUTPUT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--split-files-by-category",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output each category in a separate file and namespace (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "SPLIT_FILES_BY_CATEGORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--layered-output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Split generated files into per-layer subfolders (Domain / Presentation / Infrastructure / Server); implies --split-files-by-category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "LAYERED_OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-edit-models",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate EditModel classes (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_EDIT_MODELS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-mappers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate Mapper classes (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_MAPPERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-value-objects",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate a value object type per column (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_VALUE_OBJECTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--use-guid-key-for-string-primary-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "Turn string primary keys into GuidKey value objects (only when value objects are generated; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "USE_GUID_KEY_FOR_STRING_PRIMARY_KEY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-repositories",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate QuickER Repositories (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_REPOSITORIES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--exclude-unbounded-binary-columns",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude unbounded binary columns (varbinary(max), BLOB without a length) from the generated Repository's SELECT/UPDATE; INSERT keeps all columns (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "EXCLUDE_UNBOUNDED_BINARY_COLUMNS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-ef-core-repositories",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate EF Core code (QuickErDbContext and EF Core Repositories) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_EF_CORE_REPOSITORIES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-in-memory-repositories",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate in-memory Repository implementations for testing (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_IN_MEMORY_REPOSITORIES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-sync-support",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate the bidirectional sync support for a server (SQL Server) plus local (SQLite) setup (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_SYNC_SUPPORT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-remote-contracts",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additionally generate remote-capable Repository interfaces I{Entity}RemoteRepository (CRUD, save, named queries only; I{Entity}Repository keeps all methods and inherits it) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_REMOTE_CONTRACTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-remote-services",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include the HTTP client implementation of the remote surface in the main output, and additionally output an ASP.NET Core server implementation to {baseName}.RemoteServer.g.cs (implies the remote surface --generate-remote-contracts automatically; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_REMOTE_SERVICES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--use-runtime-packages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not include the runtime (fixed code) in the generated code; rely on references to the NuGet packages QuickER.Runtime.* instead (can be combined with EF Core generation; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "USE_RUNTIME_PACKAGES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-api-docs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additionally output one API reference Markdown ({baseName}.g.md) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_API_DOCS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--api-docs-ja",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also output the Japanese API reference Markdown ({base}.ja.g.md; requires --generate-api-docs) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "API_DOCS_JA",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--include-data-annotations",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add DataAnnotations and DB-definition meta attributes ([Required], [MaxLength], [DbTableMeta], etc.) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "INCLUDE_DATA_ANNOTATIONS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--include-json-ignore-on-parent-navigation",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add [JsonIgnore] to parent-reference navigations (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "INCLUDE_JSON_IGNORE_ON_PARENT_NAVIGATION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--repository-dialects",
+          "recursive": false,
+          "hidden": false,
+          "description": "Dialects for which to also generate QuickER Repositories (comma-separated, multiple allowed; e.g. sqlserver,sqlite). When omitted, a single dialect is derived from --provider. Overrides the settings file.",
+          "arguments": [
+            {
+              "name": "REPOSITORY_DIALECTS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "scaffold",
+      "description": "Connect directly to a database and generate C# code from its schema",
+      "options": [
+        {
+          "name": "--connection",
+          "recursive": false,
+          "hidden": false,
+          "description": "Connection string (e.g. Server=.;Database=Foo;Integrated Security=true;TrustServerCertificate=true)",
+          "arguments": [
+            {
+              "name": "CONNECTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output folder for the generated code",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generation option settings file (quicker.json)",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--command-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Timeout in seconds for each schema import statement (0 = no limit) [default: 60]",
+          "arguments": [
+            {
+              "name": "COMMAND_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target database type (default: sqlserver) [default: sqlserver]",
+          "arguments": [
+            {
+              "name": "PROVIDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--domain-layer-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Domain layer folder for layered output, relative to --out (default: Domain; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "DOMAIN_LAYER_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--presentation-layer-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Presentation layer folder for layered output, relative to --out (default: Presentation; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "PRESENTATION_LAYER_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--infrastructure-layer-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Infrastructure layer folder for layered output, relative to --out (default: Infrastructure; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "INFRASTRUCTURE_LAYER_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--server-layer-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Server layer folder for layered output, relative to --out; only used with remote services (default: Server; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "SERVER_LAYER_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--code-subdir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output subfolder for the generated code, one level below the layer folder (or below --out without layered output); blank = no subfolder; never affects namespaces (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "CODE_SUBDIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--root-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Root namespace of the generated code (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "ROOT_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--runtime-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for the shared runtime (fixed code) when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "RUNTIME_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--entity-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for Entity classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "ENTITY_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--edit-model-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for EditModel classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "EDIT_MODEL_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--mapper-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for Mapper classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "MAPPER_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--repository-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for Repository classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "REPOSITORY_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--value-object-namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Namespace for value object classes when splitting by category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "VALUE_OBJECT_NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--api-docs-subdir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output subfolder for the API reference Markdown, relative to the output directory (e.g. docs; blank = the output directory itself; requires --generate-api-docs) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "API_DOCS_SUBDIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--api-docs-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "File name for the API reference Markdown (the extension is normalized to .g.md; the Japanese version reuses the base name; blank = derived from the output file name, or ApiDocs.g.md when files are split; requires --generate-api-docs) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "API_DOCS_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file name for single-file output; only the file name part is used and the output directory is always --out (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "OUTPUT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--split-files-by-category",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output each category in a separate file and namespace (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "SPLIT_FILES_BY_CATEGORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--layered-output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Split generated files into per-layer subfolders (Domain / Presentation / Infrastructure / Server); implies --split-files-by-category (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "LAYERED_OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-edit-models",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate EditModel classes (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_EDIT_MODELS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-mappers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate Mapper classes (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_MAPPERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-value-objects",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate a value object type per column (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_VALUE_OBJECTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--use-guid-key-for-string-primary-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "Turn string primary keys into GuidKey value objects (only when value objects are generated; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "USE_GUID_KEY_FOR_STRING_PRIMARY_KEY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-repositories",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate QuickER Repositories (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_REPOSITORIES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--exclude-unbounded-binary-columns",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude unbounded binary columns (varbinary(max), BLOB without a length) from the generated Repository's SELECT/UPDATE; INSERT keeps all columns (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "EXCLUDE_UNBOUNDED_BINARY_COLUMNS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-ef-core-repositories",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate EF Core code (QuickErDbContext and EF Core Repositories) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_EF_CORE_REPOSITORIES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-in-memory-repositories",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate in-memory Repository implementations for testing (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_IN_MEMORY_REPOSITORIES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-sync-support",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate the bidirectional sync support for a server (SQL Server) plus local (SQLite) setup (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_SYNC_SUPPORT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-remote-contracts",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additionally generate remote-capable Repository interfaces I{Entity}RemoteRepository (CRUD, save, named queries only; I{Entity}Repository keeps all methods and inherits it) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_REMOTE_CONTRACTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-remote-services",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include the HTTP client implementation of the remote surface in the main output, and additionally output an ASP.NET Core server implementation to {baseName}.RemoteServer.g.cs (implies the remote surface --generate-remote-contracts automatically; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_REMOTE_SERVICES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--use-runtime-packages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not include the runtime (fixed code) in the generated code; rely on references to the NuGet packages QuickER.Runtime.* instead (can be combined with EF Core generation; overrides the settings file)",
+          "arguments": [
+            {
+              "name": "USE_RUNTIME_PACKAGES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--generate-api-docs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additionally output one API reference Markdown ({baseName}.g.md) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "GENERATE_API_DOCS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--api-docs-ja",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also output the Japanese API reference Markdown ({base}.ja.g.md; requires --generate-api-docs) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "API_DOCS_JA",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--include-data-annotations",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add DataAnnotations and DB-definition meta attributes ([Required], [MaxLength], [DbTableMeta], etc.) (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "INCLUDE_DATA_ANNOTATIONS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--include-json-ignore-on-parent-navigation",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add [JsonIgnore] to parent-reference navigations (overrides the settings file)",
+          "arguments": [
+            {
+              "name": "INCLUDE_JSON_IGNORE_ON_PARENT_NAVIGATION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--repository-dialects",
+          "recursive": false,
+          "hidden": false,
+          "description": "Dialects for which to also generate QuickER Repositories (comma-separated, multiple allowed; e.g. sqlserver,sqlite). When omitted, a single dialect is derived from --provider. Overrides the settings file.",
+          "arguments": [
+            {
+              "name": "REPOSITORY_DIALECTS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reverse",
+      "description": "Reverse a C# file generated with IncludeDataAnnotations ON into a schema-only ER diagram JSON",
+      "options": [
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input C# source file (a main .g.cs generated with IncludeDataAnnotations ON)",
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output ER diagram JSON file (schema only; no layout key)",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target database type (default: sqlserver) [default: sqlserver]",
+          "arguments": [
+            {
+              "name": "PROVIDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "description": "Start a stdio MCP server that exposes ER diagram editing and code generation tools for AI agents (communicates over stdin/stdout using JSON-RPC; each tool takes the target diagram file as its 'file' argument)"
+    }
+  ]
+}
