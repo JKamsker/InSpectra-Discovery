@@ -1,0 +1,683 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Bytewise.Cli",
+    "version": "0.1.0",
+    "description": "The bytewise operator CLI — a thin, scriptable client for the Bytewise Solutions operator-tooling API (login/pairing, project monitoring reads, crash/feedback triage writes; --json machine output with stable exit codes for CI)."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.10.0",
+      "systemCommandLineVersion": "2.0.10.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "bytewise — scriptable operator client for the Bytewise Solutions API.\n\nCredentials: 'bytewise login' pairs this machine via a web-minted CliClient pairing code and stores the token in the OS credential store (BYTEWISE_CLI_TOKEN overrides it for CI; keep CI tokens read-only-scoped).\nEnvironment: BYTEWISE_API_ORIGIN, BYTEWISE_PROJECT, BYTEWISE_CLI_TOKEN, BYTEWISE_CLI_CREDENTIAL_STORE.\nConfig file: ~/.config/bytewise/config (origin/project defaults; 'bytewise config show').\nExit codes: 0 ok, 1 failure, 2 validation/usage, 3 auth, 4 forbidden/insufficient scope, 5 not found, 6 rate limited."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--origin",
+      "recursive": true,
+      "hidden": false,
+      "description": "API origin URL (default: $BYTEWISE_API_ORIGIN, then the configured origin). HTTPS required; plain HTTP only for loopback development.",
+      "arguments": [
+        {
+          "name": "ORIGIN",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--project",
+      "recursive": true,
+      "hidden": false,
+      "description": "Project slug for project-scoped commands (default: $BYTEWISE_PROJECT, then the configured project).",
+      "aliases": [
+        "-p"
+      ],
+      "arguments": [
+        {
+          "name": "PROJECT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--json",
+      "recursive": true,
+      "hidden": false,
+      "description": "Stable machine-readable output: a versioned JSON envelope on stdout; errors as JSON on stderr. [default: False]",
+      "arguments": [
+        {
+          "name": "JSON",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "login",
+      "description": "Pair this machine: mint a CliClient pairing code on the web Security page (bound to the printed challenge), paste it here, and the CLI exchanges it for a stored token. The code is read from stdin, never a command argument.",
+      "options": [
+        {
+          "name": "--print-token",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the minted token once (default: store silently and never print it). [default: False]",
+          "arguments": [
+            {
+              "name": "PRINT_TOKEN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "logout",
+      "description": "Revoke the current credential server-side and delete it locally.",
+      "options": [
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also revoke an env-supplied BYTEWISE_CLI_TOKEN (refused by default — it may be a shared CI credential). [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "whoami",
+      "description": "Show the authenticated operator account and credential profile."
+    },
+    {
+      "name": "projects",
+      "description": "Project discovery.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List the projects this credential's account is a member of."
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "description": "Portfolio and per-project dashboard reads.",
+      "commands": [
+        {
+          "name": "portfolio",
+          "description": "Cross-project portfolio cards (account-level)."
+        },
+        {
+          "name": "summary",
+          "description": "Per-project dashboard summary tiles."
+        }
+      ]
+    },
+    {
+      "name": "crashes",
+      "description": "Crash issues: list, detail, human triage, releases.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "Open (and recently resolved) crash issues."
+        },
+        {
+          "name": "show",
+          "description": "Full detail for one crash issue: exception, frames, breadcrumbs, tags.",
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "The crash issue's external id (from 'crashes list').",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "triage",
+          "description": "Human triage of a crash issue (requires the analytics.triage write scope). Omitted fields stay unchanged.",
+          "options": [
+            {
+              "name": "--status",
+              "recursive": false,
+              "hidden": false,
+              "description": "New internal status (e.g. open, investigating, resolved, muted).",
+              "arguments": [
+                {
+                  "name": "STATUS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--severity",
+              "recursive": false,
+              "hidden": false,
+              "description": "New severity (e.g. low, medium, high, critical).",
+              "arguments": [
+                {
+                  "name": "SEVERITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--notes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Operator notes for the issue.",
+              "arguments": [
+                {
+                  "name": "NOTES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE_ID",
+              "description": "The crash issue's external id (from 'crashes list').",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "releases",
+          "description": "Per-release crash-free rates and sessions."
+        }
+      ]
+    },
+    {
+      "name": "alerts",
+      "description": "Crash alert configuration (show/enable/disable/rearm).",
+      "commands": [
+        {
+          "name": "show",
+          "description": "Current crash-alert configuration."
+        },
+        {
+          "name": "enable",
+          "description": "Enable crash alerting (requires the analytics.configure write scope)."
+        },
+        {
+          "name": "disable",
+          "description": "Disable crash alerting (requires the analytics.configure write scope)."
+        },
+        {
+          "name": "rearm",
+          "description": "Re-arm the crash alert window (requires the analytics.configure write scope).",
+          "options": [
+            {
+              "name": "--days",
+              "recursive": false,
+              "hidden": false,
+              "description": "Re-arm window in days (server default when omitted).",
+              "arguments": [
+                {
+                  "name": "DAYS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "revenue",
+      "description": "Revenue reads.",
+      "commands": [
+        {
+          "name": "show",
+          "description": "Commerce revenue: collected/outstanding by currency, counts, refunds, trials."
+        },
+        {
+          "name": "stores",
+          "description": "App-store revenue: daily series, top products, report coverage."
+        }
+      ]
+    },
+    {
+      "name": "stores",
+      "description": "App-store reads beyond revenue.",
+      "commands": [
+        {
+          "name": "vitals",
+          "description": "Store vitals (crash/ANR rates) for one registered store app.",
+          "options": [
+            {
+              "name": "--app-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The registered store app id (required by the contract).",
+              "arguments": [
+                {
+                  "name": "APP_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "feedback",
+      "description": "User feedback: list, human triage, resolve/reopen, replies.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List feedback items.",
+          "options": [
+            {
+              "name": "--state",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by state (e.g. open, resolved).",
+              "arguments": [
+                {
+                  "name": "STATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by category.",
+              "arguments": [
+                {
+                  "name": "CATEGORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "triage",
+          "description": "Human triage of a feedback item (requires the feedback.manage write scope). Omitted fields stay unchanged.",
+          "options": [
+            {
+              "name": "--status",
+              "recursive": false,
+              "hidden": false,
+              "description": "New status.",
+              "arguments": [
+                {
+                  "name": "STATUS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "New category.",
+              "arguments": [
+                {
+                  "name": "CATEGORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--assignee",
+              "recursive": false,
+              "hidden": false,
+              "description": "Assign to this operator user id.",
+              "arguments": [
+                {
+                  "name": "ASSIGNEE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--notes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Admin notes.",
+              "arguments": [
+                {
+                  "name": "NOTES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The feedback item id (from 'feedback list').",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "resolve",
+          "description": "Mark a feedback item resolved (requires the feedback.manage write scope).",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The feedback item id (from 'feedback list').",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "reopen",
+          "description": "Reopen a resolved feedback item (requires the feedback.manage write scope).",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The feedback item id (from 'feedback list').",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "replies",
+          "description": "List the e-mail replies sent for a feedback item.",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The feedback item id (from 'feedback list').",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "reply",
+          "description": "E-mail a reply to the feedback author (requires the feedback.manage write scope).",
+          "options": [
+            {
+              "name": "--body",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reply body (read from stdin when omitted — pipe-friendly).",
+              "arguments": [
+                {
+                  "name": "BODY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The feedback item id (from 'feedback list').",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Local CLI configuration (origin/project defaults, credential profiles).",
+      "commands": [
+        {
+          "name": "show",
+          "description": "Show the effective configuration and stored credential profiles (never the tokens)."
+        },
+        {
+          "name": "set",
+          "description": "Set a default (origin or project).",
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "One of: origin, project.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VALUE",
+              "description": "The value to set.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "unset",
+          "description": "Remove a default (origin or project).",
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "One of: origin, project.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "email",
+      "description": "Local email-domain checks.",
+      "commands": [
+        {
+          "name": "dns-check",
+          "description": "Check a sending domain's SPF, DMARC, and DKIM DNS records (read-only DoH lookups; validates record syntax/policy and reports missing/weak records). Exits non-zero on any FAIL.",
+          "options": [
+            {
+              "name": "--domain",
+              "recursive": false,
+              "hidden": false,
+              "description": "The sending domain to check (e.g. mail.example.com).",
+              "arguments": [
+                {
+                  "name": "DOMAIN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--from-email",
+              "recursive": false,
+              "hidden": false,
+              "description": "Derive the domain from this address when --domain is omitted (e.g. no-reply@example.com).",
+              "arguments": [
+                {
+                  "name": "FROM_EMAIL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dkim-selector",
+              "recursive": false,
+              "hidden": false,
+              "description": "DKIM selector(s) to check (repeatable), e.g. s1 s2 for SendGrid or the Resend domainkey selector.",
+              "arguments": [
+                {
+                  "name": "DKIM_SELECTOR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
