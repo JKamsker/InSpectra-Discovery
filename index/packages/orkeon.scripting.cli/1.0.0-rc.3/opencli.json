@@ -1,0 +1,758 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "orkeon 1.0.0-rc.3 — build and run AI agent crews.",
+    "version": "1.0.0-rc.3",
+    "description": "Command-line entrypoint for Orkeon crews: `orkeon run <crew.ork.ts | crew.yaml>` — runs both the Scripting DSL (.ork.ts, Jint + esbuild) and YAML crew definitions from a single pre-compiled tool."
+  },
+  "x-inspectra": {
+    "artifactSource": "static-analysis",
+    "generator": "InSpectra.Gen",
+    "metadataEnriched": true,
+    "helpDocumentCount": 11,
+    "staticAnalysis": {
+      "framework": "CommandLineParser",
+      "inspectorType": "dnlib",
+      "confidence": "high",
+      "verbCount": 5,
+      "optionCount": 49,
+      "valueCount": 1,
+      "limitations": [
+        "property-defaults-not-captured",
+        "fluent-api-configuration-not-visible"
+      ]
+    },
+    "cliFramework": "CommandLineParser"
+  },
+  "commands": [
+    {
+      "name": "doctor",
+      "hidden": false,
+      "description": "Diagnose the installation: runtime, settings, esbuild, embeddings, tree-sitter.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Emit a JSON array of {check, status, detail}\ninstead of the human-readable table (CI)."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen."
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ]
+    },
+    {
+      "name": "forge",
+      "hidden": false,
+      "description": "The Atelier: turn a need in plain words into a validated crew."
+    },
+    {
+      "name": "init",
+      "hidden": false,
+      "description": "Configure this machine: pick an LLM provider, write the settings file.",
+      "options": [
+        {
+          "name": "--provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "Provider preset: ollama | docker-model-runner | openai |\ncustom | none. Omit to run the interactive wizard.",
+          "aliases": [
+            "-p"
+          ]
+        },
+        {
+          "name": "--base-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "LLM endpoint base URL. Required for --provider custom;\npresets have their own default.",
+          "aliases": [
+            "-u"
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "Model identifier. Required for --provider custom; presets\nhave their own default.",
+          "aliases": [
+            "-m"
+          ]
+        },
+        {
+          "name": "--api-key-env",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment variable that will hold the API key (default\nORKEON_Llm__ApiKey, which the runtime reads natively).\nThe key is never written to the file.",
+          "aliases": [
+            "-k"
+          ]
+        },
+        {
+          "name": "--api-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "API key stored INLINE in the generated file — discouraged\n(plain text). Prefer --api-key-env."
+        },
+        {
+          "name": "--path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target file (default: the global per-user path,\n%APPDATA%\\Orkeon\\appsettings.json /\n~/.config/Orkeon/appsettings.json)."
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Overwrite the target file if it already\nexists.",
+          "aliases": [
+            "-f"
+          ]
+        },
+        {
+          "name": "--no-probe",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Skip the connectivity probe after\nwriting the configuration (CI/offline)."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen."
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ]
+    },
+    {
+      "name": "llm",
+      "hidden": false,
+      "description": "Probe an LLM provider against the test protocol.",
+      "commands": [
+        {
+          "name": "models",
+          "hidden": false,
+          "description": "List the models a provider currently serves, optionally filtered by\na glob.",
+          "options": [
+            {
+              "name": "--provider",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Provider key.",
+              "aliases": [
+                "-p"
+              ]
+            },
+            {
+              "name": "--base-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Base URL override.",
+              "aliases": [
+                "-u"
+              ]
+            },
+            {
+              "name": "--api-key-env",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: ORKEON_LLM_API_KEY) Name of the environment\nvariable holding the API key.",
+              "aliases": [
+                "-k"
+              ]
+            },
+            {
+              "name": "--filter",
+              "recursive": false,
+              "hidden": false,
+              "description": "Shell-style glob, e.g. 'gpt-5.6-*'.",
+              "aliases": [
+                "-f"
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit a JSON array instead of one identifier per line."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
+            }
+          ]
+        },
+        {
+          "name": "probe",
+          "hidden": false,
+          "description": "Exercise the LLM test protocol against a live provider and archive\nthe trace.",
+          "options": [
+            {
+              "name": "--provider",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Provider: openai | anthropic | ollama | azure |\ntogether | qwen | deepseek | kimi | mistral | huggingface\n| zai | gemini | grok | minimax.",
+              "aliases": [
+                "-p"
+              ]
+            },
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Model identifier. Defaults to the provider's default\nmodel.",
+              "aliases": [
+                "-m"
+              ]
+            },
+            {
+              "name": "--base-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Base URL override. Required for Azure OpenAI.",
+              "aliases": [
+                "-u"
+              ]
+            },
+            {
+              "name": "--api-version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Azure OpenAI api-version (deployment mode). Omit to\nexercise the v1 GA surface."
+            },
+            {
+              "name": "--workspace-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Workspace id for workspace-scoped keys (Anthropic\nidentity-linked keys require it)."
+            },
+            {
+              "name": "--thinking-effort",
+              "recursive": false,
+              "hidden": false,
+              "description": "Base reasoning-effort hint (e.g. none). For models that\nrefuse tools while reasoning; M7 still probes thinking\nexplicitly."
+            },
+            {
+              "name": "--m7-effort",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reasoning effort M7 probes with (default low). For models\nwhose supported set excludes low."
+            },
+            {
+              "name": "--api-key-env",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: ORKEON_LLM_API_KEY) Name of the environment\nvariable holding the API key. The key itself is never\naccepted on the command line.",
+              "aliases": [
+                "-k"
+              ]
+            },
+            {
+              "name": "--modes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated protocol modes (e.g. M1,M2,M8). Defaults\nto every mode this harness supports."
+            },
+            {
+              "name": "--archive",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory to write the campaign report to. Nothing is\narchived when omitted."
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: md) Output format: md (default, human-readable)\nor json (for the campaign scripts)."
+            },
+            {
+              "name": "--commit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Short commit of the tree under test, recorded in the\nreport. The harness does not shell out to git."
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 180) Per-request timeout in seconds (default\n180). The first call to a local model pays for loading it\ninto memory."
+            },
+            {
+              "name": "--temperature",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0) Sampling temperature (default 0). Raise it\nonly for a model that rejects a pinned temperature."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rag",
+      "hidden": false,
+      "description": "Ingest, search and evaluate a RAG collection.",
+      "commands": [
+        {
+          "name": "eval",
+          "hidden": false,
+          "description": "Evaluate a RAG collection against a golden dataset (recall@k, MRR,\ngroundedness; judge mode labelled); writes markdown/JSON reports.",
+          "options": [
+            {
+              "name": "--dataset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Golden dataset YAML (e.g.\nexamples/rag/eval/golden.yaml). Its 'corpus'\ndirectory is ingested first (incremental).",
+              "aliases": [
+                "-d"
+              ]
+            },
+            {
+              "name": "--collection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Collection to evaluate (default: the dataset's\ncollection, else 'rag-eval-{dataset name}').",
+              "aliases": [
+                "-c"
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Profile to evaluate: fast, balanced, quality,\nadaptive, corrective, or default (the configured\nOrkeon:Rag:Profile). Default: 'default'."
+            },
+            {
+              "name": "--compare",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated profiles to compare (e.g.\nfast,balanced,quality) — one report per profile\nplus a comparison table. Overrides --profile."
+            },
+            {
+              "name": "-k",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 5) Cutoff of recall@k / precision@k\n(default 5)."
+            },
+            {
+              "name": "--llm-judge",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Judge generation with the\nconfigured LLM; falls back to the deterministic\nheuristic (mode always labelled in the report)."
+            },
+            {
+              "name": "--offline",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Zero-network run: generation is\nreplaced by a deterministic extractive stub\n(retrieved passages verbatim), so no LLM key is\nneeded."
+            },
+            {
+              "name": "--no-ingest",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Skip the corpus ingestion pre-pass\n(the collection must already be ingested)."
+            },
+            {
+              "name": "--reindex",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Force a full corpus reindex.\nRequired with the default in-memory store when\n./.orkeon manifests survived a previous process,\nand after an embedding model change."
+            },
+            {
+              "name": "--min-recall",
+              "recursive": false,
+              "hidden": false,
+              "description": "Anti-regression gate: exit 1 when the aggregate\nrecall@k (cases tagged 'correctif' excluded) drops\nbelow this threshold."
+            },
+            {
+              "name": "--min-mrr",
+              "recursive": false,
+              "hidden": false,
+              "description": "Anti-regression gate: exit 1 when the aggregate MRR\n(cases tagged 'correctif' excluded) drops below\nthis threshold."
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: /output/rag/eval) Virtual directory\nreceiving the markdown/JSON reports (default\n/output/rag/eval → ./.orkeon/rag/eval)."
+            },
+            {
+              "name": "--settings",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to appsettings.json (defaults to the current\ndirectory's resolution chain).",
+              "aliases": [
+                "-s"
+              ]
+            },
+            {
+              "name": "--mount",
+              "recursive": false,
+              "hidden": false,
+              "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>. Several mounts go\nspace-separated after ONE --mount (the flag cannot\nbe repeated). The current directory is auto-mounted\nat /workspace (ro) and ./.orkeon at /output (rw)\nunless overridden.",
+              "aliases": [
+                "-m"
+              ]
+            },
+            {
+              "name": "--allow-external-mounts",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Allow mounts from directories\noutside the workspace root."
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0) Verbosity level: 0=quiet, 1=info,\n2=full debug.",
+              "aliases": [
+                "-v"
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
+            }
+          ]
+        },
+        {
+          "name": "ingest",
+          "hidden": false,
+          "description": "Ingest documents into a RAG collection (incremental: unchanged\nsources are skipped).",
+          "options": [
+            {
+              "name": "--collection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Target collection in the document store.",
+              "aliases": [
+                "-c"
+              ]
+            },
+            {
+              "name": "--source",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Source path or glob pattern (e.g.\n\"./docs/**/*.md\"). Several sources go\nspace-separated after ONE --source (the flag cannot\nbe repeated). Globs are resolved through the\nvirtual file system."
+            },
+            {
+              "name": "--chunking",
+              "recursive": false,
+              "hidden": false,
+              "description": "Chunking strategy (recursive, sentence, structural,\nsemantic). Pipeline default when omitted."
+            },
+            {
+              "name": "--reindex",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Force a full reindex of the\ncollection (the only way past an embedding\nmodel/dimension change)."
+            },
+            {
+              "name": "--settings",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to appsettings.json (defaults to the current\ndirectory's resolution chain).",
+              "aliases": [
+                "-s"
+              ]
+            },
+            {
+              "name": "--mount",
+              "recursive": false,
+              "hidden": false,
+              "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>. Several mounts go\nspace-separated after ONE --mount (the flag cannot\nbe repeated). The current directory is auto-mounted\nat /workspace (ro) and ./.orkeon at /output (rw)\nunless overridden.",
+              "aliases": [
+                "-m"
+              ]
+            },
+            {
+              "name": "--allow-external-mounts",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Allow mounts from directories\noutside the workspace root."
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0) Verbosity level: 0=quiet, 1=info,\n2=full debug.",
+              "aliases": [
+                "-v"
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
+            }
+          ]
+        },
+        {
+          "name": "search",
+          "hidden": false,
+          "description": "Ask a question against a RAG collection; prints the grounded answer\nwith citations and scores.",
+          "options": [
+            {
+              "name": "--collection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Collection to query in the document\nstore.",
+              "aliases": [
+                "-c"
+              ]
+            },
+            {
+              "name": "--top-n",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 5) Number of relevant chunks kept for\ncontext assembly (default 5)."
+            },
+            {
+              "name": "--settings",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to appsettings.json (defaults to the current\ndirectory's resolution chain).",
+              "aliases": [
+                "-s"
+              ]
+            },
+            {
+              "name": "--mount",
+              "recursive": false,
+              "hidden": false,
+              "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>. Several mounts go\nspace-separated after ONE --mount (the flag cannot\nbe repeated). The current directory is auto-mounted\nat /workspace (ro) and ./.orkeon at /output (rw)\nunless overridden.",
+              "aliases": [
+                "-m"
+              ]
+            },
+            {
+              "name": "--allow-external-mounts",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Allow mounts from directories\noutside the workspace root."
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0) Verbosity level: 0=quiet, 1=info,\n2=full debug.",
+              "aliases": [
+                "-v"
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
+            }
+          ],
+          "arguments": [
+            {
+              "name": "question",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "description": "The question to ask against the\ncollection."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "hidden": false,
+      "description": "Run a crew: a YAML crew, a .ork.ts script, or a crew directory.",
+      "options": [
+        {
+          "name": "--settings",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to appsettings.json (defaults to same dir as\nscript).",
+          "aliases": [
+            "-s"
+          ]
+        },
+        {
+          "name": "--mount",
+          "recursive": false,
+          "hidden": false,
+          "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>[;sub:rights]. Several\nmounts go space-separated after ONE --mount (the\nflag cannot be repeated).",
+          "aliases": [
+            "-m"
+          ]
+        },
+        {
+          "name": "--allow-external-mounts",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Allow mounts from directories\noutside the workspace root. Mount base paths are\nadded to the security whitelist. Can also be\nenabled for every invocation via\nORKEON_ALLOW_EXTERNAL_MOUNTS=1."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: 0) Verbosity level: 0=quiet, 1=LLM & tool\nexchanges, 2=full debug.",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--llm-log",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Enable LLM exchange logging\n(writes JSONL to ./llm-logs unless --llm-log-path\noverrides)."
+        },
+        {
+          "name": "--llm-log-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory for LLM exchange log files (.jsonl).\nImplies --llm-log."
+        },
+        {
+          "name": "--inputs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Inline JSON inputs forwarded as a global `inputs`\nvariable."
+        },
+        {
+          "name": "--inputs-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a JSON file holding the inputs."
+        },
+        {
+          "name": "--memory-limit-mb",
+          "recursive": false,
+          "hidden": false,
+          "description": "Jint memory limit in megabytes for this run\n(overrides appsettings). Set 0 to disable; default\ncomes from\nOrkeon:Scripting:Limits:MemoryLimitBytes."
+        },
+        {
+          "name": "--var",
+          "recursive": false,
+          "hidden": false,
+          "description": "Variable for a YAML crew's CrewInput (KEY=VALUE).\nSeveral variables go space-separated after ONE\n--var (the flag cannot be repeated). Used by task\ntemplates: {KEY} → VALUE. Ignored for .ork.ts\nscripts.",
+          "aliases": [
+            "-V"
+          ]
+        },
+        {
+          "name": "--initial-context",
+          "recursive": false,
+          "hidden": false,
+          "description": "Initial context string passed to a YAML crew's\nCrewInput. Ignored for .ork.ts scripts."
+        },
+        {
+          "name": "--events",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit the versioned JSONL event protocol on stdout\n(task progress, cost, run outcome) instead of plain\ntext. This is how Orkeon Studio drives a run."
+        },
+        {
+          "name": "--stream",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) With --events, also emit llm.delta\nevents token by token. Verbose by nature: off\nunless asked for."
+        },
+        {
+          "name": "--client",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: studio) With --events, the name of the\nobserving peer on the hub (client://<name>). Agents\ncan post and send to that address; a crew's links:\nblock authorizes it."
+        },
+        {
+          "name": "--validate",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Dry-run: resolve settings, build\nthe host and load the crew (strict tool resolution)\nWITHOUT probing the LLM endpoint or running a\nkickoff. Prints 'VALIDATION OK/FAILED: <config>\n...' and exits 0 (ok) or non-zero (failed)."
+        },
+        {
+          "name": "--list-tools",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Build the host and print the\nsorted list of registered tool names (one per line)\nto stdout, then exit 0. No crew is loaded, so the\ncrew path is not required."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen."
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "value",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "Path to the crew definition: .ork.ts/.js (Scripting\nDSL), .yaml/.yml (YAML crew), or a directory\nholding a multi-file YAML crew (config.yaml +\nagents/ + tasks/). Required unless --list-tools."
+        }
+      ]
+    }
+  ]
+}
