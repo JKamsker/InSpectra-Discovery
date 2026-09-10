@@ -1,0 +1,4197 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Asteroid.Cli",
+    "version": "1.0.1",
+    "description": "Asteroid framework CLI toolchain (ws/log/doc/code/mcp/scaffold) — single package, single entry, subcommand dispatch."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.11.0",
+      "systemCommandLineVersion": "2.0.11.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Asteroid CLI 工具箱（Roslyn 语义族 + 日志分析族 + 包状态）"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "code",
+      "description": "C# 开发套装：语义查询/源码改写/脚手架与领号（装载 C# 工程/解决方案后执行）",
+      "commands": [
+        {
+          "name": "explore",
+          "description": "聚合查询：声明+源码摘录+引用+调用邻域+派生一次返回（单轮完整响应，agent 首选）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "符号名（精确或 --regex 正则）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--regex",
+              "recursive": false,
+              "hidden": false,
+              "description": "将 --name 视为正则表达式 [default: False]",
+              "arguments": [
+                {
+                  "name": "REGEX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "style-fix",
+          "description": "样式+格式修复（编排 dotnet format style 与 whitespace；verify 探测/apply 落盘）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--rule",
+              "recursive": false,
+              "hidden": false,
+              "description": "规则 ID（可多值，如 IDE0037；点名时只跑 style 趟；缺省 = .editorconfig 生效集双趟，排除 IDE0130——其 fixer 上游会崩）",
+              "aliases": [
+                "-r"
+              ],
+              "arguments": [
+                {
+                  "name": "RULE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--include",
+              "recursive": false,
+              "hidden": false,
+              "description": "限定作用的文件（可多值，相对或绝对路径；缺省 = 整个工程）",
+              "aliases": [
+                "-i"
+              ],
+              "arguments": [
+                {
+                  "name": "INCLUDE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "namesimplify",
+          "description": "名称简化（IDE0001 等价，dotnet format 不支持）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "usingclean",
+          "description": "未引用 using 移除（扩展方法语义判定，宁少删不误删）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "find-symbol",
+          "description": "按名找声明",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "符号名（精确或 --regex 正则）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--regex",
+              "recursive": false,
+              "hidden": false,
+              "description": "将 --name 视为正则表达式 [default: False]",
+              "arguments": [
+                {
+                  "name": "REGEX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "find-refs",
+          "description": "精确引用查询（含所在符号与上下文行）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "符号名（精确或 --regex 正则）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--regex",
+              "recursive": false,
+              "hidden": false,
+              "description": "将 --name 视为正则表达式 [default: False]",
+              "arguments": [
+                {
+                  "name": "REGEX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "callers",
+          "description": "调用者查询（方法）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "符号名（精确或 --regex 正则）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--regex",
+              "recursive": false,
+              "hidden": false,
+              "description": "将 --name 视为正则表达式 [default: False]",
+              "arguments": [
+                {
+                  "name": "REGEX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "callees",
+          "description": "被调用者查询（方法体内的直调）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "符号名（精确或 --regex 正则）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--regex",
+              "recursive": false,
+              "hidden": false,
+              "description": "将 --name 视为正则表达式 [default: False]",
+              "arguments": [
+                {
+                  "name": "REGEX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "impact",
+          "description": "调用者闭包影响面",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "符号名（精确或 --regex 正则）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--regex",
+              "recursive": false,
+              "hidden": false,
+              "description": "将 --name 视为正则表达式 [default: False]",
+              "arguments": [
+                {
+                  "name": "REGEX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--depth",
+              "recursive": false,
+              "hidden": false,
+              "description": "调用者闭包深度 [default: 2]",
+              "arguments": [
+                {
+                  "name": "DEPTH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "hierarchy",
+          "description": "类型层级（基类链 + 派生闭包）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "符号名（精确或 --regex 正则）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--regex",
+              "recursive": false,
+              "hidden": false,
+              "description": "将 --name 视为正则表达式 [default: False]",
+              "arguments": [
+                {
+                  "name": "REGEX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "api-surface",
+          "description": "公共 API 面清单",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "generated",
+          "description": "转储源生成器的生成结果",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--match",
+              "recursive": false,
+              "hidden": false,
+              "description": "产物路径/文件名正则过滤",
+              "arguments": [
+                {
+                  "name": "MATCH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--configuration",
+              "recursive": false,
+              "hidden": false,
+              "description": "构建配置 [default: Debug]",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CONFIGURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--keep",
+              "recursive": false,
+              "hidden": false,
+              "description": "保留产物目录 [default: False]",
+              "arguments": [
+                {
+                  "name": "KEEP",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "project-graph",
+          "description": "工程引用图 + 孤儿检测",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "typeid-audit",
+          "description": "TypeId/定义 uid 重复与零值审计",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "rename",
+          "description": "代码要素重命名（语义定位 + 语法树改写）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "原符号名（精确匹配）",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "新符号名",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--overload",
+              "recursive": false,
+              "hidden": false,
+              "description": "重载过滤：符号全名需包含该子串（同名/跨类型同名时选中特定形态）",
+              "arguments": [
+                {
+                  "name": "OVERLOAD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "excise",
+          "description": "符号移除（定位声明并删除，报告残留引用）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "工程 csproj 路径（可多值；目录则递归发现 csproj）",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回变更（缺省只报告） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "要移除的符号名（精确匹配）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "类别过滤：all / types / members [default: all]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--overload",
+              "recursive": false,
+              "hidden": false,
+              "description": "重载过滤：符号全名需包含该子串（同名/跨类型同名时选中特定形态）",
+              "arguments": [
+                {
+                  "name": "OVERLOAD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "scaffold-definition",
+          "description": "生成定义类型脚手架（直接写盘、目标已存在即报错；纯模板，无需装载工作区）",
+          "options": [
+            {
+              "name": "--directory",
+              "recursive": false,
+              "hidden": false,
+              "description": "目标目录（须已存在；namespace 截到 src 段为止） [default: <path>]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--type",
+              "recursive": false,
+              "hidden": false,
+              "description": "定义类型名",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TYPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--uid",
+              "recursive": false,
+              "hidden": false,
+              "description": "定义 uid（十六进制，0x 前缀可选；缺省=自动领一个新随机号并回显）",
+              "aliases": [
+                "-u"
+              ],
+              "arguments": [
+                {
+                  "name": "UID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--group",
+              "recursive": false,
+              "hidden": false,
+              "description": "定义分组",
+              "aliases": [
+                "-g"
+              ],
+              "arguments": [
+                {
+                  "name": "GROUP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--init-batch",
+              "recursive": false,
+              "hidden": false,
+              "description": "初始化批次（可选）",
+              "arguments": [
+                {
+                  "name": "INIT_BATCH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--init-order",
+              "recursive": false,
+              "hidden": false,
+              "description": "批次内顺序，配合 --init-batch [default: 0]",
+              "arguments": [
+                {
+                  "name": "INIT_ORDER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "scaffold-attribute",
+          "description": "生成标记特性骨架（宿主 att+约束桩+可选测试夹具；门禁需求先查 docs/MetaAttributes.md 词汇表，组合表达不了才写分析器）",
+          "options": [
+            {
+              "name": "--directory",
+              "recursive": false,
+              "hidden": false,
+              "description": "目标目录（须已存在；namespace 截到 src 段为止） [default: <path>]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "特性名（Attribute 后缀可省，自动补齐）",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tests",
+              "recursive": false,
+              "hidden": false,
+              "description": "同时生成 NUnit 测试夹具骨架（好例干净+坏例留桩） [default: False]",
+              "arguments": [
+                {
+                  "name": "TESTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "uid",
+          "description": "领号：生成持久化 uid（写死进代码/数据并进版本控制；台账在使用处）",
+          "options": [
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式（text/json） [default: Text]",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "COUNT",
+              "description": "领号数量 [default: 1]",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "scaffold",
+      "description": "脚手架族（游戏项目骨架 / 定义类型模板）",
+      "commands": [
+        {
+          "name": "game",
+          "description": "生成 Asteroid 规范的 Godot 游戏项目骨架（项目结构+框架接入；业务面归业务层）",
+          "options": [
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "游戏名（PascalCase，如 MyGame）",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "目标根目录（须不存在或为空；缺省 = ./<name>）",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--title",
+              "recursive": false,
+              "hidden": false,
+              "description": "窗口显示标题（缺省 = 游戏名）",
+              "arguments": [
+                {
+                  "name": "TITLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--framework",
+              "recursive": false,
+              "hidden": false,
+              "description": "Framework 子模块源（缺省 = 团队框架仓） [default: https://git.asteroidgamestudio.com/Asteroid/AsteroidFramework.git]",
+              "arguments": [
+                {
+                  "name": "FRAMEWORK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--addon",
+              "recursive": false,
+              "hidden": false,
+              "description": "addon 子模块源（缺省 = 团队 addon 仓） [default: https://git.asteroidgamestudio.com/Asteroid/AsteroidFrameworkAddon.git]",
+              "arguments": [
+                {
+                  "name": "ADDON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--skip-git",
+              "recursive": false,
+              "hidden": false,
+              "description": "跳过 git init / 子模块 / 首提交 [default: False]",
+              "arguments": [
+                {
+                  "name": "SKIP_GIT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--skip-build",
+              "recursive": false,
+              "hidden": false,
+              "description": "跳过生成后的 dotnet build 验证 [default: False]",
+              "arguments": [
+                {
+                  "name": "SKIP_BUILD",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "项目形态（1=LocalDemo 本地 demo / 2=Standard 正式项目） [default: LocalDemo]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "ProjectKindEnum",
+                  "allowedValues": [
+                    "LocalDemo",
+                    "Standard"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--assistant",
+              "recursive": false,
+              "hidden": false,
+              "description": "内置创建助手：终端问答收集参数后生成（隐含 --apply） [default: False]",
+              "arguments": [
+                {
+                  "name": "ASSISTANT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--apply",
+              "recursive": false,
+              "hidden": false,
+              "description": "写回生成（缺省 verify 只报告计划） [default: False]",
+              "arguments": [
+                {
+                  "name": "APPLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式（text/json） [default: Text]",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "log",
+      "description": "日志会话分析（query/stats/traces/diff/artifact/check；MCP 面 log_query/log_traces/log_diff/log_artifact 同构）",
+      "commands": [
+        {
+          "name": "query",
+          "description": "过滤查询：明细+上下文+聚合一次返回（单轮完整响应）",
+          "options": [
+            {
+              "name": "--root",
+              "recursive": false,
+              "hidden": false,
+              "description": "日志根目录（含 current/archives）或直接会话目录 [default: <path>]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--session",
+              "recursive": false,
+              "hidden": false,
+              "description": "current / latest（缺省）/ latest-N / 会话 id 前缀",
+              "arguments": [
+                {
+                  "name": "SESSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-level",
+              "recursive": false,
+              "hidden": false,
+              "description": "级别下限（Trace/Debug/Info/Warning/Error）",
+              "arguments": [
+                {
+                  "name": "MIN_LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "分类前缀（点分段语义，可多值）",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CATEGORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--template",
+              "recursive": false,
+              "hidden": false,
+              "description": "模板正则（作用于 msg 模板而非渲染文本）",
+              "arguments": [
+                {
+                  "name": "TEMPLATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "TraceId 精确匹配",
+              "arguments": [
+                {
+                  "name": "TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "作用域路径前缀（如 Game/Load）",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-seq",
+              "recursive": false,
+              "hidden": false,
+              "description": "seq 下限（主流全局单调）",
+              "arguments": [
+                {
+                  "name": "MIN_SEQ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--max-seq",
+              "recursive": false,
+              "hidden": false,
+              "description": "seq 上限",
+              "arguments": [
+                {
+                  "name": "MAX_SEQ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--min-ts",
+              "recursive": false,
+              "hidden": false,
+              "description": "会话起点起毫秒下限",
+              "arguments": [
+                {
+                  "name": "MIN_TS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--max-ts",
+              "recursive": false,
+              "hidden": false,
+              "description": "会话起点起毫秒上限",
+              "arguments": [
+                {
+                  "name": "MAX_TS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--has-artifact",
+              "recursive": false,
+              "hidden": false,
+              "description": "只保留带工件引用的记录 [default: False]",
+              "arguments": [
+                {
+                  "name": "HAS_ARTIFACT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--thread",
+              "recursive": false,
+              "hidden": false,
+              "description": "线程过滤（ManagedThreadId 精确匹配）",
+              "arguments": [
+                {
+                  "name": "THREAD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--include-crash",
+              "recursive": false,
+              "hidden": false,
+              "description": "并入 crash.jsonl 快照流（尾部，origin=crash） [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_CRASH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--source-root",
+              "recursive": false,
+              "hidden": false,
+              "description": "源码路径前缀重映射：剥掉编译机绝对前缀得到仓库相对路径（跨机分析）",
+              "arguments": [
+                {
+                  "name": "SOURCE_ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--context",
+              "recursive": false,
+              "hidden": false,
+              "description": "每条命中的前后上下文条数",
+              "arguments": [
+                {
+                  "name": "CONTEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "明细上限（0=只聚合） [default: 30]",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--tail",
+              "recursive": false,
+              "hidden": false,
+              "description": "取最后 N 条命中（崩溃分诊；优先于 --limit）",
+              "arguments": [
+                {
+                  "name": "TAIL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "stats",
+          "description": "纯聚合：级别/分类/模板计数 + 自适应时间线分桶（无明细）",
+          "options": [
+            {
+              "name": "--root",
+              "recursive": false,
+              "hidden": false,
+              "description": "日志根目录（含 current/archives）或直接会话目录 [default: <path>]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--session",
+              "recursive": false,
+              "hidden": false,
+              "description": "current / latest（缺省）/ latest-N / 会话 id 前缀",
+              "arguments": [
+                {
+                  "name": "SESSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-level",
+              "recursive": false,
+              "hidden": false,
+              "description": "级别下限（Trace/Debug/Info/Warning/Error）",
+              "arguments": [
+                {
+                  "name": "MIN_LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "分类前缀（点分段语义，可多值）",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CATEGORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--template",
+              "recursive": false,
+              "hidden": false,
+              "description": "模板正则（作用于 msg 模板而非渲染文本）",
+              "arguments": [
+                {
+                  "name": "TEMPLATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "TraceId 精确匹配",
+              "arguments": [
+                {
+                  "name": "TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "作用域路径前缀（如 Game/Load）",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-seq",
+              "recursive": false,
+              "hidden": false,
+              "description": "seq 下限（主流全局单调）",
+              "arguments": [
+                {
+                  "name": "MIN_SEQ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--max-seq",
+              "recursive": false,
+              "hidden": false,
+              "description": "seq 上限",
+              "arguments": [
+                {
+                  "name": "MAX_SEQ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--min-ts",
+              "recursive": false,
+              "hidden": false,
+              "description": "会话起点起毫秒下限",
+              "arguments": [
+                {
+                  "name": "MIN_TS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--max-ts",
+              "recursive": false,
+              "hidden": false,
+              "description": "会话起点起毫秒上限",
+              "arguments": [
+                {
+                  "name": "MAX_TS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--has-artifact",
+              "recursive": false,
+              "hidden": false,
+              "description": "只保留带工件引用的记录 [default: False]",
+              "arguments": [
+                {
+                  "name": "HAS_ARTIFACT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--thread",
+              "recursive": false,
+              "hidden": false,
+              "description": "线程过滤（ManagedThreadId 精确匹配）",
+              "arguments": [
+                {
+                  "name": "THREAD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--include-crash",
+              "recursive": false,
+              "hidden": false,
+              "description": "并入 crash.jsonl 快照流（尾部，origin=crash） [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_CRASH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--source-root",
+              "recursive": false,
+              "hidden": false,
+              "description": "源码路径前缀重映射：剥掉编译机绝对前缀得到仓库相对路径（跨机分析）",
+              "arguments": [
+                {
+                  "name": "SOURCE_ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "traces",
+          "description": "trace 聚合（纵向追踪入口）：会话 trace 表（精确 begin/end/名字/父链/悬挂）+ 记录推导兜底；拿 id 后 --trace 纵向拉取",
+          "options": [
+            {
+              "name": "--dangling",
+              "recursive": false,
+              "hidden": false,
+              "description": "只列未闭合 trace（异步丢任务或崩溃信号） [default: False]",
+              "arguments": [
+                {
+                  "name": "DANGLING",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--root",
+              "recursive": false,
+              "hidden": false,
+              "description": "日志根目录（含 current/archives）或直接会话目录 [default: <path>]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--session",
+              "recursive": false,
+              "hidden": false,
+              "description": "current / latest（缺省）/ latest-N / 会话 id 前缀",
+              "arguments": [
+                {
+                  "name": "SESSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-level",
+              "recursive": false,
+              "hidden": false,
+              "description": "级别下限（Trace/Debug/Info/Warning/Error）",
+              "arguments": [
+                {
+                  "name": "MIN_LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "分类前缀（点分段语义，可多值）",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CATEGORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--template",
+              "recursive": false,
+              "hidden": false,
+              "description": "模板正则（作用于 msg 模板而非渲染文本）",
+              "arguments": [
+                {
+                  "name": "TEMPLATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "TraceId 精确匹配",
+              "arguments": [
+                {
+                  "name": "TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "作用域路径前缀（如 Game/Load）",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-seq",
+              "recursive": false,
+              "hidden": false,
+              "description": "seq 下限（主流全局单调）",
+              "arguments": [
+                {
+                  "name": "MIN_SEQ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--max-seq",
+              "recursive": false,
+              "hidden": false,
+              "description": "seq 上限",
+              "arguments": [
+                {
+                  "name": "MAX_SEQ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--min-ts",
+              "recursive": false,
+              "hidden": false,
+              "description": "会话起点起毫秒下限",
+              "arguments": [
+                {
+                  "name": "MIN_TS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--max-ts",
+              "recursive": false,
+              "hidden": false,
+              "description": "会话起点起毫秒上限",
+              "arguments": [
+                {
+                  "name": "MAX_TS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--has-artifact",
+              "recursive": false,
+              "hidden": false,
+              "description": "只保留带工件引用的记录 [default: False]",
+              "arguments": [
+                {
+                  "name": "HAS_ARTIFACT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--thread",
+              "recursive": false,
+              "hidden": false,
+              "description": "线程过滤（ManagedThreadId 精确匹配）",
+              "arguments": [
+                {
+                  "name": "THREAD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--include-crash",
+              "recursive": false,
+              "hidden": false,
+              "description": "并入 crash.jsonl 快照流（尾部，origin=crash） [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_CRASH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--source-root",
+              "recursive": false,
+              "hidden": false,
+              "description": "源码路径前缀重映射：剥掉编译机绝对前缀得到仓库相对路径（跨机分析）",
+              "arguments": [
+                {
+                  "name": "SOURCE_ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "diff",
+          "description": "两会话按模板聚合对比：新增/消失/计数变化（回归排障）",
+          "options": [
+            {
+              "name": "--root",
+              "recursive": false,
+              "hidden": false,
+              "description": "日志根目录（含 current/archives）或直接会话目录 [default: <path>]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--baseline",
+              "recursive": false,
+              "hidden": false,
+              "description": "基线会话（缺省 latest-1）",
+              "arguments": [
+                {
+                  "name": "BASELINE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--compare",
+              "recursive": false,
+              "hidden": false,
+              "description": "对比会话（缺省 latest）",
+              "arguments": [
+                {
+                  "name": "COMPARE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "artifact",
+          "description": "读取会话工件（文本回内容截断可感知，二进制回元信息与路径）",
+          "options": [
+            {
+              "name": "--root",
+              "recursive": false,
+              "hidden": false,
+              "description": "日志根目录（含 current/archives）或直接会话目录 [default: <path>]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--session",
+              "recursive": false,
+              "hidden": false,
+              "description": "current / latest（缺省）/ latest-N / 会话 id 前缀",
+              "arguments": [
+                {
+                  "name": "SESSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--id",
+              "recursive": false,
+              "hidden": false,
+              "description": "工件 id（来自记录的 art 字段）",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--max-bytes",
+              "recursive": false,
+              "hidden": false,
+              "description": "文本内容上限 [default: 65536]",
+              "arguments": [
+                {
+                  "name": "MAX_BYTES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "check",
+          "description": "门禁：命中即退出码 1（CI/自动化测试后验日志干净）",
+          "options": [
+            {
+              "name": "--root",
+              "recursive": false,
+              "hidden": false,
+              "description": "日志根目录（含 current/archives）或直接会话目录 [default: <path>]",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--session",
+              "recursive": false,
+              "hidden": false,
+              "description": "current / latest（缺省）/ latest-N / 会话 id 前缀",
+              "arguments": [
+                {
+                  "name": "SESSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-level",
+              "recursive": false,
+              "hidden": false,
+              "description": "级别下限（Trace/Debug/Info/Warning/Error） [default: Error]",
+              "arguments": [
+                {
+                  "name": "MIN_LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "分类前缀（点分段语义，可多值）",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CATEGORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--template",
+              "recursive": false,
+              "hidden": false,
+              "description": "模板正则（作用于 msg 模板而非渲染文本）",
+              "arguments": [
+                {
+                  "name": "TEMPLATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "TraceId 精确匹配",
+              "arguments": [
+                {
+                  "name": "TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "作用域路径前缀（如 Game/Load）",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-seq",
+              "recursive": false,
+              "hidden": false,
+              "description": "seq 下限（主流全局单调）",
+              "arguments": [
+                {
+                  "name": "MIN_SEQ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--max-seq",
+              "recursive": false,
+              "hidden": false,
+              "description": "seq 上限",
+              "arguments": [
+                {
+                  "name": "MAX_SEQ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--min-ts",
+              "recursive": false,
+              "hidden": false,
+              "description": "会话起点起毫秒下限",
+              "arguments": [
+                {
+                  "name": "MIN_TS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--max-ts",
+              "recursive": false,
+              "hidden": false,
+              "description": "会话起点起毫秒上限",
+              "arguments": [
+                {
+                  "name": "MAX_TS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--has-artifact",
+              "recursive": false,
+              "hidden": false,
+              "description": "只保留带工件引用的记录 [default: False]",
+              "arguments": [
+                {
+                  "name": "HAS_ARTIFACT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--thread",
+              "recursive": false,
+              "hidden": false,
+              "description": "线程过滤（ManagedThreadId 精确匹配）",
+              "arguments": [
+                {
+                  "name": "THREAD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--include-crash",
+              "recursive": false,
+              "hidden": false,
+              "description": "并入 crash.jsonl 快照流（尾部，origin=crash） [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_CRASH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--source-root",
+              "recursive": false,
+              "hidden": false,
+              "description": "源码路径前缀重映射：剥掉编译机绝对前缀得到仓库相对路径（跨机分析）",
+              "arguments": [
+                {
+                  "name": "SOURCE_ROOT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出格式：text（默认）/ json [default: Text]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormatEnum",
+                  "allowedValues": [
+                    "Text",
+                    "Json"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "doc",
+      "description": "施工案体系工具（WORKFLOW §6：extract 提取 / check 闸 / render 视图 / views 新鲜度）",
+      "commands": [
+        {
+          "name": "extract",
+          "description": "真源 → 引用网络（提取物 graph.json——确定性序列化，入库物）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "游戏工程源码根（.cs 树）",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--docs",
+              "recursive": false,
+              "hidden": false,
+              "description": "docs 根（含 design/ 与 plan/）",
+              "arguments": [
+                {
+                  "name": "DOCS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--out",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出网络 JSON 路径",
+              "arguments": [
+                {
+                  "name": "OUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--xml",
+              "recursive": false,
+              "hidden": false,
+              "description": "XML 文档文件（缺省自动扫 bin）",
+              "arguments": [
+                {
+                  "name": "XML",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "check",
+          "description": "骨架闸+XML 标签闸+文档系统四闸（悬空/谎报/新鲜度/投影新鲜度——--cards 给出时启用）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "游戏工程源码根（.cs 树）",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--docs",
+              "recursive": false,
+              "hidden": false,
+              "description": "docs 根（含 design/ 与 plan/CLARIFICATIONS.md）",
+              "arguments": [
+                {
+                  "name": "DOCS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--xml",
+              "recursive": false,
+              "hidden": false,
+              "description": "XML 文档文件（可多值；缺省自动扫 bin）",
+              "arguments": [
+                {
+                  "name": "XML",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--logic-phase",
+              "recursive": false,
+              "hidden": false,
+              "description": "逻辑期开关（WORKFLOW §2.1）：放行骨架形态闸，其余闸照跑 [default: False]",
+              "arguments": [
+                {
+                  "name": "LOGIC_PHASE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--cards",
+              "recursive": false,
+              "hidden": false,
+              "description": "源卡根（启用文档系统四闸）",
+              "arguments": [
+                {
+                  "name": "CARDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tests",
+              "recursive": false,
+              "hidden": false,
+              "description": "测试根（键组发现）",
+              "arguments": [
+                {
+                  "name": "TESTS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--progress",
+              "recursive": false,
+              "hidden": false,
+              "description": "PROGRESS.md 路径（投影新鲜度闸）",
+              "arguments": [
+                {
+                  "name": "PROGRESS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "render",
+          "description": "生成审查 HTML（obj 卡/def/op 组+标签溯源）到 --out",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "游戏工程源码根",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--docs",
+              "recursive": false,
+              "hidden": false,
+              "description": "docs 根",
+              "arguments": [
+                {
+                  "name": "DOCS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--out",
+              "recursive": false,
+              "hidden": false,
+              "description": "输出 HTML 路径",
+              "arguments": [
+                {
+                  "name": "OUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--xml",
+              "recursive": false,
+              "hidden": false,
+              "description": "XML 文档文件（缺省自动扫 bin）",
+              "arguments": [
+                {
+                  "name": "XML",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "views",
+          "description": "提取物新鲜度（⑤）：重 extract 字节对比——手改提取物=红",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "游戏工程源码根",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--docs",
+              "recursive": false,
+              "hidden": false,
+              "description": "docs 根",
+              "arguments": [
+                {
+                  "name": "DOCS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--graph",
+              "recursive": false,
+              "hidden": false,
+              "description": "入库 graph.json 路径",
+              "arguments": [
+                {
+                  "name": "GRAPH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pull",
+          "description": "需求提取（design/ 或快照包 → 键控提取件落程序仓本地——提取面契约消费端）",
+          "options": [
+            {
+              "name": "--cards",
+              "recursive": false,
+              "hidden": false,
+              "description": "源卡根（策划 project 的 内容/ 或快照包等价目录）",
+              "arguments": [
+                {
+                  "name": "CARDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--gdd",
+              "recursive": false,
+              "hidden": false,
+              "description": "GDD 路径（如 GDD_程序施工版.md——章节清单进提取件，锚点校验的输入）",
+              "arguments": [
+                {
+                  "name": "GDD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--rules",
+              "recursive": false,
+              "hidden": false,
+              "description": "数值规则/关卡/投放 YAML 根（文件级哈希——公共规则变化追踪）",
+              "arguments": [
+                {
+                  "name": "RULES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--out",
+              "recursive": false,
+              "hidden": false,
+              "description": "提取件落盘路径（如 docs/extract/requirements.json）",
+              "arguments": [
+                {
+                  "name": "OUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "description": "反推投影（代码真源+测试 → 内容层状态；--write 落盘 PROGRESS.md=doc sync）",
+          "options": [
+            {
+              "name": "--cards",
+              "recursive": false,
+              "hidden": false,
+              "description": "源卡根（①层；demo 型项目可指向自写设计文档目录）",
+              "arguments": [
+                {
+                  "name": "CARDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "代码根（扫 [Def]+impl 标记）",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tests",
+              "recursive": false,
+              "hidden": false,
+              "description": "测试根（键组发现；缺省=project 下 tests 目录）",
+              "arguments": [
+                {
+                  "name": "TESTS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--progress",
+              "recursive": false,
+              "hidden": false,
+              "description": "PROGRESS.md 路径（--write 时落盘）",
+              "arguments": [
+                {
+                  "name": "PROGRESS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--write",
+              "recursive": false,
+              "hidden": false,
+              "description": "落盘（=doc sync） [default: False]",
+              "arguments": [
+                {
+                  "name": "WRITE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "pending",
+          "description": "需求池（内容层差集：源卡有·def 无，按类别分组）",
+          "options": [
+            {
+              "name": "--cards",
+              "recursive": false,
+              "hidden": false,
+              "description": "源卡根",
+              "arguments": [
+                {
+                  "name": "CARDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "代码根",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tests",
+              "recursive": false,
+              "hidden": false,
+              "description": "测试根",
+              "arguments": [
+                {
+                  "name": "TESTS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "key",
+          "description": "打穿查询（内容物 ID→源卡/投影/FB；类型符号名→代码位置——本版覆盖内容物 ID）",
+          "options": [
+            {
+              "name": "--cards",
+              "recursive": false,
+              "hidden": false,
+              "description": "源卡根",
+              "arguments": [
+                {
+                  "name": "CARDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "代码根",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--docs",
+              "recursive": false,
+              "hidden": false,
+              "description": "docs 根（FB 扫描）",
+              "arguments": [
+                {
+                  "name": "DOCS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tests",
+              "recursive": false,
+              "hidden": false,
+              "description": "测试根",
+              "arguments": [
+                {
+                  "name": "TESTS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "键（Hero00001 形态）",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "blame",
+          "description": "git 演进史（键的 def 变更记录——体系历史轴）",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "代码根（定位 def 所在文件）",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "键",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nuget-status",
+      "description": "自有包：本地版本 / 发布版本 / 消费者版本三列对照",
+      "options": [
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "扫描根目录（默认当前目录） [default: <path>]",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "输出格式：text（默认）/ json [default: Text]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormatEnum",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "description": "以 stdio MCP server 暴露语义工具（供 agent 接入）"
+    }
+  ]
+}
