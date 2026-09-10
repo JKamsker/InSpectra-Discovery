@@ -1,0 +1,706 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "gitlab-mcp-server — GitLab MCP Server",
+    "version": "3.0.0",
+    "description": "GitLab MCP server: GitLab REST v4 and GraphQL as Model Context Protocol tools. A .NET tool wrapping the native Go binary; install with dotnet tool install or run with dnx."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 1,
+    "cliParsedDescription": "A Model Context Protocol (MCP) server that exposes GitLab operations\nas MCP tools, resources, and prompts for AI assistants.\nSupports stdio (default) and HTTP transport modes."
+  },
+  "commands": [],
+  "options": [
+    {
+      "name": "-help",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show this help message",
+      "aliases": [
+        "-h"
+      ]
+    },
+    {
+      "name": "-version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Print version and exit"
+    },
+    {
+      "name": "-shutdown",
+      "recursive": false,
+      "hidden": false,
+      "description": "Terminate all running instances and exit"
+    },
+    {
+      "name": "-env-file",
+      "recursive": false,
+      "hidden": false,
+      "description": "Dotenv file to load besides ~/.gitlab-mcp-server.env; the same setting as\nGITLAB_MCP_ENV_FILE, and wins over it",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-probe",
+      "recursive": false,
+      "hidden": false,
+      "description": "Ask the running instance's /health and exit 0 when it answers (the container\nHEALTHCHECK). The listener is read off that instance's own flags, a TLS one\npinned to its -tls-cert; a URL, unix:<path> or host:port after the flag\nprobes that instead, an https one pinned to -tls-cert when given before it"
+    },
+    {
+      "name": "-tool-search",
+      "recursive": false,
+      "hidden": false,
+      "description": "Search the action catalog by name, alias, tag or description and exit. Prints\neach canonical action ID, which is what gitlab_execute_action takes, beside the\ntool the configured surface names it. The surface and the tier come from\n-tool-surface and -tier when passed, and otherwise from GITLAB_MCP_TOOL_SURFACE\nand GITLAB_MCP_TIER, so a stdio deployment searches what it serves",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-log-level",
+      "recursive": false,
+      "hidden": false,
+      "description": "Logging verbosity: debug|info|warn|error (default info)",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-pprof-addr",
+      "recursive": false,
+      "hidden": false,
+      "description": "Serve Go's profiling handlers (net/http/pprof) on this loopback address, e.g.\n127.0.0.1:6060, on a listener of their own, started before the transport.\nEmpty (default) serves nothing; an address that is not loopback is refused\nTransport",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-transport",
+      "recursive": false,
+      "hidden": false,
+      "description": "Transport to serve: stdio|http|auto. Empty defers to -http; given both, -transport\nwins. auto reads file descriptor 0: HTTP only when stdin is the null device, which\nis what a container started without -i gives, and stdio for the pipe an MCP client\nconnects",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-http",
+      "recursive": false,
+      "hidden": false,
+      "description": "Run in HTTP transport mode (default: stdio)"
+    },
+    {
+      "name": "-http-addr",
+      "recursive": false,
+      "hidden": false,
+      "description": "Listen address: host:port, or a path to bind a unix socket (default \":8080\")",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-http-socket-mode",
+      "recursive": false,
+      "hidden": false,
+      "description": "Octal permission mode for a unix socket (default \"0660\")",
+      "arguments": [
+        {
+          "name": "STR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-tls-cert",
+      "recursive": false,
+      "hidden": false,
+      "description": "PEM certificate; serves HTTPS on the listener (requires -tls-key)",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-tls-key",
+      "recursive": false,
+      "hidden": false,
+      "description": "PEM private key matching -tls-cert",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-stateless",
+      "recursive": false,
+      "hidden": false,
+      "description": "Stateless streamable HTTP (default true; required for protocol 2026-07-28)"
+    },
+    {
+      "name": "-json-response",
+      "recursive": false,
+      "hidden": false,
+      "description": "Return application/json responses instead of SSE (default false)\n-max-request-body-bytes n Maximum streamable HTTP request body bytes (0 = SDK default 4 MiB)\n-session-timeout duration Idle MCP session timeout; -stateless=false only (default 30m0s)"
+    },
+    {
+      "name": "-http-idle-timeout",
+      "recursive": false,
+      "hidden": false,
+      "description": "HTTP server idle connection timeout; 0 (default) disables idle closure\nGitLab connection",
+      "arguments": [
+        {
+          "name": "DUR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-gitlab-url",
+      "recursive": false,
+      "hidden": false,
+      "description": "GitLab URL, required in HTTP mode. Repeatable to publish several instances, which a\nGITLAB-URL header then selects among",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-allow-any-gitlab-url",
+      "recursive": false,
+      "hidden": false,
+      "description": "Let the GITLAB-URL header name any host when -gitlab-url publishes none. Every request\nis then served against a host the caller chose, so -http-addr must bind a loopback\naddress or a unix socket",
+      "arguments": [
+        {
+          "name": "ALLOW_ANY_GITLAB_URL",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-skip-tls-verify",
+      "recursive": false,
+      "hidden": false,
+      "description": "Skip TLS certificate verification when calling GitLab (default false)"
+    },
+    {
+      "name": "-tier",
+      "recursive": false,
+      "hidden": false,
+      "description": "Force licensing tier: free|ce|premium|ultimate; omit to detect per server entry",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-ignore-scopes",
+      "recursive": false,
+      "hidden": false,
+      "description": "Skip PAT scope detection, register all tools (default false)"
+    },
+    {
+      "name": "-upload-max-file-size",
+      "recursive": false,
+      "hidden": false,
+      "description": "Maximum size in bytes for upload and file-read tools (default 2GB)\nThe GitLab token has no flag, on purpose: a token on a command line is\nvisible to every user on the machine through ps and lands in shell history.\nSet GITLAB_TOKEN in the environment, or send it per request in HTTP mode.\nTool surface",
+      "arguments": [
+        {
+          "name": "N",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-tool-surface",
+      "recursive": false,
+      "hidden": false,
+      "description": "Tool surface: dynamic|meta|individual (default dynamic)",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-capability-surface",
+      "recursive": false,
+      "hidden": false,
+      "description": "Capability surface: full|minimal (default full)",
+      "arguments": [
+        {
+          "name": "STR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-meta-param-schema",
+      "recursive": false,
+      "hidden": false,
+      "description": "Meta-tool input schema mode: opaque|compact|full (default opaque)",
+      "arguments": [
+        {
+          "name": "STR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-embedded-resources",
+      "recursive": false,
+      "hidden": false,
+      "description": "Embed canonical MCP resource links in get_* tool results (default true)"
+    },
+    {
+      "name": "-exclude-tools",
+      "recursive": false,
+      "hidden": false,
+      "description": "Comma-separated tool names to exclude from registration",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-client-compat",
+      "recursive": false,
+      "hidden": false,
+      "description": "Per-client response compatibility: auto|off (default auto)\nProtective modes",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-read-only",
+      "recursive": false,
+      "hidden": false,
+      "description": "Expose only read-only tools (default false)"
+    },
+    {
+      "name": "-safe-mode",
+      "recursive": false,
+      "hidden": false,
+      "description": "Intercept mutating tools and return a preview instead of executing"
+    },
+    {
+      "name": "-yolo-mode",
+      "recursive": false,
+      "hidden": false,
+      "description": "Skip the confirmation prompt on destructive actions (default false; overrides AUTOPILOT)\nAuthentication (HTTP mode)",
+      "arguments": [
+        {
+          "name": "YOLO_MODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-auth-mode",
+      "recursive": false,
+      "hidden": false,
+      "description": "Authentication mode: legacy|oauth (default \"legacy\")",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-public-url",
+      "recursive": false,
+      "hidden": false,
+      "description": "Externally reachable https origin; required with -auth-mode=oauth\n-oauth-cache-ttl duration OAuth token cache TTL (default 15m0s, min 1m0s, max 2h0m0s)",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-oauth-client-uid",
+      "recursive": false,
+      "hidden": false,
+      "description": "Comma-separated GitLab OAuth application uids whose tokens are admitted (default: any)",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-revalidate-interval",
+      "recursive": false,
+      "hidden": false,
+      "description": "How often pooled tokens are re-validated against GitLab (default 15m0s; 0 stops the\nperiodic check, but an entry whose credential is older than 1h0m0s is still rebuilt,\nwhich ends any stateful session on it)",
+      "arguments": [
+        {
+          "name": "DUR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-resource-documentation",
+      "recursive": false,
+      "hidden": false,
+      "description": "https URL published as RFC 9728 resource_documentation (default: this project's HTTP server mode page)",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-resource-policy-uri",
+      "recursive": false,
+      "hidden": false,
+      "description": "https URL published as RFC 9728 resource_policy_uri (default: omitted)",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-resource-tos-uri",
+      "recursive": false,
+      "hidden": false,
+      "description": "https URL published as RFC 9728 resource_tos_uri (default: omitted)\nLimits and pooling (HTTP mode)",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-max-http-clients",
+      "recursive": false,
+      "hidden": false,
+      "description": "Maximum unique (token, GitLab URL) pool entries; not sessions or concurrent requests (default 100)",
+      "arguments": [
+        {
+          "name": "INT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-pool-idle-timeout",
+      "recursive": false,
+      "hidden": false,
+      "description": "Reclaim a pooled credential entry after this long unused, except one with a live subscription (default 1h0m0s, 0 to disable)",
+      "arguments": [
+        {
+          "name": "DUR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-action-timeout",
+      "recursive": false,
+      "hidden": false,
+      "description": "Cancel an action still running after this long (default 65m, 0 to disable)",
+      "arguments": [
+        {
+          "name": "DUR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-drain-delay",
+      "recursive": false,
+      "hidden": false,
+      "description": "After SIGTERM, answer /health with 503 draining for this long before closing the\nlistener, so a balancer takes the instance out first (default 0: close at once)",
+      "arguments": [
+        {
+          "name": "DUR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-rate-limit-rps",
+      "recursive": false,
+      "hidden": false,
+      "description": "Per-credential rate limit on every call that reaches GitLab, plus tools/list on\na bucket of its own refilled a tenth as fast (default 10; 0 disables it)",
+      "arguments": [
+        {
+          "name": "FLOAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-rate-limit-burst",
+      "recursive": false,
+      "hidden": false,
+      "description": "Token-bucket burst size when -rate-limit-rps > 0 (default 40)",
+      "arguments": [
+        {
+          "name": "INT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-trusted-origins",
+      "recursive": false,
+      "hidden": false,
+      "description": "Origins allowed to make cross-origin browser requests ('*' accepts any; empty rejects all)\n-trusted-proxy-header str HTTP header with real client IP (e.g. X-Forwarded-For, X-Real-IP); requires -trusted-proxies",
+      "arguments": [
+        {
+          "name": "STRING",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-trusted-proxies",
+      "recursive": false,
+      "hidden": false,
+      "description": "Addresses or CIDR ranges of the proxies that header is believed from (e.g. 127.0.0.1,10.0.0.0/8)\nTelemetry",
+      "arguments": [
+        {
+          "name": "STR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-telemetry",
+      "recursive": false,
+      "hidden": false,
+      "description": "Export OpenTelemetry traces, metrics and logs over OTLP (default false)"
+    },
+    {
+      "name": "-telemetry-identity",
+      "recursive": false,
+      "hidden": false,
+      "description": "What telemetry records about the caller: none|pseudonymous|full (default none)",
+      "arguments": [
+        {
+          "name": "STR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-telemetry-identity-rotation",
+      "recursive": false,
+      "hidden": false,
+      "description": "How long a generated pseudonymisation key lives, e.g. 24h (empty keeps it for the process)",
+      "arguments": [
+        {
+          "name": "STR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "-telemetry-tool-name",
+      "recursive": false,
+      "hidden": false,
+      "description": "Whether the tool name is a metric dimension: auto|on|off (default auto:\non for dynamic and meta, off for individual, where ~1000 tools would\nexhaust the cardinality limit and collapse the long tail)\nOff by default, and it goes to a collector you configure through the\nstandard OTEL_EXPORTER_OTLP_* environment; nothing is ever sent anywhere\nelse. OTEL_SDK_DISABLED=true vetoes it regardless of the flag. See\ndocs/guides/telemetry.md.\nENVIRONMENT VARIABLES (stdio mode)\nSettings this project defines are read as GITLAB_MCP_<NAME>. The unprefixed\nspelling of a renamed variable still works and is removed in 3.1.0; when both\nare set the prefixed one wins and a warning names the one being ignored.\nGITLAB_URL and GITLAB_TOKEN keep their bare names, and so does every OTEL_*\nvariable, which the OpenTelemetry exporters read themselves.\nGITLAB_URL                        GitLab instance URL (default: https://gitlab.com; set for self-managed instances)\nGITLAB_TOKEN                      Personal Access Token (glpat-...)\nGITLAB_MCP_SKIP_TLS_VERIFY        Skip TLS verification: true/false (default false)\nGITLAB_MCP_TOOL_SURFACE           Canonical tool surface: dynamic|meta|individual (default dynamic)\nGITLAB_MCP_CAPABILITY_SURFACE     Resource/prompt surface: full|minimal (default full)\nGITLAB_MCP_META_PARAM_SCHEMA      Meta-tool input schema: opaque|compact|full (default opaque)\nGITLAB_MCP_TIER                   Force licensing tier: free|ce|premium|ultimate; omit to detect from license\nGITLAB_MCP_READ_ONLY              Expose only read-only tools: true/false (default false)\nGITLAB_MCP_SAFE_MODE              Intercept mutating tools and return a preview (default false)\nGITLAB_MCP_EMBEDDED_RESOURCES     Embed canonical MCP resource links in get_* results (default true)\nGITLAB_MCP_EXCLUDE_TOOLS          Comma-separated tool names to exclude (default empty)\nGITLAB_MCP_IGNORE_SCOPES          Skip PAT scope detection: true/false (default false)\nGITLAB_MCP_UPLOAD_MAX_FILE_SIZE   Maximum upload/file size for upload tools (default 2GB)\nGITLAB_MCP_RATE_LIMIT_RPS         Per-credential rate limit on every call that reaches GitLab, plus\ntools/list on a bucket refilled a tenth as fast (default 0, disabled)\nGITLAB_MCP_RATE_LIMIT_BURST       Token-bucket burst size when the rate limit is on (default 40)\nGITLAB_MCP_STDIO_MAX_LINE_BYTES   Longest stdio message accepted, in bytes (default 4 MiB). Raise it\nonly for a client that inlines large base64 payloads; a longer line\nis refused, not buffered\nGITLAB_MCP_MAX_LISTEN_STREAMS     Concurrent subscriptions/listen streams one credential may hold open\n(default 64; 0 disables the per-credential ceiling). Both transports\nGITLAB_MCP_ALLOW_PRIVATE_INSTANCES\nPermit a private, loopback or CGNAT address as a destination this\nserver's operator did not choose: an instance a caller named in\nGITLAB-URL under --allow-any-gitlab-url, or a redirect hop that left\nthe configured instance (default false). An address GITLAB_URL named\nis never checked; cloud metadata addresses are always refused\nGITLAB_MCP_YOLO_MODE              Skip destructive action confirmation prompts (default false)\nGITLAB_MCP_DESCRIPTION_SUBSTITUTIONS\nRewrite listed descriptions and titles for strict gateway validators:\ncomma-separated old=new pairs, backslash escapes \\, \\= \\\\ (default empty)\nGITLAB_MCP_TELEMETRY              Export OpenTelemetry traces, metrics and logs over OTLP (default false)\nGITLAB_MCP_TELEMETRY_IDENTITY     What telemetry records about the caller: none|pseudonymous|full\n(default none)\nGITLAB_MCP_TELEMETRY_IDENTITY_KEY\nSecret the pseudonymous policy derives its keys from; environment\nonly, no flag\nGITLAB_MCP_TELEMETRY_IDENTITY_ROTATION\nHow long a generated pseudonymisation key lives, e.g. 24h\n(default: process lifetime)\nGITLAB_MCP_TELEMETRY_TOOL_NAME    Whether gen_ai.tool.name is a metric dimension: auto|on|off\n(default auto)\nGITLAB_MCP_LOG_LEVEL              Logging: debug/info/warn/error (default info)\nGITLAB_MCP_PPROF_ADDR             Loopback address for Go's profiling handlers, e.g. 127.0.0.1:6060\n(default empty: nothing served). Both transports\nENVIRONMENT VARIABLES (HTTP mode)\nEvery HTTP flag that has a variable, above or below, reads it when the flag\nis not passed. Precedence: an explicitly passed flag, then the environment,\nthen the built-in default. The variables below have no stdio equivalent:\nGITLAB_MCP_AUTH_MODE              Authentication mode: legacy|oauth (default legacy)\nGITLAB_MCP_PUBLIC_URL             Externally reachable https origin; required with oauth auth mode\nGITLAB_MCP_TRUSTED_ORIGINS        Origins allowed to make cross-origin browser requests\nGITLAB_MCP_OAUTH_CACHE_TTL        OAuth token cache TTL (default 15m, min 1m, max 2h)\nGITLAB_MCP_OAUTH_CLIENT_UID       Comma-separated GitLab OAuth application uids whose tokens are\nadmitted (default: any)\nGITLAB_MCP_MAX_HTTP_CLIENTS       Maximum unique (token, GitLab URL) pool entries; not sessions\n(default 100)\nGITLAB_MCP_SESSION_TIMEOUT        Idle MCP session timeout; --stateless=false only (default 30m)\nGITLAB_MCP_POOL_IDLE_TIMEOUT      Reclaim an unused pooled server after this long (default 1h, 0 disables)\nGITLAB_MCP_ACTION_TIMEOUT         Cancel an action still running after this long, both transports\n(default 65m, 0 disables)\nGITLAB_MCP_DRAIN_DELAY            After SIGTERM, answer /health with 503 draining this long before closing\nthe listener (default 0)\nGITLAB_MCP_SESSION_REVALIDATE_INTERVAL\nToken re-validation interval (default 15m; 0 stops the periodic\ncheck, an entry older than 1h is still rebuilt)\nJSON CONFIGURATION EXAMPLES\nVS Code / GitHub Copilot (.vscode/mcp.json):\n{\n\"servers\": {\n\"gitlab\": {\n\"type\": \"stdio\",\n\"command\": \"/usr/local/bin/gitlab-mcp-server\",\n\"env\": {\n\"GITLAB_URL\": \"https://gitlab.example.com\",\n\"GITLAB_TOKEN\": \"glpat-your-token\",\n\"GITLAB_MCP_SKIP_TLS_VERIFY\": \"true\",\n\"GITLAB_MCP_TOOL_SURFACE\": \"dynamic\"\n}\n}\n}\n}\nOpenCode (MCP configuration):\n\"mcpServers\": {\n\"GITLAB_TOKEN\": \"glpat-your-token\"\nHTTP mode (single GitLab instance):\ngitlab-mcp-server --http --gitlab-url=https://gitlab.example.com --http-addr=:8080\nHTTP mode with no instance published (loopback only; clients send GITLAB-URL per request):\ngitlab-mcp-server --http --allow-any-gitlab-url --http-addr=127.0.0.1:8080",
+      "arguments": [
+        {
+          "name": "STR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}
