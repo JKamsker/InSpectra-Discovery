@@ -1,0 +1,627 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "sqlarchive",
+    "version": "0.1.0",
+    "description": "Export a SQL Server database to a readable archive, restore it somewhere else, and prove the two match."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 5,
+    "cliFramework": "Spectre.Console.Cli"
+  },
+  "commands": [
+    {
+      "name": "export",
+      "hidden": false,
+      "description": "Read a database into an archive: the schema, the rows, and a hash of each table.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints version information",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERSION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Connection string of the database to\narchive",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "The archive to write. The conventional\nextension is .sqlarchive; it is not\nenforced",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--table",
+          "recursive": false,
+          "hidden": false,
+          "description": "Archive only tables matching this glob, as\nschema.table. Repeatable. Default: every\ntable",
+          "arguments": [
+            {
+              "name": "TABLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave out tables matching this glob, as\nschema.table. Repeatable. Applied after",
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--where",
+          "recursive": false,
+          "hidden": false,
+          "description": "Archive only the rows of one table that\nmatch a predicate, as dbo.Order=Total>0.\nRepeatable. The predicate is written into\nthe manifest as that table's rowFilter,\nbecause an archive that is partial and does\nnot say so makes a later verify report\ndifferences that are not differences",
+          "arguments": [
+            {
+              "name": "WHERE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--schema-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Archive the schema and none of the rows.\nEvery table is marked dataSkipped in the\nmanifest, so a verify against the archive\nknows the rows are absent on purpose",
+          "arguments": [
+            {
+              "name": "SCHEMA_ONLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--consistent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read every table at one point in time.\nTries a database snapshot first, then a\nsingle connection under SNAPSHOT isolation.\nIf neither is available it REFUSES and says\nwhich permission or setting is missing - it\ndoes not quietly fall back to reading table\nby table, because an archive that was asked\nto be consistent and silently is not is\nworse than a failed export. The mode that\nwas used is recorded in the manifest"
+        },
+        {
+          "name": "--maxdop",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many units are read at once - a table\nread whole is one unit, and each range of a\ntable that was split into ranges is one\nmore, so a single large table can use every\nbit of this and not just one slot of it.\nDefault: the processor count, capped at 8.\nA database snapshot keeps this parallelism;\nSNAPSHOT isolation costs it, because it\nreads through a single connection",
+          "arguments": [
+            {
+              "name": "MAXDOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--range-size",
+          "recursive": false,
+          "hidden": false,
+          "description": "Split a large table into range files of\nabout this many rows, which is what lets it\nbe read in parallel. Only possible where\nthere is a numeric or date key to partition\nby; a table without one is read whole\nwhatever this says",
+          "arguments": [
+            {
+              "name": "RANGE_SIZE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--spool",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where the partial export is spooled.\nDefault: beside --out",
+          "arguments": [
+            {
+              "name": "SPOOL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--resume",
+          "recursive": false,
+          "hidden": false,
+          "description": "Carry on an export that was interrupted,\ndoing the tables that are missing. The\nspool carries a fingerprint of the\nconnection, the filters and the format\nversion; resuming with different ones is\nrefused rather than mixed into one archive\nthat came from two different runs"
+        }
+      ]
+    },
+    {
+      "name": "import",
+      "hidden": false,
+      "description": "Restore an archive, as a migration over what is already there rather than as a\ndrop.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints version information",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERSION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--destination",
+          "recursive": false,
+          "hidden": false,
+          "description": "Connection string of the database to\nrestore into. It does not have to be\nempty, and it does not have to be new",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DESTINATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--schema-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run the schema phases and stop. No rows\nare read out of the archive"
+        },
+        {
+          "name": "--data-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the schema and publish the rows into\na destination that already has the right\nshape. Refused where the shape does not\nmatch"
+        },
+        {
+          "name": "--table",
+          "recursive": false,
+          "hidden": false,
+          "description": "Publish the rows of only the tables\nmatching this glob, as schema.table.\nRepeatable. It selects ROWS and not\nschema: the archive's schema phases are\nits own files, run whole, so a table left\nout here is still created - and left\nempty. The summary says which and why",
+          "arguments": [
+            {
+              "name": "TABLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave the rows of tables matching this\nglob unpublished, as schema.table.\nRepeatable. Applied after --table",
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Say what would be altered and what would\nbe published, and write nothing. The\nschema diff is real; the destination is\nnot touched"
+        },
+        {
+          "name": "--continue-on-error",
+          "recursive": false,
+          "hidden": false,
+          "description": "Carry on with the remaining tables when\none fails. Each table is published\natomically by itself, so the ones that\nsucceeded stay published and the ones that\nfailed are left untouched - not half\nloaded"
+        },
+        {
+          "name": "--maxdop",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many tables to stage at once. Default:\nthe processor count",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--resume",
+          "recursive": false,
+          "hidden": false,
+          "description": "Carry on an interrupted restore by the\ntables that are missing, against the same\nfingerprint the export writes"
+        },
+        {
+          "name": "--work-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where the journal that makes --resume\npossible is kept. Default: beside the\narchive. It holds no rows - the rows are\nalready in the archive - only which tables\nare done, so a resume can pick up without\nreading them again",
+          "arguments": [
+            {
+              "name": "WORK_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ARCHIVE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "description": "The archive to restore"
+        }
+      ]
+    },
+    {
+      "name": "inspect",
+      "hidden": false,
+      "description": "Show what an archive says about itself, without unpacking it.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints version information",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERSION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--entries",
+          "recursive": false,
+          "hidden": false,
+          "description": "List every entry with its packed and unpacked size, and\nwhether the manifest accounts for it",
+          "aliases": [
+            "-e"
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the manifest to standard output exactly as it is in\nthe archive, and nothing else. This is the way to get the\nhashes in full"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ARCHIVE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "description": "The archive to read: a .sqlarchive file, an archive dbdumper\nwrote, a directory holding a manifest.json, or a manifest.json\nby itself"
+        }
+      ]
+    },
+    {
+      "name": "verify",
+      "hidden": false,
+      "description": "Prove an archive is intact, or that a database still matches it down to the row.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints version information",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERSION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--against",
+          "recursive": false,
+          "hidden": false,
+          "description": "Compare the archive against a live database:\nthe schema by diff, and per table the row\ncount and the content hash. Without it, only\nthe integrity of the archive itself is checked\n- the file hashes in the manifest against the\nentries - and no server is touched at all",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "AGAINST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--table",
+          "recursive": false,
+          "hidden": false,
+          "description": "Verify only tables matching this glob, as\nschema.table. Repeatable",
+          "arguments": [
+            {
+              "name": "TABLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave out tables matching this glob, as\nschema.table. Repeatable. Applied after",
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--schema-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Compare the schema and stop. No table is read\non either side\nconsole. A build branching on the exit code\nfound differences, and 1 when it could not be\na job that treats a corrupt archive and an\nunreachable server as the same event will\neventually act on the wrong one",
+          "arguments": [
+            {
+              "name": "SCHEMA_ONLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the verdict as JSON as well, for a build\nto read. The readable report still goes to the\nconsole. A build branching on the exit code\ngets three answers rather than two: 0 when the\ntwo sides match, 3 when the comparison ran and\nfound differences, and 1 when it could not be\nmade at all. Finding drift is not failing, and\na job that treats a corrupt archive and an\nunreachable server as the same event will\neventually act on the wrong one",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--maxdop",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many tables to read at once. Default: the\nprocessor count",
+          "arguments": [
+            {
+              "name": "MAXDOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Command timeout for reading a table. 0, the\ndefault, is no limit: verify reads whole\ntables and a clock is the wrong way to notice\na slow one",
+          "arguments": [
+            {
+              "name": "TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ARCHIVE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "description": "The archive to verify, and the side of the comparison that is a\nfile"
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false,
+      "description": "Prints help information",
+      "aliases": [
+        "-h"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Prints version information",
+      "aliases": [
+        "-v"
+      ],
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}
