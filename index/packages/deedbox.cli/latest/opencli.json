@@ -1,0 +1,484 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Deedbox.Cli",
+    "version": "0.2.0",
+    "description": "The deedbox command-line tool: schema scripts, status, key rewrap and lockfile diff."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.12.0",
+      "systemCommandLineVersion": "2.0.12.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "The Deedbox command-line tool."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--provider",
+      "recursive": true,
+      "hidden": false,
+      "description": "The database: postgres or sqlserver.",
+      "arguments": [
+        {
+          "name": "PROVIDER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--schema",
+      "recursive": true,
+      "hidden": false,
+      "description": "The Deedbox schema name. [default: deedbox]",
+      "arguments": [
+        {
+          "name": "SCHEMA",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--connection",
+      "recursive": true,
+      "hidden": false,
+      "description": "The connection string. Defaults to the DEEDBOX_CONNECTION environment variable.",
+      "arguments": [
+        {
+          "name": "CONNECTION",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "schema",
+      "description": "Print or apply the Deedbox schema.",
+      "commands": [
+        {
+          "name": "script",
+          "description": "Print the SQL for every migration after --from.",
+          "options": [
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "The schema version the database has now; 0 for a new database. [default: 0]",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--native-json",
+              "recursive": false,
+              "hidden": false,
+              "description": "SQL Server: convert the JSON columns to the native json type (SQL Server 2025, Azure SQL). [default: False]",
+              "arguments": [
+                {
+                  "name": "NATIVE_JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "apply",
+          "description": "Apply pending migrations under a database lock.",
+          "options": [
+            {
+              "name": "--native-json",
+              "recursive": false,
+              "hidden": false,
+              "description": "SQL Server: convert the JSON columns to the native json type (SQL Server 2025, Azure SQL). [default: False]",
+              "arguments": [
+                {
+                  "name": "NATIVE_JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Show checkpoints, lag, stalled consumers with their poison event, and recent jobs.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the status as JSON. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rebuild",
+      "description": "Queue an in-place rebuild of a projection; the app's runner does it.",
+      "options": [
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "Wait for the job to finish; exit 1 if it fails. [default: False]",
+          "arguments": [
+            {
+              "name": "WAIT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PROJECTION",
+          "description": "The stored projection name.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "skip",
+      "description": "Queue an audited skip of the event a consumer stalled on.",
+      "options": [
+        {
+          "name": "--event",
+          "recursive": false,
+          "hidden": false,
+          "description": "The event it stalled on, from deedbox status.",
+          "arguments": [
+            {
+              "name": "EVENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "Wait for the job to finish; exit 1 if it fails. [default: False]",
+          "arguments": [
+            {
+              "name": "WAIT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "CONSUMER",
+          "description": "The stalled projection or subscription.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "erase",
+      "description": "Delete a data subject's key now, and queue the job that finishes their erasure.",
+      "options": [
+        {
+          "name": "--tenant",
+          "recursive": false,
+          "hidden": false,
+          "description": "The tenant; empty by default. [default: ]",
+          "arguments": [
+            {
+              "name": "TENANT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "Wait for the job to finish; exit 1 if it fails. [default: False]",
+          "arguments": [
+            {
+              "name": "WAIT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SUBJECT",
+          "description": "The data subject, such as person:8421.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "snapshots",
+      "description": "Rebuild stored state.",
+      "commands": [
+        {
+          "name": "rebuild",
+          "description": "Queue a rebuild of the stored state of every stream of a type.",
+          "options": [
+            {
+              "name": "--wait",
+              "recursive": false,
+              "hidden": false,
+              "description": "Wait for the job to finish; exit 1 if it fails. [default: False]",
+              "arguments": [
+                {
+                  "name": "WAIT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "STREAMTYPE",
+              "description": "The stored stream type name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "keys",
+      "description": "Manage the master key.",
+      "commands": [
+        {
+          "name": "rewrap",
+          "description": "Re-wrap every tenant key with another master key. Events are not touched.",
+          "options": [
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "The master key that wrapped the keys now: database, env:<VARIABLE> or azure:<key URL>.",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "The master key to wrap them with: database, env:<VARIABLE> or azure:<key URL>.",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tenant",
+      "description": "Manage tenants.",
+      "commands": [
+        {
+          "name": "shred",
+          "description": "Crypto-shred a tenant: every personal field and sealed state of it reads as erased.",
+          "options": [
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Confirm: this destroys the tenant's keys and cannot be undone. [default: False]",
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TENANT",
+              "description": "The tenant to shred.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lockfile",
+      "description": "Work with event-contract lockfiles.",
+      "commands": [
+        {
+          "name": "diff",
+          "description": "Show event-contract changes between two lockfiles; exit 1 when one breaks stored events.",
+          "arguments": [
+            {
+              "name": "OLD",
+              "description": "The earlier lockfile, such as the one on the main branch.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            },
+            {
+              "name": "NEW",
+              "description": "The lockfile to compare.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
