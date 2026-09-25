@@ -1,0 +1,1511 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Greek Developer - Graylog Query CLI",
+    "version": "0.1.15",
+    "description": "Read-only Graylog query CLI with named profiles and stored queries, for people and agents"
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.10.0",
+      "systemCommandLineVersion": "2.0.10.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedTitle": "glq",
+    "cliParsedDescription": "glq: read-only Graylog queries with named profiles and stored queries."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--profile",
+      "recursive": true,
+      "hidden": false,
+      "description": "Profile to use (default: $GLQ_PROFILE, then current_profile in config.json).",
+      "aliases": [
+        "-p"
+      ],
+      "arguments": [
+        {
+          "name": "PROFILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--insecure",
+      "recursive": true,
+      "hidden": false,
+      "description": "Skip TLS certificate verification for this run. Prints a warning. [default: False]",
+      "arguments": [
+        {
+          "name": "INSECURE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "recursive": true,
+      "hidden": false,
+      "description": "Trace HTTP requests to stderr, with the Authorization header redacted. [default: False]",
+      "aliases": [
+        "-v"
+      ],
+      "arguments": [
+        {
+          "name": "VERBOSE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "search",
+      "description": "Search messages on the active profile.",
+      "options": [
+        {
+          "name": "--range",
+          "recursive": false,
+          "hidden": false,
+          "description": "Relative range ending now: 30s, 15m, 2h, 1d, 1w (default: the profile's default_range).",
+          "arguments": [
+            {
+              "name": "RANGE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "Absolute range start, ISO 8601. UTC unless it carries an offset or --tz is given.",
+          "arguments": [
+            {
+              "name": "FROM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "Absolute range end, ISO 8601.",
+          "arguments": [
+            {
+              "name": "TO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tz",
+          "recursive": false,
+          "hidden": false,
+          "description": "Time zone for --from/--to values without an offset, e.g. Europe/Athens.",
+          "arguments": [
+            {
+              "name": "TZ",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--stream",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stream name or ID. Repeatable (default: the profile's default_streams).",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "STREAM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--fields",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated fields to return (default: the profile's default_fields).",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FIELDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--limit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum messages to return (default: the profile's default_limit).",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "LIMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--sort",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sort as <field>:asc|desc (default: timestamp:desc).",
+          "arguments": [
+            {
+              "name": "SORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: table, json, jsonl or csv (default: table on a terminal, jsonl otherwise).",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Table",
+                "Json",
+                "Jsonl",
+                "Csv"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--raw",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the untransformed API response, for debugging. Still masked. [default: False]",
+          "arguments": [
+            {
+              "name": "RAW",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-mask",
+          "recursive": false,
+          "hidden": false,
+          "description": "Turn off masking of emails, phones and mask_fields. Card numbers stay masked. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_MASK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--yes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Confirm a large run against a production profile without a prompt. [default: False]",
+          "aliases": [
+            "-y"
+          ],
+          "arguments": [
+            {
+              "name": "YES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "QUERY",
+          "description": "Graylog/Lucene query, e.g. 'source:api AND http_status:>=500'. Use '*' for everything.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "description": "Manage Graylog profiles - one per cluster or environment.",
+      "commands": [
+        {
+          "name": "add",
+          "description": "Add a profile.",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Graylog base URL, e.g. https://graylog.example.com",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--production",
+              "recursive": false,
+              "hidden": false,
+              "description": "Mark the target as production. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRODUCTION",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-verify-tls",
+              "recursive": false,
+              "hidden": false,
+              "description": "Store verify_tls = false. Every run then warns. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_VERIFY_TLS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--ca-bundle",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to a custom CA bundle (PEM).",
+              "arguments": [
+                {
+                  "name": "CA_BUNDLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--timeout-seconds",
+              "recursive": false,
+              "hidden": false,
+              "description": "Per-request timeout (default 30).",
+              "arguments": [
+                {
+                  "name": "TIMEOUT_SECONDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--token-command",
+              "recursive": false,
+              "hidden": false,
+              "description": "Shell command that prints the token, e.g. a password-manager CLI.",
+              "arguments": [
+                {
+                  "name": "TOKEN_COMMAND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--default-range",
+              "recursive": false,
+              "hidden": false,
+              "description": "Relative range used when a search gives none (default 5m).",
+              "arguments": [
+                {
+                  "name": "DEFAULT_RANGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--default-stream",
+              "recursive": false,
+              "hidden": false,
+              "description": "Stream name or ID used when a search gives none. Repeatable.",
+              "arguments": [
+                {
+                  "name": "DEFAULT_STREAM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--default-limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Result count used when a search gives none (default 100).",
+              "arguments": [
+                {
+                  "name": "DEFAULT_LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--default-fields",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated fields used when a search gives none.",
+              "arguments": [
+                {
+                  "name": "DEFAULT_FIELDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--mask-field",
+              "recursive": false,
+              "hidden": false,
+              "description": "Extra field name to mask on this profile. Repeatable.",
+              "arguments": [
+                {
+                  "name": "MASK_FIELD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--use",
+              "recursive": false,
+              "hidden": false,
+              "description": "Make it the current profile. [default: False]",
+              "arguments": [
+                {
+                  "name": "USE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Replace an existing profile of the same name. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The profile name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List profiles; * marks the current one.",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: table, json, jsonl or csv (default: table on a terminal, jsonl otherwise).",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormat",
+                  "allowedValues": [
+                    "Table",
+                    "Json",
+                    "Jsonl",
+                    "Csv"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Show a profile's settings and where its token comes from - never the token.",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: table, json, jsonl or csv (default: table on a terminal, jsonl otherwise).",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormat",
+                  "allowedValues": [
+                    "Table",
+                    "Json",
+                    "Jsonl",
+                    "Csv"
+                  ]
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The profile name.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "use",
+          "description": "Make a profile the current one.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The profile name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "description": "Remove a profile, its token and its profile-only queries.",
+          "options": [
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip the confirmation. [default: False]",
+              "aliases": [
+                "-y"
+              ],
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The profile name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "test",
+          "description": "Check connectivity and authentication, and print the Graylog server version.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The profile to test (default: the active profile).",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "set-token",
+          "description": "Prompt for a profile's token, with hidden input, and store it in config.json.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The profile name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "query",
+      "description": "Save, share and run named, parameterized searches.",
+      "commands": [
+        {
+          "name": "save",
+          "description": "Save or replace a stored query.",
+          "options": [
+            {
+              "name": "--description",
+              "recursive": false,
+              "hidden": false,
+              "description": "Free-text description.",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DESCRIPTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tag",
+              "recursive": false,
+              "hidden": false,
+              "description": "Label for filtering. Repeatable.",
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--profile-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Save it on the active profile only, instead of shared. [default: False]",
+              "arguments": [
+                {
+                  "name": "PROFILE_ONLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--range",
+              "recursive": false,
+              "hidden": false,
+              "description": "Relative range ending now: 30s, 15m, 2h, 1d, 1w (default: the profile's default_range).",
+              "arguments": [
+                {
+                  "name": "RANGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "Absolute range start, ISO 8601. UTC unless it carries an offset or --tz is given.",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "Absolute range end, ISO 8601.",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tz",
+              "recursive": false,
+              "hidden": false,
+              "description": "Time zone for --from/--to values without an offset, e.g. Europe/Athens.",
+              "arguments": [
+                {
+                  "name": "TZ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--stream",
+              "recursive": false,
+              "hidden": false,
+              "description": "Stream name or ID. Repeatable (default: the profile's default_streams).",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "STREAM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--fields",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated fields to return (default: the profile's default_fields).",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FIELDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum messages to return (default: the profile's default_limit).",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--sort",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sort as <field>:asc|desc (default: timestamp:desc).",
+              "arguments": [
+                {
+                  "name": "SORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The stored query's name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "QUERY",
+              "description": "Graylog/Lucene query; may contain {{param}} placeholders.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List the stored queries visible on the active profile.",
+          "options": [
+            {
+              "name": "--tag",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show only queries with this tag.",
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: table, json, jsonl or csv (default: table on a terminal, jsonl otherwise).",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormat",
+                  "allowedValues": [
+                    "Table",
+                    "Json",
+                    "Jsonl",
+                    "Csv"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Print one stored query as JSON.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The stored query's name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "edit",
+          "description": "Edit a stored query in $VISUAL / $EDITOR; it is validated before it is saved.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The stored query's name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "rm",
+          "description": "Delete a stored query.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The stored query's name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "run",
+          "description": "Run a stored query; any search option given overrides the stored value for this run.",
+          "options": [
+            {
+              "name": "--param",
+              "recursive": false,
+              "hidden": false,
+              "description": "A parameter value as name=value. Repeatable.",
+              "aliases": [
+                "-P"
+              ],
+              "arguments": [
+                {
+                  "name": "PARAM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--range",
+              "recursive": false,
+              "hidden": false,
+              "description": "Relative range ending now: 30s, 15m, 2h, 1d, 1w (default: the profile's default_range).",
+              "arguments": [
+                {
+                  "name": "RANGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "Absolute range start, ISO 8601. UTC unless it carries an offset or --tz is given.",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "Absolute range end, ISO 8601.",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tz",
+              "recursive": false,
+              "hidden": false,
+              "description": "Time zone for --from/--to values without an offset, e.g. Europe/Athens.",
+              "arguments": [
+                {
+                  "name": "TZ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--stream",
+              "recursive": false,
+              "hidden": false,
+              "description": "Stream name or ID. Repeatable (default: the profile's default_streams).",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "STREAM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--fields",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated fields to return (default: the profile's default_fields).",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FIELDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum messages to return (default: the profile's default_limit).",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--sort",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sort as <field>:asc|desc (default: timestamp:desc).",
+              "arguments": [
+                {
+                  "name": "SORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: table, json, jsonl or csv (default: table on a terminal, jsonl otherwise).",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormat",
+                  "allowedValues": [
+                    "Table",
+                    "Json",
+                    "Jsonl",
+                    "Csv"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--raw",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the untransformed API response, for debugging. Still masked. [default: False]",
+              "arguments": [
+                {
+                  "name": "RAW",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-mask",
+              "recursive": false,
+              "hidden": false,
+              "description": "Turn off masking of emails, phones and mask_fields. Card numbers stay masked. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_MASK",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Confirm a large run against a production profile without a prompt. [default: False]",
+              "aliases": [
+                "-y"
+              ],
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The stored query's name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "export",
+          "description": "Write stored queries as JSON to stdout - never tokens or profile settings.",
+          "arguments": [
+            {
+              "name": "NAMES",
+              "description": "Queries to export (default: all visible).",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "import",
+          "description": "Add stored queries from a file; files with token-like keys are rejected.",
+          "options": [
+            {
+              "name": "--profile-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Add the queries to the active profile only, instead of shared. [default: False]",
+              "arguments": [
+                {
+                  "name": "PROFILE_ONLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "A file written by glq query export.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "streams",
+      "description": "Inspect Graylog streams.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List the streams the token's user can read.",
+          "options": [
+            {
+              "name": "--filter",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show only streams whose name contains this text (any case).",
+              "arguments": [
+                {
+                  "name": "FILTER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--refresh",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ignore the 10-minute stream cache. [default: False]",
+              "arguments": [
+                {
+                  "name": "REFRESH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: table, json, jsonl or csv (default: table on a terminal, jsonl otherwise).",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "OutputFormat",
+                  "allowedValues": [
+                    "Table",
+                    "Json",
+                    "Jsonl",
+                    "Csv"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Locate, edit and protect config.json.",
+      "commands": [
+        {
+          "name": "path",
+          "description": "Print the path of config.json."
+        },
+        {
+          "name": "edit",
+          "description": "Open config.json in $VISUAL / $EDITOR, creating a template if it is missing."
+        },
+        {
+          "name": "protect",
+          "description": "Restrict config.json to your user - the fix when glq refuses a readable file."
+        }
+      ]
+    },
+    {
+      "name": "version",
+      "description": "Print the version, commit and build time of this build."
+    },
+    {
+      "name": "skill",
+      "description": "Print the agent guide, ready to save as a skill file.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the guide as JSON, with the path a harness expects it at. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
