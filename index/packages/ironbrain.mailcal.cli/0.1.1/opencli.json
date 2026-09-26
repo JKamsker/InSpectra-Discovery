@@ -1,0 +1,690 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "ironbrain-mailcal",
+    "version": "0.1.1",
+    "description": "CLI (ironbrain-mailcal) for IMAP/SMTP + CalDAV against self-hosted servers. For scripts, cron, CI, and bot hosts that shell out. Companion MCP tool: Ironbrain.MailCal.Mcp. Shared config ~/.config/ironbrain/mailcal.json."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.12.0",
+      "systemCommandLineVersion": "2.0.12.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Ironbrain MailCal — IMAP/SMTP + CalDAV/iCalendar CLI for self-hosted servers (Mailcow, SOGo, etc.)"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--config",
+      "recursive": true,
+      "hidden": false,
+      "description": "Path to mailcal JSON config (default: $IRONBRAIN_MAILCAL_CONFIG, ~/.config/ironbrain/mailcal.json, or ./appsettings.json)",
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "recursive": true,
+      "hidden": false,
+      "description": "Enable debug logging [default: False]",
+      "arguments": [
+        {
+          "name": "VERBOSE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--account",
+      "recursive": true,
+      "hidden": false,
+      "description": "Named account from config (default: $IRONBRAIN_MAILCAL_ACCOUNT, defaultAccount, or the only account)",
+      "aliases": [
+        "-a"
+      ],
+      "arguments": [
+        {
+          "name": "ACCOUNT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "account",
+      "description": "List or inspect configured accounts (passwords never shown)",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List account names with hosts/usernames (no passwords)"
+        },
+        {
+          "name": "show",
+          "description": "Show one account (redacted — no passwords)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "Account name",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mail",
+      "description": "IMAP/SMTP mail operations",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List recent messages from the IMAP mailbox",
+          "options": [
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Max messages [default: 20]",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--offset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Offset from newest [default: 0]",
+              "arguments": [
+                {
+                  "name": "OFFSET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--mailbox",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override IMAP mailbox (default from account config)",
+              "arguments": [
+                {
+                  "name": "MAILBOX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "description": "Read one message by IMAP unique id",
+          "options": [
+            {
+              "name": "--mailbox",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override IMAP mailbox (default from account config)",
+              "arguments": [
+                {
+                  "name": "MAILBOX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "IMAP unique id",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "send",
+          "description": "Send a message via SMTP (also appends to IMAP Sent when configured)",
+          "options": [
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "Recipient",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--subject",
+              "recursive": false,
+              "hidden": false,
+              "description": "Subject",
+              "arguments": [
+                {
+                  "name": "SUBJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--body",
+              "recursive": false,
+              "hidden": false,
+              "description": "Plain text body",
+              "arguments": [
+                {
+                  "name": "BODY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--html",
+              "recursive": false,
+              "hidden": false,
+              "description": "HTML body",
+              "arguments": [
+                {
+                  "name": "HTML",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--body-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Read plain text body from file",
+              "arguments": [
+                {
+                  "name": "BODY_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "reply",
+          "description": "Reply to a message (loads subject/from via IMAP, sends via SMTP)",
+          "options": [
+            {
+              "name": "--body",
+              "recursive": false,
+              "hidden": false,
+              "description": "Plain text body",
+              "arguments": [
+                {
+                  "name": "BODY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--body-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Read plain text body from file",
+              "arguments": [
+                {
+                  "name": "BODY_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--mailbox",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override IMAP mailbox (default from account config)",
+              "arguments": [
+                {
+                  "name": "MAILBOX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "IMAP unique id of the message to reply to",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cal",
+      "description": "CalDAV / iCalendar operations",
+      "commands": [
+        {
+          "name": "calendars",
+          "description": "List CalDAV calendar collections (displayname, href/id, shared; passwords never shown)",
+          "options": [
+            {
+              "name": "--include-shared",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include shared/delegated calendars (default: Calendar:IncludeSharedByDefault, usually true) [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_SHARED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--exclude-shared",
+              "recursive": false,
+              "hidden": false,
+              "description": "Omit shared/delegated calendars from discovery results [default: False]",
+              "arguments": [
+                {
+                  "name": "EXCLUDE_SHARED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List appointments (default: all discovered calendars for the account)",
+          "options": [
+            {
+              "name": "--date",
+              "recursive": false,
+              "hidden": false,
+              "description": "yyyy-MM-dd or 'today' [default: today]",
+              "arguments": [
+                {
+                  "name": "DATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--range",
+              "recursive": false,
+              "hidden": false,
+              "description": "day or week [default: day]",
+              "arguments": [
+                {
+                  "name": "RANGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override a single calendar collection / .ics URL (skips multi-calendar discovery)",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--calendar",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by calendar display name or collection id (repeatable or comma-separated, e.g. Family,personal)",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CALENDAR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--include-shared",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include shared/delegated calendars (default: Calendar:IncludeSharedByDefault, usually true) [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_SHARED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--exclude-shared",
+              "recursive": false,
+              "hidden": false,
+              "description": "Omit shared/delegated calendars from discovery results [default: False]",
+              "arguments": [
+                {
+                  "name": "EXCLUDE_SHARED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "add",
+          "description": "Add an appointment via CalDAV PUT (never writes to all calendars)",
+          "options": [
+            {
+              "name": "--summary",
+              "recursive": false,
+              "hidden": false,
+              "description": "Event title",
+              "arguments": [
+                {
+                  "name": "SUMMARY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--start",
+              "recursive": false,
+              "hidden": false,
+              "description": "Start (ISO 8601 or yyyy-MM-dd HH:mm)",
+              "arguments": [
+                {
+                  "name": "START",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--end",
+              "recursive": false,
+              "hidden": false,
+              "description": "End (same format as --start)",
+              "arguments": [
+                {
+                  "name": "END",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--location",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "LOCATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--description",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "DESCRIPTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tz",
+              "recursive": false,
+              "hidden": false,
+              "description": "IANA timezone (e.g. Europe/Berlin)",
+              "arguments": [
+                {
+                  "name": "TZ",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override a single calendar collection / .ics URL (skips multi-calendar discovery)",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--calendar",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target calendar display name or collection id (required when multiple calendars exist unless DefaultWriteCalendar or --url is set)",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CALENDAR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Configuration helpers",
+      "commands": [
+        {
+          "name": "path",
+          "description": "Print the config file that would be used"
+        }
+      ]
+    }
+  ]
+}
