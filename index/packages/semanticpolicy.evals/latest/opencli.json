@@ -1,0 +1,1119 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "semantic-policy",
+    "version": "0.1.0-alpha.2",
+    "description": "The semantic-policy command: measures a policy's rules on a labelled dataset, sweeps thresholds against goals you set and compares providers, replaying a recording of their answers."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.12.0",
+      "systemCommandLineVersion": "2.0.12.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Evaluates a SemanticPolicy policy against a labelled JSONL dataset."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "samples",
+      "description": "Write the datasets, policies and recordings the tool ships with under a directory.",
+      "arguments": [
+        {
+          "name": "DIR",
+          "description": "The directory to write them under; created when it does not exist.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "description": "Call the policy's providers on every row, record the answers, and report on them.",
+      "options": [
+        {
+          "name": "--policy",
+          "recursive": false,
+          "hidden": false,
+          "description": "The policy file, in the library's JSON format.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dataset",
+          "recursive": false,
+          "hidden": false,
+          "description": "One dataset; tune and test halves come from metadata.split, when every row has one.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tune",
+          "recursive": false,
+          "hidden": false,
+          "description": "The tune dataset; goes with --test and excludes --dataset.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--test",
+          "recursive": false,
+          "hidden": false,
+          "description": "The test dataset; goes with --tune and excludes --dataset.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tune-split",
+          "recursive": false,
+          "hidden": false,
+          "description": "The metadata.split value that marks a tune row. [default: tune]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--test-split",
+          "recursive": false,
+          "hidden": false,
+          "description": "The metadata.split value that marks a test row. [default: test]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--where",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep only rows whose metadata.<key> equals <value>; repeatable, and every filter must match.",
+          "arguments": [
+            {
+              "name": "WHERE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--rule",
+          "recursive": false,
+          "hidden": false,
+          "description": "The rule to evaluate; required when the policy has more than one.",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the JSON result to this file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--record",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where the recording goes; ./<dataset>.<policy>.recording.jsonl when omitted.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--parallel",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many provider calls may be in flight at once. [default: 4]",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "How long one provider call may take before it is recorded as a timeout. [default: 30]",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--retries",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many times a call answered unavailable is made again, with a growing wait between. [default: 2]",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--resume",
+          "recursive": false,
+          "hidden": false,
+          "description": "Finish this recording: call the rows it lacks and the attempts it holds as unavailable, then rewrite it.",
+          "arguments": [
+            {
+              "name": "RECORDING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "A providers file; its entries are then the only providers run may call.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--require",
+          "recursive": false,
+          "hidden": false,
+          "description": "A rate the report must reach, or the verb exits 2: <rung>.min-precision=<v>, <rung>.min-recall=<v> or <rung>.max-fpr=<v> for a Boolean rule, min-accuracy=<v> or min-macro-f1=<v> for a Choice or Score rule, max-abstain=<v> or max-failure-rate=<v> for any, v from 0 to 1; repeatable, and every one must pass.",
+          "arguments": [
+            {
+              "name": "REQUIREMENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "description": "Replay a recording at the policy's thresholds and print what it measured.",
+      "options": [
+        {
+          "name": "--policy",
+          "recursive": false,
+          "hidden": false,
+          "description": "The policy file, in the library's JSON format.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dataset",
+          "recursive": false,
+          "hidden": false,
+          "description": "One dataset; tune and test halves come from metadata.split, when every row has one.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tune",
+          "recursive": false,
+          "hidden": false,
+          "description": "The tune dataset; goes with --test and excludes --dataset.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--test",
+          "recursive": false,
+          "hidden": false,
+          "description": "The test dataset; goes with --tune and excludes --dataset.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tune-split",
+          "recursive": false,
+          "hidden": false,
+          "description": "The metadata.split value that marks a tune row. [default: tune]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--test-split",
+          "recursive": false,
+          "hidden": false,
+          "description": "The metadata.split value that marks a test row. [default: test]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--where",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep only rows whose metadata.<key> equals <value>; repeatable, and every filter must match.",
+          "arguments": [
+            {
+              "name": "WHERE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--rule",
+          "recursive": false,
+          "hidden": false,
+          "description": "The rule to evaluate; required when the policy has more than one.",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the JSON result to this file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--recording",
+          "recursive": false,
+          "hidden": false,
+          "description": "The recording to read.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read the recording even though the dataset's digest differs from the recorded one. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--diagram",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the reliability diagram as SVG to this file; only where the calibration section applies.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--require",
+          "recursive": false,
+          "hidden": false,
+          "description": "A rate the report must reach, or the verb exits 2: <rung>.min-precision=<v>, <rung>.min-recall=<v> or <rung>.max-fpr=<v> for a Boolean rule, min-accuracy=<v> or min-macro-f1=<v> for a Choice or Score rule, max-abstain=<v> or max-failure-rate=<v> for any, v from 0 to 1; repeatable, and every one must pass.",
+          "arguments": [
+            {
+              "name": "REQUIREMENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sweep",
+      "description": "Sweep one binding's thresholds and margin gate on a recording, and recommend them under constraints.",
+      "options": [
+        {
+          "name": "--policy",
+          "recursive": false,
+          "hidden": false,
+          "description": "The policy file, in the library's JSON format.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dataset",
+          "recursive": false,
+          "hidden": false,
+          "description": "One dataset; tune and test halves come from metadata.split, when every row has one.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tune",
+          "recursive": false,
+          "hidden": false,
+          "description": "The tune dataset; goes with --test and excludes --dataset.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--test",
+          "recursive": false,
+          "hidden": false,
+          "description": "The test dataset; goes with --tune and excludes --dataset.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tune-split",
+          "recursive": false,
+          "hidden": false,
+          "description": "The metadata.split value that marks a tune row. [default: tune]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--test-split",
+          "recursive": false,
+          "hidden": false,
+          "description": "The metadata.split value that marks a test row. [default: test]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--where",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep only rows whose metadata.<key> equals <value>; repeatable, and every filter must match.",
+          "arguments": [
+            {
+              "name": "WHERE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--rule",
+          "recursive": false,
+          "hidden": false,
+          "description": "The rule to evaluate; required when the policy has more than one.",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--recording",
+          "recursive": false,
+          "hidden": false,
+          "description": "The recording to read.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read the recording even though the dataset's digest differs from the recorded one. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the JSON result to this file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "The binding to sweep, by provider name; required when the policy has more than one.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--warn",
+          "recursive": false,
+          "hidden": false,
+          "description": "A constraint on the warn threshold: min-recall=<v>, max-fpr=<v> or min-precision=<v>, v from 0 to 1; repeatable, and the first one given decides which end of the feasible thresholds is recommended.",
+          "arguments": [
+            {
+              "name": "CONSTRAINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--escalate",
+          "recursive": false,
+          "hidden": false,
+          "description": "A constraint on the escalate threshold: min-recall=<v>, max-fpr=<v> or min-precision=<v>, v from 0 to 1; repeatable, and the first one given decides which end of the feasible thresholds is recommended.",
+          "arguments": [
+            {
+              "name": "CONSTRAINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--deny",
+          "recursive": false,
+          "hidden": false,
+          "description": "A constraint on the deny threshold: min-recall=<v>, max-fpr=<v> or min-precision=<v>, v from 0 to 1; repeatable, and the first one given decides which end of the feasible thresholds is recommended.",
+          "arguments": [
+            {
+              "name": "CONSTRAINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--gate",
+          "recursive": false,
+          "hidden": false,
+          "description": "A constraint on the margin gate: max-abstain=<v> or min-accuracy=<v>, v from 0 to 1; repeatable, and the first one given decides which end of the feasible gates is recommended.",
+          "arguments": [
+            {
+              "name": "CONSTRAINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "compare",
+      "description": "Sweep every binding of the policy on its own, under the same constraints, and compare them on the test rows.",
+      "options": [
+        {
+          "name": "--policy",
+          "recursive": false,
+          "hidden": false,
+          "description": "The policy file, in the library's JSON format.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dataset",
+          "recursive": false,
+          "hidden": false,
+          "description": "One dataset; tune and test halves come from metadata.split, when every row has one.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tune",
+          "recursive": false,
+          "hidden": false,
+          "description": "The tune dataset; goes with --test and excludes --dataset.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--test",
+          "recursive": false,
+          "hidden": false,
+          "description": "The test dataset; goes with --tune and excludes --dataset.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tune-split",
+          "recursive": false,
+          "hidden": false,
+          "description": "The metadata.split value that marks a tune row. [default: tune]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--test-split",
+          "recursive": false,
+          "hidden": false,
+          "description": "The metadata.split value that marks a test row. [default: test]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--where",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep only rows whose metadata.<key> equals <value>; repeatable, and every filter must match.",
+          "arguments": [
+            {
+              "name": "WHERE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--rule",
+          "recursive": false,
+          "hidden": false,
+          "description": "The rule to evaluate; required when the policy has more than one.",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--recording",
+          "recursive": false,
+          "hidden": false,
+          "description": "The recording to read.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read the recording even though the dataset's digest differs from the recorded one. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the JSON result to this file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "Compare only these bindings, by provider name; repeatable. Every binding when omitted.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--warn",
+          "recursive": false,
+          "hidden": false,
+          "description": "A constraint on the warn threshold: min-recall=<v>, max-fpr=<v> or min-precision=<v>, v from 0 to 1; repeatable, and the first one given decides which end of the feasible thresholds is recommended.",
+          "arguments": [
+            {
+              "name": "CONSTRAINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--escalate",
+          "recursive": false,
+          "hidden": false,
+          "description": "A constraint on the escalate threshold: min-recall=<v>, max-fpr=<v> or min-precision=<v>, v from 0 to 1; repeatable, and the first one given decides which end of the feasible thresholds is recommended.",
+          "arguments": [
+            {
+              "name": "CONSTRAINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--deny",
+          "recursive": false,
+          "hidden": false,
+          "description": "A constraint on the deny threshold: min-recall=<v>, max-fpr=<v> or min-precision=<v>, v from 0 to 1; repeatable, and the first one given decides which end of the feasible thresholds is recommended.",
+          "arguments": [
+            {
+              "name": "CONSTRAINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--gate",
+          "recursive": false,
+          "hidden": false,
+          "description": "A constraint on the margin gate: max-abstain=<v> or min-accuracy=<v>, v from 0 to 1; repeatable, and the first one given decides which end of the feasible gates is recommended.",
+          "arguments": [
+            {
+              "name": "CONSTRAINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
