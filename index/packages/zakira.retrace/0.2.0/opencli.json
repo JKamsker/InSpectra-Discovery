@@ -1,0 +1,1807 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "retrace",
+    "version": "0.2.0",
+    "description": "Search, read, and resume AI coding sessions across harnesses. Indexes OpenCode, GitHub Copilot CLI, and Copilot in VS Code into one local hybrid (BM25 + local ONNX embeddings) search index. Ships as a CLI (`retrace`), an interactive terminal browser (`retrace tui`), and an MCP server (`retrace mcp serve`) in one .NET 10 binary."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.8.0",
+      "systemCommandLineVersion": "2.0.8.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "retrace — search, read, and resume AI coding sessions across OpenCode, Copilot CLI, and Copilot in VS Code."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--config",
+      "recursive": true,
+      "hidden": false,
+      "description": "Path to retrace.json. Defaults to $XDG_CONFIG_HOME/Zakira.Retrace/retrace.json.",
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output format: text (default), json, or ndjson. [default: text]",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "recursive": true,
+      "hidden": false,
+      "description": "Log diagnostic detail to stderr. [default: False]",
+      "aliases": [
+        "-v"
+      ],
+      "arguments": [
+        {
+          "name": "VERBOSE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--quiet",
+      "recursive": true,
+      "hidden": false,
+      "description": "Suppress progress and summary lines. [default: False]",
+      "aliases": [
+        "-q"
+      ],
+      "arguments": [
+        {
+          "name": "QUIET",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--color",
+      "recursive": true,
+      "hidden": false,
+      "description": "ANSI colour: auto (default), always, or never.",
+      "arguments": [
+        {
+          "name": "COLOR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "version",
+      "description": "Print the Retrace version."
+    },
+    {
+      "name": "info",
+      "description": "Show resolved paths, configuration, and capabilities."
+    },
+    {
+      "name": "sources",
+      "description": "List the session sources and whether each is readable."
+    },
+    {
+      "name": "doctor",
+      "description": "Check configuration, sources, index, and models."
+    },
+    {
+      "name": "tui",
+      "description": "Browse, search, read, and resume sessions interactively.",
+      "aliases": [
+        "ui",
+        "browse"
+      ],
+      "options": [
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Restrict to these sources (opencode, copilot-cli, copilot-vscode). Repeatable.",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--workspace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions whose working directory is at or below this path.",
+          "aliases": [
+            "-w"
+          ],
+          "arguments": [
+            {
+              "name": "WORKSPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--here",
+          "recursive": false,
+          "hidden": false,
+          "description": "Shorthand for --workspace <current directory>. [default: False]",
+          "arguments": [
+            {
+              "name": "HERE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions whose repository or path contains this value.",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--branch",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions recorded on this branch.",
+          "arguments": [
+            {
+              "name": "BRANCH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions updated since this point. Accepts a date (2026-01-31) or a duration (7d, 12h, 30m).",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--until",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions updated before this point. Same formats as --since.",
+          "arguments": [
+            {
+              "name": "UNTIL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions run with this agent or mode.",
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions that used a model whose id contains this value.",
+          "arguments": [
+            {
+              "name": "MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions carrying every one of these tags. Repeatable.",
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--min-messages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Drop sessions with fewer than this many messages.",
+          "arguments": [
+            {
+              "name": "MIN_MESSAGES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--include-archived",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include sessions the harness marked archived. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_ARCHIVED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--live",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read the sources directly instead of the index. Always current, slower. [default: False]",
+          "arguments": [
+            {
+              "name": "LIVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--pick",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run as a picker: Enter prints the chosen session's uri, id, dir, or command to stdout and exits. Draws on stderr, so it works inside $(...) — for example `cd (retrace tui --pick dir)`.",
+          "arguments": [
+            {
+              "name": "PICK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-mouse",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave the mouse to the terminal, so native text selection keeps working. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_MOUSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "QUERY",
+          "description": "Search to start with, as if typed into the search box.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List sessions, most recently updated first.",
+      "options": [
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Restrict to these sources (opencode, copilot-cli, copilot-vscode). Repeatable.",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--workspace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions whose working directory is at or below this path.",
+          "aliases": [
+            "-w"
+          ],
+          "arguments": [
+            {
+              "name": "WORKSPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--here",
+          "recursive": false,
+          "hidden": false,
+          "description": "Shorthand for --workspace <current directory>. [default: False]",
+          "arguments": [
+            {
+              "name": "HERE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions whose repository or path contains this value.",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--branch",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions recorded on this branch.",
+          "arguments": [
+            {
+              "name": "BRANCH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions updated since this point. Accepts a date (2026-01-31) or a duration (7d, 12h, 30m).",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--until",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions updated before this point. Same formats as --since.",
+          "arguments": [
+            {
+              "name": "UNTIL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions run with this agent or mode.",
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions that used a model whose id contains this value.",
+          "arguments": [
+            {
+              "name": "MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions carrying every one of these tags. Repeatable.",
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--min-messages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Drop sessions with fewer than this many messages.",
+          "arguments": [
+            {
+              "name": "MIN_MESSAGES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--include-archived",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include sessions the harness marked archived. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_ARCHIVED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--live",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read the sources directly instead of the index. Always current, slower. [default: False]",
+          "arguments": [
+            {
+              "name": "LIVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--limit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum sessions to show. [default: 25]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "LIMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--sort",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ordering: recent (default), created, or size. [default: recent]",
+          "arguments": [
+            {
+              "name": "SORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "search",
+      "description": "Search session content across every source.",
+      "options": [
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Restrict to these sources (opencode, copilot-cli, copilot-vscode). Repeatable.",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--workspace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions whose working directory is at or below this path.",
+          "aliases": [
+            "-w"
+          ],
+          "arguments": [
+            {
+              "name": "WORKSPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--here",
+          "recursive": false,
+          "hidden": false,
+          "description": "Shorthand for --workspace <current directory>. [default: False]",
+          "arguments": [
+            {
+              "name": "HERE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions whose repository or path contains this value.",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--branch",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions recorded on this branch.",
+          "arguments": [
+            {
+              "name": "BRANCH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions updated since this point. Accepts a date (2026-01-31) or a duration (7d, 12h, 30m).",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--until",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions updated before this point. Same formats as --since.",
+          "arguments": [
+            {
+              "name": "UNTIL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions run with this agent or mode.",
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions that used a model whose id contains this value.",
+          "arguments": [
+            {
+              "name": "MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only sessions carrying every one of these tags. Repeatable.",
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--min-messages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Drop sessions with fewer than this many messages.",
+          "arguments": [
+            {
+              "name": "MIN_MESSAGES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--include-archived",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include sessions the harness marked archived. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_ARCHIVED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--live",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read the sources directly instead of the index. Always current, slower. [default: False]",
+          "arguments": [
+            {
+              "name": "LIVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum results. [default: 0]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--snippets",
+          "recursive": false,
+          "hidden": false,
+          "description": "Snippets to show per result. 0 shows none, for a compact one-line-per-hit listing.",
+          "arguments": [
+            {
+              "name": "SNIPPETS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--lexical-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keyword matching only. [default: False]",
+          "arguments": [
+            {
+              "name": "LEXICAL_ONLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--semantic-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Vector similarity only. [default: False]",
+          "arguments": [
+            {
+              "name": "SEMANTIC_ONLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--deep",
+          "recursive": false,
+          "hidden": false,
+          "description": "Score every chunk vector instead of a session shortlist. Slower, higher recall. [default: False]",
+          "arguments": [
+            {
+              "name": "DEEP",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--scores",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show fused and per-signal scores. [default: False]",
+          "arguments": [
+            {
+              "name": "SCORES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "QUERY",
+          "description": "What to search for. Quote a phrase for an exact match.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "show",
+      "description": "Print a session transcript.",
+      "options": [
+        {
+          "name": "--turns",
+          "recursive": false,
+          "hidden": false,
+          "description": "Turn range, such as 0-20, 5-, or -10.",
+          "arguments": [
+            {
+              "name": "TURNS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tools",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include captured tool output. [default: False]",
+          "arguments": [
+            {
+              "name": "TOOLS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--reasoning",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include model reasoning. [default: False]",
+          "arguments": [
+            {
+              "name": "REASONING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--diffs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include unified diffs on edits. [default: False]",
+          "arguments": [
+            {
+              "name": "DIFFS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--max-chars",
+          "recursive": false,
+          "hidden": false,
+          "description": "Approximate character budget. 0 means unlimited. [default: 0]",
+          "arguments": [
+            {
+              "name": "MAX_CHARS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--max-tool-chars",
+          "recursive": false,
+          "hidden": false,
+          "description": "Truncate each tool output to this length. [default: 2000]",
+          "arguments": [
+            {
+              "name": "MAX_TOOL_CHARS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SESSION",
+          "description": "Session URI, native id, or unambiguous id prefix.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "description": "Export a full session transcript.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Export format: markdown (default) or json. [default: markdown]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write to this file instead of standard output.",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-tools",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude tool output from the export. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_TOOLS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SESSION",
+          "description": "Session URI, native id, or unambiguous id prefix.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "files",
+      "description": "List the files a session touched.",
+      "arguments": [
+        {
+          "name": "SESSION",
+          "description": "Session URI, native id, or unambiguous id prefix.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "resume",
+      "description": "Show (or run) the command that reopens a session in its own harness.",
+      "options": [
+        {
+          "name": "--exec",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run the command instead of printing it. [default: False]",
+          "arguments": [
+            {
+              "name": "EXEC",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--fork",
+          "recursive": false,
+          "hidden": false,
+          "description": "Branch the session instead of continuing it, where supported. [default: False]",
+          "arguments": [
+            {
+              "name": "FORK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override the agent the resumed session starts with.",
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override the model the resumed session starts with.",
+          "arguments": [
+            {
+              "name": "MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SESSION",
+          "description": "Session URI, native id, or unambiguous id prefix.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "tag",
+      "description": "Add, remove, or list session tags.",
+      "options": [
+        {
+          "name": "--add",
+          "recursive": false,
+          "hidden": false,
+          "description": "Tags to add. Repeatable.",
+          "arguments": [
+            {
+              "name": "ADD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--remove",
+          "recursive": false,
+          "hidden": false,
+          "description": "Tags to remove. Repeatable.",
+          "arguments": [
+            {
+              "name": "REMOVE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SESSION",
+          "description": "Session to tag. Omit to list every tag in use.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "index",
+      "description": "Manage the local search index.",
+      "commands": [
+        {
+          "name": "build",
+          "description": "Build or update the search index.",
+          "options": [
+            {
+              "name": "--source",
+              "recursive": false,
+              "hidden": false,
+              "description": "Restrict to these sources. Repeatable.",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SOURCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Re-read everything, ignoring watermarks and content hashes. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--prune",
+              "recursive": false,
+              "hidden": false,
+              "description": "Remove indexed sessions that no longer exist in their source. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRUNE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-embed",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip vectors. Much faster; search runs keyword-only. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_EMBED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--backfill",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also add vectors to sessions that are already indexed but have none, such as those picked up by an automatic refresh. Only the sessions actually missing vectors are re-read, so this is far cheaper than --force. Scope it with --source or --since: a source left keyword-only on purpose can represent hours of work. [default: False]",
+              "arguments": [
+                {
+                  "name": "BACKFILL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--since",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only index sessions updated since this point, as a date (2026-01-31) or a duration (90d, 12h). On its own it only narrows which sessions are considered; an already-indexed session is still skipped, so pair it with --backfill to add missing vectors or --force to re-read regardless. A scoped build does not advance the watermark, so a later unscoped refresh still backfills what was excluded.",
+              "arguments": [
+                {
+                  "name": "SINCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--until",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only index sessions updated before this point. Same formats as --since.",
+              "arguments": [
+                {
+                  "name": "UNTIL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "refresh",
+          "description": "Update the index with sessions that changed since the last run.",
+          "options": [
+            {
+              "name": "--source",
+              "recursive": false,
+              "hidden": false,
+              "description": "Restrict to these sources. Repeatable.",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SOURCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--backfill",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also add vectors to sessions that are already indexed but have none, such as those picked up by an automatic refresh. Only the sessions actually missing vectors are re-read, so this is far cheaper than --force. Scope it with --source or --since: a source left keyword-only on purpose can represent hours of work. [default: False]",
+              "arguments": [
+                {
+                  "name": "BACKFILL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--since",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only index sessions updated since this point, as a date (2026-01-31) or a duration (90d, 12h). On its own it only narrows which sessions are considered; an already-indexed session is still skipped, so pair it with --backfill to add missing vectors or --force to re-read regardless. A scoped build does not advance the watermark, so a later unscoped refresh still backfills what was excluded.",
+              "arguments": [
+                {
+                  "name": "SINCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--until",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only index sessions updated before this point. Same formats as --since.",
+              "arguments": [
+                {
+                  "name": "UNTIL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "description": "Show index size, freshness, and per-source state."
+        },
+        {
+          "name": "clear",
+          "description": "Delete the index."
+        }
+      ]
+    },
+    {
+      "name": "deps",
+      "description": "Manage optional local dependencies.",
+      "commands": [
+        {
+          "name": "install",
+          "description": "Download the local embedding model.",
+          "options": [
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Model id to install. Known: bge-small-en-v1.5, snowflake-arctic-embed-s, multilingual-e5-small.",
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Re-download even when files are already present. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "description": "What to install. Currently only 'onnx' (the embedding model).",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "description": "Show which embedding models are installed."
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Read and write retrace.json.",
+      "commands": [
+        {
+          "name": "path",
+          "description": "Print the resolved config file path."
+        },
+        {
+          "name": "init",
+          "description": "Create retrace.json with every option at its default value.",
+          "options": [
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite an existing file. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List every configuration key and its current value."
+        },
+        {
+          "name": "get",
+          "description": "Print one configuration value.",
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "Dotted configuration key, such as search.rrfK.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "set",
+          "description": "Change one configuration value.",
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "Dotted configuration key.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VALUE",
+              "description": "New value. Use 'null' to clear an optional setting.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "description": "Model Context Protocol server.",
+      "commands": [
+        {
+          "name": "serve",
+          "description": "Run Retrace as an MCP server.",
+          "options": [
+            {
+              "name": "--transport",
+              "recursive": false,
+              "hidden": false,
+              "description": "MCP transport: stdio (default) or http. [default: stdio]",
+              "arguments": [
+                {
+                  "name": "TRANSPORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--port",
+              "recursive": false,
+              "hidden": false,
+              "description": "Port for the http transport. [default: 8770]",
+              "arguments": [
+                {
+                  "name": "PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
