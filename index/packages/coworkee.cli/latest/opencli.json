@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Coworkee.Cli",
-    "version": "0.0.1.14",
+    "version": "0.0.1.15",
     "description": "Coworkee command line: create a Coworkee application from switches or a JSON spec with modules, branding and entities, run it, add migrations, modules and entities, update the packages; MCP server for AI agents and launcher of Coworkee Studio."
   },
   "x-inspectra": {
@@ -250,10 +250,27 @@
           ]
         },
         {
+          "name": "--reports",
+          "recursive": false,
+          "hidden": false,
+          "description": "Dashboards over the OData entity sets with charts, KPIs, tables and filters, aggregated on the server. (default: true)",
+          "arguments": [
+            {
+              "name": "REPORTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--ai",
           "recursive": false,
           "hidden": false,
-          "description": "Assistant page, MCP endpoint and tool call audit; every permitted command becomes a tool (Anthropic API key in the settings). (default: true)",
+          "description": "Assistant page, MCP endpoint and tool call audit; every permitted command becomes a tool (provider and key in the settings). (default: true)",
           "arguments": [
             {
               "name": "AI",
@@ -437,6 +454,57 @@
           ]
         },
         {
+          "name": "--ai-provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "Model provider of the assistant (with the AI assistant); changeable later in the AI settings. (default: anthropic)",
+          "arguments": [
+            {
+              "name": "AI_PROVIDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--redis",
+          "recursive": false,
+          "hidden": false,
+          "description": "Redis container in the app host: SignalR backplane, shared presence, cache invalidation and sign-in sessions across instances. (default: true)",
+          "arguments": [
+            {
+              "name": "REDIS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--database",
+          "recursive": false,
+          "hidden": false,
+          "description": "Database engine of the app; the app host starts it and the initial migration is made for it. (default: postgres)",
+          "arguments": [
+            {
+              "name": "DATABASE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--theme",
           "recursive": false,
           "hidden": false,
@@ -571,6 +639,108 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "--languages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Languages the app offers from the start, from those the library ships texts for; administrators add more later on the Languages page. Empty offers all of them.",
+          "arguments": [
+            {
+              "name": "EN,DE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--default-language",
+          "recursive": false,
+          "hidden": false,
+          "description": "Language of users who chose none and whose browser asks for none of the offered ones. (default: en)",
+          "arguments": [
+            {
+              "name": "DEFAULT_LANGUAGE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--color-mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Light, dark or the system's mode as default of the installation; every user can switch it in the app bar. (default: system)",
+          "arguments": [
+            {
+              "name": "COLOR_MODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--registration",
+          "recursive": false,
+          "hidden": false,
+          "description": "Visitors can register on the sign-in page (setting Account.AllowRegistration, changeable later). (default: false)",
+          "arguments": [
+            {
+              "name": "REGISTRATION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--github-actions",
+          "recursive": false,
+          "hidden": false,
+          "description": "A workflow (.github/workflows/ci.yml) that builds the solution and runs its tests on every push and pull request. (default: false)",
+          "arguments": [
+            {
+              "name": "GITHUB_ACTIONS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--devcontainer",
+          "recursive": false,
+          "hidden": false,
+          "description": "A .devcontainer with the .NET SDK and Docker in Docker for GitHub Codespaces and VS Code. (default: false)",
+          "arguments": [
+            {
+              "name": "DEVCONTAINER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -694,13 +864,30 @@
               "name": "--property",
               "recursive": false,
               "hidden": false,
-              "description": "A property as Name[:type][:required][:maxLength], e.g. Number:string:required:50 or Total:decimal. Types: string, int, long, decimal, double, bool, datetime, guid. Repeat for more (default: Name:string:required:200).",
+              "description": "A property as Name[:type][:required][:maxLength][:flag][:key=value], e.g. Number:string:required:50:unique, Total:money, Status:enum=OrderStatus:default=Open:facet, Customer:ref=Customer:required or Customer:ref=Crm.Customer:onDelete=cascade. Flags: required, unique, display, facet, searchable. Keys: enum, ref (reference), referenceDisplay, onDelete (restrict, cascade, setNull), inverse, default, label, precision, scale, searchable. Types: string, int, long, decimal, double, bool, dateTime, guid, dateOnly, timeOnly, text, email, url, money, enum, reference. Repeat for more (default: Name:string:required:200).",
               "aliases": [
                 "-p"
               ],
               "arguments": [
                 {
                   "name": "PROPERTY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--enum",
+              "recursive": false,
+              "hidden": false,
+              "description": "An enum for enum properties as Name=Value1,Value2, e.g. OrderStatus=Open,Paid,Shipped; written to the contracts. Repeat for more.",
+              "arguments": [
+                {
+                  "name": "ENUM",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -793,13 +980,30 @@
               "name": "--property",
               "recursive": false,
               "hidden": false,
-              "description": "A property as Name[:type][:required][:maxLength], e.g. Number:string:required:50 or Total:decimal. Types: string, int, long, decimal, double, bool, datetime, guid. Repeat for more (default: Name:string:required:200).",
+              "description": "A property as Name[:type][:required][:maxLength][:flag][:key=value], e.g. Number:string:required:50:unique, Total:money, Status:enum=OrderStatus:default=Open:facet, Customer:ref=Customer:required or Customer:ref=Crm.Customer:onDelete=cascade. Flags: required, unique, display, facet, searchable. Keys: enum, ref (reference), referenceDisplay, onDelete (restrict, cascade, setNull), inverse, default, label, precision, scale, searchable. Types: string, int, long, decimal, double, bool, dateTime, guid, dateOnly, timeOnly, text, email, url, money, enum, reference. Repeat for more (default: Name:string:required:200).",
               "aliases": [
                 "-p"
               ],
               "arguments": [
                 {
                   "name": "PROPERTY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--enum",
+              "recursive": false,
+              "hidden": false,
+              "description": "An enum for enum properties as Name=Value1,Value2, e.g. OrderStatus=Open,Paid,Shipped; written to the contracts. Repeat for more.",
+              "arguments": [
+                {
+                  "name": "ENUM",
                   "required": true,
                   "arity": {
                     "minimum": 1,

@@ -2,19 +2,41 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Container Registry Client CLI",
-    "version": "6.0.2",
+    "version": "7.0.0",
     "description": "CLI for executing commands on a container registry's HTTP API."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
-    "generator": "InSpectra.Discovery",
+    "generator": "InSpectra.Gen",
     "hookCapture": {
-      "systemCommandLineVersion": "2.0.0.0",
-      "patchTarget": "ProcessExit-fallback (OK: ArgumentExtensions.Parse, OK: ArgumentExtensions.Parse, OK: CommandExtensions.Parse, OK: CommandExtensions.Parse, OK: OptionExtensions.Parse, OK: OptionExtensions.Parse, OK: Parser.Parse, OK: ParserExtensions.Parse, OK: CommandExtensions.Invoke, OK: CommandExtensions.Invoke, OK: ParseResultExtensions.Invoke, OK: ParserExtensions.Invoke, OK: ParserExtensions.Invoke, OK: CommandExtensions.InvokeAsync, OK: CommandExtensions.InvokeAsync, OK: ParseResultExtensions.InvokeAsync, OK: ParserExtensions.InvokeAsync, OK: ParserExtensions.InvokeAsync, OK: RootCommand.ctor(String))"
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.12.0",
+      "systemCommandLineVersion": "2.0.12.0",
+      "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
     "cliParsedTitle": "dredge"
   },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
   "commands": [
     {
       "name": "image",
@@ -22,15 +44,15 @@
       "commands": [
         {
           "name": "compare",
-          "description": "Compares two images",
+          "description": "Compares two images. The layers comparison uses exit code 2 when differences are found; this is not a command failure.",
           "commands": [
             {
               "name": "layers",
-              "description": "Compares two images by layers",
+              "description": "Compares two images by layers. Exit code 2 means layer differences were found, not a command failure.",
               "arguments": [
                 {
-                  "name": "base",
-                  "description": "Name of the base container image (<image>, <image>:<tag>, or <image>@<digest>)",
+                  "name": "BASE",
+                  "description": "Base container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -39,8 +61,8 @@
                   "type": "String"
                 },
                 {
-                  "name": "target",
-                  "description": "Name of the target container image (<image>, <image>:<tag>, or <image>@<digest>)",
+                  "name": "TARGET",
+                  "description": "Target container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -55,8 +77,8 @@
               "description": "Compares two images by their files",
               "arguments": [
                 {
-                  "name": "base",
-                  "description": "Name of the base container image (<image>, <image>:<tag>, or <image>@<digest>)",
+                  "name": "BASE",
+                  "description": "Base container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -65,8 +87,34 @@
                   "type": "String"
                 },
                 {
-                  "name": "target",
-                  "description": "Name of the target container image (<image>, <image>:<tag>, or <image>@<digest>)",
+                  "name": "TARGET",
+                  "description": "Target container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "metadata",
+              "description": "Compares two images by configuration and platform metadata",
+              "arguments": [
+                {
+                  "name": "BASE",
+                  "description": "Base container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                },
+                {
+                  "name": "TARGET",
+                  "description": "Target container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -79,12 +127,100 @@
           ]
         },
         {
-          "name": "inspect",
-          "description": "Return low-level information on a container image",
+          "name": "ls",
+          "description": "Lists files in an image filesystem with layer provenance",
           "arguments": [
             {
-              "name": "image",
-              "description": "Name of the container image (<image>, <image>:<tag>, or <image>@<digest>)",
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "PATH",
+              "description": "Image path to list",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "cat",
+          "description": "Writes a file from an image filesystem to standard output",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "PATH",
+              "description": "Image file path to write to standard output",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "extract",
+          "description": "Extracts a file or directory from an image filesystem",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "PATH",
+              "description": "Image file or directory path to extract",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "OUTPUT_PATH",
+              "description": "New destination path",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "inspect",
+          "description": "Returns low-level information on a container image",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -99,8 +235,8 @@
           "description": "Gets OS info about the container image",
           "arguments": [
             {
-              "name": "image",
-              "description": "Name of the container image (<image>, <image>:<tag>, or <image>@<digest>)",
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -115,8 +251,8 @@
           "description": "Saves an image's extracted layers to disk",
           "arguments": [
             {
-              "name": "image",
-              "description": "Name of the container image (<image>, <image>:<tag>, or <image>@<digest>)",
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -125,7 +261,7 @@
               "type": "String"
             },
             {
-              "name": "output-path",
+              "name": "OUTPUT_PATH",
               "description": "Path to the output location",
               "required": true,
               "arity": {
@@ -141,8 +277,24 @@
           "description": "Generates a Dockerfile that represents the image",
           "arguments": [
             {
-              "name": "image",
-              "description": "Name of the container image (<image>, <image>:<tag>, or <image>@<digest>)",
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "explore",
+          "description": "Interactively explore image layers, files, and insights",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -163,8 +315,8 @@
           "description": "Queries a manifest",
           "arguments": [
             {
-              "name": "name",
-              "description": "Name of the manifest (<name>, <name>:<tag>, or <name>@<digest>)",
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -179,8 +331,8 @@
           "description": "Queries the digest of a manifest",
           "arguments": [
             {
-              "name": "name",
-              "description": "Name of the manifest (<name>, <name>:<tag>, or <name>@<digest>)",
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -195,8 +347,24 @@
           "description": "Resolves a manifest to a target platform's fully-qualified image digest",
           "arguments": [
             {
-              "name": "image",
-              "description": "Name of the container image (<image>, <image>:<tag>, or <image>@<digest>)",
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "delete",
+          "description": "Deletes a manifest and all tags pointing to it, without deleting child manifests or layers",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Explicit reference to delete (<image>:<tag> or <image>@<digest>)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -217,8 +385,76 @@
           "description": "Lists the referrers to a manifest",
           "arguments": [
             {
-              "name": "name",
-              "description": "Name of the manifest (<name>, <name>:<tag>, or <name>@<digest>)",
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "check",
+          "description": "Checks for required OCI referrer artifact types. Exit code 2 means one or more required types are missing, not a command failure.",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "inspect",
+          "description": "Inspects an OCI artifact referenced by an image",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "ARTIFACT_DIGEST",
+              "description": "Digest of the artifact manifest",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "description": "Retrieves a payload from an OCI artifact referenced by an image",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Container image reference (<image>, <image>:<tag>, or <image>@<digest>)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "ARTIFACT_DIGEST",
+              "description": "Digest of the artifact manifest",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -239,8 +475,8 @@
           "description": "Lists the repositories contained in the container registry",
           "arguments": [
             {
-              "name": "repo",
-              "description": "Name of the container registry",
+              "name": "REGISTRY",
+              "description": "Container registry host",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -258,11 +494,27 @@
       "commands": [
         {
           "name": "list",
-          "description": "Lists the tag contained in the container repository",
+          "description": "Lists the tags contained in the container repository",
           "arguments": [
             {
-              "name": "repo",
-              "description": "Name of the container repository",
+              "name": "REPOSITORY",
+              "description": "Container repository name",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "delete",
+          "description": "Deletes a tag without deleting its manifest or other tags",
+          "arguments": [
+            {
+              "name": "IMAGE",
+              "description": "Explicit reference to delete (<image>:<tag>)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -287,8 +539,8 @@
           "description": "Gets the value of the specified setting",
           "arguments": [
             {
-              "name": "name",
-              "description": "Name of the setting to set",
+              "name": "SETTING",
+              "description": "Setting name to get",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -303,8 +555,8 @@
           "description": "Sets the specified setting name to a value",
           "arguments": [
             {
-              "name": "name",
-              "description": "Name of the setting to set",
+              "name": "SETTING",
+              "description": "Setting name to set",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -313,7 +565,7 @@
               "type": "String"
             },
             {
-              "name": "value",
+              "name": "VALUE",
               "description": "Value to assign to the setting",
               "required": true,
               "arity": {

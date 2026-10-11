@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "postgresql-sharp-mcp — database-agnostic PostgreSQL MCP over stdio; the MCP client launches it.",
-    "version": "0.5.0",
+    "version": "0.7.0",
     "description": "Database-agnostic PostgreSQL MCP server with live discovery and bounded per-call database selection using Npgsql."
   },
   "x-inspectra": {
@@ -17,10 +17,26 @@
       "name": "--databases",
       "recursive": false,
       "hidden": false,
-      "description": "POSTGRES_DATABASES. Database lock: JSON array of 1+ unique physical names\n(1..63 UTF-8 bytes, no NUL), with a connection string or targets. Startup then\nverifies PostgreSQL grants enforce the lock.",
+      "description": "POSTGRES_DATABASES. Database lock: JSON array of 1+ unique physical names\n(1..63 UTF-8 bytes, no NUL), with a connection string or targets. Tools reject\nevery other database before connecting. Startup also checks whether PostgreSQL\ngrants confine the login to the list (see --database-lock-mode).",
       "arguments": [
         {
           "name": "JSON",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--database-lock-mode",
+      "recursive": false,
+      "hidden": false,
+      "description": "POSTGRES_DATABASE_LOCK_MODE: advisory (default) or strict. advisory prints grant\nfindings as warnings and starts; strict refuses to start on any finding and\nrequires a database lock.",
+      "arguments": [
+        {
+          "name": "MODE",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -97,7 +113,7 @@
       "name": "--validate",
       "recursive": false,
       "hidden": false,
-      "description": "Check each seed connection (and the database lock) and exit; diagnostics and\nprivilege/TLS warnings on stderr."
+      "description": "Check each seed connection (and the database lock) and exit; diagnostics and\nprivilege/TLS/lock warnings on stderr. Exit status 1 only for a failed connection\nor, with --database-lock-mode strict, a lock finding."
     },
     {
       "name": "--version",
