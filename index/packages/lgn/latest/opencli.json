@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "LGN",
-    "version": "4.0.6",
+    "version": "4.0.7",
     "description": "DESIRADE Lagoon dotnet tools."
   },
   "x-inspectra": {
@@ -15,7 +15,7 @@
       "inspectorType": "dnlib",
       "confidence": "high",
       "verbCount": 0,
-      "optionCount": 13,
+      "optionCount": 15,
       "valueCount": 1,
       "limitations": [
         "property-defaults-not-captured",
@@ -23,7 +23,7 @@
       ]
     },
     "cliFramework": "McMaster.Extensions.CommandLineUtils",
-    "cliParsedDescription": "Command used to update Lagoon packages versions."
+    "cliParsedDescription": "Reformat files (charset, trailing whitespace, final newline, line endings) based on their .editorconfig."
   },
   "commands": [
     {
@@ -411,14 +411,14 @@
           "name": "--diagnostics",
           "recursive": false,
           "hidden": false,
-          "description": "Enable diagnostic output.\nWARNING : Files listed as excluded in .gitignore will not be processed !"
+          "description": "Enable diagnostic output.\nFiles excluded by .gitignore are not processed.\nExit codes: 0 success, 2 error."
         }
       ]
     },
     {
       "name": "fix-format",
       "hidden": false,
-      "description": "Reformat files (charset, trailing whitespace, line\nendings) based on their .editorconfig.",
+      "description": "Reformat files (charset, trailing whitespace, final\nnewline, line endings) based on their .editorconfig.",
       "options": [
         {
           "name": "--charset",
@@ -445,7 +445,7 @@
           "name": "--line-end-chars",
           "recursive": false,
           "hidden": false,
-          "description": "Line endings <auto|ignore|lf|crlf|cr>. Default auto\n(.editorconfig end_of_line, else lf).\nDefault value is: auto."
+          "description": "Line endings <auto|ignore|lf|crlf|cr>. Default auto\n(.editorconfig end_of_line, else git eol attribute, else\nlf).\nDefault value is: auto."
         },
         {
           "name": "--exclude",
@@ -460,10 +460,55 @@
           "name": "--path",
           "recursive": false,
           "hidden": false,
-          "description": "Root folder to scan. Default: current directory.",
+          "description": "Root folder to scan (with --changed/--staged/--since:\nrestricts to this folder). Default: current directory.",
           "aliases": [
             "-p"
           ]
+        },
+        {
+          "name": "--changed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Files changed (staged or not) compared to HEAD, plus\nuntracked non-ignored files."
+        },
+        {
+          "name": "--staged",
+          "recursive": false,
+          "hidden": false,
+          "description": "Staged files only (pre-commit hook). Partially staged\nfiles are not fixed, and fail --check."
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Files changed since the merge base with <ref> (whole\nbranch: commits, uncommitted and untracked files)."
+        },
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exact path of a file (relative to the current directory,\nor absolute). Repeatable.",
+          "aliases": [
+            "-f"
+          ]
+        },
+        {
+          "name": "--stdin",
+          "recursive": false,
+          "hidden": false,
+          "description": "exact paths, always processed (default masks and .gitignore do not apply).\n[include-filter] and -x apply to every source.\nExit codes: 0 success, 1 --check found pending changes, 2 error."
+        },
+        {
+          "name": "--explain",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show the effective settings of a file and where they\ncome from, without changing anything."
+        },
+        {
+          "name": "--gitattributes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Warn when .gitattributes does not enforce the\n.editorconfig end_of_line rules, and suggest rules\n(never modified) [y/n]. Default y."
         },
         {
           "name": "--dry-run",
@@ -478,7 +523,7 @@
           "name": "--check",
           "recursive": false,
           "hidden": false,
-          "description": "Like --dry-run but exits non-zero when changes are\npending (CI gate)."
+          "description": "Like --dry-run but exits with 1 when changes are pending\n(CI gate)."
         },
         {
           "name": "--help",
@@ -493,7 +538,7 @@
           "name": "--diagnostics",
           "recursive": false,
           "hidden": false,
-          "description": "Enable diagnostic output.\nWARNING : Files listed as excluded in .gitignore will not be processed !"
+          "description": "Enable diagnostic output.\nFile selection (exclusive sources):\ndefault                     tree walk under --path; files excluded by .gitignore are not processed."
         }
       ],
       "arguments": [
@@ -817,6 +862,12 @@
           "recursive": false,
           "hidden": false,
           "description": "Don't apply patchs on projects sources."
+        },
+        {
+          "name": "--no-migration",
+          "recursive": false,
+          "hidden": false,
+          "description": "Don't add the EF Core migrations requested\nby the Lagoon update patches (the other\npatches are still applied)."
         },
         {
           "name": "--no-restore",
