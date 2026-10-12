@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dotllm",
-    "version": "0.3.0-dev.2761",
+    "version": "0.3.0-dev.2795",
     "description": "Command-line tool for dotLLM — run, chat, serve, and manage GGUF models. Install with: dotnet tool install -g DotLLM.Cli"
   },
   "x-inspectra": {
@@ -593,6 +593,18 @@
           "recursive": false,
           "hidden": false,
           "description": "3          Number of draft tokens per\nspeculative step (K). Default 3"
+        },
+        {
+          "name": "--no-mtp",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable Multi-Token Prediction (MTP)\nself-speculative decoding (on by\ndefault when the model carries an MTP\nhead; an adaptive gate falls back to\nplain decode when it loses)"
+        },
+        {
+          "name": "--mtp-head",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path of a separate MTP head GGUF\n(qwen4exp ships it as mtp-*.gguf\nbeside the quantisation folders).\nDefault: auto-detected next to the\nmodel; a head that does not fit the\ndevice is declined with a warning"
         },
         {
           "name": "--prefill-chunk-size",
@@ -1499,13 +1511,13 @@
           "name": "--no-mtp",
           "recursive": false,
           "hidden": false,
-          "description": "Disable Multi-Token Prediction\n(MTP) self-speculative decoding.\nWhen enabled (default), MTP\nauto-engages whenever the loaded\nGGUF carries an MTP head (nextn.*\ntensors) and decoding is\neffectively greedy — same output as\nplain decode, just faster. No\neffect on GGUFs without an MTP\nhead. Mutually exclusive with\n--speculative-model (an explicit\ndraft model takes priority)"
+          "description": "Disable Multi-Token Prediction\n(MTP) self-speculative decoding.\nWhen enabled (default), MTP\nauto-engages whenever the loaded\nGGUF carries an MTP head (nextn.*\ntensors); an adaptive gate measures\nit against plain decode and falls\nback when it loses. Greedy output\nis identical to plain decode;\nsampled output is distributed\nidentically (exact speculative\nsampling). No effect on GGUFs\nwithout an MTP head. Mutually\nexclusive with --speculative-model\n(an explicit draft model takes\npriority)"
         },
         {
           "name": "--mtp-head",
           "recursive": false,
           "hidden": false,
-          "description": "Path of a separate MTP head GGUF\n(qwen4exp ships it as mtp-*.gguf\nbeside the quantisation folders).\nDefault: auto-detected in the\nmodel's directory and the one above\nit. Ignored for models whose GGUF\nembeds the head",
+          "description": "Path of a separate MTP head GGUF\n(qwen4exp ships it as mtp-*.gguf\nbeside the quantisation folders).\nDefault: auto-detected in the\nmodel's directory and the one above\nit (a head that does not fit the\ndevice is declined with a warning).\nIgnored for models whose GGUF\nembeds the head",
           "arguments": [
             {
               "name": "MTP_HEAD",
@@ -1834,6 +1846,22 @@
           "recursive": false,
           "hidden": false,
           "description": "Disable the default-on MTP\nself-speculative decoding for\nmodels with an embedded MTP\nhead (keeps the\ncontinuous-batch scheduler\navailable for concurrent\nclients)"
+        },
+        {
+          "name": "--mtp-head",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path of a separate MTP head\nGGUF (qwen4exp ships it as\nmtp-*.gguf beside the\nquantisation folders). Default:\nauto-detected in the model's\ndirectory and the one above it\n(a head that does not fit the\ndevice is declined with a\nstartup message and serving\ncontinues without it)",
+          "arguments": [
+            {
+              "name": "MTP_HEAD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
         },
         {
           "name": "--reasoning-format",
