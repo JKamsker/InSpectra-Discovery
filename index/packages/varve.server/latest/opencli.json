@@ -2,19 +2,19 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "varve",
-    "version": "0.1.0-preview.2",
+    "version": "0.1.0-preview.3",
     "description": "Varve: the server and the varve command line. An event-sourced RDF store with SPARQL 1.1 Query, Update, Graph Store Protocol and a change feed over HTTP."
   },
   "x-inspectra": {
     "artifactSource": "static-analysis",
     "generator": "InSpectra.Gen",
     "metadataEnriched": true,
-    "helpDocumentCount": 10,
+    "helpDocumentCount": 11,
     "staticAnalysis": {
       "framework": "System.CommandLine",
       "inspectorType": "dnlib",
       "confidence": "high",
-      "verbCount": 9,
+      "verbCount": 10,
       "optionCount": 0,
       "valueCount": 0,
       "limitations": [
@@ -459,7 +459,7 @@
     {
       "name": "feed",
       "hidden": false,
-      "description": "Write a dataset's change feed to standard output (ADR 0097).",
+      "description": "Write a dataset's change feed, its commits in order, to standard output (ADRs 0097, 0118).",
       "options": [
         {
           "name": "--allow-endpoint",
@@ -847,6 +847,40 @@
       ]
     },
     {
+      "name": "lease",
+      "hidden": false,
+      "description": "Inspect a dataset's lease, and clear a stale owner file (ADR 0116).",
+      "options": [
+        {
+          "name": "--break",
+          "recursive": false,
+          "hidden": false,
+          "description": "Remove the owner file when the lock proves free; refuse when it is held."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "dataset",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "A dataset directory."
+        }
+      ]
+    },
+    {
       "name": "load",
       "hidden": false,
       "description": "Bulk-load files into a local dataset as one commit.",
@@ -1189,8 +1223,148 @@
     {
       "name": "serve",
       "hidden": false,
-      "description": "Run the server. Every argument after `serve` is the host's configuration, as --Varve:Datasets:people:Storage=File; a bare `varve` serves too.",
+      "description": "Run the server (ADRs 0101, 0115). Configuration comes from the files, then the environment, then the command line, later winning; an unknown key refuses to start.",
       "options": [
+        {
+          "name": "--datasets-root",
+          "recursive": false,
+          "hidden": false,
+          "description": "The directory file datasets live under (Varve:DatasetsRoot).",
+          "arguments": [
+            {
+              "name": "DATASETS_ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--dataset",
+          "recursive": false,
+          "hidden": false,
+          "description": "A dataset to serve, as name or name=File|Memory (Varve:Datasets:{name}:Storage). Repeatable.",
+          "arguments": [
+            {
+              "name": "DATASET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--auth-mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Oidc or Anonymous (Varve:Auth:Mode).",
+          "arguments": [
+            {
+              "name": "AUTH_MODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--anonymous",
+          "recursive": false,
+          "hidden": false,
+          "description": "Shorthand for --auth-mode Anonymous: development only (ADR 0037)."
+        },
+        {
+          "name": "--authority",
+          "recursive": false,
+          "hidden": false,
+          "description": "The OIDC issuer (Varve:Auth:Authority).",
+          "arguments": [
+            {
+              "name": "AUTHORITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--audience",
+          "recursive": false,
+          "hidden": false,
+          "description": "An audience a token may carry (Varve:Auth:Audiences). Repeatable.",
+          "arguments": [
+            {
+              "name": "AUDIENCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--urls",
+          "recursive": false,
+          "hidden": false,
+          "description": "What to listen on, as ASP.NET Core takes it; http://localhost:5000 by default.",
+          "arguments": [
+            {
+              "name": "URLS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "A configuration file, read below the environment and the command line. Repeatable, in order.",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--set",
+          "recursive": false,
+          "hidden": false,
+          "description": "Any setting as Key=Value under Varve:, as Limits:QueryTimeout=00:01:00. Repeatable.",
+          "arguments": [
+            {
+              "name": "SET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--print-config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the effective configuration with secrets redacted, validate it, and exit."
+        },
         {
           "name": "--help",
           "recursive": false,

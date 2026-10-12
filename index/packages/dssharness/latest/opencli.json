@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dssharness",
-    "version": "0.6.11",
+    "version": "0.6.13",
     "description": "Cross-platform repository harness CLI: git worktree management with Windows path-budget checks, driven entirely by .harness-config/config.json."
   },
   "x-inspectra": {
@@ -944,7 +944,7 @@
     },
     {
       "name": "seed-agent",
-      "description": "Seed a live agent again with the main tree's uncommitted state; refused where its worktree holds changes of its own - a copy it was handed and left alone is not one - unless --force.",
+      "description": "Seed a live agent again with the main tree's uncommitted state, and every path the main tree holds otherwise than the agent shares it, committed or not; refused where its worktree holds changes of its own - a copy it was handed and left alone is not one - unless --force.",
       "options": [
         {
           "name": "--empty",
@@ -1063,8 +1063,42 @@
     },
     {
       "name": "refresh-agent",
-      "description": "Hand a live agent the main tree's changes under the paths, recorded as handed to it so its fold leaves them out; refused, copying nothing, where the agent changed or deleted one of them.",
+      "description": "Hand a live agent every path under the paths, or anywhere with --all, that the main tree holds otherwise than the agent shares it - not what it was last handed, or not what its base holds - committed or not, recorded as handed to it so its fold leaves them out; refused, copying nothing, where the agent changed or deleted one of them, unless --except names it.",
       "options": [
+        {
+          "name": "--all",
+          "recursive": false,
+          "hidden": false,
+          "description": "Weigh every path the main tree moved, anywhere in the tree but what is never handed to an agent; takes no path beside it. [default: False]",
+          "arguments": [
+            {
+              "name": "ALL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--except",
+          "recursive": false,
+          "hidden": false,
+          "description": "A path to refresh that the agent changed: left as it changed it, for its fold to weigh, and the rest handed over. Once for each path.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
         {
           "name": "--apply",
           "recursive": false,
@@ -1163,13 +1197,132 @@
         },
         {
           "name": "PATH",
-          "description": "The paths to refresh, relative to the tree; the directory the anchor registries are kept in where none is given.",
+          "description": "The paths to refresh, relative to the tree; the directory the anchor registries are kept in where none is given and --all is not.",
           "required": false,
           "arity": {
             "minimum": 0,
             "maximum": 100000
           },
           "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "rebase-agent",
+      "description": "Move a live agent's base to the main tree's HEAD: what the main tree committed since comes into its worktree as git holds it, and its own changes and what it was handed stay; refused, moving nothing, where it changed a path the main tree committed a change to since, unless --settled, or where what comes in would go over anything of its own. Run again after one that stopped part way (exit 21), it finishes it.",
+      "options": [
+        {
+          "name": "--settled",
+          "recursive": false,
+          "hidden": false,
+          "description": "A path the agent changed that the main tree committed a change to since its base, whose copy you reconciled by hand: kept as its own change on the new base. Once for each path.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--apply",
+          "recursive": false,
+          "hidden": false,
+          "description": "Move it; without it, only say what moving it would bring in and keep. [default: False]",
+          "arguments": [
+            {
+              "name": "APPLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output. [default: False]",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_PROMPT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ORCHESTRATOR",
+          "description": "The agent's orchestrator.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "AGENT",
+          "description": "The agent whose base to move.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
         }
       ]
     },
@@ -3127,6 +3280,103 @@
       ]
     },
     {
+      "name": "update-tool",
+      "description": "Update the DssHarness installed on this machine to the newest release, only while no DssHarness runs here: an update beside one takes the tool away from every command typed meanwhile. On Windows, run it from beside the installed tool: dotnet tool exec DssHarness --yes --source https://api.nuget.org/v3/index.json -- update-tool",
+      "options": [
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "Wait for every DssHarness running on this machine to end, saying who it waits for, rather than be refused by one. [default: False]",
+          "arguments": [
+            {
+              "name": "WAIT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--tool-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "The directory DssHarness is kept in, where it was installed with dotnet's own --tool-path. Without it, this user's global tools.",
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output. [default: False]",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_PROMPT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "sync",
       "description": "Put each host's copy of this repository in step with this tree: files whose content changed are written, files the source no longer has are deleted, and the copy is verified afterwards. The tree is read once for every host; a file that changes before it is carried fails the sync.",
       "options": [
@@ -3185,7 +3435,7 @@
           "name": "--pull",
           "recursive": false,
           "hidden": false,
-          "description": "Bring these paths back from each host's copy instead of syncing to it, verified on arrival.",
+          "description": "Bring these paths back from each host's copy instead of syncing to it, verified on arrival: each a file, or with a '/' at its end a directory, whose every file comes back, each named.",
           "arguments": [
             {
               "name": "PULL",
@@ -4456,7 +4706,7 @@
         },
         {
           "name": "ARGUMENTS",
-          "description": "The operation's arguments: the copy's root, then whatever the operation takes.",
+          "description": "The operation's arguments, after '--': the copy's root, then whatever the operation takes, each value an argument of its own.",
           "required": true,
           "arity": {
             "minimum": 1,
