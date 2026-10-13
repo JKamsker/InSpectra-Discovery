@@ -1,0 +1,1443 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "jex - Jex Clean Architecture CLI",
+    "version": "3.0.0",
+    "description": "Command-line tool for the Jex Clean Architecture template: create projects (jex new), scaffold features (jex scaffold), and run the build/test/database/infrastructure workflow of a generated solution (jex check, jex run, jex db, jex infra)."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.12.0",
+      "systemCommandLineVersion": "2.0.12.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedTitle": "Jex.Cli",
+    "cliParsedDescription": "jex - create, scaffold, build and run Jex Clean Architecture solutions."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "build",
+      "description": "Build the solution."
+    },
+    {
+      "name": "format",
+      "description": "Apply code formatting to the solution.",
+      "options": [
+        {
+          "name": "--check",
+          "recursive": false,
+          "hidden": false,
+          "description": "Verify formatting without changing files (dotnet format --verify-no-changes). [default: False]",
+          "arguments": [
+            {
+              "name": "CHECK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "test",
+      "description": "Run the tests.",
+      "arguments": [
+        {
+          "name": "SUITE",
+          "description": "Run only one test project: unit, integration or arch. Default: the whole solution.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "description": "The acceptance gate: format, build, test. Stops at the first failing step.",
+      "options": [
+        {
+          "name": "--ci",
+          "recursive": false,
+          "hidden": false,
+          "description": "Same as CI: verify formatting, Release build with warnings as errors, tests without rebuilding. [default: False]",
+          "arguments": [
+            {
+              "name": "CI",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "description": "Run the API (Development), or the Aspire AppHost with --aspire.",
+      "options": [
+        {
+          "name": "--aspire",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run the .NET Aspire AppHost instead of the API. [default: False]",
+          "arguments": [
+            {
+              "name": "ASPIRE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--api-project",
+          "recursive": false,
+          "hidden": false,
+          "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+          "arguments": [
+            {
+              "name": "API_PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "watch",
+      "description": "Run the API with hot reload.",
+      "options": [
+        {
+          "name": "--api-project",
+          "recursive": false,
+          "hidden": false,
+          "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+          "arguments": [
+            {
+              "name": "API_PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "description": "Mark the current directory (a solution generated before jex existed) as a jex project by writing jex.json."
+    },
+    {
+      "name": "infra",
+      "description": "Local database containers (docker compose profile of the configured provider).",
+      "commands": [
+        {
+          "name": "up",
+          "description": "Start the database container and wait until it is healthy.",
+          "options": [
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "docker compose profile. Default: derived from Database:Provider in the API's appsettings.json.",
+              "arguments": [
+                {
+                  "name": "PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "down",
+          "description": "Stop the database container and remove its volumes.",
+          "options": [
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "docker compose profile. Default: derived from Database:Provider in the API's appsettings.json.",
+              "arguments": [
+                {
+                  "name": "PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "db",
+      "description": "Database: migration scripts, applying migrations, resetting the local SQLite file.",
+      "commands": [
+        {
+          "name": "reset",
+          "description": "Delete the local SQLite database files next to the API (recreated with seed data on the next run).",
+          "options": [
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "script",
+          "description": "Generate the next migration script from the entity model (db/migrations/NNNN_<name>.sql).",
+          "options": [
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "Migration name, e.g. add-orders. [default: update]",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "DIR",
+              "description": "Output directory relative to the solution root. Default: db/migrations.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "migrate",
+          "description": "Apply pending migrations to the configured database (builds the API first).",
+          "options": [
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "List pending migrations without applying them. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "scaffold",
+      "description": "Generate code with the item templates. Existing files are never overwritten (the command fails instead).",
+      "commands": [
+        {
+          "name": "entity",
+          "description": "Entity, repository, FreeSql configuration and DTO.",
+          "options": [
+            {
+              "name": "--template-version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Template version to require instead of jex.json's templateVersion.",
+              "arguments": [
+                {
+                  "name": "TEMPLATE_VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip the template version check. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--solution-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project name prefix (src/<Prefix>.Domain ...). Default: inferred from the *.WebAPI project.",
+              "arguments": [
+                {
+                  "name": "SOLUTION_NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--no-test",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not generate the test file. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_TEST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ENTITY",
+              "description": "Entity name, e.g. Order.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "PLURAL",
+              "description": "Plural / feature folder, e.g. Orders.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "usecase",
+          "description": "Command or query with handler, validator and unit test.",
+          "options": [
+            {
+              "name": "--type",
+              "recursive": false,
+              "hidden": false,
+              "description": "command (write) or query (read). [default: command]",
+              "arguments": [
+                {
+                  "name": "TYPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--return",
+              "recursive": false,
+              "hidden": false,
+              "description": "Return type, e.g. long, OrderDto, List<OrderDto>. [default: Unit]",
+              "arguments": [
+                {
+                  "name": "RETURN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--with-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Request carries a long Id (get/update/delete by id). [default: False]",
+              "arguments": [
+                {
+                  "name": "WITH_ID",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--paged",
+              "recursive": false,
+              "hidden": false,
+              "description": "Paged query (PaginatedList<T>; requires --type query). [default: False]",
+              "arguments": [
+                {
+                  "name": "PAGED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--template-version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Template version to require instead of jex.json's templateVersion.",
+              "arguments": [
+                {
+                  "name": "TEMPLATE_VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip the template version check. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--solution-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project name prefix (src/<Prefix>.Domain ...). Default: inferred from the *.WebAPI project.",
+              "arguments": [
+                {
+                  "name": "SOLUTION_NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--no-test",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not generate the test file. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_TEST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "USECASE",
+              "description": "Use case name, e.g. CreateOrder or GetOrdersWithPagination.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "FEATURE",
+              "description": "Feature folder, e.g. Orders.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "endpoint",
+          "description": "Minimal API endpoint group and integration test.",
+          "options": [
+            {
+              "name": "--entity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Wire the CRUD use cases of this entity (scaffold them first).",
+              "arguments": [
+                {
+                  "name": "ENTITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--template-version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Template version to require instead of jex.json's templateVersion.",
+              "arguments": [
+                {
+                  "name": "TEMPLATE_VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip the template version check. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--solution-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project name prefix (src/<Prefix>.Domain ...). Default: inferred from the *.WebAPI project.",
+              "arguments": [
+                {
+                  "name": "SOLUTION_NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--no-test",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not generate the test file. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_TEST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FEATURE",
+              "description": "Feature / route group, e.g. Orders.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "feature",
+          "description": "Entity + Create<Entity> command + Get<Entity>ById query + endpoint group, in that order.",
+          "options": [
+            {
+              "name": "--template-version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Template version to require instead of jex.json's templateVersion.",
+              "arguments": [
+                {
+                  "name": "TEMPLATE_VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip the template version check. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--solution-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project name prefix (src/<Prefix>.Domain ...). Default: inferred from the *.WebAPI project.",
+              "arguments": [
+                {
+                  "name": "SOLUTION_NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--api-project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Web API project to use (path to the .csproj or its directory). Default: the only *.WebAPI.csproj in the solution.",
+              "arguments": [
+                {
+                  "name": "API_PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--no-test",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not generate the test file. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_TEST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ENTITY",
+              "description": "Entity name, e.g. Order.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "PLURAL",
+              "description": "Plural / feature folder, e.g. Orders.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "new",
+      "description": "Create a solution from the Jex template (installs the matching template package if needed). Other options are passed to 'dotnet new jex'.",
+      "options": [
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output directory. Default: ./<name>.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--database",
+          "recursive": false,
+          "hidden": false,
+          "description": "Database provider: sqlite (default), postgresql, sqlserver, mysql.",
+          "aliases": [
+            "-db"
+          ],
+          "arguments": [
+            {
+              "name": "DATABASE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--use-aspire",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add a .NET Aspire AppHost project. [default: False]",
+          "arguments": [
+            {
+              "name": "USE_ASPIRE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--include-ai-docs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include AGENTS.md, CLAUDE.md, skills and Copilot instructions (default true). [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_AI_DOCS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--include-docker",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include Dockerfile and docker-compose.yml (default true). [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_DOCKER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--http-port",
+          "recursive": false,
+          "hidden": false,
+          "description": "HTTP port in launchSettings.json (random if omitted).",
+          "arguments": [
+            {
+              "name": "HTTP_PORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--https-port",
+          "recursive": false,
+          "hidden": false,
+          "description": "HTTPS port in launchSettings.json (random if omitted).",
+          "arguments": [
+            {
+              "name": "HTTPS_PORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--skip-restore",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not restore packages after generating. [default: False]",
+          "arguments": [
+            {
+              "name": "SKIP_RESTORE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--template-version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Template package version to use (installed if needed). Default: the version of this jex.",
+          "arguments": [
+            {
+              "name": "TEMPLATE_VERSION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-install",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never install or switch the template package; fail instead. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_INSTALL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "NAME",
+          "description": "Project name, e.g. Acme.Shop (also the root namespace).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "dev",
+      "description": "Develop the Jex template repository: install templates from source, generate sandboxes, run the matrix.",
+      "commands": [
+        {
+          "name": "install",
+          "description": "Install the templates from this checkout (dev loop, no pack needed).",
+          "options": [
+            {
+              "name": "--from-package",
+              "recursive": false,
+              "hidden": false,
+              "description": "Pack the template package and install the nupkg (release acceptance path). [default: False]",
+              "arguments": [
+                {
+                  "name": "FROM_PACKAGE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Package version for --from-package. [default: 0.0.0-dev]",
+              "arguments": [
+                {
+                  "name": "VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "uninstall",
+          "description": "Remove the Jex templates (directory and package installs)."
+        },
+        {
+          "name": "pack",
+          "description": "Pack the template package and the Jex.Cli tool package with the same version.",
+          "options": [
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Version of both packages. [default: 0.0.0-dev]",
+              "arguments": [
+                {
+                  "name": "VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output directory. [default: artifacts]",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "new",
+          "description": "Regenerate artifacts/sandbox/<name> from the installed templates and assert its structure.",
+          "options": [
+            {
+              "name": "--database",
+              "recursive": false,
+              "hidden": false,
+              "description": "Database provider. [default: sqlite]",
+              "arguments": [
+                {
+                  "name": "DATABASE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--aspire",
+              "recursive": false,
+              "hidden": false,
+              "description": "--use-aspire. [default: False]",
+              "arguments": [
+                {
+                  "name": "ASPIRE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--ai",
+              "recursive": false,
+              "hidden": false,
+              "description": "--include-ai-docs. [default: True]",
+              "arguments": [
+                {
+                  "name": "AI",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--docker",
+              "recursive": false,
+              "hidden": false,
+              "description": "--include-docker. [default: True]",
+              "arguments": [
+                {
+                  "name": "DOCKER",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--check",
+              "recursive": false,
+              "hidden": false,
+              "description": "Then run the strict gate (check --ci) in the sandbox, in this process. [default: False]",
+              "arguments": [
+                {
+                  "name": "CHECK",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "Project name (artifacts/sandbox/<name>), e.g. Acme, Acme.Shop, my-api.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "matrix",
+          "description": "Generate, assert, scaffold (with jex) and check every supported template combination.",
+          "options": [
+            {
+              "name": "--cells",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated cells (sqlite, postgresql, sqlserver, mysql, aspire, bare). Default: all.",
+              "arguments": [
+                {
+                  "name": "CELLS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--package",
+              "recursive": false,
+              "hidden": false,
+              "description": "Test this template nupkg instead of ./templates.",
+              "arguments": [
+                {
+                  "name": "PACKAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--docker",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also docker build the cells that have a Dockerfile. [default: False]",
+              "arguments": [
+                {
+                  "name": "DOCKER",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--jex",
+              "recursive": false,
+              "hidden": false,
+              "description": "Executable of the jex CLI under test. Default: this jex.",
+              "arguments": [
+                {
+                  "name": "JEX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--jex-arg",
+              "recursive": false,
+              "hidden": false,
+              "description": "Argument placed before every jex command (repeatable), e.g. the Jex.Cli.dll path when --jex is dotnet.",
+              "arguments": [
+                {
+                  "name": "JEX_ARG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "install-cli",
+          "description": "Pack this checkout's CLI as 0.0.0-dev and (re)install it as the global 'jex' tool. Run it with 'dotnet run --project src/Jex.Cli -- dev install-cli'.",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory for the packed tool. [default: artifacts]",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "check",
+          "description": "Format, build and test the template source (templates/solution), in this process.",
+          "options": [
+            {
+              "name": "--ci",
+              "recursive": false,
+              "hidden": false,
+              "description": "Same as CI: verify formatting, warnings as errors. [default: False]",
+              "arguments": [
+                {
+                  "name": "CI",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "clean",
+          "description": "Delete bin/obj under templates/ and the artifacts/ directory."
+        }
+      ]
+    }
+  ]
+}
