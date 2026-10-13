@@ -1,0 +1,306 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "sonde",
+    "version": "0.1.0",
+    "description": "Command-line front door to Sonde: launch a process with the probe, then eval C# inside it."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.12.0",
+      "systemCommandLineVersion": "2.0.12.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Run C# inside a live .NET process. Start the process with `sonde env` or `sonde run`, then `sonde eval` into it."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "env",
+      "description": "Print the environment variables that load the probe into a process you launch yourself.",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "A name for the process; its endpoint is derived from it. Default: the current directory's name.",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "The app's project directory, so its own runtimeconfig.template.json is merged into the one Sonde writes for `dotnet watch`.",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "How to print the variables. [default: shell]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "description": "Launch a command with the probe loaded into it, and wait for it to exit.",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "A name for the process; its endpoint is derived from it. Default: the current directory's name.",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "The app's project directory (see `sonde env --project`).",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "COMMAND",
+          "description": "The command to launch, after `--`: for example `-- dotnet run --project MyApp`.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "hello",
+      "description": "Describe the process behind a probe: runtime, pid, loaded assemblies, probe version.",
+      "arguments": [
+        {
+          "name": "TARGET",
+          "description": "A name given to `sonde env`/`sonde run`, or an endpoint (socket path or pipe name).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Report a probe's state: running eval, live contexts, hooks and taps.",
+      "arguments": [
+        {
+          "name": "TARGET",
+          "description": "A name given to `sonde env`/`sonde run`, or an endpoint (socket path or pipe name).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "eval",
+      "description": "Compile a script, run it inside the process, print what came back.",
+      "options": [
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Milliseconds to wait for the script. [default: 10000]",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--max-depth",
+          "recursive": false,
+          "hidden": false,
+          "description": "How deep the result is serialised. [default: 6]",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "MAX_DEPTH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the whole result (outcome, result, logs, timing) as one JSON object. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "TARGET",
+          "description": "A name given to `sonde env`/`sonde run`, or an endpoint (socket path or pipe name).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "SCRIPT",
+          "description": "C# statements ending in `return x;`, or `@file.cs`, or `-` to read stdin.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "ls",
+      "description": "List the endpoints under the Sonde home directory and whether a probe answers at each.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print as JSON. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
