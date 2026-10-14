@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "CodeTorch.Agent.Cli",
-    "version": "1.2.13",
+    "version": "1.2.14",
     "description": "CodeTorch Agent CLI (cta) - Command-line tool for agent operations including dev slot deployments, status checks, and verification."
   },
   "x-inspectra": {
@@ -795,7 +795,10 @@
               "name": "--artifact-type",
               "recursive": false,
               "hidden": false,
-              "description": "Logical artifact type to register",
+              "description": "Logical artifact type to register (alias --type; use 'result' for result.json)",
+              "aliases": [
+                "--type"
+              ],
               "arguments": [
                 {
                   "name": "ARTIFACT_TYPE",
@@ -2022,7 +2025,7 @@
               "name": "--workspace",
               "recursive": false,
               "hidden": false,
-              "description": "Workspace ID",
+              "description": "Workspace ID (default: the current task's workspace, from CODETORCH_TASK_ID)",
               "arguments": [
                 {
                   "name": "WORKSPACE",
@@ -2039,7 +2042,7 @@
               "name": "--repo",
               "recursive": false,
               "hidden": false,
-              "description": "Repository ID",
+              "description": "Repository ID (default: the current task's repository, from CODETORCH_TASK_ID)",
               "arguments": [
                 {
                   "name": "REPO",
@@ -2343,6 +2346,74 @@
                   "type": "Boolean"
                 }
               ]
+            },
+            {
+              "name": "--idempotency-key",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repeat-safe create: the same key and request return the same task; a different request is refused",
+              "arguments": [
+                {
+                  "name": "IDEMPOTENCY_KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--depends-on",
+              "recursive": false,
+              "hidden": false,
+              "description": "Prerequisite task ids (comma-separated or repeated); the task waits until they succeed",
+              "arguments": [
+                {
+                  "name": "DEPENDS_ON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--stage-prompt",
+              "recursive": false,
+              "hidden": false,
+              "description": "Per-task prompt for one stage, as <stageCode>=<text> (repeatable)",
+              "arguments": [
+                {
+                  "name": "STAGE_PROMPT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--stage-prompt-mode",
+              "recursive": false,
+              "hidden": false,
+              "description": "How --stage-prompt combines with the stage's workflow prompt: append (default) or replace",
+              "arguments": [
+                {
+                  "name": "STAGE_PROMPT_MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
             }
           ]
         },
@@ -2520,6 +2591,178 @@
                 "maximum": 1
               },
               "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "result",
+          "description": "Show a delegated task's result: answer, verdict, summary, branch, PR and artifacts",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output in JSON format (default)",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--human",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output in human-readable format",
+              "arguments": [
+                {
+                  "name": "HUMAN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TASK_ID",
+              "description": "Task id",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "wait",
+          "description": "Wait for delegated tasks to finish (exit 0 completed, 1 failed, 4 cancelled, 2 attention, 6 timed out, 3 not found, 5 transport)",
+          "options": [
+            {
+              "name": "--until",
+              "recursive": false,
+              "hidden": false,
+              "description": "all-terminal (default), any-terminal, or attention (first task needing someone, or all ended)",
+              "arguments": [
+                {
+                  "name": "UNTIL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--revision",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only accept an ending of this run revision or later (default: each task's revision when the wait starts)",
+              "arguments": [
+                {
+                  "name": "REVISION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "Give up after this long and exit 6, e.g. 9m, 2h, 90s (default: no limit)",
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--wait",
+              "recursive": false,
+              "hidden": false,
+              "description": "Seconds each feed read may be held by the server (max 200)",
+              "arguments": [
+                {
+                  "name": "WAIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output in JSON format (default)",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--human",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output in human-readable format",
+              "arguments": [
+                {
+                  "name": "HUMAN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TASK_IDS",
+              "description": "Task ids to wait for",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "Guid[]"
             }
           ]
         },
@@ -4889,10 +5132,413 @@
               ]
             },
             {
+              "name": "--offset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Result offset (0-200).",
+              "arguments": [
+                {
+                  "name": "OFFSET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Authorized scope: organization, workspace, repository, workflow-role, automation.",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tag",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exact memory tag.",
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository-relative path matched against memory prefixes.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--alias",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exact decision alias.",
+              "arguments": [
+                {
+                  "name": "ALIAS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--work-item",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exact linked work item ID.",
+              "arguments": [
+                {
+                  "name": "WORK_ITEM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "--json",
               "recursive": false,
               "hidden": false,
               "description": "Output stable JSON.",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "propose",
+          "description": "Submit a scoped Dreamin proposal from standard input or a JSON file",
+          "options": [
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON path, or - for standard input",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--task",
+              "recursive": false,
+              "hidden": false,
+              "description": "Assigned task ID; defaults to CODETORCH_TASK_ID in task mode",
+              "arguments": [
+                {
+                  "name": "TASK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--org",
+              "recursive": false,
+              "hidden": false,
+              "description": "Organization ID for an interactive profile session",
+              "arguments": [
+                {
+                  "name": "ORG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--workspace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Workspace ID for an interactive profile session",
+              "arguments": [
+                {
+                  "name": "WORKSPACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository ID inside the selected workspace",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print stable JSON",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "feedback",
+          "description": "Rate an exact memory revision: --memory <id> --version <memoryVersion> --rating <rating> [--exposure <id> | --observation <ref>]. A delivered snapshot memory needs no exposure. Alternatively submit a JSON body with --file (- for standard input).",
+          "options": [
+            {
+              "name": "--memory",
+              "recursive": false,
+              "hidden": false,
+              "description": "Memory ID: a manifest.json revisions memoryId, a file's Memory: line, or a search result id",
+              "arguments": [
+                {
+                  "name": "MEMORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exact 16-hex memoryVersion (the revision= value)",
+              "arguments": [
+                {
+                  "name": "VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--rating",
+              "recursive": false,
+              "hidden": false,
+              "description": "helpful, irrelevant, stale, incorrect or harmful",
+              "arguments": [
+                {
+                  "name": "RATING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--exposure",
+              "recursive": false,
+              "hidden": false,
+              "description": "exposureId of a cta memory search result; omit for a delivered snapshot memory",
+              "arguments": [
+                {
+                  "name": "EXPOSURE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--observation",
+              "recursive": false,
+              "hidden": false,
+              "description": "Observation reference (max 500 characters) instead of a delivery or search exposure",
+              "arguments": [
+                {
+                  "name": "OBSERVATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON path, or - for standard input",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--task",
+              "recursive": false,
+              "hidden": false,
+              "description": "Assigned task ID; defaults to CODETORCH_TASK_ID in task mode",
+              "arguments": [
+                {
+                  "name": "TASK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--org",
+              "recursive": false,
+              "hidden": false,
+              "description": "Organization ID for an interactive profile session",
+              "arguments": [
+                {
+                  "name": "ORG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--workspace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Workspace ID for an interactive profile session",
+              "arguments": [
+                {
+                  "name": "WORKSPACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository ID inside the selected workspace",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print stable JSON",
               "arguments": [
                 {
                   "name": "JSON",

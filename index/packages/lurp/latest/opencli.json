@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "lurp : Roslyn-native semantic context engine for C#",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "description": "Lurp — a Roslyn semantic map for .NET agents. Indexes a C# solution into SQLite via Roslyn and serves retrieval, semantic-diff, impact, and bounded context capsules to other software agents."
   },
   "x-inspectra": {
@@ -16,13 +16,29 @@
       "name": "--output-dir",
       "recursive": false,
       "hidden": false,
-      "description": "Directory where index.db is stored. --solution= may\nstand in for it when it points at a solution directory.\n(LURP_OUTPUT_DIR / LURP_SOLUTION_PATH set these too.)",
+      "description": "Directory where index.db is stored. When omitted,",
       "arguments": [
         {
           "name": "PATH",
           "required": true,
           "arity": {
             "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--solution",
+      "recursive": false,
+      "hidden": false,
+      "description": "%LOCALAPPDATA%\\lurp\\<hash of the solution path>.\n(LURP_OUTPUT_DIR / LURP_SOLUTION_PATH set these too.)\nPath to the .sln or .slnx file. Required (or set\nIf provided, compares the current workspace against\nThe solution the session was started with.",
+      "arguments": [
+        {
+          "name": "SOLUTION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
             "maximum": 1
           }
         }
@@ -45,26 +61,10 @@
       ]
     },
     {
-      "name": "--solution",
-      "recursive": false,
-      "hidden": false,
-      "description": "Path to the .sln/.slnx to index (--mode=index); for",
-      "arguments": [
-        {
-          "name": "SOLUTION",
-          "required": true,
-          "arity": {
-            "minimum": 1,
-            "maximum": 1
-          }
-        }
-      ]
-    },
-    {
       "name": "--strategy",
       "recursive": false,
       "hidden": false,
-      "description": "full | incremental. 'full' reindexes every document",
+      "description": "full: index every document from scratch.",
       "arguments": [
         {
           "name": "STRATEGY",
@@ -96,7 +96,7 @@
       "name": "--skip-adapter",
       "recursive": false,
       "hidden": false,
-      "description": "Skip a named framework adapter. Valid: ASP.NET Core,",
+      "description": "Skip a named framework adapter. Values: ASP.NET",
       "arguments": [
         {
           "name": "SKIP_ADAPTER",
@@ -118,7 +118,7 @@
       "name": "--verbose",
       "recursive": false,
       "hidden": false,
-      "description": "Emit per-extractor [measure] timing lines to stderr."
+      "description": "Emit per-extractor timing lines to stderr."
     },
     {
       "name": "--force",
@@ -130,7 +130,7 @@
       "name": "--document",
       "recursive": false,
       "hidden": false,
-      "description": "Relative path of the document to retrieve.",
+      "description": "Relative path of the document within the solution.\nFilter to diagnostics in this document.\nFilter to symbols declared in this document",
       "arguments": [
         {
           "name": "DOCUMENT",
@@ -146,7 +146,7 @@
       "name": "--start-line",
       "recursive": false,
       "hidden": false,
-      "description": "1-based first line to return (inclusive, requires",
+      "description": "1-based start line for line window (inclusive).",
       "arguments": [
         {
           "name": "START_LINE",
@@ -162,7 +162,7 @@
       "name": "--end-line",
       "recursive": false,
       "hidden": false,
-      "description": "1-based last line to return (inclusive, requires",
+      "description": "1-based end line for line window (inclusive).",
       "arguments": [
         {
           "name": "END_LINE",
@@ -178,7 +178,7 @@
       "name": "--context-lines",
       "recursive": false,
       "hidden": false,
-      "description": "Extra source lines of context: for get-source,",
+      "description": "Lines of context (symmetric expansion). Requires\nLines of context for --view=surrounding (default:",
       "arguments": [
         {
           "name": "CONTEXT_LINES",
@@ -194,7 +194,7 @@
       "name": "--snapshot",
       "recursive": false,
       "hidden": false,
-      "description": "Snapshot to use (default: latest; the literal value",
+      "description": "Snapshot to use (default: latest, or the pinned\nSnapshot ID to pin. Only snapshots with\nSnapshot to act on (default: latest, or the pinned",
       "arguments": [
         {
           "name": "SNAPSHOT",
@@ -210,7 +210,7 @@
       "name": "--freshness",
       "recursive": false,
       "hidden": false,
-      "description": "How hard to check the snapshot still matches the",
+      "description": "How hard to check that the snapshot still matches",
       "arguments": [
         {
           "name": "FRESHNESS",
@@ -232,25 +232,25 @@
       "name": "--quiet",
       "recursive": false,
       "hidden": false,
-      "description": "Emit only the payload: suppress the freshness stderr"
+      "description": "Emit only the payload: suppresses the freshness"
     },
     {
       "name": "--include-generated",
       "recursive": false,
       "hidden": false,
-      "description": "Include source-generated code (obj/**, *.g.cs,"
+      "description": "Include diagnostics located in generated files (the"
     },
     {
       "name": "--limit",
       "recursive": false,
       "hidden": false,
-      "description": "Max results per scope (default: 20; for --mode=grep",
+      "description": "Max declarations per page (default: 100).\nMax results per scope (default: 20).\nSymbols per page (default: 50). When more exist, the\nMax annotations per page (default: 100; positive\nMax diagnostics per page (default: 100).\nMax matches per page (default: 50).\nMax dead candidates per page (default: 50, max:",
       "arguments": [
         {
           "name": "LIMIT",
-          "required": true,
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 1
           }
         }
@@ -260,7 +260,7 @@
       "name": "--cursor",
       "recursive": false,
       "hidden": false,
-      "description": "Continue from a previous page's nextCursor /",
+      "description": "Continue from a previous page's next_cursor.\nContinue from a previous page's nextCursor\nContinue from a previous page's truncated.cursor.\nContinue a tier from its next_cursor (--tier only).",
       "arguments": [
         {
           "name": "CURSOR",
@@ -276,13 +276,13 @@
       "name": "--output",
       "recursive": false,
       "hidden": false,
-      "description": "Payload rendering: summary | json | jsonl (default:",
+      "description": "Payload rendering (default: json). summary is a\nPayload rendering (default: summary when neither",
       "arguments": [
         {
           "name": "OUTPUT",
-          "required": true,
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 1
           }
         }
@@ -292,7 +292,7 @@
       "name": "--symbol",
       "recursive": false,
       "hidden": false,
-      "description": "Symbol ID: fully qualified name, doc-comment ID, or",
+      "description": "The symbol ID to look up. Accepts the full\nFully qualified name to resolve. Required.\nThe symbol ID to trace from. Accepts the full\nSymbol ID to anchor on. Accepts the full\nThe symbol ID to annotate. Required.\nThe symbol ID to query. Accepts the full",
       "arguments": [
         {
           "name": "SYMBOL",
@@ -308,7 +308,7 @@
       "name": "--view",
       "recursive": false,
       "hidden": false,
-      "description": "What to return: metadata | signature | body |",
+      "description": "What to return. Values: metadata, signature, body,",
       "arguments": [
         {
           "name": "VIEW",
@@ -324,7 +324,7 @@
       "name": "--query",
       "recursive": false,
       "hidden": false,
-      "description": "Search term. Symbol search matches whole identifier",
+      "description": "Search term. Symbol search matches whole identifier\nExact substring to find. The match is byte-exact,",
       "arguments": [
         {
           "name": "QUERY",
@@ -340,7 +340,7 @@
       "name": "--type",
       "recursive": false,
       "hidden": false,
-      "description": "Search scope: all | source | symbol (default: all).",
+      "description": "Search scope (default: all). An unknown value is an",
       "arguments": [
         {
           "name": "TYPE",
@@ -356,7 +356,7 @@
       "name": "--kind",
       "recursive": false,
       "hidden": false,
-      "description": "Filter symbol results by Roslyn SymbolKind (e.g.",
+      "description": "Filter symbol results by Roslyn SymbolKind (e.g.\nFilter to one annotation kind.\nFilter by symbol kind (case-insensitive). Values:",
       "arguments": [
         {
           "name": "KIND",
@@ -388,7 +388,7 @@
       "name": "--file",
       "recursive": false,
       "hidden": false,
-      "description": "Source file path (paired with --line=) to anchor by",
+      "description": "Source file path relative to the solution root.\nSource file path (use with --line). Required in some",
       "arguments": [
         {
           "name": "FILE",
@@ -404,7 +404,7 @@
       "name": "--line",
       "recursive": false,
       "hidden": false,
-      "description": "1-based line number, paired with --file=. Every",
+      "description": "1-based line number in the source file. Every\nLine number in the source file. Required in some",
       "arguments": [
         {
           "name": "LINE",
@@ -420,7 +420,7 @@
       "name": "--from-snapshot",
       "recursive": false,
       "hidden": false,
-      "description": "Baseline snapshot ID to diff from (required for",
+      "description": "Base snapshot ID. Required.",
       "arguments": [
         {
           "name": "FROM_SNAPSHOT",
@@ -436,7 +436,7 @@
       "name": "--to-snapshot",
       "recursive": false,
       "hidden": false,
-      "description": "Target snapshot ID to diff to (required for",
+      "description": "Target snapshot ID. Required.",
       "arguments": [
         {
           "name": "TO_SNAPSHOT",
@@ -452,13 +452,13 @@
       "name": "--direction",
       "recursive": false,
       "hidden": false,
-      "description": "Traversal direction: downstream | upstream (default:",
+      "description": "Traversal direction (default: downstream). Use",
       "arguments": [
         {
           "name": "DIRECTION",
-          "required": true,
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 1
           }
         }
@@ -500,7 +500,7 @@
       "name": "--max-depth",
       "recursive": false,
       "hidden": false,
-      "description": "Maximum hops per path (default: 3).",
+      "description": "Maximum traversal depth (default: 3).",
       "arguments": [
         {
           "name": "MAX_DEPTH",
@@ -516,13 +516,13 @@
       "name": "--intent",
       "recursive": false,
       "hidden": false,
-      "description": "Assembly-priority hint: inspect | modify | diagnose",
+      "description": "Intent hint for assembly (default: inspect). Values:",
       "arguments": [
         {
           "name": "INTENT",
-          "required": true,
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 1
           }
         }
@@ -532,10 +532,26 @@
       "name": "--content-budget",
       "recursive": false,
       "hidden": false,
-      "description": "Token budget for capsule CONTENT (default: 8000, or",
+      "description": "Token budget for capsule content (default: 8000, or",
       "arguments": [
         {
           "name": "CONTENT_BUDGET",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--tier",
+      "recursive": false,
+      "hidden": false,
+      "description": "Fetch ONE tier on its own instead of a capsule, with",
+      "arguments": [
+        {
+          "name": "TIER",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -593,22 +609,6 @@
       ]
     },
     {
-      "name": "--tier",
-      "recursive": false,
-      "hidden": false,
-      "description": "Fetch ONE tier on its own instead of a capsule, with",
-      "arguments": [
-        {
-          "name": "TIER",
-          "required": true,
-          "arity": {
-            "minimum": 1,
-            "maximum": 1
-          }
-        }
-      ]
-    },
-    {
       "name": "--tier-limit",
       "recursive": false,
       "hidden": false,
@@ -628,13 +628,13 @@
       "name": "--completeness-detail",
       "recursive": false,
       "hidden": false,
-      "description": "Emit per-document binding_incompleteness rows"
+      "description": "Emit per-document binding_incompleteness rows."
     },
     {
       "name": "--detail",
       "recursive": false,
       "hidden": false,
-      "description": "Comma-separated JSON sections to expand: 'documents'",
+      "description": "Comma-separated sections to expand in --json output:",
       "arguments": [
         {
           "name": "DETAIL",
@@ -653,16 +653,32 @@
       "description": "Emit structured JSON instead of plain text."
     },
     {
+      "name": "--max-mismatches",
+      "recursive": false,
+      "hidden": false,
+      "description": "Cap on the mismatches list in --json output",
+      "arguments": [
+        {
+          "name": "MAX_MISMATCHES",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
       "name": "--clear",
       "recursive": false,
       "hidden": false,
-      "description": "Clear the pinned snapshot override; reads will again"
+      "description": "Clear the pin; reads will again default to the most"
     },
     {
       "name": "--annotation-kind",
       "recursive": false,
       "hidden": false,
-      "description": "Annotation kind (required for --mode=annotate).",
+      "description": "Annotation kind. Required.",
       "arguments": [
         {
           "name": "ANNOTATION_KIND",
@@ -678,7 +694,7 @@
       "name": "--value",
       "recursive": false,
       "hidden": false,
-      "description": "Annotation value text (required for",
+      "description": "Annotation value. Required.",
       "arguments": [
         {
           "name": "VALUE",
@@ -694,7 +710,7 @@
       "name": "--annotation-id",
       "recursive": false,
       "hidden": false,
-      "description": "Surrogate PK of the annotation to retract (from",
+      "description": "Surrogate PK from get-annotations annotation_id",
       "arguments": [
         {
           "name": "ANNOTATION_ID",
@@ -710,7 +726,7 @@
       "name": "--project",
       "recursive": false,
       "hidden": false,
-      "description": "Filter to this project (assembly name, e.g.",
+      "description": "Filter to diagnostics in this project.\nFilter to this project (assembly simple name, e.g.",
       "arguments": [
         {
           "name": "PROJECT",
@@ -726,6 +742,7 @@
       "name": "--severity",
       "recursive": false,
       "hidden": false,
+      "description": "Filter by severity: Roslyn DiagnosticSeverity names,",
       "arguments": [
         {
           "name": "SEVERITY",
@@ -741,6 +758,7 @@
       "name": "--id",
       "recursive": false,
       "hidden": false,
+      "description": "Filter by diagnostic ID (e.g. CS8933).",
       "arguments": [
         {
           "name": "ID",
@@ -756,7 +774,7 @@
       "name": "--ignore-case",
       "recursive": false,
       "hidden": false,
-      "description": "For --mode=grep, make the literal search",
+      "description": "Make the search case-insensitive (default:",
       "arguments": [
         {
           "name": "IGNORE_CASE",
@@ -778,12 +796,28 @@
       "name": "--include-tests",
       "recursive": false,
       "hidden": false,
-      "description": "Include test-project symbols (project name %.Tests)"
+      "description": "Include test-project symbols (a project that"
+    },
+    {
+      "name": "--enable-write-tools",
+      "recursive": false,
+      "hidden": false,
+      "description": "Also register the write tools lurp_index and",
+      "arguments": [
+        {
+          "name": "ENABLE_WRITE_TOOLS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
     }
   ],
   "arguments": [
     {
-      "name": "AFTERWARD",
+      "name": "HASH",
       "required": true,
       "hidden": false,
       "arity": {
@@ -792,7 +826,7 @@
       }
     },
     {
-      "name": "TRUNCATEDCURSOR",
+      "name": "REQUIRED",
       "required": true,
       "hidden": false,
       "arity": {
@@ -801,7 +835,7 @@
       }
     },
     {
-      "name": "CASE_INSENSITIVE",
+      "name": "FILE",
       "required": true,
       "hidden": false,
       "arity": {
@@ -810,7 +844,7 @@
       }
     },
     {
-      "name": "LOCATION",
+      "name": "DROPPED",
       "required": true,
       "hidden": false,
       "arity": {
@@ -820,6 +854,33 @@
     },
     {
       "name": "OUTPUT_DIR",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "MISMATCHES",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "ALL",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "PROVED_DEAD",
       "required": true,
       "hidden": false,
       "arity": {

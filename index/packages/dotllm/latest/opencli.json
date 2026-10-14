@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dotllm",
-    "version": "0.3.0-dev.2861",
+    "version": "0.3.0-dev.2948",
     "description": "Command-line tool for dotLLM — run, chat, serve, and manage GGUF models. Install with: dotnet tool install -g DotLLM.Cli"
   },
   "x-inspectra": {
@@ -44,6 +44,18 @@
               }
             }
           ]
+        },
+        {
+          "name": "--kv-quant-k",
+          "recursive": false,
+          "hidden": false,
+          "description": "KV-cache key storage: f16, q8_0, q4_0.\nSynonym of --cache-type-k. For the CUDA\nhybrid-dense model (Bonsai-2 / qwen35)\noverrides DOTLLM_HYBRID_KV; quantized KV\nneeds numKvHeads*headDim % 32 == 0"
+        },
+        {
+          "name": "--kv-quant-v",
+          "recursive": false,
+          "hidden": false,
+          "description": "KV-cache value storage: f16, q8_0, q4_0.\nSynonym of --cache-type-v. See"
         },
         {
           "name": "--device",
@@ -178,6 +190,41 @@
           "arguments": [
             {
               "name": "N_CPU_MOE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--depth-list",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated context depths for\nmulti-point sweep (e.g., 512,2048,8192).\nMeasures decode at each checkpoint in one\nprocess without reloading the model.\nMutually exclusive with --depth",
+          "arguments": [
+            {
+              "name": "DEPTH_LIST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--warmup",
+          "recursive": false,
+          "hidden": false,
+          "description": "Number of warm-up repetitions to discard\nper checkpoint (default: 1). Use 0 to\nskip warm-up entirely",
+          "aliases": [
+            "-1"
+          ],
+          "arguments": [
+            {
+              "name": "WARMUP",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -938,6 +985,18 @@
               }
             }
           ]
+        },
+        {
+          "name": "--kv-cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "none              KV-cache storage format\nfor perplexity scoring:\n'none' (cacheless, exact\nK/V baseline — the\ndefault), 'f32' (FP32\ncache), 'q8_0', 'q4_0'.\nWhen set, the forward pass\nreads K/V from the cache,\nso perplexity reflects the\nquantization quality of KV\nstorage"
+        },
+        {
+          "name": "--kv-window",
+          "recursive": false,
+          "hidden": false,
+          "description": "0                 Full-precision window size\nfor quantized KV cache\n(recent tokens kept in\nFP32 before\nquantize-on-evict). 0 =\nquantize all tokens\nimmediately. Only applies\nwhen --kv-cache is q8_0 or\nq4_0"
         }
       ],
       "arguments": [
@@ -1036,6 +1095,18 @@
               }
             }
           ]
+        },
+        {
+          "name": "--kv-quant-k",
+          "recursive": false,
+          "hidden": false,
+          "description": "KV-cache key storage: f16, q8_0,\nq4_0. Synonym of --cache-type-k.\nFor the CUDA hybrid-dense model\n(Bonsai-2 / qwen35) overrides\nDOTLLM_HYBRID_KV; quantized KV\nneeds numKvHeads*headDim % 32 == 0"
+        },
+        {
+          "name": "--kv-quant-v",
+          "recursive": false,
+          "hidden": false,
+          "description": "KV-cache value storage: f16, q8_0,\nq4_0. Synonym of --cache-type-v.\nSee --kv-quant-k"
         },
         {
           "name": "--prompt",
@@ -1419,7 +1490,7 @@
           "name": "--cache-type-k",
           "recursive": false,
           "hidden": false,
-          "description": "f32        KV-cache key quantization: f32\n(default), q8_0, q4_0",
+          "description": "KV-cache key quantization: f32/f16\n(default), q8_0, q4_0. Synonym of",
           "arguments": [
             {
               "name": "CACHE_TYPE_K",
@@ -1435,7 +1506,7 @@
           "name": "--cache-type-v",
           "recursive": false,
           "hidden": false,
-          "description": "f32        KV-cache value quantization: f32",
+          "description": "KV-cache value quantization:\nf32/f16 (default), q8_0, q4_0.\nSynonym of --kv-quant-v",
           "arguments": [
             {
               "name": "CACHE_TYPE_V",
@@ -1609,6 +1680,33 @@
           ]
         },
         {
+          "name": "--kv-quant-k",
+          "recursive": false,
+          "hidden": false,
+          "description": "KV-cache key storage: f16,\nq8_0, q4_0. Synonym of\n--cache-type-k. For the CUDA\nhybrid-dense model (Bonsai-2 /\nqwen35) overrides\nDOTLLM_HYBRID_KV; quantized KV\nneeds numKvHeads*headDim % 32\n== 0"
+        },
+        {
+          "name": "--kv-quant-v",
+          "recursive": false,
+          "hidden": false,
+          "description": "KV-cache value storage: f16,"
+        },
+        {
+          "name": "--cache-type-v.",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "SEE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--port",
           "recursive": false,
           "hidden": false,
@@ -1723,7 +1821,7 @@
           "name": "--cache-type-k",
           "recursive": false,
           "hidden": false,
-          "description": "f32          KV-cache key quantization: f32\n(default), q8_0, q4_0",
+          "description": "KV-cache key quantization: f32\n(default), f16, q8_0, q4_0.\nSynonym of --kv-quant-k. For\nthe CUDA hybrid-dense model f32\nmeans 'not given'\n(DOTLLM_HYBRID_KV applies); use\nf16 to force unquantized",
           "arguments": [
             {
               "name": "CACHE_TYPE_K",
@@ -1739,7 +1837,7 @@
           "name": "--cache-type-v",
           "recursive": false,
           "hidden": false,
-          "description": "f32          KV-cache value quantization:\nf32 (default), q8_0, q4_0",
+          "description": "KV-cache value quantization:\nf32 (default), f16, q8_0, q4_0.\nSynonym of --kv-quant-v",
           "arguments": [
             {
               "name": "CACHE_TYPE_V",
