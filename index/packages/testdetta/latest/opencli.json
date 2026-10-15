@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "td",
-    "version": "0.1.3",
+    "version": "0.2.1",
     "description": "Run only the .NET tests a change can affect: test impact analysis from your git diff, project graph and per-test-class coverage, inside your CI."
   },
   "x-inspectra": {
@@ -74,6 +74,38 @@
           ]
         },
         {
+          "name": "--color",
+          "recursive": false,
+          "hidden": false,
+          "description": "auto (default: a terminal or GitHub Actions; NO_COLOR turns it off), always or never",
+          "arguments": [
+            {
+              "name": "WHEN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--theme",
+          "recursive": false,
+          "hidden": false,
+          "description": "default, colorblind (blue/yellow instead of green/red) or mono; also TESTDETTA_THEME",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--max-map-age",
           "recursive": false,
           "hidden": false,
@@ -109,10 +141,26 @@
           "name": "--drift-fallback",
           "recursive": false,
           "hidden": false,
-          "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)\ntd affected:",
+          "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)",
           "arguments": [
             {
               "name": "DRIFT_FALLBACK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--non-code-files",
+          "recursive": false,
+          "hidden": false,
+          "description": "What a changed file in a project folder that is not code\n(README.md, CHANGELOG.md, a JSON file) runs: readers (the default) runs\nonly the test classes the map saw read it, when the build neither compiles,\nembeds, copies nor hands it to a tool; project runs its project and every\nproject depending on it completely\ntd affected:",
+          "arguments": [
+            {
+              "name": "NON_CODE_FILES",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -491,7 +539,61 @@
           "name": "--no-build",
           "recursive": false,
           "hidden": false,
-          "description": "Use the existing build output (built with the same -c) instead of building\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss)."
+          "description": "Use the existing build output (built with the same -c) instead of building"
+        },
+        {
+          "name": "--incremental",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-record only the test classes the commits since the previous map (in\n.testdetta/coverage or --maps-dir, within --max-map-age) can affect"
+        },
+        {
+          "name": "--full-record-every",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full after n incremental steps (default: 20)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--full-record-days",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full when the last full map is n days old (default: 7)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--full-record-share",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full when more of a project is selected (default: 60)\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss).",
+          "arguments": [
+            {
+              "name": "PERCENT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
         }
       ],
       "arguments": [
@@ -539,7 +641,7 @@
         {
           "name": "record",
           "hidden": false,
-          "description": "Run all tests with coverage and store the map in .testdetta/coverage"
+          "description": "Run all tests with coverage and store the map in .testdetta/coverage; <args> are"
         },
         {
           "name": "test",
@@ -611,6 +713,38 @@
           ]
         },
         {
+          "name": "--color",
+          "recursive": false,
+          "hidden": false,
+          "description": "auto (default: a terminal or GitHub Actions; NO_COLOR turns it off), always or never",
+          "arguments": [
+            {
+              "name": "WHEN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--theme",
+          "recursive": false,
+          "hidden": false,
+          "description": "default, colorblind (blue/yellow instead of green/red) or mono; also TESTDETTA_THEME",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--max-map-age",
           "recursive": false,
           "hidden": false,
@@ -646,10 +780,26 @@
           "name": "--drift-fallback",
           "recursive": false,
           "hidden": false,
-          "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)\ntd affected:",
+          "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)",
           "arguments": [
             {
               "name": "DRIFT_FALLBACK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--non-code-files",
+          "recursive": false,
+          "hidden": false,
+          "description": "What a changed file in a project folder that is not code\n(README.md, CHANGELOG.md, a JSON file) runs: readers (the default) runs\nonly the test classes the map saw read it, when the build neither compiles,\nembeds, copies nor hands it to a tool; project runs its project and every\nproject depending on it completely\ntd affected:",
+          "arguments": [
+            {
+              "name": "NON_CODE_FILES",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -1028,7 +1178,61 @@
           "name": "--no-build",
           "recursive": false,
           "hidden": false,
-          "description": "Use the existing build output (built with the same -c) instead of building\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss)."
+          "description": "Use the existing build output (built with the same -c) instead of building"
+        },
+        {
+          "name": "--incremental",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-record only the test classes the commits since the previous map (in\n.testdetta/coverage or --maps-dir, within --max-map-age) can affect"
+        },
+        {
+          "name": "--full-record-every",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full after n incremental steps (default: 20)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--full-record-days",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full when the last full map is n days old (default: 7)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--full-record-share",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full when more of a project is selected (default: 60)\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss).",
+          "arguments": [
+            {
+              "name": "PERCENT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
         }
       ],
       "arguments": [
@@ -1076,7 +1280,7 @@
         {
           "name": "record",
           "hidden": false,
-          "description": "Run all tests with coverage and store the map in .testdetta/coverage"
+          "description": "Run all tests with coverage and store the map in .testdetta/coverage; <args> are"
         },
         {
           "name": "test",
@@ -1152,6 +1356,38 @@
               ]
             },
             {
+              "name": "--color",
+              "recursive": false,
+              "hidden": false,
+              "description": "auto (default: a terminal or GitHub Actions; NO_COLOR turns it off), always or never",
+              "arguments": [
+                {
+                  "name": "WHEN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--theme",
+              "recursive": false,
+              "hidden": false,
+              "description": "default, colorblind (blue/yellow instead of green/red) or mono; also TESTDETTA_THEME",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--max-map-age",
               "recursive": false,
               "hidden": false,
@@ -1187,10 +1423,26 @@
               "name": "--drift-fallback",
               "recursive": false,
               "hidden": false,
-              "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)\ntd affected:",
+              "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)",
               "arguments": [
                 {
                   "name": "DRIFT_FALLBACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--non-code-files",
+              "recursive": false,
+              "hidden": false,
+              "description": "What a changed file in a project folder that is not code\n(README.md, CHANGELOG.md, a JSON file) runs: readers (the default) runs\nonly the test classes the map saw read it, when the build neither compiles,\nembeds, copies nor hands it to a tool; project runs its project and every\nproject depending on it completely\ntd affected:",
+              "arguments": [
+                {
+                  "name": "NON_CODE_FILES",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1569,7 +1821,61 @@
               "name": "--no-build",
               "recursive": false,
               "hidden": false,
-              "description": "Use the existing build output (built with the same -c) instead of building\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss)."
+              "description": "Use the existing build output (built with the same -c) instead of building"
+            },
+            {
+              "name": "--incremental",
+              "recursive": false,
+              "hidden": false,
+              "description": "Re-record only the test classes the commits since the previous map (in\n.testdetta/coverage or --maps-dir, within --max-map-age) can affect"
+            },
+            {
+              "name": "--full-record-every",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --incremental: record in full after n incremental steps (default: 20)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--full-record-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --incremental: record in full when the last full map is n days old (default: 7)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--full-record-share",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --incremental: record in full when more of a project is selected (default: 60)\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss).",
+              "arguments": [
+                {
+                  "name": "PERCENT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "arguments": [
@@ -1617,7 +1923,7 @@
             {
               "name": "record",
               "hidden": false,
-              "description": "Run all tests with coverage and store the map in .testdetta/coverage"
+              "description": "Run all tests with coverage and store the map in .testdetta/coverage; <args> are"
             },
             {
               "name": "test",
@@ -1689,6 +1995,38 @@
               ]
             },
             {
+              "name": "--color",
+              "recursive": false,
+              "hidden": false,
+              "description": "auto (default: a terminal or GitHub Actions; NO_COLOR turns it off), always or never",
+              "arguments": [
+                {
+                  "name": "WHEN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--theme",
+              "recursive": false,
+              "hidden": false,
+              "description": "default, colorblind (blue/yellow instead of green/red) or mono; also TESTDETTA_THEME",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--max-map-age",
               "recursive": false,
               "hidden": false,
@@ -1724,10 +2062,26 @@
               "name": "--drift-fallback",
               "recursive": false,
               "hidden": false,
-              "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)\ntd affected:",
+              "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)",
               "arguments": [
                 {
                   "name": "DRIFT_FALLBACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--non-code-files",
+              "recursive": false,
+              "hidden": false,
+              "description": "What a changed file in a project folder that is not code\n(README.md, CHANGELOG.md, a JSON file) runs: readers (the default) runs\nonly the test classes the map saw read it, when the build neither compiles,\nembeds, copies nor hands it to a tool; project runs its project and every\nproject depending on it completely\ntd affected:",
+              "arguments": [
+                {
+                  "name": "NON_CODE_FILES",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -2106,7 +2460,61 @@
               "name": "--no-build",
               "recursive": false,
               "hidden": false,
-              "description": "Use the existing build output (built with the same -c) instead of building\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss)."
+              "description": "Use the existing build output (built with the same -c) instead of building"
+            },
+            {
+              "name": "--incremental",
+              "recursive": false,
+              "hidden": false,
+              "description": "Re-record only the test classes the commits since the previous map (in\n.testdetta/coverage or --maps-dir, within --max-map-age) can affect"
+            },
+            {
+              "name": "--full-record-every",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --incremental: record in full after n incremental steps (default: 20)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--full-record-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --incremental: record in full when the last full map is n days old (default: 7)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--full-record-share",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --incremental: record in full when more of a project is selected (default: 60)\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss).",
+              "arguments": [
+                {
+                  "name": "PERCENT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "arguments": [
@@ -2154,7 +2562,7 @@
             {
               "name": "record",
               "hidden": false,
-              "description": "Run all tests with coverage and store the map in .testdetta/coverage"
+              "description": "Run all tests with coverage and store the map in .testdetta/coverage; <args> are"
             },
             {
               "name": "test",
@@ -2168,7 +2576,7 @@
     {
       "name": "record",
       "hidden": false,
-      "description": "Run all tests with coverage and store the map in .testdetta/coverage",
+      "description": "Run all tests with coverage and store the map in .testdetta/coverage; <args> are",
       "options": [
         {
           "name": "--base",
@@ -2228,6 +2636,38 @@
           ]
         },
         {
+          "name": "--color",
+          "recursive": false,
+          "hidden": false,
+          "description": "auto (default: a terminal or GitHub Actions; NO_COLOR turns it off), always or never",
+          "arguments": [
+            {
+              "name": "WHEN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--theme",
+          "recursive": false,
+          "hidden": false,
+          "description": "default, colorblind (blue/yellow instead of green/red) or mono; also TESTDETTA_THEME",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--max-map-age",
           "recursive": false,
           "hidden": false,
@@ -2263,10 +2703,26 @@
           "name": "--drift-fallback",
           "recursive": false,
           "hidden": false,
-          "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)\ntd affected:",
+          "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)",
           "arguments": [
             {
               "name": "DRIFT_FALLBACK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--non-code-files",
+          "recursive": false,
+          "hidden": false,
+          "description": "What a changed file in a project folder that is not code\n(README.md, CHANGELOG.md, a JSON file) runs: readers (the default) runs\nonly the test classes the map saw read it, when the build neither compiles,\nembeds, copies nor hands it to a tool; project runs its project and every\nproject depending on it completely\ntd affected:",
+          "arguments": [
+            {
+              "name": "NON_CODE_FILES",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -2645,7 +3101,61 @@
           "name": "--no-build",
           "recursive": false,
           "hidden": false,
-          "description": "Use the existing build output (built with the same -c) instead of building\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss)."
+          "description": "Use the existing build output (built with the same -c) instead of building"
+        },
+        {
+          "name": "--incremental",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-record only the test classes the commits since the previous map (in\n.testdetta/coverage or --maps-dir, within --max-map-age) can affect"
+        },
+        {
+          "name": "--full-record-every",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full after n incremental steps (default: 20)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--full-record-days",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full when the last full map is n days old (default: 7)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--full-record-share",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full when more of a project is selected (default: 60)\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss).",
+          "arguments": [
+            {
+              "name": "PERCENT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
         }
       ],
       "arguments": [
@@ -2765,6 +3275,38 @@
           ]
         },
         {
+          "name": "--color",
+          "recursive": false,
+          "hidden": false,
+          "description": "auto (default: a terminal or GitHub Actions; NO_COLOR turns it off), always or never",
+          "arguments": [
+            {
+              "name": "WHEN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--theme",
+          "recursive": false,
+          "hidden": false,
+          "description": "default, colorblind (blue/yellow instead of green/red) or mono; also TESTDETTA_THEME",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--max-map-age",
           "recursive": false,
           "hidden": false,
@@ -2800,10 +3342,26 @@
           "name": "--drift-fallback",
           "recursive": false,
           "hidden": false,
-          "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)\ntd affected:",
+          "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)",
           "arguments": [
             {
               "name": "DRIFT_FALLBACK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--non-code-files",
+          "recursive": false,
+          "hidden": false,
+          "description": "What a changed file in a project folder that is not code\n(README.md, CHANGELOG.md, a JSON file) runs: readers (the default) runs\nonly the test classes the map saw read it, when the build neither compiles,\nembeds, copies nor hands it to a tool; project runs its project and every\nproject depending on it completely\ntd affected:",
+          "arguments": [
+            {
+              "name": "NON_CODE_FILES",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -3182,7 +3740,61 @@
           "name": "--no-build",
           "recursive": false,
           "hidden": false,
-          "description": "Use the existing build output (built with the same -c) instead of building\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss)."
+          "description": "Use the existing build output (built with the same -c) instead of building"
+        },
+        {
+          "name": "--incremental",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-record only the test classes the commits since the previous map (in\n.testdetta/coverage or --maps-dir, within --max-map-age) can affect"
+        },
+        {
+          "name": "--full-record-every",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full after n incremental steps (default: 20)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--full-record-days",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full when the last full map is n days old (default: 7)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--full-record-share",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --incremental: record in full when more of a project is selected (default: 60)\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss).",
+          "arguments": [
+            {
+              "name": "PERCENT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
         }
       ],
       "arguments": [
@@ -3235,7 +3847,7 @@
         {
           "name": "record",
           "hidden": false,
-          "description": "Run all tests with coverage and store the map in .testdetta/coverage"
+          "description": "Run all tests with coverage and store the map in .testdetta/coverage; <args> are"
         }
       ]
     }
@@ -3299,6 +3911,38 @@
       ]
     },
     {
+      "name": "--color",
+      "recursive": false,
+      "hidden": false,
+      "description": "auto (default: a terminal or GitHub Actions; NO_COLOR turns it off), always or never",
+      "arguments": [
+        {
+          "name": "WHEN",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--theme",
+      "recursive": false,
+      "hidden": false,
+      "description": "default, colorblind (blue/yellow instead of green/red) or mono; also TESTDETTA_THEME",
+      "arguments": [
+        {
+          "name": "NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
       "name": "--max-map-age",
       "recursive": false,
       "hidden": false,
@@ -3334,10 +3978,26 @@
       "name": "--drift-fallback",
       "recursive": false,
       "hidden": false,
-      "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)\ntd affected:",
+      "description": "When the changes since an older map include a build file,\nconfiguration or a global using, run the affected test projects\ncompletely (all, the default) or decide them by name (name: faster,\nblind to calls made through configuration or reflection)",
       "arguments": [
         {
           "name": "DRIFT_FALLBACK",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--non-code-files",
+      "recursive": false,
+      "hidden": false,
+      "description": "What a changed file in a project folder that is not code\n(README.md, CHANGELOG.md, a JSON file) runs: readers (the default) runs\nonly the test classes the map saw read it, when the build neither compiles,\nembeds, copies nor hands it to a tool; project runs its project and every\nproject depending on it completely\ntd affected:",
+      "arguments": [
+        {
+          "name": "NON_CODE_FILES",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -3716,7 +4376,61 @@
       "name": "--no-build",
       "recursive": false,
       "hidden": false,
-      "description": "Use the existing build output (built with the same -c) instead of building\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss)."
+      "description": "Use the existing build output (built with the same -c) instead of building"
+    },
+    {
+      "name": "--incremental",
+      "recursive": false,
+      "hidden": false,
+      "description": "Re-record only the test classes the commits since the previous map (in\n.testdetta/coverage or --maps-dir, within --max-map-age) can affect"
+    },
+    {
+      "name": "--full-record-every",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --incremental: record in full after n incremental steps (default: 20)",
+      "arguments": [
+        {
+          "name": "N",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--full-record-days",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --incremental: record in full when the last full map is n days old (default: 7)",
+      "arguments": [
+        {
+          "name": "N",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--full-record-share",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --incremental: record in full when more of a project is selected (default: 60)\nLicense: set TESTDETTA_LICENSE (or TESTDETTA_LICENSE_FILE) in CI. Public repositories need none.\nWithout a valid license every test runs. The build never fails because of it.\nExit codes: 0 success, 1 analysis failed, 2 invalid command line, 3 tests failed (td audit: a miss).",
+      "arguments": [
+        {
+          "name": "PERCENT",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
     }
   ]
 }
