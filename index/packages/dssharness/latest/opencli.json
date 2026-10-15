@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dssharness",
-    "version": "0.6.13",
+    "version": "0.6.14",
     "description": "Cross-platform repository harness CLI: git worktree management with Windows path-budget checks, driven entirely by .harness-config/config.json."
   },
   "x-inspectra": {
@@ -275,7 +275,7 @@
     },
     {
       "name": "delete-worktree",
-      "description": "Remove a worktree and everything under it, its copies on hosts, and the mutation workers kept beside each; refuses one holding work that would be lost, a locked one, one whose evidence directories hold measurements, or one a sweep still running holds a worker of, without --force.",
+      "description": "Remove a worktree and everything under it, its copies on hosts, and the copies kept in each - the mutation workers in .mutations, and on this machine the leg copies in .legs; refuses one holding work that would be lost, a locked one, one whose evidence directories hold measurements, or one with a copy in it that a sweep or a run still holds, without --force.",
       "options": [
         {
           "name": "--force",
@@ -1063,7 +1063,7 @@
     },
     {
       "name": "refresh-agent",
-      "description": "Hand a live agent every path under the paths, or anywhere with --all, that the main tree holds otherwise than the agent shares it - not what it was last handed, or not what its base holds - committed or not, recorded as handed to it so its fold leaves them out; refused, copying nothing, where the agent changed or deleted one of them, unless --except names it.",
+      "description": "Hand a live agent every path under the paths, or anywhere with --all, that the main tree holds otherwise than the agent shares it - not what it was last handed, or not what its base holds - committed or not, recorded as handed to it so its fold leaves them out; refused, copying nothing, where the agent changed or deleted one of them, unless --except names it, --stale names it and the main tree's history holds its very bytes there, or --merge names it and its three-way merge with the main tree's is clean; the arm registry both changed is merged by arm, unasked.",
       "options": [
         {
           "name": "--all",
@@ -1100,13 +1100,64 @@
           ]
         },
         {
+          "name": "--stale",
+          "recursive": false,
+          "hidden": false,
+          "description": "A path whose copy in the agent is not its work: handed the main tree's copy, only where the main tree's history holds the agent's very bytes at that path. Once for each path.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--merge",
+          "recursive": false,
+          "hidden": false,
+          "description": "A path the agent and the main tree both changed whose three-way merge is clean, as the refusal says of it: the merge is written into the agent's worktree as its change, for its fold to write, and the path recorded as handed the main tree's copy. Never taken unasked, and a clean textual merge proves nothing about the program. Once for each path.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
           "name": "--apply",
           "recursive": false,
           "hidden": false,
-          "description": "Hand them over; without it, only say what would be handed over. [default: False]",
+          "description": "Hand them over; without it, only say what would be handed over, and exit as --apply would. [default: False]",
           "arguments": [
             {
               "name": "APPLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -1209,8 +1260,25 @@
     },
     {
       "name": "rebase-agent",
-      "description": "Move a live agent's base to the main tree's HEAD: what the main tree committed since comes into its worktree as git holds it, and its own changes and what it was handed stay; refused, moving nothing, where it changed a path the main tree committed a change to since, unless --settled, or where what comes in would go over anything of its own. Run again after one that stopped part way (exit 21), it finishes it.",
+      "description": "Move a live agent's base to the main tree's HEAD: what the main tree committed since comes into its worktree as git holds it, and its own changes and what it was handed stay; refused, moving nothing, where it changed a path the main tree committed a change to since, unless --merge takes a clean three-way merge of the two or --settled keeps its copy, or where what comes in would go over anything of its own. Run again after one that stopped part way (exit 21), it finishes it.",
       "options": [
+        {
+          "name": "--merge",
+          "recursive": false,
+          "hidden": false,
+          "description": "A path the agent changed that the main tree committed a change to since its base, whose three-way merge is clean, as the dry run says of it: the merged file is written into its worktree as its own change on the new base. Never taken unasked, and a clean textual merge proves nothing about the program. Once for each path.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
         {
           "name": "--settled",
           "recursive": false,
@@ -1232,10 +1300,27 @@
           "name": "--apply",
           "recursive": false,
           "hidden": false,
-          "description": "Move it; without it, only say what moving it would bring in and keep. [default: False]",
+          "description": "Move it; without it, only say what moving it would bring in and keep, and exit as --apply would. [default: False]",
           "arguments": [
             {
               "name": "APPLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -1328,13 +1413,13 @@
     },
     {
       "name": "fold-agent",
-      "description": "Fold a live agent's own changes into the main tree, then apply the anchor rows it filed: everything that refuses it is named before anything is written, the rows go in all or nothing, and a file of either tree that changed after it was weighed stops the fold part way (exit 21) rather than being written over or copied changed; its worktree is kept.",
+      "description": "Fold a live agent's own changes into the main tree, then apply the anchor rows it filed: everything that refuses it is named before anything is written, a path both trees changed with what a three-way merge of it gives, which --merge takes where it is clean; the rows go in all or nothing, and a file of either tree that changed after it was weighed stops the fold part way (exit 21) rather than being written over or copied changed; its worktree is kept.",
       "options": [
         {
           "name": "--apply",
           "recursive": false,
           "hidden": false,
-          "description": "Write the fold and the rows; without it, only say what would be written. [default: False]",
+          "description": "Write the fold and the rows; without it, only say what would be written, and exit as --apply would. [default: False]",
           "arguments": [
             {
               "name": "APPLY",
@@ -1348,10 +1433,44 @@
           ]
         },
         {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--merge",
+          "recursive": false,
+          "hidden": false,
+          "description": "A path both trees changed whose three-way merge is clean, as the dry run says of it: the merged file is written into both trees and recorded as shared. Never taken unasked, and a clean textual merge proves nothing about the program. Once for each path.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
           "name": "--settled",
           "recursive": false,
           "hidden": false,
-          "description": "A path you reconciled in the main tree by hand, left out of the fold so the rest can go in: neither compared nor written. Once for each path.",
+          "description": "A path you reconciled in the main tree by hand: the fold hands the agent the main tree's copy and records it as shared, so the rest can go in and its next fold starts from it. Refused where only the agent changed the path. Once for each path.",
           "arguments": [
             {
               "name": "PATH",
@@ -1386,6 +1505,23 @@
           "recursive": false,
           "hidden": false,
           "description": "A cell of an existing row - trigger, closing, cross-refs - the fold may write though the agent's text does not keep its stored text word for word: read its word diff in the dry run first. Once for each cell.",
+          "arguments": [
+            {
+              "name": "ID:CELL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--accept-over",
+          "recursive": false,
+          "hidden": false,
+          "description": "A cell of a row an earlier fold of the agent applied - priority, status, trigger, closing, cross-refs - that the registries and the agent both changed since, each otherwise: the fold may write the agent's over the registries'. Read the three texts in the dry run first. Once for each cell.",
           "arguments": [
             {
               "name": "ID:CELL",
@@ -1487,7 +1623,7 @@
           "name": "--apply",
           "recursive": false,
           "hidden": false,
-          "description": "Do it; without it, only say what would be done. [default: False]",
+          "description": "Do it; without it, only say what would be done, and exit as --apply would. [default: False]",
           "arguments": [
             {
               "name": "APPLY",
@@ -1501,10 +1637,27 @@
           ]
         },
         {
+          "name": "--merge",
+          "recursive": false,
+          "hidden": false,
+          "description": "A path both trees changed whose three-way merge is clean, as the dry run says of it: the merged file is written into both trees and recorded as shared. Never taken unasked, and a clean textual merge proves nothing about the program. Once for each path.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
           "name": "--settled",
           "recursive": false,
           "hidden": false,
-          "description": "A path you reconciled in the main tree by hand, left out of the fold so the rest can go in: neither compared nor written. Once for each path.",
+          "description": "A path you reconciled in the main tree by hand: the fold hands the agent the main tree's copy and records it as shared, so the rest can go in and its next fold starts from it. Refused where only the agent changed the path. Once for each path.",
           "arguments": [
             {
               "name": "PATH",
@@ -1552,6 +1705,23 @@
           ]
         },
         {
+          "name": "--accept-over",
+          "recursive": false,
+          "hidden": false,
+          "description": "A cell of a row an earlier fold of the agent applied - priority, status, trigger, closing, cross-refs - that the registries and the agent both changed since, each otherwise: the fold may write the agent's over the registries'. Read the three texts in the dry run first. Once for each cell.",
+          "arguments": [
+            {
+              "name": "ID:CELL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
           "name": "--discard-uncommitted",
           "recursive": false,
           "hidden": false,
@@ -1559,6 +1729,23 @@
           "arguments": [
             {
               "name": "DISCARD_UNCOMMITTED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -3401,7 +3588,7 @@
           "name": "--dry-run",
           "recursive": false,
           "hidden": false,
-          "description": "List what would be written and deleted, and change nothing. [default: False]",
+          "description": "List what would be written and deleted, change nothing, and exit as the sync would: 13 where it would refuse - a directory it did not make, without --adopt; more deleted than sync.maxDeleteFraction allows; a worktree's copy another worktree of the same name holds. [default: False]",
           "arguments": [
             {
               "name": "DRY_RUN",
@@ -3600,10 +3787,44 @@
           "name": "--use-staged",
           "recursive": false,
           "hidden": false,
-          "description": "Build what is already staged on each host, without syncing again. Legs on a copy a sync or a takeover began and did not finish are inputs-moved. [default: False]",
+          "description": "Build what is already staged on each copy, without syncing again. Legs on a copy a sync or a takeover began and did not finish, that is not there, or that holds no copy this tool made are inputs-moved. [default: False]",
           "arguments": [
             {
               "name": "USE_STAGED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--local-copy",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every leg this machine runs itself works in a copy of its tree kept in the tree's .legs, for this run: over the leg's own localCopy and defaults.localCopy. [default: False]",
+          "arguments": [
+            {
+              "name": "LOCAL_COPY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--in-place",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every leg this machine runs itself works in its tree itself, for this run: over the leg's own localCopy and defaults.localCopy. [default: False]",
+          "arguments": [
+            {
+              "name": "IN_PLACE",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -3816,7 +4037,7 @@
           "name": "--use-staged",
           "recursive": false,
           "hidden": false,
-          "description": "Test what is already staged on each host, without syncing again. Legs on a copy a sync or a takeover began and did not finish are inputs-moved. [default: False]",
+          "description": "Test what is already staged on each copy, without syncing again. Legs on a copy a sync or a takeover began and did not finish, that is not there, or that holds no copy this tool made are inputs-moved. [default: False]",
           "arguments": [
             {
               "name": "USE_STAGED",
@@ -3837,6 +4058,40 @@
           "arguments": [
             {
               "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--local-copy",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every leg this machine runs itself works in a copy of its tree kept in the tree's .legs, for this run: over the leg's own localCopy and defaults.localCopy. [default: False]",
+          "arguments": [
+            {
+              "name": "LOCAL_COPY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--in-place",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every leg this machine runs itself works in its tree itself, for this run: over the leg's own localCopy and defaults.localCopy. [default: False]",
+          "arguments": [
+            {
+              "name": "IN_PLACE",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -3998,7 +4253,7 @@
           "name": "--use-staged",
           "recursive": false,
           "hidden": false,
-          "description": "Run against what is already staged on each host, without syncing again. Legs on a copy a sync or a takeover began and did not finish are inputs-moved. [default: False]",
+          "description": "Run against what is already staged on each copy, without syncing again. Legs on a copy a sync or a takeover began and did not finish, that is not there, or that holds no copy this tool made are inputs-moved. [default: False]",
           "arguments": [
             {
               "name": "USE_STAGED",
@@ -4042,6 +4297,40 @@
                 "maximum": 100000
               },
               "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--local-copy",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every leg this machine runs itself works in a copy of its tree kept in the tree's .legs, for this run: over the leg's own localCopy and defaults.localCopy. [default: False]",
+          "arguments": [
+            {
+              "name": "LOCAL_COPY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--in-place",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every leg this machine runs itself works in its tree itself, for this run: over the leg's own localCopy and defaults.localCopy. [default: False]",
+          "arguments": [
+            {
+              "name": "IN_PLACE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -4209,7 +4498,7 @@
           "name": "--use-staged",
           "recursive": false,
           "hidden": false,
-          "description": "Sweep what is already staged on each host, without syncing again. Legs on a copy a sync or a takeover began and did not finish are inputs-moved. [default: False]",
+          "description": "Sweep what is already staged on each copy, without syncing again. Legs on a copy a sync or a takeover began and did not finish, that is not there, or that holds no copy this tool made are inputs-moved. [default: False]",
           "arguments": [
             {
               "name": "USE_STAGED",
@@ -4236,6 +4525,56 @@
                 "maximum": 1
               },
               "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--list",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sweep nothing: say each selected arm's last verdict on each leg and whether anything it was judged on that this machine reads has moved since. Asks no host, takes no lock, begins no run and writes nothing; exits 0 whatever is pending. [default: False]",
+          "arguments": [
+            {
+              "name": "LIST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--pending",
+          "recursive": false,
+          "hidden": false,
+          "description": "Drive on each leg only the arms with no recorded passed that still holds: its first worker is made alone, each arm's key read from its build, and an arm whose key is a recorded passed's is left out, skipped-not-selected, saying which run's passed holds. With nothing pending the leg passes, and nothing is swept. [default: False]",
+          "arguments": [
+            {
+              "name": "PENDING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--held",
+          "recursive": false,
+          "hidden": true,
+          "arguments": [
+            {
+              "name": "HELD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         },
@@ -4317,7 +4656,7 @@
     },
     {
       "name": "clean",
-      "description": "Remove each selected leg's build directory, and the mutation workers its sweeps keep beside its tree, wherever the leg runs, writing nothing there first, so a full disk can be freed.",
+      "description": "Remove each selected leg's build directory, the mutation workers its sweeps keep in its tree, and the copies of its tree it works in on this machine (.legs), wherever the leg runs, writing nothing there first, so a full disk can be freed.",
       "options": [
         {
           "name": "--legs",
@@ -4340,7 +4679,7 @@
           "name": "--dry-run",
           "recursive": false,
           "hidden": false,
-          "description": "Say what each leg's build directory holds and the room left on its filesystem, and remove nothing. [default: False]",
+          "description": "Say what each leg's build directory, workers and copies hold and the room left on its filesystem, remove nothing, and exit as the clean would: 13 where a run holds the leg, a sweep its workers or a run its copy. [default: False]",
           "arguments": [
             {
               "name": "DRY_RUN",

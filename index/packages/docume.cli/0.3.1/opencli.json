@@ -1,0 +1,912 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "docume",
+    "version": "0.3.1",
+    "description": "DocuMe CLI (`docume`) — deterministic markdown-to-Confluence publisher."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.10.0",
+      "systemCommandLineVersion": "2.0.10.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "DocuMe — deterministic markdown-to-Confluence documentation publisher."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "description": "Scaffold docume.json and a wiki skeleton in the current directory.",
+      "options": [
+        {
+          "name": "--space",
+          "recursive": false,
+          "hidden": false,
+          "description": "Confluence space key to write into docume.json.",
+          "arguments": [
+            {
+              "name": "SPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--base-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "Confluence wiki base URL to write into docume.json.",
+          "arguments": [
+            {
+              "name": "BASE_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--adopt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Build _meta/state.json from the wiki this repo already has (one entry per page, pageIds seeded from frontmatter) instead of writing an empty one. [default: False]",
+          "arguments": [
+            {
+              "name": "ADOPT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--legacy-map",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a JSON '<page path>': '<page id>' map from whatever published the wiki before, to seed pageIds from. Requires --adopt.",
+          "arguments": [
+            {
+              "name": "LEGACY_MAP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Which coding agent the model-running workflows are written for: claude or copilot. Recorded in docume.json; omitted, a recorded value wins and a fresh repo gets claude.",
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "convert",
+      "description": "Convert every wiki page and report failures and degradations. Read-only: nothing is published.",
+      "options": [
+        {
+          "name": "--accept",
+          "recursive": false,
+          "hidden": false,
+          "description": "Diagnostic code to treat as an accepted loss: still reported, but counted as a note instead of a warning. Repeatable.",
+          "arguments": [
+            {
+              "name": "ACCEPT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--render-mermaid",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also render every mermaid diagram through Node and report the ones that fail. Off by default: it starts a process per diagram and needs beautiful-mermaid installed. Without it, diagrams are counted but never checked. [default: False]",
+          "arguments": [
+            {
+              "name": "RENDER_MERMAID",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--renderer",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to render-mermaid.mjs for --render-mermaid. Defaults to where `docume init` scaffolds it and docume.json -> mermaid.renderer names it. [default: tools/render-mermaid.mjs]",
+          "arguments": [
+            {
+              "name": "RENDERER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "WIKI_ROOT",
+          "description": "Wiki root directory to convert (the folder holding the markdown pages).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "publish",
+      "description": "Convert the wiki and publish it to Confluence. --dry-run plans the run and writes nothing.",
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to docume.json. Its directory is the repo root wiki.root resolves against. [default: docume.json]",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--state",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to state.json. Defaults to <wiki.root>/_meta/state.json; a missing file plans a first publish (every page created).",
+          "arguments": [
+            {
+              "name": "STATE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Convert, decide and print the plan without writing anything. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Republish every page even when nothing changed, re-uploading its attachments. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--allow-protected-space",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write into a space listed in confluence.protectedSpaces. One run only; there is no config value that grants this. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_PROTECTED_SPACE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--tree",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also print the page tree the run would build (parents resolved from the directory index pages). [default: False]",
+          "arguments": [
+            {
+              "name": "TREE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--changed-since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write only the pages touched since <sha> — `git diff --name-only` over the wiki root, including the pages whose images changed. The whole tree is still loaded, converted and checked for orphans.",
+          "arguments": [
+            {
+              "name": "CHANGED_SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--page",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write only these pages (wiki-root-relative markdown paths). Repeatable; a path that is not in the tree is an error. [default: System.String[]]",
+          "arguments": [
+            {
+              "name": "PAGE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--prune",
+          "recursive": false,
+          "hidden": false,
+          "description": "After publishing, delete the orphan pages (state entries whose markdown file is gone) from Confluence. Asks first, needs a terminal, refuses to run in CI. [default: False]",
+          "arguments": [
+            {
+              "name": "PRUNE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-reorder",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the post-pass that puts each parent's children in source-tree order. Leaves the order in Confluence exactly as it is, for a team that arranges it by hand. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_REORDER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--block-on-open-comments",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave a page as it is, and exit non-zero, when it has unresolved inline comments a body rewrite could strand. Default is to publish and warn. Has no effect on --dry-run: the check reads Confluence, which a dry run does not. [default: False]",
+          "arguments": [
+            {
+              "name": "BLOCK_ON_OPEN_COMMENTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-comment-check",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the read that looks for unresolved inline comments before rewriting a page (one extra read per page whose body changes; none for creates, skips or moves). [default: False]",
+          "arguments": [
+            {
+              "name": "NO_COMMENT_CHECK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--notify-reviewers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Post a footer comment asking for a re-review on every page whose `approved` label this run removes. One comment per revoked approval, so it notifies everyone watching those pages; without it the dashboard and `docume status` say the same thing quietly. [default: False]",
+          "arguments": [
+            {
+              "name": "NOTIFY_REVIEWERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "sync",
+      "description": "Read the approved/stale labels and the page comments out of Confluence and reconcile them into state.json and the feedback inbox. Writes nothing to Confluence unless --reply is passed; committing the result is the caller's job.",
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to docume.json. Its directory is the repo root wiki.root resolves against. [default: docume.json]",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--state",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to state.json. Defaults to <wiki.root>/_meta/state.json.",
+          "arguments": [
+            {
+              "name": "STATE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--labels",
+          "recursive": false,
+          "hidden": false,
+          "description": "Reconcile the approved/stale labels into state. Passing no half runs the two read halves. [default: False]",
+          "arguments": [
+            {
+              "name": "LABELS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--comments",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ingest page comments into the feedback inbox. Passing no half runs the two read halves. [default: False]",
+          "arguments": [
+            {
+              "name": "COMMENTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--reply",
+          "recursive": false,
+          "hidden": false,
+          "description": "Post a reply under every triaged inbox item and resolve the inline comments it answers. Writes to Confluence, so it never runs unless asked for. [default: False]",
+          "arguments": [
+            {
+              "name": "REPLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--output-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where to write inbox items. Defaults to <wiki.root>/_meta/feedback/inbox.",
+          "arguments": [
+            {
+              "name": "OUTPUT_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--rebuild-state",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rebuild state.json's page map from the managed marker every DocuMe-written page carries. Runs alone, because it rebuilds the map the other halves reconcile onto; composes only with --dry-run. [default: False]",
+          "arguments": [
+            {
+              "name": "REBUILD_STATE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report what would change in state.json and the inbox and what would be posted to Confluence, and write none of it. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "drift",
+      "description": "Report which wiki pages derive from code changed between two revisions. Reads only, unless --mark.",
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to docume.json. Its directory is the repo root wiki.root and every 'sources' glob resolve against. [default: docume.json]",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--state",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to state.json. Defaults to <wiki.root>/_meta/state.json; read for its baselineSha, and written only by --mark.",
+          "arguments": [
+            {
+              "name": "STATE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Revision to diff from. Defaults to state.baselineSha — the commit the wiki content was last generated against.",
+          "arguments": [
+            {
+              "name": "BASELINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--head",
+          "recursive": false,
+          "hidden": false,
+          "description": "Revision to diff to. Defaults to HEAD. [default: HEAD]",
+          "arguments": [
+            {
+              "name": "HEAD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output shape: table | json | github-comment. 'github-comment' is a markdown block for a PR comment; 'json' prints nothing else. [default: table]",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--fail-on-drift",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit 1 when any page is affected. Without it the command is advisory and always exits 0. [default: False]",
+          "arguments": [
+            {
+              "name": "FAIL_ON_DRIFT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--mark",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add the stale label to every affected page in Confluence, set stale: true in state, and refresh the dashboard. Labels only — never a page-body edit (§6.4). [default: False]",
+          "arguments": [
+            {
+              "name": "MARK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --mark: report what would be labelled and write nothing. Needs no credentials — the plan is state plus the diff. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--allow-protected-space",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --mark: label pages even though confluence.spaceKey is listed in confluence.protectedSpaces. One run only; the list stays as it is. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_PROTECTED_SPACE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "description": "Regenerate the Documentation Status page in Confluence from state plus the live labels. The only M3 command that writes to Confluence.",
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to docume.json. Its directory is the repo root wiki.root resolves against. [default: docume.json]",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--state",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to state.json. Defaults to <wiki.root>/_meta/state.json. Read only — the labels are reconciled in memory, and `docume sync --labels` is what writes them.",
+          "arguments": [
+            {
+              "name": "STATE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--title",
+          "recursive": false,
+          "hidden": false,
+          "description": "Title of the dashboard page. Defaults to dashboard.title in docume.json.",
+          "arguments": [
+            {
+              "name": "TITLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the storage format the run would publish and write nothing. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--allow-protected-space",
+          "recursive": false,
+          "hidden": false,
+          "description": "Publish even though confluence.spaceKey is listed in confluence.protectedSpaces. One run only; the list stays as it is. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_PROTECTED_SPACE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Report what is published, what drifted, and whether this repo is set up to publish. Writes nothing.",
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to docume.json. Its directory is the repo root wiki.root resolves against. [default: docume.json]",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--state",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to state.json. Defaults to <wiki.root>/_meta/state.json; a missing file means nothing has been published, so every page reads as unpublished.",
+          "arguments": [
+            {
+              "name": "STATE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the report as JSON and nothing else, for a PR body or a CI step. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--offline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the one Confluence request (the token and space probe). Everything else in this report is computed locally anyway. [default: False]",
+          "arguments": [
+            {
+              "name": "OFFLINE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--fail-on-drift",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit non-zero when the published wiki differs from the repo — unpublished, changed, moved pages, or orphans in state. Without it the command is advisory and always exits 0. [default: False]",
+          "arguments": [
+            {
+              "name": "FAIL_ON_DRIFT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
