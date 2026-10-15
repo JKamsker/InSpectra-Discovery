@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "tryAGI.OpenAI.CLI",
-    "version": "4.2.11-dev.67",
+    "version": "4.2.11-dev.68",
     "description": "Command-line interface for the OpenAI API. Run any chat, image, embedding, audio, or model endpoint from the shell. Invoke without install via `dnx tryAGI.OpenAI.CLI <command>`. Built on the tryAGI.OpenAI SDK."
   },
   "x-inspectra": {
@@ -1084,7 +1084,7 @@
             },
             {
               "name": "create-agent-environment-file",
-              "description": "Create an agent environment file\nCopies inline bytes or a Files API file into a connected execution environment. See [environment files](https://developers.openai.com/api/docs/guides/agents-api/environments/files).",
+              "description": "Write an agent environment file\nCopies inline bytes or a Files API file into a connected execution environment, replacing an existing regular file at the same path. Upload between turns and wait for success before starting the next turn. See [environment files](https://developers.openai.com/api/docs/guides/agents-api/environments/files).",
               "options": [
                 {
                   "name": "--input",
@@ -10692,12 +10692,13 @@
           "commands": [
             {
               "name": "create-decision",
-              "description": "Create a decision\nUse this endpoint to ask classification or scoring questions about the same input. You’ll get the answers back in the order you asked the questions.\n\nFor text, you can pass a string. You can also send user messages containing `input_text` and `input_image` parts, with up to 128 images per request. Images can be base64 data URLs or publicly accessible HTTP(S) URLs. File IDs aren’t accepted. Other message roles, function calls, files, audio, and item references aren’t supported.\n\nSometimes a question returns a refusal instead of an answer. The result has type `refusal` and includes the question’s name, or `null` if you didn’t give it one.",
+              "description": "Create a decision\nUse this endpoint to quickly answer classification or scoring questions about some input. You can ask multiple questions in one request.",
               "options": [
                 {
                   "name": "--model",
                   "recursive": false,
                   "hidden": false,
+                  "description": "The model to use. Only `gpt-6-luna` is supported.",
                   "arguments": [
                     {
                       "name": "MODEL",
@@ -10731,6 +10732,7 @@
                   "name": "--questions",
                   "recursive": false,
                   "hidden": false,
+                  "description": "Ask 1–200 questions about the input. Each question can be a predicate, choice, or score. Answers come back in the same order.",
                   "arguments": [
                     {
                       "name": "QUESTIONS",
@@ -18479,12 +18481,15 @@
                         "AeStorage",
                         "AeStorageProcessing",
                         "AuStorage",
+                        "AuStorageProcessing",
                         "CaStorage",
                         "EuStorageProcessing",
                         "GbStorage",
                         "Global",
                         "InStorage",
+                        "InStorageProcessing",
                         "JpStorage",
+                        "JpStorageProcessing",
                         "KrStorage",
                         "SgStorage",
                         "UsStorageProcessing"
@@ -19574,13 +19579,13 @@
             },
             {
               "name": "update-project-api-key",
-              "description": "Update project API key\nUpdates the expiration of an existing API key in the project, including a\nservice-account-owned key. Requires permission to write project API keys.\n\nProvide `expires_in_seconds` to set the expiration relative to this request.\nThe value must satisfy the organization's and project's expiry policies.\nExpired keys cannot be updated. Retrying resets the expiration relative to\nthe new request. The response contains only the redacted key, not its secret.\n",
+              "description": "Update project API key\nUpdates the scopes and/or expiration of an existing API key in the project, including a\nservice-account-owned key. Requires permission to write project API keys.\n\nProvide at least one of `scopes` or `expires_in_seconds`. Omitted fields stay\nunchanged; neither field accepts `null`. Both changes are saved together.\n\n`scopes` replaces the key's scope restrictions using the same scope identifiers\nas the dashboard. An empty array means All permissions, subject to the owner's\neffective access; it does not mean no access. Use `[\"api.all.read\"]` for read-only\naccess or specific scopes such as `[\"api.files.read\"]` for restricted access.\nThis does not change user or service-account roles or grant admin permissions.\nScope changes follow the same authentication-cache propagation as dashboard edits.\n\nProvide `expires_in_seconds` to set the expiration relative to this request.\nThe value must satisfy the organization's and project's expiry policies.\nExpired keys cannot be updated. Retrying resets the expiration relative to\nthe new request. The response contains only the redacted key, not its secret.\n",
               "options": [
                 {
                   "name": "--expires-in-seconds",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Number of seconds from this request until the API key expires. Must comply with the organization and project expiry policies. Expired keys cannot be updated. Retrying resets the expiry relative to the new request.",
+                  "description": "Number of seconds from this request until the API key expires. Must comply with the organization and project expiry policies. Expired keys cannot be updated. Retrying resets the expiry relative to the new request. Omit to keep the current expiration.",
                   "arguments": [
                     {
                       "name": "EXPIRES_IN_SECONDS",
@@ -19590,6 +19595,74 @@
                         "maximum": 1
                       },
                       "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--scopes",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Replace the API key scope restrictions. Omit to leave scopes unchanged. An empty array removes key restrictions (All permissions), subject to the owner's effective permissions. Use [\"api.all.read\"] for read-only access. Scopes do not change the owner's roles or grant administrative permissions.",
+                  "arguments": [
+                    {
+                      "name": "SCOPES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "IList`1"
+                    }
+                  ]
+                },
+                {
+                  "name": "--input",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+                  "arguments": [
+                    {
+                      "name": "INPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-json",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Request body as JSON.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_JSON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-file",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Path to a JSON request file, or '-' for stdin.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_FILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
                     }
                   ]
                 }
