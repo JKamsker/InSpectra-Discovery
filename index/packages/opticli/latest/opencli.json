@@ -2,14 +2,14 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "opticli",
-    "version": "0.16.1",
+    "version": "0.19.0",
     "description": "Read and write local Optimizely CMS 12 and 13 sites from the command line, Visual Builder included."
   },
   "x-inspectra": {
     "artifactSource": "static-analysis",
     "generator": "InSpectra.Gen",
     "metadataEnriched": true,
-    "helpDocumentCount": 68,
+    "helpDocumentCount": 75,
     "staticAnalysis": {
       "framework": "System.CommandLine",
       "inspectorType": "dnlib",
@@ -23,13 +23,13 @@
       ]
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "Inspect and change a local Optimizely CMS 12 or 13 (EPiServer) site from its repository: content, content types, URLs.\nRun it anywhere in the site's repository: the CMS project and its development database are found automatically\n(`opticli doctor` shows what was found). A local database is used as is; a remote one (e.g. a dev database in Azure)\nonly once the user has chosen it with `opticli db use`: until then commands fail with needs_selection (exit 6).\n\nRefs: A ref is a content id (123), id_version (123_456), a content GUID, a URL/path (/en/about/ or https://host/en/about/), or content provider content as get prints it (63__provider).\nReads query the database directly and need nothing running.\nWrites (set, create, area, composition, block, upload, translate, publish, unpublish, discard, move, delete, restore,\n  access, apply, sites primary, sites host, jobs run|stop|set, users add|remove, types remove|remove-property|prune) go\n  through the CMS inside the running site: `opticli serve` first, `opticli serve --stop` when done. They save\n  drafts unless --publish, delete only moves to the recycle bin, and every write takes --dry-run.\nOutput: compact JSON {\"ok\": true, \"data\": ..., \"meta\": {\"source\", \"version\", \"next\", \"warnings\", \"database\"}} when\n  stdout is redirected, tables on a terminal; --json / --text force one, --jsonl (list commands) prints one item per\n  line. Lists return 50 items: pass meta.next as --cursor for more, or raise --limit.\nErrors: {\"ok\": false, \"error\": {\"code\", \"message\", \"hint\"}}; the hint says what to do next.\nExit codes: 0 ok, 1 usage, 2 not found, 3 refused by a safety rule, 4 database/site unreachable (or a wait timed\n  out), 5 write conflict, validation failure or unconfirmed drift (a shared database that differs from this build:\n  `opticli drift`),\n  6 the user must choose the development database first (error.details lists the choices),\n  7 a job `opticli jobs run` ran didn't succeed.\nDetails and an example for each command: opticli <command> --help"
+    "cliParsedDescription": "Inspect and change a local Optimizely CMS 12 or 13 (EPiServer) site from its repository: content, content types, URLs.\nRun it anywhere in the site's repository: the CMS project and its development database are found automatically\n(`opticli doctor` shows what was found). A local database is used as is; a remote one (e.g. a dev database in Azure)\nonly once the user has chosen it with `opticli db use`: until then commands fail with needs_selection (exit 6).\nA database with the role prod (`opticli db list`) is only read, with --db: writes, serve and env are refused (exit 3).\n\nRefs: A ref is a content id (123), id_version (123_456), a content GUID, a URL/path (/en/about/ or https://host/en/about/), or content provider content as get prints it (63__provider).\nReads query the database directly and need nothing running.\nWrites (set, create, area, composition, block, upload, translate, publish, unpublish, discard, move, delete, restore,\n  access, apply, sync pull, sites primary, sites host, jobs run|stop|set, users add|remove, types remove|remove-property|prune) go\n  through the CMS inside the running site: `opticli serve` first, `opticli serve --stop` when done. They save\n  drafts unless --publish, delete only moves to the recycle bin, and every write takes --dry-run.\nOutput: compact JSON {\"ok\": true, \"data\": ..., \"meta\": {\"source\", \"version\", \"next\", \"warnings\", \"database\"}} when\n  stdout is redirected, tables on a terminal; --json / --text force one, --jsonl (list commands) prints one item per\n  line. Lists return 50 items: pass meta.next as --cursor for more, or raise --limit.\nErrors: {\"ok\": false, \"error\": {\"code\", \"message\", \"hint\"}}; the hint says what to do next.\nExit codes: 0 ok, 1 usage, 2 not found, 3 refused by a safety rule, 4 database/site unreachable (or a wait timed\n  out, or the database refused the login: login_failed), 5 write conflict, validation failure or unconfirmed\n  drift (a shared database that differs from this build: `opticli drift`),\n  6 the user must choose the development database first (error.details lists the choices),\n  7 a job `opticli jobs run` ran didn't succeed.\nDetails and an example for each command: opticli <command> --help"
   },
   "commands": [
     {
       "name": "access",
       "hidden": false,
-      "description": "Show or change who may read and edit a content item (its access rights, or ACL).\nWithout options it shows the effective entries, read from the database: whether they are inherited, and from where.\nWith options it changes them through the site (needs `opticli serve`), for this item only: children that inherit\nfollow automatically, nothing is applied to descendants. An inherited ACL can only be changed with\n--break-inheritance. The root, the recycle bin, start pages and asset roots are refused (exit 3), and so is any\nchange that leaves no role with Administer. Access rights aren't versioned: the output shows before and after, and\nthe undo is the inverse command.",
+      "description": "Show or change who may read and edit a content item (its access rights, or ACL).\nWithout options it shows the effective entries, read from the database: whether they are inherited, and from where.\nWith options it changes them through the site (needs `opticli serve`), for this item only: children that inherit\nfollow automatically, nothing is applied to descendants. An inherited ACL can only be changed with\n--break-inheritance. The root, the recycle bin, start pages and asset roots are refused (exit 3), and so is any\nchange that leaves no role with Administer. Content in a \"For this page\" folder has its owner's access rights\n(shown as assetsOf) and is refused too, as in the edit UI: change the owner instead. Access rights aren't versioned: the output shows before and after, and\nthe undo is the inverse command.",
       "options": [
         {
           "name": "--site",
@@ -196,7 +196,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -376,7 +376,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -534,7 +534,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -591,7 +591,7 @@
     {
       "name": "apply",
       "hidden": false,
-      "description": "Run several writes from a JSON plan, validating every one before anything is saved. Needs `opticli serve`.\nEach operation gets a dry run first; nothing is written unless all pass. Operations on content the plan creates\nare dry-run against a stand-in: the content as it will be after that operation, under its nearest existing\nancestor (status \"simulated\"; values that refer to other planned content are checked when the plan runs, and\ntheir ContentArea placements against [AllowedTypes] in the code). So is a publish after earlier set, area or\ntranslate operations on the same content and language (those changes, published), a set or area after one with\n\"from\" (on that version, with the changes since), and a set on a language branch an earlier translate creates.\nThe rest get their names checked (\"deferred\"). Then they run in order; on a failure\nopticli stops and reports what was saved (refs and versions), what failed, and how to undo each saved operation.\nPlan: {\"operations\": [ {\"op\": \"...\", ...}, ... ]}. A create, block or upload operation may have an \"id\"; later\noperations refer to what it created as \"$id\", in ref fields and as a whole string value in \"properties\".\nA string value \"@path\" in \"properties\" is that file's text (e.g. \"MainBody\": \"@texts/article.html\"; \"@@\" for a\nliteral @). These files and an upload's \"file\" are relative to the plan file (the working directory for stdin)\nand must stay inside its folder unless --allow-outside.\nTo run a plan again (after a database refresh, or to repair content editors changed), give it fixed GUIDs:\n\"guidNamespace\": \"<a GUID>\" next to \"operations\" derives each create/block/upload's GUID from its \"id\" (a step's\n\"guid\" overrides it), so its content has the same GUID and permanent links (~/link/<guid-without-dashes>.aspx) in\nevery database. Without --update-existing a GUID that exists is a conflict; with it, that content is updated\n(moved back out of the recycle bin first if needed), and area adds, translations, publishes, deletes and restores that are\nalready done are skipped. Content the plan no longer has is left alone. Each step reports its \"guid\".\nOperations and fields (* required; the same as the matching command):\nset: ref*, properties, name, lang, variation, publish, publishAt, includeDraft, requestApproval, from, baseVersion, force\ncreate: parent*, type, blueprint, name*, properties, lang, publish, publishAt, includeDraft, requestApproval, id, guid\narea: ref*, property*, action*, item, type, values, name, index, at, to, display, lang, publish, publishAt, includeDraft, requestApproval, from, baseVersion, force\ncomposition: ref*, action*, node, nodeType, in, at, value, lang, variation, publish, publishAt, includeDraft, requestApproval, from, baseVersion, force\nblock: type*, name*, for, parent, properties, lang, publish, includeDraft, requestApproval, id, guid\nupload: file*, for, parent, replace, name, type, properties, publish, includeDraft, requestApproval, id, guid\ntranslate: ref*, lang*, name, properties, publish, includeDraft, requestApproval, withBlocks, remove, confirm\npublish: ref*, version, lang, publishAt, includeDraft, requestApproval\nunpublish: ref*, lang\ndiscard: ref*, version, lang, includeDraft\nmove: ref*, to*\ndelete: ref*, ignoreReferences\nrestore: ref*, to\naccess: ref*, grant, grantUsers, revoke, breakInheritance, inherit, allowUnknownRole\narea: action is add (item = block ref, at, display), remove (index or item) or move (index or item, to).\nset, area: \"from\": \"published\" (or a version, 456 or \"123_456\") bases the change on that version instead of the\nlatest, leaving newer drafts out (as --from); later operations on that content and language build on its result.\nCMS 13 (Visual Builder): \"composition\" in a create's or set's \"properties\" is the whole composition, as get shows\nit (\"@path\" reads it from a JSON file); create takes \"blueprint\" instead of \"type\"; composition: action is add\n(nodeType, in, at, value: the node as get's composition shows one), remove (node), move (node, in, at) or set\n(node, value: name, displayTemplate, displaySettings, properties); a node is its key, or its name if unique.\n\"variation\" on set and composition changes that content variation.",
+      "description": "Run several writes from a JSON plan, validating every one before anything is saved. Needs `opticli serve`.\nEach operation gets a dry run first; nothing is written unless all pass. Operations on content the plan creates\nare dry-run against a stand-in: the content as it will be after that operation, under its nearest existing\nancestor (status \"simulated\"; values that refer to other planned content are checked when the plan runs, and\ntheir ContentArea placements against [AllowedTypes] in the code). So is a publish after earlier set, area or\ntranslate operations on the same content and language (those changes, published), a set or area after one with\n\"from\" (on that version, with the changes since), and a set on a language branch an earlier translate creates.\nThe rest get their names checked (\"deferred\"). Then they run in order; on a failure\nopticli stops and reports what was saved (refs and versions), what failed, and how to undo each saved operation.\nA set, area or composition operation on content and a language this run already saved a draft of saves into\nthat draft, as the edit UI does (\"savedInto\" names it and the operation that made it), so a plan leaves one\ndraft per content and language; after a publish the next change starts a new one. --version-per-step saves a\nversion per operation instead. \"from\", \"baseVersion\", \"force\" and a ref naming a version always make a new version.\nPlan: {\"operations\": [ {\"op\": \"...\", ...}, ... ]} (\"source\", which `opticli export` writes, is accepted and not\nread). A create, block or upload operation may have an \"id\"; later\noperations refer to what it created as \"$id\", in ref fields and as a whole string value in \"properties\".\nA string value \"@path\" in \"properties\" is that file's text (e.g. \"MainBody\": \"@texts/article.html\"; \"@@\" for a\nliteral @). These files and an upload's \"file\" are relative to the plan file (the working directory for stdin)\nand must stay inside its folder unless --allow-outside.\nTo run a plan again (after a database refresh, or to repair content editors changed), give it fixed GUIDs:\n\"guidNamespace\": \"<a GUID>\" next to \"operations\" derives each create/block/upload's GUID from its \"id\" (a step's\n\"guid\" overrides it), so its content has the same GUID and permanent links (~/link/<guid-without-dashes>.aspx) in\nevery database. Without --update-existing a GUID that exists is a conflict; with it, that content is updated\n(moved back out of the recycle bin first if needed), and area adds, translations, publishes, deletes and restores that are\nalready done are skipped. Content the plan no longer has is left alone. Each step reports its \"guid\".\nOperations and fields (* required; the same as the matching command):\nset: ref*, properties, name, lang, variation, publish, publishAt, includeDraft, requestApproval, from, baseVersion, force\ncreate: parent, for, type, blueprint, name*, properties, lang, publish, publishAt, includeDraft, requestApproval, id, guid\narea: ref*, property*, action*, item, type, values, name, index, at, to, display, lang, publish, publishAt, includeDraft, requestApproval, from, baseVersion, force\ncomposition: ref*, action*, node, nodeType, in, at, value, lang, variation, publish, publishAt, includeDraft, requestApproval, from, baseVersion, force\nblock: type*, name*, for, parent, properties, lang, publish, includeDraft, requestApproval, id, guid\nupload: file*, for, parent, replace, name, type, properties, publish, includeDraft, requestApproval, id, guid\ntranslate: ref*, lang*, name, properties, publish, includeDraft, requestApproval, withBlocks, remove, confirm\npublish: ref*, version, lang, publishAt, includeDraft, requestApproval\nunpublish: ref*, lang\ndiscard: ref*, version, lang, includeDraft\nmove: ref*, to*\ndelete: ref*, ignoreReferences\nrestore: ref*, to\naccess: ref*, grant, grantUsers, revoke, breakInheritance, inherit, allowUnknownRole\narea: action is add (item = block ref, at, display), remove (index or item) or move (index or item, to).\nset, area: \"from\": \"published\" (or a version, 456 or \"123_456\") bases the change on that version instead of the\nlatest, leaving newer drafts out (as --from); later operations on that content and language build on its result.\nCMS 13 (Visual Builder): \"composition\" in a create's or set's \"properties\" is the whole composition, as get shows\nit (\"@path\" reads it from a JSON file); create takes \"blueprint\" instead of \"type\"; composition: action is add\n(nodeType, in, at, value: the node as get's composition shows one), remove (node), move (node, in, at) or set\n(node, value: name, displayTemplate, displaySettings, properties); a node is its key, or its name if unique.\n\"variation\" on set and composition changes that content variation.",
       "options": [
         {
           "name": "--allow-outside",
@@ -604,6 +604,44 @@
           "recursive": false,
           "hidden": false,
           "description": "Run a plan again: content that already has a step's GUID is updated (and moved back out of the recycle bin), and steps that are already done change nothing."
+        },
+        {
+          "name": "--seal-for",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --dry-run: check the plan against the local site and against production (read only: its content model and the versions of everything the plan touches), and seal it for that production database (name or id, role prod). Writes nothing but the seal, and prints the command the user runs in their own terminal (data.userCommand). Only create, change, move, translate and publish steps by GUID; no media.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--seal",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run a sealed plan against production (with --db <name>): only the user, in their own terminal. Shows what the plan does, asks for the database's name and the write login (never saved), and refuses if the plan, the build or production changed since the seal, or after 24 hours. Takes its options from the seal. An agent never runs it.",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--version-per-step",
+          "recursive": false,
+          "hidden": false,
+          "description": "Save each set, area and composition operation as a version of its own, as the single commands do, instead of into the draft the run already saved for that content and language."
         },
         {
           "name": "--dry-run",
@@ -700,7 +738,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -1026,7 +1064,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -1103,7 +1141,7 @@
     {
       "name": "blob",
       "hidden": false,
-      "description": "Show where a media item's file lives: blob URI, path on disk and whether the file exists (also for the thumbnail).\nThe disk path is for the file blob provider: EPiServer:Cms:FileBlobProvider:Path in appsettings.json or\nappsettings.Development.json, default App_Data/blobs.",
+      "description": "Show where a media item's file lives: blob URI, path on disk and whether the file exists (also for the thumbnail).\nThe disk path is for the file blob provider: EPiServer:Cms:FileBlobProvider:Path in appsettings.json or\nappsettings.Development.json, or EPiServer__Cms__FileBlobProvider__Path in the environment; default App_Data/blobs.",
       "options": [
         {
           "name": "--site",
@@ -1182,7 +1220,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -1302,7 +1340,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -1556,7 +1594,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -1716,7 +1754,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -1900,7 +1938,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -2322,7 +2360,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -2598,7 +2636,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -2665,7 +2703,7 @@
     {
       "name": "db",
       "hidden": false,
-      "description": "Which database opticli uses: list the project's connection strings, choose the development database.\nBy default opticli uses the project's development database: the one chosen with `db use`, else the local database\nthe site's Development configuration uses. It never picks a remote database by itself: a command fails with\nneeds_selection (exit 6) until one is chosen. --db <id> uses another one for a single run.",
+      "description": "Which database opticli uses: list the project's connection strings, choose the development database, add other\nenvironments' databases by name and give databases a role (local, dev, test, prod).\nBy default opticli uses the project's development database: the one chosen with `db use`, else the local database\nthe site's Development configuration uses. It never picks a remote database by itself: a command fails with\nneeds_selection (exit 6) until one is chosen. --db <id|name> uses another one for a single run.\nA role belongs to a server and database, whichever entry or setting names it. A prod database is only read: never the\ndevelopment database, and writes, serve and env against it are refused (exit 3, details.reason prodDatabase).",
       "options": [
         {
           "name": "--help",
@@ -2728,7 +2766,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -2770,6 +2808,158 @@
         }
       ],
       "commands": [
+        {
+          "name": "add",
+          "hidden": false,
+          "description": "Add another environment's database by name (in the opticli user config, for this project), with its role, so\n--db <name> reads it. Takes the connection string from --connection; without it, at a terminal, it asks (the\npassword without showing it). Elsewhere --connection is needed, and puts the password in the command line and the\nshell history: let the user run it themselves. For prod, save a read-only login. A name that exists is replaced.\nGiving a server and database a weaker role than they have needs a terminal (exit 3 elsewhere).",
+          "options": [
+            {
+              "name": "--role",
+              "recursive": false,
+              "hidden": false,
+              "description": "Its role: local, dev, test or prod. It belongs to the server and database, for every entry and setting that names them.",
+              "arguments": [
+                {
+                  "name": "ROLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force JSON output (the default when stdout is redirected)."
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force human-readable tables (the default on a terminal)."
+            },
+            {
+              "name": "--connection;",
+              "recursive": false,
+              "hidden": false,
+              "description": "password without showing it). Elsewhere --connection is needed, and puts the password in the command line and the\nshell history: let the user run it themselves. For prod, save a read-only login. A name that exists is replaced.\nGiving a server and database a weaker role than they have needs a terminal (exit 3 elsewhere).\nExample: opticli db add prod --role prod",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "name",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "What --db calls it: letters, digits, '.', '_' and '-' (not 6 hex digits, which look like an id)."
+            }
+          ]
+        },
         {
           "name": "forget",
           "hidden": false,
@@ -2836,7 +3026,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -2881,7 +3071,7 @@
         {
           "name": "list",
           "hidden": false,
-          "description": "List every connection string the project has (launch profiles, exported ConnectionStrings__<Name>, user secrets,\nevery appsettings file) with an id, server, database, whether it is local and where it was found, and which one is\nthe development database. Passwords are never shown. Example: opticli db list",
+          "description": "List every connection string the project has (launch profiles, exported ConnectionStrings__<Name>, user secrets,\nevery appsettings file, the databases added with `db add`) with an id, name, server, database, whether it is local,\nits role and where it was found, and which one is the development database. Passwords are never shown.",
           "options": [
             {
               "name": "--help",
@@ -2944,7 +3134,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -2987,9 +3177,9 @@
           ]
         },
         {
-          "name": "use",
+          "name": "remove",
           "hidden": false,
-          "description": "Save which of the project's connection strings is its development database (in the opticli user config).\nOnly run it with the id the user chose. The choice holds until that setting changes: if the server or database\nat that source changes, opticli asks again. At a terminal, without an id, it shows the list and asks.",
+          "description": "Remove a database added with `db add`. The role of its server and database stays: another entry or setting that\nnames them keeps it (`db role` changes it). Example: opticli db remove staging",
           "options": [
             {
               "name": "--help",
@@ -3052,7 +3242,247 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force JSON output (the default when stdout is redirected)."
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force human-readable tables (the default on a terminal)."
+            }
+          ],
+          "arguments": [
+            {
+              "name": "name",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The name it was added with."
+            }
+          ]
+        },
+        {
+          "name": "role",
+          "hidden": false,
+          "description": "Give a database its role: local, dev, test or prod. The role belongs to its server and database, so every\nconnection string that names them has it, in this project and every other. local is only for a database on this\nmachine (the default there); a remote one has no role until it is given one. A weaker role than the one it has\nneeds a terminal, where the user confirms by typing the database's name (refused, exit 3, elsewhere).",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force JSON output (the default when stdout is redirected)."
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force human-readable tables (the default on a terminal)."
+            }
+          ],
+          "arguments": [
+            {
+              "name": "role",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "Its role: local, dev, test or prod."
+            }
+          ]
+        },
+        {
+          "name": "use",
+          "hidden": false,
+          "description": "Save which of the project's connection strings is its development database (in the opticli user config).\nOnly run it with the id the user chose. The choice holds until that setting changes: if the server or database\nat that source changes, opticli asks again. At a terminal, without an id, it shows the list and asks.\nA prod database is refused (exit 3). Example: opticli db use a71c3f",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -3102,7 +3532,7 @@
                 "minimum": 0,
                 "maximum": 1
               },
-              "description": "The id from `opticli db list` (or a needs_selection error). Leave it out at a terminal to pick from a list."
+              "description": "The id from `opticli db list` (or a needs_selection error), or the name of a database added with `db add`. Leave it out at a terminal to pick from a list."
             }
           ]
         }
@@ -3218,7 +3648,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -3414,7 +3844,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -3588,7 +4018,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -3696,7 +4126,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -3928,7 +4358,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -3973,7 +4403,7 @@
     {
       "name": "drift",
       "hidden": false,
-      "description": "What differs between this build and the shared (remote) development database; read-only. Needs `opticli serve`.\nAgainst a shared database the site doesn't sync its content types into it, so the database keeps what the deployed\ncode made. drift compares them as the sync would (content types and properties), plus EF Core migrations, Dynamic\nData Store types and the CMS schema version. Each difference says which side is ahead: local (this branch has\nchanges that aren't deployed there) or database (that environment runs newer code than this checkout).\nWhile anything differs, writes stop until the user confirms with --accept-drift <fingerprint>; the fingerprint\nchanges when the differences do. On CMS 13, types of unknown origin (no class or version on record: made in admin\nmode, or imported) are listed with informational: true and don't stop writes. New job classes the site registers at\nstartup aren't drift (the deployed site registers them too). Against a local database nothing is compared: the\nsync commits there.",
+      "description": "What differs between this build and the shared (remote) development database; read-only. Needs `opticli serve`.\nAgainst a shared database the site doesn't sync its content types into it, so the database keeps what the deployed\ncode made. drift compares them as the sync would (content types and properties), plus EF Core migrations, Dynamic\nData Store types and the CMS schema version. Each difference says which side is ahead: local (this branch has\nchanges that aren't deployed there) or database (the database has what this build lacks: that environment runs\nnewer code than this checkout, or a class or property was removed from code and the CMS kept it for the content\nthat uses it; `opticli types --orphaned` lists such types). For a content type or property only in the database,\nremovedFromCode names the commit in this checkout's git history that removed it from code, when git finds one\n(looked up in a git work tree only, for up to 50 items, within a few seconds).\nWhile anything differs, writes stop until the user confirms with --accept-drift <fingerprint>; the fingerprint\nchanges when the differences do. On CMS 13, types of unknown origin (no class or version on record: made in admin\nmode, or imported) are listed with informational: true and don't stop writes. New job classes the site registers at\nstartup aren't drift (the deployed site registers them too). Against a local database nothing is compared: the\nsync commits there.",
       "options": [
         {
           "name": "--help",
@@ -4036,7 +4466,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -4182,7 +4612,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -4221,6 +4651,214 @@
           "recursive": false,
           "hidden": false,
           "description": "Force human-readable tables (the default on a terminal)."
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "hidden": false,
+      "description": "Write content of any database as a plan folder (plan.json, files/ for media, texts/ for long rich text) that\n`opticli apply --update-existing` brings into another database with the same GUIDs. Reads the database only\n(over SQL, never through the site), so it works on a production database (`--db <name>`).\nEvery item becomes a create, block or upload step with its source GUID, its values and built-in settings (publish\ndates, URL segment, menu visibility, simple address, shortcut, sorting, category); references to what the plan\ncreates are $id, to anything else its GUID (listed in externalRefs: the target must have it). Values that refer to\ncontent created later (a cycle) follow in a set step; other language branches are translate steps. A published\nbranch is published, others stay drafts; a newer draft than the published version is left out (drafts).\nBlocks and media in a \"For this page\" folder go with their owner. data.notExported says what never is.",
+      "options": [
+        {
+          "name": "--descendants",
+          "recursive": false,
+          "hidden": false,
+          "description": "Everything below each ref too."
+        },
+        {
+          "name": "--languages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only these language branches (comma-separated codes), besides each item's master branch, which is always written.",
+          "arguments": [
+            {
+              "name": "ENSV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all-languages",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every language branch (the default)."
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "The folder to write (created; a folder with an earlier export's plan.json is written over). Default: export-<database>-<time> here.",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-media",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave media out: no files are read, and media is referred to by GUID (listed in externalRefs)."
+        },
+        {
+          "name": "--blobs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where media files are: a folder holding the blob containers (a copy of the site's App_Data/blobs), or the Azure container's https:// URL with a SAS token. Default for a local database: the project's file blob folder.",
+          "arguments": [
+            {
+              "name": "BLOBS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--site",
+          "recursive": false,
+          "hidden": false,
+          "description": "Without a ref: export the site's start page with everything below it, its assets and the global assets. With a ref: the site a path ref belongs to.",
+          "arguments": [
+            {
+              "name": "SITE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every site's start page with everything below it, the sites' assets and the global assets."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--connection",
+          "recursive": false,
+          "hidden": false,
+          "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--connection-name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force JSON output (the default when stdout is redirected)."
+        },
+        {
+          "name": "--text",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force human-readable tables (the default on a terminal)."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ref",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The content to export, one or more (A ref is a content id (123), id_version (123_456), a content GUID, a URL/path (/en/about/ or https://host/en/about/), or content provider content as get prints it (63__provider).); or --site / --all."
         }
       ]
     },
@@ -4430,7 +5068,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -4636,7 +5274,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -4842,7 +5480,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -5024,7 +5662,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -5192,7 +5830,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -5346,7 +5984,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -5526,7 +6164,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -5652,7 +6290,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -5818,7 +6456,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -5980,7 +6618,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -6138,7 +6776,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -6356,7 +6994,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -6492,7 +7130,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -6666,7 +7304,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -6862,7 +7500,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -7094,7 +7732,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -7376,7 +8014,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -7544,7 +8182,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -7652,7 +8290,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -7830,7 +8468,7 @@
                   "name": "--db",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+                  "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
                   "arguments": [
                     {
                       "name": "DB",
@@ -7966,7 +8604,7 @@
                   "name": "--db",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+                  "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
                   "arguments": [
                     {
                       "name": "DB",
@@ -8160,7 +8798,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -8282,7 +8920,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -8402,7 +9040,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -8510,7 +9148,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -8666,7 +9304,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -8717,6 +9355,536 @@
             "maximum": 1
           },
           "description": "One SELECT (or WITH ... SELECT) statement."
+        }
+      ]
+    },
+    {
+      "name": "sync",
+      "hidden": false,
+      "description": "Keep the local database's content in step with another environment's (`sync pull --from <name>`). The source is only\nread, over SQL, so it may be production (`opticli db add <name> --role prod`); the local database is written through\nits running site (`opticli serve`), like every write.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--connection",
+          "recursive": false,
+          "hidden": false,
+          "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--connection-name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force JSON output (the default when stdout is redirected)."
+        },
+        {
+          "name": "--text",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force human-readable tables (the default on a terminal)."
+        }
+      ],
+      "commands": [
+        {
+          "name": "pull",
+          "hidden": false,
+          "description": "Bring a source database's content into the local development database: what the local one lacks is created, what\ndiffers updated (a new version, published when the source's is), what the source moved moved, what is in the local\nrecycle bin restored, and with --delete what the source deleted since the last sync moved to the recycle bin. Content\nonly in the local database, never synced, is left alone. Content is matched by GUID.\nIt is `export` of the source (read over SQL only: production is fine), a diff against the local database, and\n`apply --update-existing` of only what changed, through the local site: `opticli serve` first. The local database must\nhave the role local (refused for dev, test and prod, exit 3). Its site must run on the current build: its database\nholds the build's content model, which the source's is compared with. Content of a type the build lacks is skipped,\nproperties it lacks are dropped, each listed (--strict fails instead).\nThe sync state (user config folder) remembers per item what was synced, so the next pull only reads what changed:\na local change since then, to content the source also changed, is a conflict (listed, skipped; --overwrite-local\nwrites over it). The first pull of a database takes the baseline: everything is compared, what differs is updated.\nNot synced: access rights, history, authors, Forms submissions, users, the schema (a bacpac copies those).",
+          "options": [
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "The database to read from: its name (`opticli db add`), id or database name from `opticli db list`. Only read.",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--site",
+              "recursive": false,
+              "hidden": false,
+              "description": "Without a ref: the site's start page with everything below it, its assets and the global assets. With a ref: the site a path ref belongs to.",
+              "arguments": [
+                {
+                  "name": "SITE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--all",
+              "recursive": false,
+              "hidden": false,
+              "description": "Every site's start page with everything below it, the sites' assets and the global assets."
+            },
+            {
+              "name": "--languages",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only these language branches (comma-separated codes), besides each item's master branch, which is always written.",
+              "arguments": [
+                {
+                  "name": "ENSV",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--delete",
+              "recursive": false,
+              "hidden": false,
+              "description": "Move content synced before that the source no longer has (or has in its recycle bin) to the local recycle bin. Without it such content is only listed (gone). Never deletes for good."
+            },
+            {
+              "name": "--overwrite-local",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the source's content over local changes made since the last sync (conflicts), and restore synced content trashed locally. The local versions stay in the history. Ask the user first."
+            },
+            {
+              "name": "--strict",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fail (exit 5) when the source has content types or properties the local build lacks or has as another type, instead of skipping that content and dropping those values."
+            },
+            {
+              "name": "--blobs",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where the source's media files are: a folder holding the blob containers (a copy of its App_Data/blobs), or the Azure container's https:// URL with a SAS token. Default for a local source: the project's file blob folder.",
+              "arguments": [
+                {
+                  "name": "BLOBS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--out",
+              "recursive": false,
+              "hidden": false,
+              "description": "Keep the plan the sync applies (plan.json, files/, texts/) in this folder, new or empty. Default: a temporary folder, removed afterwards.",
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Compare and validate the plan against the local site without saving anything; the sync state stays as it was."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force JSON output (the default when stdout is redirected)."
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force human-readable tables (the default on a terminal)."
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ref",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The content to sync with everything below it, found in the source: one or more (A ref is a content id (123), id_version (123_456), a content GUID, a URL/path (/en/about/ or https://host/en/about/), or content provider content as get prints it (63__provider).); or --site / --all."
+            }
+          ]
+        },
+        {
+          "name": "push",
+          "hidden": false,
+          "description": "Prepare local content for production and seal it: the user then runs one command in their own terminal, which writes it\n(`opticli apply <plan> --db <name> --seal <id>`, data.userCommand). Nothing is written to production by this command.\nIt is `export` of the local development database (which must have the role local, with its site running: `opticli\nserve`), compared with production over SQL by GUID (read only): content production lacks is created (or restored from\nits recycle bin), content that differs updated, content moved locally moved; content production already has the same\nis left out, and so is content with someone's unpublished changes in production. Content production changed since the\nlast pull (or never pulled from it) is a conflict, left out: a push never writes over production's own changes (pull\nfirst, `sync pull --from <name>`; its sync state tells them apart). Never deletes, and no media (listed:\nupload it in production's edit UI). Then the plan is checked against the local site and sealed, as `apply --dry-run\n--seal-for` does: production's content model must be the build's, and the versions of everything the plan touches are\nrecorded; the run refuses if they changed. The seal is good for 24 hours and runs once.",
+          "options": [
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "The production database to seal the push for: its name (`opticli db add`), id or database name from `opticli db list`, with the role prod. Only read.",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--site",
+              "recursive": false,
+              "hidden": false,
+              "description": "Without a ref: the site's start page with everything below it, its assets and the global assets. With a ref: the site a path ref belongs to.",
+              "arguments": [
+                {
+                  "name": "SITE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--all",
+              "recursive": false,
+              "hidden": false,
+              "description": "Every site's start page with everything below it, the sites' assets and the global assets."
+            },
+            {
+              "name": "--languages",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only these language branches (comma-separated codes), besides each item's master branch, which is always written.",
+              "arguments": [
+                {
+                  "name": "ENSV",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--out",
+              "recursive": false,
+              "hidden": false,
+              "description": "The folder for the plan (new or empty); it must stay until the user ran the sealed command. Default: push-<database>-<time> here.",
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force JSON output (the default when stdout is redirected)."
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force human-readable tables (the default on a terminal)."
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ref",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The local content to push with everything below it: one or more (A ref is a content id (123), id_version (123_456), a content GUID, a URL/path (/en/about/ or https://host/en/about/), or content provider content as get prints it (63__provider).); or --site / --all."
+            }
+          ]
         }
       ]
     },
@@ -8902,7 +10070,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -9118,7 +10286,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -9296,7 +10464,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -9416,7 +10584,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -9618,7 +10786,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -9750,7 +10918,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -9870,7 +11038,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -10008,7 +11176,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -10194,7 +11362,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -10460,7 +11628,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -10622,7 +11790,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -10742,7 +11910,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -10878,7 +12046,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -11004,7 +12172,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -11124,7 +12292,7 @@
               "name": "--db",
               "recursive": false,
               "hidden": false,
-              "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
               "arguments": [
                 {
                   "name": "DB",
@@ -11304,7 +12472,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -11462,7 +12630,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -11646,7 +12814,7 @@
           "name": "--db",
           "recursive": false,
           "hidden": false,
-          "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
           "arguments": [
             {
               "name": "DB",
@@ -11754,7 +12922,7 @@
       "name": "--db",
       "recursive": false,
       "hidden": false,
-      "description": "Use another of the project's connection strings for this run: its id or database name from `opticli db list`. Default: the development database.",
+      "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
       "arguments": [
         {
           "name": "DB",

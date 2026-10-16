@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "bee",
-    "version": "1.1.6",
+    "version": "1.12.0",
     "description": "Config-driven development CLI with local context tools and explicit AI provider profiles."
   },
   "x-inspectra": {
@@ -127,6 +127,11 @@
           "description": "The question. If omitted, bee reads the prompt from stdin"
         }
       ]
+    },
+    {
+      "name": "behavior",
+      "hidden": false,
+      "description": "Experimental opt-in case selection and reviewable QA\nspecification (behavior pilot --help)"
     },
     {
       "name": "budget",
@@ -1599,6 +1604,28 @@
               "recursive": false,
               "hidden": false,
               "description": "When the name matches several overloads of\none member, answer for all of them"
+            },
+            {
+              "name": "--test-candidates",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON diff-only advisory test files; never\nexecutes tests or authorizes skipping other\ntests"
+            },
+            {
+              "name": "--test-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit repo-relative script test file\ninventory; repeat for each test file",
+              "arguments": [
+                {
+                  "name": "TEST_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "arguments": [
@@ -2828,6 +2855,38 @@
           "description": "Read the separate built-in Bee help catalogue; never\nprivate conventions"
         },
         {
+          "name": "--source-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Opt in to a measured local Git source binding when\nadding; repository-relative regular file\nroot). Never fetched remotely",
+          "arguments": [
+            {
+              "name": "SOURCE_FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--source-root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Local source checkout (default: current directory's Git\nroot). Never fetched remotely",
+          "arguments": [
+            {
+              "name": "SOURCE_ROOT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--limit",
           "recursive": false,
           "hidden": false
@@ -3202,7 +3261,7 @@
           "name": "--file",
           "recursive": false,
           "hidden": false,
-          "description": "create/comment: bounded UTF-8 file, or - for stdin",
+          "description": "create/comment: bounded UTF-8 file, or - for\nstdin",
           "arguments": [
             {
               "name": "FILE",
@@ -3282,24 +3341,48 @@
           "name": "--state",
           "recursive": false,
           "hidden": false,
-          "description": "update:\nrunning|blocked|failed|abandoned|reported_complete\n|renew. Completion requires a summary and is not\nQA acceptance"
+          "description": "update:\nrunning|blocked|failed|abandoned|reported_compl\nete|renew. Completion requires a summary and is\nnot QA acceptance"
         },
         {
           "name": "--limit",
           "recursive": false,
           "hidden": false,
-          "description": "next: 1-5 complete steps (default 1); children:\n1-5 child summaries (default 5)"
+          "description": "next: 1-5 complete steps (default 1); children:\n1-5 child summaries (default 5); ready: 1-20\nclaimable steps across open plans (default 10)"
         },
         {
           "name": "--after",
           "recursive": false,
           "hidden": false,
-          "description": "children: exclusive plan ID cursor returned as\nnextAfter; optional STEP_ID filters the origin\nstep"
+          "description": "children: exclusive plan ID cursor returned as\nnextAfter; optional STEP_ID filters the origin\nstep. ready: exclusive PLAN_ID or\nPLAN_ID/STEP_ID cursor returned as nextAfter"
+        },
+        {
+          "name": "--capability",
+          "recursive": false,
+          "hidden": false,
+          "description": "claim/next/ready: repeatable capability tag\nthis claimant declares for step routing\n(requires/assignee). Routing, not authorization"
+        },
+        {
+          "name": "--ready-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "claim only: take only a pending or\nlease-expired running step; a failed, abandoned\nor blocked step is refused as not_retried. Not\npart of the request hash"
+        },
+        {
+          "name": "--scope-from-checkout",
+          "recursive": false,
+          "hidden": false,
+          "description": "create only: fill an omitted definition scope\nwith this checkout's space and repository;\nanother scope is refused as scope_mismatch"
         },
         {
           "name": "--json",
           "recursive": false,
           "hidden": false
+        },
+        {
+          "name": "--compact",
+          "recursive": false,
+          "hidden": false,
+          "description": "show --json only: bounded state summary with an\nexact full-show command"
         }
       ],
       "arguments": [
@@ -3311,7 +3394,7 @@
             "minimum": 0,
             "maximum": 1
           },
-          "description": "create|show|next|children|claim|update|comment. Uses an\nexisting authenticated collaboration session"
+          "description": "create|show|next|ready|children|claim|update|comment. Uses an\nexisting authenticated collaboration session"
         },
         {
           "name": "PLAN_ID",
@@ -3361,7 +3444,7 @@
           "name": "--type",
           "recursive": false,
           "hidden": false,
-          "description": "decision | error | learning | pattern (default:\nlearning)",
+          "description": "decision | error | learning | pattern\n(default: learning)",
           "aliases": [
             "-t"
           ],
@@ -3385,7 +3468,7 @@
           "name": "--alternative",
           "recursive": false,
           "hidden": false,
-          "description": "An option considered and rejected, as \"option:\nwhy not\". Repeatable"
+          "description": "An option considered and rejected, as\n\"option: why not\". Repeatable"
         },
         {
           "name": "--solution",
@@ -3447,20 +3530,41 @@
         {
           "name": "--session",
           "recursive": false,
-          "hidden": false,
-          "description": "table"
+          "hidden": false
         },
         {
           "name": "--json",
           "recursive": false,
           "hidden": false,
-          "description": "Emit a stable machine-readable shape instead of a\ntable"
+          "description": "Emit a stable machine-readable shape\ninstead of a table\npreviews with exact full-detail commands"
+        },
+        {
+          "name": "--compact",
+          "recursive": false,
+          "hidden": false,
+          "description": "context/search/history --json only: bounded\npreviews with exact full-detail commands"
+        },
+        {
+          "name": "--output-budget-chars",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --compact: hard UTF-16 character cap\nfor the entire JSON line (1024-65536;\ndefault 4096)\nor a date like 2026-08-01",
+          "arguments": [
+            {
+              "name": "OUTPUT_BUDGET_CHARS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
         },
         {
           "name": "--before",
           "recursive": false,
           "hidden": false,
-          "description": "Only memories learned before this: 7d, 24h, or a\ndate like 2026-08-01"
+          "description": "Only memories learned before this: 7d, 24h,\nor a date like 2026-08-01"
         },
         {
           "name": "--agent",
@@ -3486,13 +3590,13 @@
           "name": "--semantic",
           "recursive": false,
           "hidden": false,
-          "description": "Rank by embedding (cosine) similarity instead of\ntoken match"
+          "description": "Rank by embedding (cosine) similarity\ninstead of token match"
         },
         {
           "name": "--min-score",
           "recursive": false,
           "hidden": false,
-          "description": "Minimum cosine similarity from -1 to 1 (requires\n--semantic). No lexical fallback",
+          "description": "Minimum cosine similarity from -1 to 1\n(requires --semantic). No lexical fallback",
           "arguments": [
             {
               "name": "MIN_SCORE",
@@ -3508,13 +3612,13 @@
           "name": "--match-all",
           "recursive": false,
           "hidden": false,
-          "description": "Require every distinct lexical query term before\nranking. Cannot combine with --semantic"
+          "description": "Require every distinct lexical query term\nbefore ranking. Cannot combine with"
         },
         {
           "name": "--full",
           "recursive": false,
           "hidden": false,
-          "description": "Plain search rows print complete content instead\nof a window around the match. JSON always does"
+          "description": "Plain search rows print complete content\ninstead of a window around the match. JSON\nalways does"
         },
         {
           "name": "--since",
@@ -3531,7 +3635,7 @@
           "name": "--root",
           "recursive": false,
           "hidden": false,
-          "description": "Checked-out repository root the audit inspects\n(read-only)",
+          "description": "Checked-out repository root the audit\ninspects (read-only)",
           "arguments": [
             {
               "name": "ROOT",
@@ -3553,13 +3657,13 @@
           "name": "--with-evidence",
           "recursive": false,
           "hidden": false,
-          "description": "Opt-in lifecycle/source-evidence metadata in the\ncontext envelope"
+          "description": "Opt-in lifecycle/source-evidence metadata\nin the context envelope"
         },
         {
           "name": "--source",
           "recursive": false,
           "hidden": false,
-          "description": "A checkout-relative file whose current bytes\nbecome a source anchor (repeatable, for 'evidence\nadd')",
+          "description": "A checkout-relative file whose current\nbytes become a source anchor (repeatable,\nfor 'evidence add')",
           "arguments": [
             {
               "name": "SOURCE",
@@ -3786,6 +3890,94 @@
           "recursive": false,
           "hidden": false,
           "description": "list only: user-invocable skills"
+        },
+        {
+          "name": "--department",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter search, list or categories by canonical\ndepartment"
+        },
+        {
+          "name": "--role",
+          "recursive": false,
+          "hidden": false,
+          "description": "Filter search, list or categories by\nprofessional role"
+        },
+        {
+          "name": "--include-retired",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include retired records in search or list"
+        },
+        {
+          "name": "--group-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "categories only: category, department or role"
+        },
+        {
+          "name": "--depth",
+          "recursive": false,
+          "hidden": false,
+          "description": "resolve only: include bodies through\ndependency depth 0..16"
+        },
+        {
+          "name": "--metadata-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "resolve only: retain ordered identities but\nomit every body"
+        },
+        {
+          "name": "--expected-fingerprint",
+          "recursive": false,
+          "hidden": false,
+          "description": "doctor only: expected 64-hex source catalog\nfingerprint"
+        },
+        {
+          "name": "--expected-instance",
+          "recursive": false,
+          "hidden": false,
+          "description": "doctor only: expected absolute selected Bee\ninstance root"
+        },
+        {
+          "name": "--receipt-session",
+          "recursive": false,
+          "hidden": false,
+          "description": "get/resolve/receipt/ack only: existing local\nBee collaboration session UUID; caller\nassertion"
+        },
+        {
+          "name": "--receipt-generation",
+          "recursive": false,
+          "hidden": false,
+          "description": "get/resolve/receipt/ack only: existing local\ncollaboration generation"
+        },
+        {
+          "name": "--chain-digest",
+          "recursive": false,
+          "hidden": false,
+          "description": "ack only: exact SHA-256 digest returned with\nthe receipt"
+        },
+        {
+          "name": "--recover-receipt",
+          "recursive": false,
+          "hidden": false,
+          "description": "get only: attach this exact body to a missing\nmember of an existing resolve receipt"
+        },
+        {
+          "name": "--provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "skillbridge | engineering. A catalog policy\nselects engineering by default in its checkout",
+          "arguments": [
+            {
+              "name": "PROVIDER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
         }
       ],
       "arguments": [
@@ -3797,7 +3989,7 @@
             "minimum": 0,
             "maximum": 1
           },
-          "description": "search | list | get | resolve | categories | stats | suggest |\ntools | setup"
+          "description": "search | list | get | resolve | categories | stats | suggest |\ntools | doctor | receipt | ack | setup"
         },
         {
           "name": "ARGS",
@@ -4080,7 +4272,7 @@
     {
       "name": "worker",
       "hidden": false,
-      "description": "Background maintenance (--once, --json); profiles/inspect; explicit\nsummarize/generate/apply operations (each supports --help)",
+      "description": "Before bee worker, run bee instance doctor --json; collision or required\nunchecked blocks startup. Background maintenance (--once, --json);\nprofiles/inspect; approvals (list/show/approve/deny what dispatched runs wait\nfor); explicit summarize/generate/apply operations (each supports --help)",
       "options": [
         {
           "name": "--help",

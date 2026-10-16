@@ -2,14 +2,14 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "claustrum",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "description": "Harness-neutral coding-agent delegation: one binary that runs role-based agent jobs on claude, opencode, cursor or copilot, as a CLI and as an MCP server."
   },
   "x-inspectra": {
     "artifactSource": "static-analysis",
     "generator": "InSpectra.Gen",
     "metadataEnriched": true,
-    "helpDocumentCount": 25,
+    "helpDocumentCount": 32,
     "staticAnalysis": {
       "framework": "System.CommandLine",
       "inspectorType": "dnlib",
@@ -444,13 +444,73 @@
           "name": "--stream",
           "recursive": false,
           "hidden": false,
-          "description": "Echo the architect's output to stderr as it runs."
+          "description": "Stream formatted progress lines to stderr."
+        },
+        {
+          "name": "--stream-raw",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stream the raw backend JSON to stderr, unformatted (implies --stream)."
         },
         {
           "name": "--raw",
           "recursive": false,
           "hidden": false,
           "description": "Include the backend's raw response in JSON output."
+        },
+        {
+          "name": "--reply-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds an open question waits for a human reply before the role is told no human is available (default 1800 on a terminal or as a child in a job tree whose architect is live, 0 otherwise: the role is told at once nobody can answer).",
+          "arguments": [
+            {
+              "name": "REPLY_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-live",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run as before the live channel: no conversation, so the role cannot ask the human anything."
+        },
+        {
+          "name": "--resume",
+          "recursive": false,
+          "hidden": false,
+          "description": "Continue the coordinate job <id> that stopped with needs_input: its architect session is resumed on its branch, under the same cast and budget tree, with the answers given by --answers (or --brief/--brief-file as free text). --cast, --issues and --cwd are the job's own.",
+          "arguments": [
+            {
+              "name": "RESUME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--answers",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --resume: a JSON file mapping each question's key to its answer.",
+          "arguments": [
+            {
+              "name": "ANSWERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
         },
         {
           "name": "--help",
@@ -466,13 +526,29 @@
     {
       "name": "init",
       "hidden": false,
-      "description": "Scaffold Claustrum in the current repo: claustrum.json, .claustrum/, and sync for the harnesses in use.",
+      "description": "Scaffold Claustrum in the current repo: config aliases (user config), .claustrum/, and sync for the harnesses in use.",
       "options": [
         {
           "name": "--all",
           "recursive": false,
           "hidden": false,
           "description": "Sync every supported harness, not just the ones this repo already uses."
+        },
+        {
+          "name": "--answers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a JSON file mapping alias -> 'backend:model-id'.",
+          "arguments": [
+            {
+              "name": "ANSWERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
         },
         {
           "name": "--help",
@@ -483,12 +559,36 @@
             "-h"
           ]
         }
+      ],
+      "commands": [
+        {
+          "name": "questions",
+          "hidden": false,
+          "description": "List the alias questionnaire: one question per built-in class the user config does not define.",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit the alias questionnaire as one JSON document."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ]
+        }
       ]
     },
     {
       "name": "jobs",
       "hidden": false,
-      "description": "Inspect past and running jobs.",
+      "description": "Inspect past and running jobs, and talk to a live one.",
       "options": [
         {
           "name": "--help",
@@ -501,6 +601,66 @@
         }
       ],
       "commands": [
+        {
+          "name": "answer",
+          "hidden": false,
+          "description": "Continue a finished job that stopped with needs_input: resume its session with the answers.",
+          "options": [
+            {
+              "name": "--answers",
+              "recursive": false,
+              "hidden": false,
+              "description": "A JSON file mapping each question's key to its answer.",
+              "arguments": [
+                {
+                  "name": "ANSWERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit exactly one RunResult JSON document on stdout (exit 7: the new job asked again)."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "id",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The finished job that stopped with needs_input."
+            },
+            {
+              "name": "text",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The answer as free text (instead of --answers)."
+            }
+          ]
+        },
         {
           "name": "budget",
           "hidden": false,
@@ -536,6 +696,34 @@
           ]
         },
         {
+          "name": "cancel",
+          "hidden": false,
+          "description": "Cancel a detached job (`run --detach`, a tree's child): its host ends it `cancelled`, with its receipt.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "id",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "Job id."
+            }
+          ]
+        },
+        {
           "name": "clean",
           "hidden": false,
           "description": "Remove finished isolated jobs' worktrees (docs/PLAN.md §D4); their branches, which carry the work, are kept. A worktree with uncommitted changes, on a detached HEAD, mid-rebase/merge/cherry-pick, holding commits only its own reflog has, with edits hidden by skip-worktree or assume-unchanged, or that is not this repository's worktree is reported and left in place, and so is one holding job worktrees of its own (a coordinate architect's: clean it with --cwd <that worktree> first). The first Ctrl-C or SIGTERM lets the remove in flight finish and stops the sweep (exit 130); a second one exits at once.",
@@ -564,6 +752,40 @@
               "aliases": [
                 "-h"
               ]
+            }
+          ]
+        },
+        {
+          "name": "follow",
+          "hidden": false,
+          "description": "Follow a job's output as it runs (poll-based, ~500 ms).",
+          "options": [
+            {
+              "name": "--raw",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show unformatted raw stream lines."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "id",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "Job id to follow (omit to follow every new job)."
             }
           ]
         },
@@ -634,10 +856,142 @@
           ]
         },
         {
+          "name": "reply",
+          "hidden": false,
+          "description": "Answer a child's question, then wait for its next question or its result (exit 7: it asked again).",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print one document: the RunResult when the job finishes, or {status: needs_input, job_id, question: {seq, text}} when it asks again (exit 7)."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "id",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "Job id."
+            },
+            {
+              "name": "text",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The answer to the job's open question."
+            }
+          ]
+        },
+        {
+          "name": "say",
+          "hidden": false,
+          "description": "Answer a live job's open question, or send its running role a message.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "id",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "Job id."
+            },
+            {
+              "name": "text",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The answer while the job's question is open, otherwise a message to the running role."
+            }
+          ]
+        },
+        {
           "name": "show",
           "hidden": false,
           "description": "Show one job's result (or request, if it has not finished).",
           "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "id",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "Job id."
+            }
+          ]
+        },
+        {
+          "name": "wait",
+          "hidden": false,
+          "description": "Block until a job asks a question or finishes (poll-based, ~500 ms).",
+          "options": [
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "Give up after this many seconds (exit 4).",
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print one document: {state: running|waiting_for_input|done|abandoned, question: {seq, text} | null, result_status | null}."
+            },
             {
               "name": "--help",
               "recursive": false,
@@ -1028,13 +1382,47 @@
           "name": "--stream",
           "recursive": false,
           "hidden": false,
-          "description": "Echo backend output to stderr as it runs."
+          "description": "Stream formatted progress lines to stderr."
+        },
+        {
+          "name": "--stream-raw",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stream the raw backend JSON to stderr, unformatted (implies --stream)."
         },
         {
           "name": "--raw",
           "recursive": false,
           "hidden": false,
           "description": "Include the backend's raw response in JSON output."
+        },
+        {
+          "name": "--reply-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds an open question waits for a human reply before the role is told no human is available (default 1800 on a terminal or as a child in a job tree whose architect is live, 0 otherwise: the role is told at once nobody can answer).",
+          "arguments": [
+            {
+              "name": "REPLY_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-live",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run as before the live channel: no conversation, so the role cannot ask the human anything."
+        },
+        {
+          "name": "--detach",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start the job in a detached host process and exit at once, printing its id (--json: {status: started, job_id}). Watch it with `jobs follow`, talk to it with `jobs say`, stop it with `jobs cancel`. Cannot be combined with --stream."
         },
         {
           "name": "--help",

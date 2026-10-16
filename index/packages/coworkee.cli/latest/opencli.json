@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Coworkee.Cli",
-    "version": "0.0.1.25",
+    "version": "0.0.1.28",
     "description": "Coworkee command line: create a Coworkee application from switches or a JSON spec with modules, branding and entities, run it, add migrations, modules and entities, update the packages; MCP server for AI agents and launcher of Coworkee Studio."
   },
   "x-inspectra": {
@@ -76,6 +76,23 @@
                 "maximum": 1
               },
               "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--template-spec",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start from a starter spec of the gallery (coworkee specs list); switches given here win over it.",
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         },
@@ -250,6 +267,23 @@
           ]
         },
         {
+          "name": "--pwa",
+          "recursive": false,
+          "hidden": false,
+          "description": "Web manifest, service worker and offline page: the app installs on phones and desktops and opens without the browser bar. With notifications users switch on Web Push per device. (default: true)",
+          "arguments": [
+            {
+              "name": "PWA",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--repository",
           "recursive": false,
           "hidden": false,
@@ -410,6 +444,74 @@
           "arguments": [
             {
               "name": "SOCIAL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--workflows",
+          "recursive": false,
+          "hidden": false,
+          "description": "States and transitions per entity type, approvals by roles or users with deadlines, reminders and escalation, a history, the approvals inbox; declared in code. With the samples, products go through an approval. (default: false)",
+          "arguments": [
+            {
+              "name": "WORKFLOWS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--elsa",
+          "recursive": false,
+          "hidden": false,
+          "description": "Elsa Workflows 3 in the api: its tables in the app's database, its api under /api/elsa for the permission Workflows.Elsa.Manage, activities and triggers for Coworkee workflows. Elsa Studio runs as its own app. (default: false) Only used with workflows.",
+          "arguments": [
+            {
+              "name": "ELSA",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--elsa-studio",
+          "recursive": false,
+          "hidden": false,
+          "description": "Elsa Studio, the visual designer, as an app of its own in the app host: signs in at the auth server like the web app, lets in users with the permission Workflows.Elsa.Manage and works with the Elsa API of the api. The app's navigation links to it. (default: false) Only used with elsa.",
+          "arguments": [
+            {
+              "name": "ELSA_STUDIO",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--webhooks",
+          "recursive": false,
+          "hidden": false,
+          "description": "Outgoing webhooks: admins register endpoints that get signed events about entity changes, workflow transitions and the app's own events, with retries and a delivery log. With the samples, products send events. (default: false)",
+          "arguments": [
+            {
+              "name": "WEBHOOKS",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -1012,6 +1114,10 @@
           ]
         },
         {
+          "name": "current",
+          "description": "Print the spec of the app in this folder: .coworkee/app.json, or for older apps the options its files show."
+        },
+        {
           "name": "show",
           "description": "Print what a spec creates: the library modules on and off, every other option with its value and your own modules. A spec lists only what differs from the defaults.",
           "arguments": [
@@ -1024,6 +1130,32 @@
                 "maximum": 1
               },
               "type": "FileInfo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "specs",
+      "description": "Starter specs that come with the CLI: a CRM, a helpdesk, a shop and more. coworkee new MyApp --template-spec <id> creates one.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List the starter specs with id, tags and what they contain."
+        },
+        {
+          "name": "show",
+          "description": "Print a starter spec as JSON, e.g. to save it and change it: coworkee specs show crm > crm.json",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "Id of the starter spec, see coworkee specs list.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         }
@@ -1052,6 +1184,323 @@
               "type": "String"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "db",
+      "description": "The app's local development database: reset, seed, backup and restore.",
+      "commands": [
+        {
+          "name": "reset",
+          "description": "Delete the database: the app host's data volume or the SQLite file. The next start migrates and seeds it again.",
+          "options": [
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not ask before deleting or overwriting data. [default: False]",
+              "aliases": [
+                "-y"
+              ],
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--volume",
+              "recursive": false,
+              "hidden": false,
+              "description": "The data volume, when the app has several (run from several folders).",
+              "arguments": [
+                {
+                  "name": "VOLUME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "seed",
+          "description": "Migrate the database and seed the demo users and roles (runs the migrations project against the running database).",
+          "options": [
+            {
+              "name": "--volume",
+              "recursive": false,
+              "hidden": false,
+              "description": "The data volume, when the app has several (run from several folders).",
+              "arguments": [
+                {
+                  "name": "VOLUME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "backup",
+          "description": "Back the database up: pg_dump or BACKUP DATABASE in the running container, or a copy of the SQLite file.",
+          "options": [
+            {
+              "name": "--volume",
+              "recursive": false,
+              "hidden": false,
+              "description": "The data volume, when the app has several (run from several folders).",
+              "arguments": [
+                {
+                  "name": "VOLUME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "Target file (default: .data/backups/<name>-<time>.<dump|bak|db>).",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "restore",
+          "description": "Restore a backup of coworkee db backup; stop the app first for SQLite and SQL Server.",
+          "options": [
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not ask before deleting or overwriting data. [default: False]",
+              "aliases": [
+                "-y"
+              ],
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--volume",
+              "recursive": false,
+              "hidden": false,
+              "description": "The data volume, when the app has several (run from several folders).",
+              "arguments": [
+                {
+                  "name": "VOLUME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "A backup of coworkee db backup.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "add",
+      "description": "Turn on options of an existing app (modules, infrastructure, languages, ...): the template's changes are merged into your files, conflicts go to .rej files, then a migration is added.",
+      "options": [
+        {
+          "name": "--spec",
+          "recursive": false,
+          "hidden": false,
+          "description": "Bring the app to this spec: its options, and its modules and entities the app does not have yet.",
+          "arguments": [
+            {
+              "name": "SPEC",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the plan and change nothing. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--template-source",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Coworkee.Templates .nupkg or folder of the app's version (default: the app's local feed, then nuget.org).",
+          "arguments": [
+            {
+              "name": "TEMPLATE_SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-migration",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not add a migration afterwards. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_MIGRATION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "OPTIONS",
+          "description": "Option ids, each optionally followed by its value: reports, eventBus rabbitMq, languages fr,it, ai openAI (coworkee options lists them).",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "remove",
+      "description": "Turn options of an existing app off; only when every file it touches is still as the template wrote it or merges cleanly.",
+      "options": [
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the plan and change nothing. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--template-source",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Coworkee.Templates .nupkg or folder of the app's version (default: the app's local feed, then nuget.org).",
+          "arguments": [
+            {
+              "name": "TEMPLATE_SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-migration",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not add a migration afterwards. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_MIGRATION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "OPTIONS",
+          "description": "Option ids, each optionally followed by its value: reports, eventBus rabbitMq, languages fr,it, ai openAI (coworkee options lists them).",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "type": "String[]"
         }
       ]
     },
@@ -1311,6 +1760,131 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "import",
+          "description": "Import entities from a database, an OpenAPI document or a CSV file into a module of the app, or into a spec.",
+          "options": [
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "What to read: db (Postgres, SQL Server or SQLite), openapi (OpenAPI 3 JSON) or csv.",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "ImportSource",
+                  "allowedValues": [
+                    "Db",
+                    "OpenApi",
+                    "Csv"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--module",
+              "recursive": false,
+              "hidden": false,
+              "description": "Module of the entities (default: the database name, the API title or the CSV file name).",
+              "arguments": [
+                {
+                  "name": "MODULE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tables",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only these tables or schemas, comma separated, e.g. orders,customers.",
+              "arguments": [
+                {
+                  "name": "TABLES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--provider",
+              "recursive": false,
+              "hidden": false,
+              "description": "db: postgres, sqlServer or sqlite (default: guessed from the connection string).",
+              "arguments": [
+                {
+                  "name": "PROVIDER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the spec and the problems, change nothing. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--spec-out",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the module into this spec file (added to an existing spec) instead of the app.",
+              "arguments": [
+                {
+                  "name": "SPEC_OUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "description": "db: a connection string or SQLite file; openapi: a JSON file or http(s) address; csv: a file with a header row.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         }
       ]
     },
@@ -1379,7 +1953,7 @@
     },
     {
       "name": "update",
-      "description": "Set the Coworkee package version of the solution.",
+      "description": "Set the Coworkee package version of the solution, apply the upgrade rules of the versions in between and list the manual steps.",
       "options": [
         {
           "name": "--version",
@@ -1406,6 +1980,23 @@
           "arguments": [
             {
               "name": "PRERELEASE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show the breaking changes and what would change, change nothing. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -1458,8 +2049,114 @@
       ]
     },
     {
+      "name": "deploy",
+      "description": "Write the deployment artifacts of the app and its tools: Docker Compose, Azure Container Apps (Bicep) or Kubernetes (Helm).",
+      "options": [
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder for the artifacts, default deploy/<target> in the solution.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not build the container images (compose). [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--without",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave a tool of the app host out of the deployment, e.g. --without grafana.",
+          "arguments": [
+            {
+              "name": "WITHOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--with",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deploy a tool that stays out by default: --with mailpit for a test deployment without a real mail server.",
+          "arguments": [
+            {
+              "name": "WITH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--admin-email",
+          "recursive": false,
+          "hidden": false,
+          "description": "Email of the first administrator (compose; asked for, or admin@<app>.local).",
+          "arguments": [
+            {
+              "name": "ADMIN_EMAIL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "TARGET",
+          "description": "compose (Docker Compose on one host), azure (Azure Container Apps) or k8s (Kubernetes). [default: compose]",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
       "name": "doctor",
-      "description": "Check the tools a Coworkee application needs."
+      "description": "Check the tools a Coworkee application needs and whether their versions match the app."
     },
     {
       "name": "ui",

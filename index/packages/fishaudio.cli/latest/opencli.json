@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "FishAudio.CLI",
-    "version": "1.0.4-dev.45",
+    "version": "1.0.4-dev.47",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -165,7 +165,7 @@
       "commands": [
         {
           "name": "create-agent-sessions",
-          "description": "Create Agent Session\nStart a conversation session with an agent and receive a join token for the\nsession transport (currently LiveKit WebRTC). Authenticate with an API key to\nstart sessions with any agent in your team; without credentials only agents\npublished as public are reachable, and the request `Origin` must match the\nagent's allowed origins.\n\n`language` (and `overrides.language`) accepts `en`, `ja`, `zh`, `ko`, `es`,\n`fr`, `de`, `pt`, `it`, `nl`; anything else is 422. Omit it to use the agent's configured\nspeaking language.",
+          "description": "Create Agent Session\nStart a conversation session with an agent and receive a join token for the\nsession transport (currently LiveKit WebRTC). Authenticate with an API key to\nstart sessions with any agent in your team; without credentials only agents\npublished as public are reachable, and the request `Origin` must match the\nagent's allowed origins.\n\n`language` (and `overrides.language`) accepts `en`, `ja`, `zh`, `ko`, `es`,\n`fr`, `de`, `pt`, `it`, `nl`; anything else is 422. Omit it to use the agent's configured\nspeaking language.\n\n`overrides.asr.model` picks the speech recognition model for this session,\nnested like the agent config's `asr` section and with the same values as\n`asr.model`. It needs an API key. A model in preview is 403 unless your\nteam has access or the agent already uses it.",
           "options": [
             {
               "name": "--origin",
@@ -2136,6 +2136,7 @@
               "name": "--body-template",
               "recursive": false,
               "hidden": false,
+              "description": "Request body sent for non-GET calls. `{{argument}}`, `{{system.*}}` and custom session variable placeholders are filled in at call time; a missing value becomes empty. When the body's content type is JSON (the default `application/json`, any `+json` type, or a `Content-Type` header saying so), a placeholder inside a JSON string, such as `{\"note\": \"{{note}}\"}`, is JSON-escaped, so quotes, backslashes and newlines in the value keep the body valid JSON. A placeholder outside a string, such as `{\"count\": {{count}}}`, is inserted as is. Other content types are filled in as is.",
               "arguments": [
                 {
                   "name": "BODY_TEMPLATE",
@@ -2444,6 +2445,7 @@
               "name": "--body-template",
               "recursive": false,
               "hidden": false,
+              "description": "Request body sent for non-GET calls. `{{argument}}`, `{{system.*}}` and custom session variable placeholders are filled in at call time; a missing value becomes empty. When the body's content type is JSON (the default `application/json`, any `+json` type, or a `Content-Type` header saying so), a placeholder inside a JSON string, such as `{\"note\": \"{{note}}\"}`, is JSON-escaped, so quotes, backslashes and newlines in the value keep the body valid JSON. A placeholder outside a string, such as `{\"count\": {{count}}}`, is inserted as is. Other content types are filled in as is.",
               "arguments": [
                 {
                   "name": "BODY_TEMPLATE",
@@ -3158,7 +3160,7 @@
         },
         {
           "name": "edit-agent-agents-by-agent-id-config",
-          "description": "Update Draft Config\nPatch the draft configuration section by section; omitted sections keep\ntheir value. Changes only affect live sessions after the next publish.\n`prompt.system_prompt` is limited to 32000 tokens (422 beyond); keeping it\nunder 2000 tokens is recommended for latency and cost.\n`voice.voice_id` accepts any public voice model id.\n`voice.speaking_language` accepts any of the 52 supported ISO 639-1 codes\n(the same set the console offers, see the Voice &amp; language docs); anything else is 422. `voice.expressive` (default `true`) enables richer\nexpressive delivery (emotion steering, laughter and sounds, pauses); off\nkeeps the standard delivery. The `asr` section configures speech\nrecognition. `asr.model` picks the model: `deepgram:nova-3` (default),\n`elevenlabs:scribe_v2_realtime`, or `elevenlabs:scribe_v2_medical`.\n`asr.multilingual` (default `false`) lets recognition follow callers who\nswitch language mid-call, off tells the recognizer to expect\n`voice.speaking_language` (models other than `deepgram:nova-3` may still\ntranscribe clear speech in another language). `asr.strict_language`\n(default `false`) enforces `voice.speaking_language` whatever\n`asr.multilingual` says: speech recognized as another language reaches the\nagent as `[unintelligible speech]`. Language is detected per utterance, so\na short or heavily accented phrase in the speaking language can\noccasionally be detected as another language and replaced too. Only\nenable it when you explicitly need to stop the agent from understanding\nother languages.\n`asr.keyterms` is a recognition\nvocabulary of up to 50 plain terms (brand names, product terms, personal\nnames), each at most 100 characters with no commas or semicolons. `[]`\nclears it and 20-50 focused terms work best. `tool_ids` and\n`knowledge_source_ids` replace their attachment lists wholesale and every\nid must resolve, else 422. `llm.custom` points the agent at your own\nOpenAI-compatible endpoint; mutually exclusive with `llm.model`, cleared\nwith an explicit null.",
+          "description": "Update Draft Config\nPatch the draft configuration section by section; omitted sections keep\ntheir value. Changes only affect live sessions after the next publish.\n`prompt.system_prompt` is limited to 32000 tokens (422 beyond); keeping it\nunder 2000 tokens is recommended for latency and cost.\n`voice.voice_id` accepts any public voice model id.\n`voice.speaking_language` accepts any of the 52 supported ISO 639-1 codes\n(the same set the console offers, see the Voice &amp; language docs); anything else is 422. `voice.expressive` (default `true`) enables richer\nexpressive delivery (emotion steering, laughter and sounds, pauses); off\nkeeps the standard delivery. The `asr` section configures speech\nrecognition. `asr.model` picks the model: `deepgram:nova-3` (default),\n`elevenlabs:scribe_v2_realtime`, `elevenlabs:scribe_v2_medical`, or\n`fish_audio:transcribe-1-pro-realtime` (Fish realtime recognition, which\nalso decides end of turn and whether the caller is interrupting; in\npreview, switching an agent onto it is 403 unless your team has access).\n`asr.multilingual` (default `false`) lets recognition follow callers who\nswitch language mid-call, off tells the recognizer to expect\n`voice.speaking_language` (models other than `deepgram:nova-3` may still\ntranscribe clear speech in another language). `asr.strict_language`\n(default `false`) enforces `voice.speaking_language` whatever\n`asr.multilingual` says: speech recognized as another language reaches the\nagent as `[unintelligible speech]`. Language is detected per utterance, so\na short or heavily accented phrase in the speaking language can\noccasionally be detected as another language and replaced too. Only\nenable it when you explicitly need to stop the agent from understanding\nother languages.\n`asr.keyterms` is a recognition\nvocabulary of up to 50 plain terms (brand names, product terms, personal\nnames), each at most 100 characters with no commas or semicolons. `[]`\nclears it and 20-50 focused terms work best. `tool_ids` and\n`knowledge_source_ids` replace their attachment lists wholesale and every\nid must resolve, else 422. `llm.custom` points the agent at your own\nOpenAI-compatible endpoint; mutually exclusive with `llm.model`, cleared\nwith an explicit null.",
           "options": [
             {
               "name": "--prompt",
@@ -5518,7 +5520,7 @@
               "name": "--model",
               "recursive": false,
               "hidden": false,
-              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. `drama-3-preview` is a preview model; its behavior and availability may change. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
+              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
               "arguments": [
                 {
                   "name": "MODEL",
@@ -5529,7 +5531,7 @@
                   },
                   "type": "CreateTtsModel",
                   "allowedValues": [
-                    "Drama3Preview",
+                    "Drama3",
                     "S1",
                     "S2Pro",
                     "S21Pro",
@@ -5542,7 +5544,7 @@
               "name": "--references",
               "recursive": false,
               "hidden": false,
-              "description": "Inline voice references for zero-shot cloning. Requires MessagePack (not JSON). For single speaker, provide an array of ReferenceAudio objects. For multiple speakers, provide an array of arrays where each inner array contains references for one speaker. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3-preview`, not `s1`.** The speaker index corresponds to the index in reference_id array. Example for multi-speaker: [[{audio, text}], [{audio, text}, {audio, text}]] for 2 speakers where speaker 1 has 2 reference samples.",
+              "description": "Inline voice references for zero-shot cloning. Requires MessagePack (not JSON). For single speaker, provide an array of ReferenceAudio objects. For multiple speakers, provide an array of arrays where each inner array contains references for one speaker. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`.** The speaker index corresponds to the index in reference_id array. Example for multi-speaker: [[{audio, text}], [{audio, text}, {audio, text}]] for 2 speakers where speaker 1 has 2 reference samples.",
               "arguments": [
                 {
                   "name": "REFERENCES",
@@ -5559,7 +5561,7 @@
               "name": "--reference-id",
               "recursive": false,
               "hidden": false,
-              "description": "Voice model ID(s) from Fish Audio library or your custom models. For single-speaker synthesis, provide a string. For multi-speaker synthesis (dialogue), provide an array of model IDs. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3-preview`, not `s1`.** When using multiple speakers, use speaker tags in your text like `<|speaker:0|>` and `<|speaker:1|>` to indicate speaker changes. Example: `<|speaker:0|>Hello!<|speaker:1|>Hi there!<|speaker:0|>How are you?` with `reference_id: [\"speaker-a-id\", \"speaker-b-id\"]`.",
+              "description": "Voice model ID(s) from Fish Audio library or your custom models. For single-speaker synthesis, provide a string. For multi-speaker synthesis (dialogue), provide an array of model IDs. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`.** When using multiple speakers, use speaker tags in your text like `<|speaker:0|>` and `<|speaker:1|>` to indicate speaker changes. Example: `<|speaker:0|>Hello!<|speaker:1|>Hi there!<|speaker:0|>How are you?` with `reference_id: [\"speaker-a-id\", \"speaker-b-id\"]`.",
               "arguments": [
                 {
                   "name": "REFERENCE_ID",
@@ -5661,7 +5663,7 @@
               "name": "--normalize",
               "recursive": false,
               "hidden": false,
-              "description": "Normalizes text for English and Chinese, improving stability for numbers. Specify true/false; presence alone implies true; omit to inherit.",
+              "description": "Rewrites numbers, dates, units and symbols as spoken words before synthesis, improving stability. Uses `language` when it is set and otherwise detects the language of each text chunk. Specify true/false; presence alone implies true; omit to inherit.",
               "arguments": [
                 {
                   "name": "NORMALIZE",
@@ -5671,6 +5673,23 @@
                     "maximum": 1
                   },
                   "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--language",
+              "recursive": false,
+              "hidden": false,
+              "description": "BCP-47 language tag of the text, for example `en`, `es-MX` or `zh-CN`. Case-insensitive, and `_` is read as `-`. Used only by text normalization (how numbers, dates, units and symbols are spelled out before synthesis) and by word-timestamp alignment. It is not passed to the speech model and does not change the voice, accent or audio quality; a wrong tag only changes how those tokens are spelled out. Omit it, or send `auto` or an empty string, to detect the language per chunk. A tag without dedicated normalization rules skips normalization instead of failing. Without a region, Spanish follows Spain conventions; send `es-MX` for Mexican readings. When `normalize` is false it only affects word timestamps. For text that mixes languages, leave it unset.",
+              "arguments": [
+                {
+                  "name": "LANGUAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             },
@@ -5984,7 +6003,7 @@
               "name": "--model",
               "recursive": false,
               "hidden": false,
-              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. `drama-3-preview` is a preview model; its behavior and availability may change. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
+              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
               "arguments": [
                 {
                   "name": "MODEL",
@@ -5995,7 +6014,7 @@
                   },
                   "type": "CreateTtsStreamWithTimestampModel",
                   "allowedValues": [
-                    "Drama3Preview",
+                    "Drama3",
                     "S1",
                     "S2Pro",
                     "S21Pro",
@@ -6008,7 +6027,7 @@
               "name": "--references",
               "recursive": false,
               "hidden": false,
-              "description": "Inline voice references for zero-shot cloning. Requires MessagePack (not JSON). For single speaker, provide an array of ReferenceAudio objects. For multiple speakers, provide an array of arrays where each inner array contains references for one speaker. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3-preview`, not `s1`.** The speaker index corresponds to the index in reference_id array. Example for multi-speaker: [[{audio, text}], [{audio, text}, {audio, text}]] for 2 speakers where speaker 1 has 2 reference samples.",
+              "description": "Inline voice references for zero-shot cloning. Requires MessagePack (not JSON). For single speaker, provide an array of ReferenceAudio objects. For multiple speakers, provide an array of arrays where each inner array contains references for one speaker. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`.** The speaker index corresponds to the index in reference_id array. Example for multi-speaker: [[{audio, text}], [{audio, text}, {audio, text}]] for 2 speakers where speaker 1 has 2 reference samples.",
               "arguments": [
                 {
                   "name": "REFERENCES",
@@ -6025,7 +6044,7 @@
               "name": "--reference-id",
               "recursive": false,
               "hidden": false,
-              "description": "Voice model ID(s) from Fish Audio library or your custom models. For single-speaker synthesis, provide a string. For multi-speaker synthesis (dialogue), provide an array of model IDs. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3-preview`, not `s1`.** When using multiple speakers, use speaker tags in your text like `<|speaker:0|>` and `<|speaker:1|>` to indicate speaker changes. Example: `<|speaker:0|>Hello!<|speaker:1|>Hi there!<|speaker:0|>How are you?` with `reference_id: [\"speaker-a-id\", \"speaker-b-id\"]`.",
+              "description": "Voice model ID(s) from Fish Audio library or your custom models. For single-speaker synthesis, provide a string. For multi-speaker synthesis (dialogue), provide an array of model IDs. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`.** When using multiple speakers, use speaker tags in your text like `<|speaker:0|>` and `<|speaker:1|>` to indicate speaker changes. Example: `<|speaker:0|>Hello!<|speaker:1|>Hi there!<|speaker:0|>How are you?` with `reference_id: [\"speaker-a-id\", \"speaker-b-id\"]`.",
               "arguments": [
                 {
                   "name": "REFERENCE_ID",
@@ -6127,7 +6146,7 @@
               "name": "--normalize",
               "recursive": false,
               "hidden": false,
-              "description": "Normalizes text for English and Chinese, improving stability for numbers. Specify true/false; presence alone implies true; omit to inherit.",
+              "description": "Rewrites numbers, dates, units and symbols as spoken words before synthesis, improving stability. Uses `language` when it is set and otherwise detects the language of each text chunk. Specify true/false; presence alone implies true; omit to inherit.",
               "arguments": [
                 {
                   "name": "NORMALIZE",
@@ -6137,6 +6156,23 @@
                     "maximum": 1
                   },
                   "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--language",
+              "recursive": false,
+              "hidden": false,
+              "description": "BCP-47 language tag of the text, for example `en`, `es-MX` or `zh-CN`. Case-insensitive, and `_` is read as `-`. Used only by text normalization (how numbers, dates, units and symbols are spelled out before synthesis) and by word-timestamp alignment. It is not passed to the speech model and does not change the voice, accent or audio quality; a wrong tag only changes how those tokens are spelled out. Omit it, or send `auto` or an empty string, to detect the language per chunk. A tag without dedicated normalization rules skips normalization instead of failing. Without a region, Spanish follows Spain conventions; send `es-MX` for Mexican readings. When `normalize` is false it only affects word timestamps. For text that mixes languages, leave it unset.",
+              "arguments": [
+                {
+                  "name": "LANGUAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             },
@@ -6450,7 +6486,7 @@
               "name": "--model",
               "recursive": false,
               "hidden": false,
-              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. `drama-3-preview` is a preview model; its behavior and availability may change. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
+              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
               "arguments": [
                 {
                   "name": "MODEL",
@@ -6461,7 +6497,7 @@
                   },
                   "type": "CreateTtsStreamWithTimestampModel",
                   "allowedValues": [
-                    "Drama3Preview",
+                    "Drama3",
                     "S1",
                     "S2Pro",
                     "S21Pro",
@@ -6474,7 +6510,7 @@
               "name": "--references",
               "recursive": false,
               "hidden": false,
-              "description": "Inline voice references for zero-shot cloning. Requires MessagePack (not JSON). For single speaker, provide an array of ReferenceAudio objects. For multiple speakers, provide an array of arrays where each inner array contains references for one speaker. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3-preview`, not `s1`.** The speaker index corresponds to the index in reference_id array. Example for multi-speaker: [[{audio, text}], [{audio, text}, {audio, text}]] for 2 speakers where speaker 1 has 2 reference samples.",
+              "description": "Inline voice references for zero-shot cloning. Requires MessagePack (not JSON). For single speaker, provide an array of ReferenceAudio objects. For multiple speakers, provide an array of arrays where each inner array contains references for one speaker. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`.** The speaker index corresponds to the index in reference_id array. Example for multi-speaker: [[{audio, text}], [{audio, text}, {audio, text}]] for 2 speakers where speaker 1 has 2 reference samples.",
               "arguments": [
                 {
                   "name": "REFERENCES",
@@ -6491,7 +6527,7 @@
               "name": "--reference-id",
               "recursive": false,
               "hidden": false,
-              "description": "Voice model ID(s) from Fish Audio library or your custom models. For single-speaker synthesis, provide a string. For multi-speaker synthesis (dialogue), provide an array of model IDs. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3-preview`, not `s1`.** When using multiple speakers, use speaker tags in your text like `<|speaker:0|>` and `<|speaker:1|>` to indicate speaker changes. Example: `<|speaker:0|>Hello!<|speaker:1|>Hi there!<|speaker:0|>How are you?` with `reference_id: [\"speaker-a-id\", \"speaker-b-id\"]`.",
+              "description": "Voice model ID(s) from Fish Audio library or your custom models. For single-speaker synthesis, provide a string. For multi-speaker synthesis (dialogue), provide an array of model IDs. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`.** When using multiple speakers, use speaker tags in your text like `<|speaker:0|>` and `<|speaker:1|>` to indicate speaker changes. Example: `<|speaker:0|>Hello!<|speaker:1|>Hi there!<|speaker:0|>How are you?` with `reference_id: [\"speaker-a-id\", \"speaker-b-id\"]`.",
               "arguments": [
                 {
                   "name": "REFERENCE_ID",
@@ -6593,7 +6629,7 @@
               "name": "--normalize",
               "recursive": false,
               "hidden": false,
-              "description": "Normalizes text for English and Chinese, improving stability for numbers. Specify true/false; presence alone implies true; omit to inherit.",
+              "description": "Rewrites numbers, dates, units and symbols as spoken words before synthesis, improving stability. Uses `language` when it is set and otherwise detects the language of each text chunk. Specify true/false; presence alone implies true; omit to inherit.",
               "arguments": [
                 {
                   "name": "NORMALIZE",
@@ -6603,6 +6639,23 @@
                     "maximum": 1
                   },
                   "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--language",
+              "recursive": false,
+              "hidden": false,
+              "description": "BCP-47 language tag of the text, for example `en`, `es-MX` or `zh-CN`. Case-insensitive, and `_` is read as `-`. Used only by text normalization (how numbers, dates, units and symbols are spelled out before synthesis) and by word-timestamp alignment. It is not passed to the speech model and does not change the voice, accent or audio quality; a wrong tag only changes how those tokens are spelled out. Omit it, or send `auto` or an empty string, to detect the language per chunk. A tag without dedicated normalization rules skips normalization instead of failing. Without a region, Spanish follows Spain conventions; send `es-MX` for Mexican readings. When `normalize` is false it only affects word timestamps. For text that mixes languages, leave it unset.",
+              "arguments": [
+                {
+                  "name": "LANGUAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             },
@@ -6916,7 +6969,7 @@
               "name": "--model",
               "recursive": false,
               "hidden": false,
-              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. `drama-3-preview` is a preview model; its behavior and availability may change. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
+              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
               "arguments": [
                 {
                   "name": "MODEL",
@@ -6927,7 +6980,7 @@
                   },
                   "type": "CreateTtsModel",
                   "allowedValues": [
-                    "Drama3Preview",
+                    "Drama3",
                     "S1",
                     "S2Pro",
                     "S21Pro",
@@ -6940,7 +6993,7 @@
               "name": "--references",
               "recursive": false,
               "hidden": false,
-              "description": "Inline voice references for zero-shot cloning. Requires MessagePack (not JSON). For single speaker, provide an array of ReferenceAudio objects. For multiple speakers, provide an array of arrays where each inner array contains references for one speaker. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3-preview`, not `s1`.** The speaker index corresponds to the index in reference_id array. Example for multi-speaker: [[{audio, text}], [{audio, text}, {audio, text}]] for 2 speakers where speaker 1 has 2 reference samples.",
+              "description": "Inline voice references for zero-shot cloning. Requires MessagePack (not JSON). For single speaker, provide an array of ReferenceAudio objects. For multiple speakers, provide an array of arrays where each inner array contains references for one speaker. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`.** The speaker index corresponds to the index in reference_id array. Example for multi-speaker: [[{audio, text}], [{audio, text}, {audio, text}]] for 2 speakers where speaker 1 has 2 reference samples.",
               "arguments": [
                 {
                   "name": "REFERENCES",
@@ -6957,7 +7010,7 @@
               "name": "--reference-id",
               "recursive": false,
               "hidden": false,
-              "description": "Voice model ID(s) from Fish Audio library or your custom models. For single-speaker synthesis, provide a string. For multi-speaker synthesis (dialogue), provide an array of model IDs. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3-preview`, not `s1`.** When using multiple speakers, use speaker tags in your text like `<|speaker:0|>` and `<|speaker:1|>` to indicate speaker changes. Example: `<|speaker:0|>Hello!<|speaker:1|>Hi there!<|speaker:0|>How are you?` with `reference_id: [\"speaker-a-id\", \"speaker-b-id\"]`.",
+              "description": "Voice model ID(s) from Fish Audio library or your custom models. For single-speaker synthesis, provide a string. For multi-speaker synthesis (dialogue), provide an array of model IDs. **Multi-speaker is available with the S2 family (`s2-pro`, `s2.1-pro`, `s2.1-pro-free`) and `drama-3`, not `s1`.** When using multiple speakers, use speaker tags in your text like `<|speaker:0|>` and `<|speaker:1|>` to indicate speaker changes. Example: `<|speaker:0|>Hello!<|speaker:1|>Hi there!<|speaker:0|>How are you?` with `reference_id: [\"speaker-a-id\", \"speaker-b-id\"]`.",
               "arguments": [
                 {
                   "name": "REFERENCE_ID",
@@ -7059,7 +7112,7 @@
               "name": "--normalize",
               "recursive": false,
               "hidden": false,
-              "description": "Normalizes text for English and Chinese, improving stability for numbers. Specify true/false; presence alone implies true; omit to inherit.",
+              "description": "Rewrites numbers, dates, units and symbols as spoken words before synthesis, improving stability. Uses `language` when it is set and otherwise detects the language of each text chunk. Specify true/false; presence alone implies true; omit to inherit.",
               "arguments": [
                 {
                   "name": "NORMALIZE",
@@ -7069,6 +7122,23 @@
                     "maximum": 1
                   },
                   "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--language",
+              "recursive": false,
+              "hidden": false,
+              "description": "BCP-47 language tag of the text, for example `en`, `es-MX` or `zh-CN`. Case-insensitive, and `_` is read as `-`. Used only by text normalization (how numbers, dates, units and symbols are spelled out before synthesis) and by word-timestamp alignment. It is not passed to the speech model and does not change the voice, accent or audio quality; a wrong tag only changes how those tokens are spelled out. Omit it, or send `auto` or an empty string, to detect the language per chunk. A tag without dedicated normalization rules skips normalization instead of failing. Without a region, Spanish follows Spain conventions; send `es-MX` for Mexican readings. When `normalize` is false it only affects word timestamps. For text that mixes languages, leave it unset.",
+              "arguments": [
+                {
+                  "name": "LANGUAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             },
@@ -7609,7 +7679,7 @@
               "name": "--model",
               "recursive": false,
               "hidden": false,
-              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. `drama-3-preview` is a preview model; its behavior and availability may change. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
+              "description": "Specify which TTS model to use. Use `s2.1-pro-free` for the free developer tier. If omitted or set to an unrecognized value, the request falls back to `s2.1-pro`.",
               "arguments": [
                 {
                   "name": "MODEL",
@@ -7620,7 +7690,7 @@
                   },
                   "type": "GetTtsLiveWithTimestampModel",
                   "allowedValues": [
-                    "Drama3Preview",
+                    "Drama3",
                     "S1",
                     "S2Pro",
                     "S21Pro",
