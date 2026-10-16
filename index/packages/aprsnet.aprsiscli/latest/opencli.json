@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "aprscli",
-    "version": "0.3.0-alpha.1",
+    "version": "0.3.0-alpha.3",
     "description": "APRS.NET command-line tool: listen to APRS-IS, parse and replay packets, send as your callsign, serve a feed to local APRS-IS clients, and compute passcodes."
   },
   "x-inspectra": {
@@ -1350,17 +1350,17 @@
     },
     {
       "name": "tnc",
-      "description": "Talk to a KISS TNC over TCP, such as Dire Wolf.",
+      "description": "Talk to a KISS TNC over TCP, such as Dire Wolf, or on a serial port.",
       "commands": [
         {
           "name": "listen",
-          "description": "Connect to a KISS TNC over TCP and print the APRS packets it hears.",
+          "description": "Connect to a KISS TNC and print the APRS packets it hears.",
           "options": [
             {
               "name": "--tnc",
               "recursive": false,
               "hidden": false,
-              "description": "The TNC as host[:port]. Default port: 8001 (Dire Wolf's KISS port).",
+              "description": "The TNC as host[:port] (default port 8001, Dire Wolf's KISS port), or a serial TNC as serial:PORT[@BAUD], such as serial:/dev/ttyUSB0 or serial:COM3@57600 (default 9600 baud).",
               "aliases": [
                 "-t"
               ],
@@ -1454,7 +1454,7 @@
               "name": "--reconnect",
               "recursive": false,
               "hidden": false,
-              "description": "If the TNC closes the connection or cannot be reached, keep trying (waiting 5s, doubling to 60s) until --count, --duration or Ctrl+C. Without it, the first loss ends the command. [default: False]",
+              "description": "If the TNC closes the connection, is unplugged or cannot be reached, keep trying (waiting 5s, doubling to 60s; 2s to 30s for a serial port) until --count, --duration or Ctrl+C. Without it, the first loss ends the command. [default: False]",
               "arguments": [
                 {
                   "name": "RECONNECT",
@@ -2226,6 +2226,10 @@
               ]
             }
           ]
+        },
+        {
+          "name": "ports",
+          "description": "List the serial ports present, for --tnc serial:PORT."
         }
       ]
     },
@@ -2297,7 +2301,7 @@
           "name": "--tnc",
           "recursive": false,
           "hidden": false,
-          "description": "Also serve what a KISS TNC hears, as host[:port] (default port 8001, Dire Wolf's). Repeat for several TNCs. A lost TNC is reconnected.",
+          "description": "Also serve what a KISS TNC hears, as host[:port] (default port 8001, Dire Wolf's) or serial:PORT[@BAUD] for a TNC on a serial port. Repeat for several TNCs. A lost or unplugged TNC is reconnected.",
           "aliases": [
             "-t"
           ],
@@ -2324,6 +2328,23 @@
           "arguments": [
             {
               "name": "LISTEN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--http",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also serve HTTP on this address:port, for example 127.0.0.1:14590: WebSocket clients at ws://address:port/aprs get JSON packets and set their filter in the URL or a message, and /health says whether each source is connected (503 when none is). Default: off.",
+          "arguments": [
+            {
+              "name": "HTTP",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -2386,6 +2407,41 @@
               "type": "String"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "health",
+      "description": "Check a running 'aprscli serve --http': prints its health report and exits 0 while any source is connected, 1 when none is, 2 when it doesn't answer.",
+      "options": [
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "How long to wait for an answer, for example 5s. Default: 5s. [default: 5s]",
+          "arguments": [
+            {
+              "name": "TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "URL",
+          "description": "The health URL of aprscli serve --http. Default: http://127.0.0.1:14590/health. [default: http://127.0.0.1:14590/health]",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
         }
       ]
     }
