@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "aprscli",
-    "version": "0.2.0-alpha.1",
+    "version": "0.2.0-alpha.3",
     "description": "APRS.NET command-line tool: listen to APRS-IS, parse and replay packets, send as your callsign, serve a feed to local APRS-IS clients, and compute passcodes."
   },
   "x-inspectra": {
@@ -144,6 +144,23 @@
           "arguments": [
             {
               "name": "FULL_FEED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--tls",
+          "recursive": false,
+          "hidden": false,
+          "description": "Connect over TLS, checking the server's certificate. Default server: ssl.aprs2.net:24580; a --server without a port uses 24580. Few servers offer TLS. Cannot be combined with --region or --full-feed. [default: False]",
+          "arguments": [
+            {
+              "name": "TLS",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -595,6 +612,23 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tls",
+          "recursive": true,
+          "hidden": false,
+          "description": "Connect over TLS, checking the server's certificate. Default server: ssl.aprs2.net:24580; a --server without a port uses 24580. Cannot be combined with --region. [default: False]",
+          "arguments": [
+            {
+              "name": "TLS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -1434,12 +1468,770 @@
               ]
             }
           ]
+        },
+        {
+          "name": "send",
+          "description": "Transmit a status report, message, position, object, weather or telemetry report on the air through a KISS TNC. Needs your callsign and a licence to transmit; check the path first with --dry-run.",
+          "options": [
+            {
+              "name": "--callsign",
+              "recursive": true,
+              "hidden": false,
+              "description": "Your callsign, with optional SSID, as the sender and the login. Required.",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CALLSIGN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tnc",
+              "recursive": true,
+              "hidden": false,
+              "description": "The TNC as host[:port]. Default port: 8001 (Dire Wolf's KISS port).",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TNC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--radio-port",
+              "recursive": true,
+              "hidden": false,
+              "description": "The radio port on a multi-port TNC, 0 to 15. Default: 0. [default: 0]",
+              "arguments": [
+                {
+                  "name": "RADIO_PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--tocall",
+              "recursive": true,
+              "hidden": false,
+              "description": "Destination TOCALL that identifies the software. Default: APZNET (experimental). [default: APZNET]",
+              "arguments": [
+                {
+                  "name": "TOCALL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--path",
+              "recursive": true,
+              "hidden": false,
+              "description": "Digipeater path, comma-separated. Default: WIDE1-1,WIDE2-1; use \"\" for none (direct only).",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": true,
+              "hidden": false,
+              "description": "Print the packet that would be transmitted, without connecting to the TNC. [default: False]",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "status",
+              "description": "Send a status report.",
+              "arguments": [
+                {
+                  "name": "TEXT",
+                  "description": "Status text.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "message",
+              "description": "Transmit a message once. It carries no message number, so the recipient does not acknowledge it.",
+              "arguments": [
+                {
+                  "name": "ADDRESSEE",
+                  "description": "Callsign to send the message to.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                },
+                {
+                  "name": "TEXT",
+                  "description": "Message text, at most 67 characters.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "position",
+              "description": "Send a position report.",
+              "options": [
+                {
+                  "name": "--lat",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Latitude in degrees, north positive.",
+                  "arguments": [
+                    {
+                      "name": "LAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--lon",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Longitude in degrees, east positive.",
+                  "arguments": [
+                    {
+                      "name": "LON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--symbol",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Symbol as table and code, for example /> (car) or /- (house). Default: /- . [default: /-]",
+                  "arguments": [
+                    {
+                      "name": "SYMBOL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--comment",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Comment after the position.",
+                  "arguments": [
+                    {
+                      "name": "COMMENT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "object",
+              "description": "Send an object, timestamped now; --kill removes it.",
+              "options": [
+                {
+                  "name": "--lat",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Latitude in degrees, north positive.",
+                  "arguments": [
+                    {
+                      "name": "LAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--lon",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Longitude in degrees, east positive.",
+                  "arguments": [
+                    {
+                      "name": "LON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--symbol",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Symbol as table and code, for example /> (car) or /- (house). Default: /- . [default: /-]",
+                  "arguments": [
+                    {
+                      "name": "SYMBOL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--comment",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Comment after the position.",
+                  "arguments": [
+                    {
+                      "name": "COMMENT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--kill",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Send the object as killed, to remove it. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "KILL",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "description": "Object name, 1 to 9 characters.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "weather",
+              "description": "Send weather readings: a complete report with --lat and --lon, otherwise a positionless one. Readings left out are sent as unknown (wind, gust, temperature) or not at all.",
+              "options": [
+                {
+                  "name": "--lat",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Station latitude. With --lon, sends a complete report; without, a positionless one.",
+                  "arguments": [
+                    {
+                      "name": "LAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--lon",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Station longitude.",
+                  "arguments": [
+                    {
+                      "name": "LON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--symbol",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Weather station symbol, /_ or \\_ with an overlay. Default: /_ . [default: /_]",
+                  "arguments": [
+                    {
+                      "name": "SYMBOL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--wind-dir",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Wind direction, degrees.",
+                  "arguments": [
+                    {
+                      "name": "WIND_DIR",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--wind-speed",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Sustained wind speed, mph.",
+                  "arguments": [
+                    {
+                      "name": "WIND_SPEED",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--gust",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Peak wind in the last 5 minutes, mph.",
+                  "arguments": [
+                    {
+                      "name": "GUST",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--temp",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Temperature, °F.",
+                  "arguments": [
+                    {
+                      "name": "TEMP",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--rain-1h",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Rain in the last hour, inches.",
+                  "arguments": [
+                    {
+                      "name": "RAIN_1H",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--rain-24h",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Rain in the last 24 hours, inches.",
+                  "arguments": [
+                    {
+                      "name": "RAIN_24H",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--rain-midnight",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Rain since local midnight, inches.",
+                  "arguments": [
+                    {
+                      "name": "RAIN_MIDNIGHT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--humidity",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Relative humidity, 1 to 100 %.",
+                  "arguments": [
+                    {
+                      "name": "HUMIDITY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--pressure",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Barometric pressure, millibars.",
+                  "arguments": [
+                    {
+                      "name": "PRESSURE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--luminosity",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Luminosity, W/m².",
+                  "arguments": [
+                    {
+                      "name": "LUMINOSITY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--snow",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Snowfall in the last 24 hours, inches. Needs --lat and --lon.",
+                  "arguments": [
+                    {
+                      "name": "SNOW",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--comment",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Comment after the position.",
+                  "arguments": [
+                    {
+                      "name": "COMMENT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "telemetry",
+              "description": "Send a telemetry report (T#), after any PARM./UNIT./EQNS./BITS. definitions given, which go to your own callsign.",
+              "options": [
+                {
+                  "name": "--seq",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Telemetry sequence number, 0 to 999. Required.",
+                  "arguments": [
+                    {
+                      "name": "SEQ",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--analog",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "One to five raw analog values, whole numbers 0 to 999, comma-separated: 199,0,255,73,123.",
+                  "arguments": [
+                    {
+                      "name": "ANALOG",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--digital",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The eight digital channels as 0s and 1s: 01101001. Needs all five analog values.",
+                  "arguments": [
+                    {
+                      "name": "DIGITAL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--comment",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Comment after the position.",
+                  "arguments": [
+                    {
+                      "name": "COMMENT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--names",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Also send PARM.: channel names, comma-separated, analog then digital.",
+                  "arguments": [
+                    {
+                      "name": "NAMES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--units",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Also send UNIT.: channel units or labels, comma-separated, analog then digital.",
+                  "arguments": [
+                    {
+                      "name": "UNITS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--equations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Also send EQNS.: a,b,c per analog channel (reading = a·v² + b·v + c), channels separated by ';'.",
+                  "arguments": [
+                    {
+                      "name": "EQUATIONS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--bits",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Also send BITS.: the 'on' state of each digital channel as eight 0s and 1s.",
+                  "arguments": [
+                    {
+                      "name": "BITS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--project",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Project name sent with --bits.",
+                  "arguments": [
+                    {
+                      "name": "PROJECT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },
     {
       "name": "serve",
-      "description": "Serve an APRS-IS feed to local APRS-IS clients, each with its own filter. Clients are read-only.",
+      "description": "Serve an APRS-IS feed, KISS TNCs or both to local APRS-IS clients, each with its own filter. A packet heard on several sources is served once. Clients are read-only.",
       "options": [
         {
           "name": "--callsign",
@@ -1485,7 +2277,7 @@
           "name": "--filter",
           "recursive": false,
           "hidden": false,
-          "description": "Upstream APRS-IS filter: everything local clients can ask for, for example \"r/35/-97/300\". Each client then narrows it with its own filter.",
+          "description": "Upstream APRS-IS filter: everything local clients can ask for, for example \"r/35/-97/300\". Each client then narrows it with its own filter. Without it, only the --tnc sources are served.",
           "aliases": [
             "-f"
           ],
@@ -1498,6 +2290,26 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tnc",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also serve what a KISS TNC hears, as host[:port] (default port 8001, Dire Wolf's). Repeat for several TNCs. A lost TNC is reconnected.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TNC",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
             }
           ]
         },
