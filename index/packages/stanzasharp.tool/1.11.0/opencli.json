@@ -1,0 +1,707 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "stanzasharp",
+    "version": "1.11.0",
+    "description": "The stanzasharp command: downloads Stanza's English and German models for StanzaSharp, checked against their MD5s, e.g. in a Dockerfile or CI. \"stanzasharp download DIR [--lang de] [--package default_fast] [--processors tokenize,mwt,pos]\". \"stanzasharp compare FILE\" runs Python Stanza and StanzaSharp on your own text and shows whether their output is identical; \"stanzasharp benchmark\" measures both on your machine. Needs no native libtorch."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 4
+  },
+  "commands": [
+    {
+      "name": "benchmark",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--lang",
+          "recursive": false,
+          "hidden": false,
+          "description": "the language: en (default) or de (German)",
+          "arguments": [
+            {
+              "name": "CODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--package",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stanza's package: default, or default_fast (faster, no constituency); the treebank\npackages (tokenize to depparse only): English combined, ewt, gum, lines, partut, atis, childes, eslspok,\ncraft, genia, mimic;\nGerman combined, gsd, hdt",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--processors",
+          "recursive": false,
+          "hidden": false,
+          "description": "comma-separated, from tokenize,mwt,pos,lemma,constituency,depparse,sentiment,ner\n(default: all of the package's)",
+          "arguments": [
+            {
+              "name": "LIST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "a model for processor P instead of the package's (repeatable, or P=NAME,P=NAME), as Stanza's\nprocessors dict: English constituency=ptb3_charlm; ner=ontonotes_charlm, ontonotes_nocharlm,\ncombined_charlm, conll03_charlm, i2b2, radiology (clinical),\nanatem, bc4chemd, bc5cdr, bionlp13cg, jnlpba, linnaeus, ncbi_disease, s800 (biomedical); German ner=conll03.\nIts processor is added if needed",
+          "arguments": [
+            {
+              "name": "PNAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--list",
+          "recursive": false,
+          "hidden": false,
+          "description": "download: print each file and its MD5 instead of downloading"
+        },
+        {
+          "name": "--models",
+          "recursive": false,
+          "hidden": false,
+          "description": "compare, benchmark: the models (default: models/stanza/CODE)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--python",
+          "recursive": false,
+          "hidden": false,
+          "description": "compare, benchmark: the Python with Stanza installed (default: python)",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--threads",
+          "recursive": false,
+          "hidden": false,
+          "description": "benchmark: threads on both sides (default: each side's own default, StanzaSharp the\nphysical cores from 4 up, else all logical processors; torch the physical cores)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--words",
+          "recursive": false,
+          "hidden": false,
+          "description": "benchmark: the text's length in words, counted by whitespace (default: 1500); the block\ncounts words after tokenizing (2,009 for the default)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--quick",
+          "recursive": false,
+          "hidden": false,
+          "description": "benchmark: 300 words (by whitespace), one run, 10 calls"
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "benchmark: also write the results as JSON",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "compare",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "FILE",
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "download",
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "compare",
+      "hidden": false,
+      "commands": [
+        {
+          "name": "FILE",
+          "hidden": false,
+          "options": [
+            {
+              "name": "--lang",
+              "recursive": false,
+              "hidden": false,
+              "description": "the language: en (default) or de (German)",
+              "arguments": [
+                {
+                  "name": "CODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--package",
+              "recursive": false,
+              "hidden": false,
+              "description": "Stanza's package: default, or default_fast (faster, no constituency); the treebank\npackages (tokenize to depparse only): English combined, ewt, gum, lines, partut, atis, childes, eslspok,\ncraft, genia, mimic;\nGerman combined, gsd, hdt",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--processors",
+              "recursive": false,
+              "hidden": false,
+              "description": "comma-separated, from tokenize,mwt,pos,lemma,constituency,depparse,sentiment,ner\n(default: all of the package's)",
+              "arguments": [
+                {
+                  "name": "LIST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "a model for processor P instead of the package's (repeatable, or P=NAME,P=NAME), as Stanza's\nprocessors dict: English constituency=ptb3_charlm; ner=ontonotes_charlm, ontonotes_nocharlm,\ncombined_charlm, conll03_charlm, i2b2, radiology (clinical),\nanatem, bc4chemd, bc5cdr, bionlp13cg, jnlpba, linnaeus, ncbi_disease, s800 (biomedical); German ner=conll03.\nIts processor is added if needed",
+              "arguments": [
+                {
+                  "name": "PNAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--list",
+              "recursive": false,
+              "hidden": false,
+              "description": "download: print each file and its MD5 instead of downloading"
+            },
+            {
+              "name": "--models",
+              "recursive": false,
+              "hidden": false,
+              "description": "compare, benchmark: the models (default: models/stanza/CODE)",
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--python",
+              "recursive": false,
+              "hidden": false,
+              "description": "compare, benchmark: the Python with Stanza installed (default: python)",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--threads",
+              "recursive": false,
+              "hidden": false,
+              "description": "benchmark: threads on both sides (default: each side's own default, StanzaSharp the\nphysical cores from 4 up, else all logical processors; torch the physical cores)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--words",
+              "recursive": false,
+              "hidden": false,
+              "description": "benchmark: the text's length in words, counted by whitespace (default: 1500); the block\ncounts words after tokenizing (2,009 for the default)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--quick",
+              "recursive": false,
+              "hidden": false,
+              "description": "benchmark: 300 words (by whitespace), one run, 10 calls"
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "benchmark: also write the results as JSON",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "benchmark",
+              "hidden": false
+            },
+            {
+              "name": "download",
+              "hidden": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "download",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--lang",
+          "recursive": false,
+          "hidden": false,
+          "description": "the language: en (default) or de (German)",
+          "arguments": [
+            {
+              "name": "CODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--package",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stanza's package: default, or default_fast (faster, no constituency); the treebank\npackages (tokenize to depparse only): English combined, ewt, gum, lines, partut, atis, childes, eslspok,\ncraft, genia, mimic;\nGerman combined, gsd, hdt",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--processors",
+          "recursive": false,
+          "hidden": false,
+          "description": "comma-separated, from tokenize,mwt,pos,lemma,constituency,depparse,sentiment,ner\n(default: all of the package's)",
+          "arguments": [
+            {
+              "name": "LIST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "a model for processor P instead of the package's (repeatable, or P=NAME,P=NAME), as Stanza's\nprocessors dict: English constituency=ptb3_charlm; ner=ontonotes_charlm, ontonotes_nocharlm,\ncombined_charlm, conll03_charlm, i2b2, radiology (clinical),\nanatem, bc4chemd, bc5cdr, bionlp13cg, jnlpba, linnaeus, ncbi_disease, s800 (biomedical); German ner=conll03.\nIts processor is added if needed",
+          "arguments": [
+            {
+              "name": "PNAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--list",
+          "recursive": false,
+          "hidden": false,
+          "description": "download: print each file and its MD5 instead of downloading"
+        },
+        {
+          "name": "--models",
+          "recursive": false,
+          "hidden": false,
+          "description": "compare, benchmark: the models (default: models/stanza/CODE)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--python",
+          "recursive": false,
+          "hidden": false,
+          "description": "compare, benchmark: the Python with Stanza installed (default: python)",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--threads",
+          "recursive": false,
+          "hidden": false,
+          "description": "benchmark: threads on both sides (default: each side's own default, StanzaSharp the\nphysical cores from 4 up, else all logical processors; torch the physical cores)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--words",
+          "recursive": false,
+          "hidden": false,
+          "description": "benchmark: the text's length in words, counted by whitespace (default: 1500); the block\ncounts words after tokenizing (2,009 for the default)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--quick",
+          "recursive": false,
+          "hidden": false,
+          "description": "benchmark: 300 words (by whitespace), one run, 10 calls"
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "benchmark: also write the results as JSON",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "benchmark",
+          "hidden": false
+        },
+        {
+          "name": "compare",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "FILE",
+              "hidden": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--lang",
+      "recursive": false,
+      "hidden": false,
+      "description": "the language: en (default) or de (German)",
+      "arguments": [
+        {
+          "name": "CODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--package",
+      "recursive": false,
+      "hidden": false,
+      "description": "Stanza's package: default, or default_fast (faster, no constituency); the treebank\npackages (tokenize to depparse only): English combined, ewt, gum, lines, partut, atis, childes, eslspok,\ncraft, genia, mimic;\nGerman combined, gsd, hdt",
+      "arguments": [
+        {
+          "name": "NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--processors",
+      "recursive": false,
+      "hidden": false,
+      "description": "comma-separated, from tokenize,mwt,pos,lemma,constituency,depparse,sentiment,ner\n(default: all of the package's)",
+      "arguments": [
+        {
+          "name": "LIST",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--model",
+      "recursive": false,
+      "hidden": false,
+      "description": "a model for processor P instead of the package's (repeatable, or P=NAME,P=NAME), as Stanza's\nprocessors dict: English constituency=ptb3_charlm; ner=ontonotes_charlm, ontonotes_nocharlm,\ncombined_charlm, conll03_charlm, i2b2, radiology (clinical),\nanatem, bc4chemd, bc5cdr, bionlp13cg, jnlpba, linnaeus, ncbi_disease, s800 (biomedical); German ner=conll03.\nIts processor is added if needed",
+      "arguments": [
+        {
+          "name": "PNAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--list",
+      "recursive": false,
+      "hidden": false,
+      "description": "download: print each file and its MD5 instead of downloading"
+    },
+    {
+      "name": "--models",
+      "recursive": false,
+      "hidden": false,
+      "description": "compare, benchmark: the models (default: models/stanza/CODE)",
+      "arguments": [
+        {
+          "name": "DIR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--python",
+      "recursive": false,
+      "hidden": false,
+      "description": "compare, benchmark: the Python with Stanza installed (default: python)",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--threads",
+      "recursive": false,
+      "hidden": false,
+      "description": "benchmark: threads on both sides (default: each side's own default, StanzaSharp the\nphysical cores from 4 up, else all logical processors; torch the physical cores)",
+      "arguments": [
+        {
+          "name": "N",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--words",
+      "recursive": false,
+      "hidden": false,
+      "description": "benchmark: the text's length in words, counted by whitespace (default: 1500); the block\ncounts words after tokenizing (2,009 for the default)",
+      "arguments": [
+        {
+          "name": "N",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--quick",
+      "recursive": false,
+      "hidden": false,
+      "description": "benchmark: 300 words (by whitespace), one run, 10 calls"
+    },
+    {
+      "name": "--json",
+      "recursive": false,
+      "hidden": false,
+      "description": "benchmark: also write the results as JSON",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}
