@@ -2,34 +2,30 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "subsln",
-    "version": "0.6.1",
+    "version": "0.7.0",
     "description": "Command line tool used to manipulate .subsln files and released as .NET SDK tool.\n\nCheck our project page to see how install it.\nIf you need the .NET libraries, use the others SubSolution NuGet packages."
   },
   "x-inspectra": {
-    "artifactSource": "static-analysis",
-    "generator": "InSpectra.Discovery",
-    "metadataEnriched": true,
-    "helpDocumentCount": 5,
-    "staticAnalysis": {
-      "framework": "CommandLineParser",
-      "inspectorType": "dnlib",
-      "confidence": "high",
-      "verbCount": 4,
-      "optionCount": 37,
-      "valueCount": 4,
-      "limitations": [
-        "property-defaults-not-captured",
-        "fluent-api-configuration-not-visible"
-      ]
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "CommandLineParser",
+      "frameworkVersion": "2.9.1.0",
+      "patchTarget": "Parser.ParseArguments"
     },
     "cliFramework": "CommandLineParser"
   },
   "commands": [
     {
       "name": "create",
-      "hidden": false,
       "description": "Create a new .subsln SubSolution configuration file",
       "options": [
+        {
+          "name": "--debug",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable debug mode to show exceptions and callstacks."
+        },
         {
           "name": "--force",
           "recursive": false,
@@ -52,22 +48,19 @@
           "name": "--xsd",
           "recursive": false,
           "hidden": false,
-          "description": "Set the XSD schema location. Allow to have auto-completion\nin your XML editor even if it doesn't recognize the XML\nnamespace.",
+          "description": "Set the XSD schema location. Allow to have auto-completion in your XML editor even if it doesn't recognize the XML namespace.",
           "aliases": [
             "-x"
           ]
         },
         {
-          "name": "--debug",
-          "recursive": false,
-          "hidden": false,
-          "description": "Enable debug mode to show exceptions and callstacks."
-        },
-        {
           "name": "--help",
           "recursive": false,
           "hidden": false,
-          "description": "Display this help screen."
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
         },
         {
           "name": "--version",
@@ -78,33 +71,114 @@
       ],
       "arguments": [
         {
-          "name": "files",
+          "name": "FILES",
+          "description": "Paths of the files to create, relative to working directory. If no extension provided, default extension is \".subsln\".",
           "required": true,
-          "hidden": false,
           "arity": {
             "minimum": 1,
-            "maximum": 1
+            "maximum": 2147483647
           },
-          "description": "Paths of the files to create, relative to working\ndirectory. If no extension provided, default extension is\n\".subsln\".",
-          "metadata": [
-            {
-              "name": "ClrType",
-              "value": "System.Collections.Generic.IEnumerable<System.String>"
-            }
-          ]
+          "type": "IEnumerable`1"
         }
       ]
     },
     {
       "name": "generate",
-      "hidden": false,
       "description": "Generate .sln Visual Studio solution files from .subsln files.",
       "options": [
+        {
+          "name": "--debug",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable debug mode to show exceptions and callstacks."
+        },
+        {
+          "name": "--detailed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show more details in solution output.",
+          "aliases": [
+            "-d"
+          ]
+        },
+        {
+          "name": "--divergent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show divergent projects contexts in solution output (divergent configuration-platforms, disabled build, disabled deploy).",
+          "aliases": [
+            "-D"
+          ]
+        },
+        {
+          "name": "--paths",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show project paths in solution output.",
+          "aliases": [
+            "-P"
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose log (solution build, project reading, ...)",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--dotnet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read projects using given dotnet directory path.",
+          "arguments": [
+            {
+              "name": "DOT_NET_DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--msbuild",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read projects using given MSBuild directory path.",
+          "arguments": [
+            {
+              "name": "MS_BUILD_DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--embedded",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read projects using embedded MSBuild DLLs."
+        },
+        {
+          "name": "--import-fallback",
+          "recursive": false,
+          "hidden": false,
+          "description": "On missing imports or SDks, read manually Directory.Build.props and use fallback values. Result may differ from reality."
+        },
         {
           "name": "--preview",
           "recursive": false,
           "hidden": false,
-          "description": "Preview the command result without creating/updating\nfiles.",
+          "description": "Preview the command result without creating/updating files.",
           "aliases": [
             "-p"
           ]
@@ -122,7 +196,7 @@
           "name": "--new",
           "recursive": false,
           "hidden": false,
-          "description": "Create new solutions from scratch instead of updating\nexisting ones.",
+          "description": "Create new solutions from scratch instead of updating existing ones.",
           "aliases": [
             "-n"
           ]
@@ -146,108 +220,13 @@
           ]
         },
         {
-          "name": "--detailed",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show more details in solution output.",
-          "aliases": [
-            "-d"
-          ]
-        },
-        {
-          "name": "--divergent",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show divergent projects contexts in solution output\n(divergent configuration-platforms, disabled build,\ndisabled deploy).",
-          "aliases": [
-            "-D"
-          ]
-        },
-        {
-          "name": "--paths",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show project paths in solution output.",
-          "aliases": [
-            "-P"
-          ]
-        },
-        {
-          "name": "--verbose",
-          "recursive": false,
-          "hidden": false,
-          "description": "Enable verbose log (solution build, project reading, ...)",
-          "aliases": [
-            "-v"
-          ]
-        },
-        {
-          "name": "--dotnet",
-          "recursive": false,
-          "hidden": false,
-          "description": "Read projects using given dotnet directory path.",
-          "arguments": [
-            {
-              "name": "DOTNETDIRECTORY",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "metadata": [
-                {
-                  "name": "ClrType",
-                  "value": "System.String"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "--msbuild",
-          "recursive": false,
-          "hidden": false,
-          "description": "Read projects using given MSBuild directory path.",
-          "arguments": [
-            {
-              "name": "MSBUILDDIRECTORY",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "metadata": [
-                {
-                  "name": "ClrType",
-                  "value": "System.String"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "--embedded",
-          "recursive": false,
-          "hidden": false,
-          "description": "Read projects using embedded MSBuild DLLs."
-        },
-        {
-          "name": "--import-fallback",
-          "recursive": false,
-          "hidden": false,
-          "description": "On missing imports or SDks, read manually\nDirectory.Build.props and use fallback values. Result may\ndiffer from reality."
-        },
-        {
-          "name": "--debug",
-          "recursive": false,
-          "hidden": false,
-          "description": "Enable debug mode to show exceptions and callstacks."
-        },
-        {
           "name": "--help",
           "recursive": false,
           "hidden": false,
-          "description": "Display this help screen."
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
         },
         {
           "name": "--version",
@@ -258,163 +237,109 @@
       ],
       "arguments": [
         {
-          "name": "files",
+          "name": "FILES",
+          "description": "Paths of SubSolution configuration files to generate. Also accept relative file path using glob patterns (\"*\", \"**\" and \"?\"). If not provided, all .subsln files in working directory and its sub-directories will be generated.",
           "required": false,
-          "hidden": false,
           "arity": {
             "minimum": 0,
-            "maximum": 1
+            "maximum": 2147483647
           },
-          "description": "Paths of SubSolution configuration files to generate.\nAlso accept relative file path using glob patterns (\"*\",\n\"**\" and \"?\"). If not provided, all .subsln files in\nworking directory and its sub-directories will be\ngenerated.",
-          "metadata": [
-            {
-              "name": "ClrType",
-              "value": "System.Collections.Generic.IEnumerable<System.String>"
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "show",
-      "hidden": false,
-      "description": "Show the content of .sln or .subsln files.",
-      "options": [
-        {
-          "name": "--detailed",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show more details in solution output.",
-          "aliases": [
-            "-d"
-          ]
-        },
-        {
-          "name": "--divergent",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show divergent projects contexts in solution output\n(divergent configuration-platforms, disabled build,\ndisabled deploy).",
-          "aliases": [
-            "-D"
-          ]
-        },
-        {
-          "name": "--paths",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show project paths in solution output.",
-          "aliases": [
-            "-P"
-          ]
-        },
-        {
-          "name": "--verbose",
-          "recursive": false,
-          "hidden": false,
-          "description": "Enable verbose log (solution build, project reading, ...)",
-          "aliases": [
-            "-v"
-          ]
-        },
-        {
-          "name": "--dotnet",
-          "recursive": false,
-          "hidden": false,
-          "description": "Read projects using given dotnet directory path.",
-          "arguments": [
-            {
-              "name": "DOTNETDIRECTORY",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "metadata": [
-                {
-                  "name": "ClrType",
-                  "value": "System.String"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "--msbuild",
-          "recursive": false,
-          "hidden": false,
-          "description": "Read projects using given MSBuild directory path.",
-          "arguments": [
-            {
-              "name": "MSBUILDDIRECTORY",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "metadata": [
-                {
-                  "name": "ClrType",
-                  "value": "System.String"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "--embedded",
-          "recursive": false,
-          "hidden": false,
-          "description": "Read projects using embedded MSBuild DLLs."
-        },
-        {
-          "name": "--import-fallback",
-          "recursive": false,
-          "hidden": false,
-          "description": "On missing imports or SDks, read manually\nDirectory.Build.props and use fallback values. Result may\ndiffer from reality."
-        },
-        {
-          "name": "--debug",
-          "recursive": false,
-          "hidden": false,
-          "description": "Enable debug mode to show exceptions and callstacks."
-        },
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Display this help screen."
-        },
-        {
-          "name": "--version",
-          "recursive": false,
-          "hidden": false,
-          "description": "Display version information."
-        }
-      ],
-      "arguments": [
-        {
-          "name": "files",
-          "required": true,
-          "hidden": false,
-          "arity": {
-            "minimum": 1,
-            "maximum": 1
-          },
-          "description": "Paths of the solution files to show. Can be\n.sln or .subsln files.",
-          "metadata": [
-            {
-              "name": "ClrType",
-              "value": "System.Collections.Generic.IEnumerable<System.String>"
-            }
-          ]
+          "type": "IEnumerable`1"
         }
       ]
     },
     {
       "name": "validate",
-      "hidden": false,
       "description": "Validate .subsln files and their associated .sln files are up-to-date.",
       "options": [
+        {
+          "name": "--debug",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable debug mode to show exceptions and callstacks."
+        },
+        {
+          "name": "--detailed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show more details in solution output.",
+          "aliases": [
+            "-d"
+          ]
+        },
+        {
+          "name": "--divergent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show divergent projects contexts in solution output (divergent configuration-platforms, disabled build, disabled deploy).",
+          "aliases": [
+            "-D"
+          ]
+        },
+        {
+          "name": "--paths",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show project paths in solution output.",
+          "aliases": [
+            "-P"
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable verbose log (solution build, project reading, ...)",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--dotnet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read projects using given dotnet directory path.",
+          "arguments": [
+            {
+              "name": "DOT_NET_DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--msbuild",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read projects using given MSBuild directory path.",
+          "arguments": [
+            {
+              "name": "MS_BUILD_DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--embedded",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read projects using embedded MSBuild DLLs."
+        },
+        {
+          "name": "--import-fallback",
+          "recursive": false,
+          "hidden": false,
+          "description": "On missing imports or SDks, read manually Directory.Build.props and use fallback values. Result may differ from reality."
+        },
         {
           "name": "--show",
           "recursive": false,
@@ -425,6 +350,45 @@
           ]
         },
         {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Display version information."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FILES",
+          "description": "Paths of SubSolution configuration files to validate. Also accept relative file path pattern using wildcards \"*\", \"**\" and \"?\". If not provided, all .subsln files in working directory and its sub-directories will be validated.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "type": "IEnumerable`1"
+        }
+      ]
+    },
+    {
+      "name": "show",
+      "description": "Show the content of .sln or .subsln files.",
+      "options": [
+        {
+          "name": "--debug",
+          "recursive": false,
+          "hidden": false,
+          "description": "Enable debug mode to show exceptions and callstacks."
+        },
+        {
           "name": "--detailed",
           "recursive": false,
           "hidden": false,
@@ -437,7 +401,7 @@
           "name": "--divergent",
           "recursive": false,
           "hidden": false,
-          "description": "Show divergent projects contexts in solution output\n(divergent configuration-platforms, disabled build,\ndisabled deploy).",
+          "description": "Show divergent projects contexts in solution output (divergent configuration-platforms, disabled build, disabled deploy).",
           "aliases": [
             "-D"
           ]
@@ -467,18 +431,13 @@
           "description": "Read projects using given dotnet directory path.",
           "arguments": [
             {
-              "name": "DOTNETDIRECTORY",
+              "name": "DOT_NET_DIRECTORY",
               "required": false,
               "arity": {
                 "minimum": 0,
                 "maximum": 1
               },
-              "metadata": [
-                {
-                  "name": "ClrType",
-                  "value": "System.String"
-                }
-              ]
+              "type": "String"
             }
           ]
         },
@@ -489,18 +448,13 @@
           "description": "Read projects using given MSBuild directory path.",
           "arguments": [
             {
-              "name": "MSBUILDDIRECTORY",
+              "name": "MS_BUILD_DIRECTORY",
               "required": false,
               "arity": {
                 "minimum": 0,
                 "maximum": 1
               },
-              "metadata": [
-                {
-                  "name": "ClrType",
-                  "value": "System.String"
-                }
-              ]
+              "type": "String"
             }
           ]
         },
@@ -514,19 +468,16 @@
           "name": "--import-fallback",
           "recursive": false,
           "hidden": false,
-          "description": "On missing imports or SDks, read manually\nDirectory.Build.props and use fallback values. Result may\ndiffer from reality."
-        },
-        {
-          "name": "--debug",
-          "recursive": false,
-          "hidden": false,
-          "description": "Enable debug mode to show exceptions and callstacks."
+          "description": "On missing imports or SDks, read manually Directory.Build.props and use fallback values. Result may differ from reality."
         },
         {
           "name": "--help",
           "recursive": false,
           "hidden": false,
-          "description": "Display this help screen."
+          "description": "Display this help screen.",
+          "aliases": [
+            "-h"
+          ]
         },
         {
           "name": "--version",
@@ -537,20 +488,14 @@
       ],
       "arguments": [
         {
-          "name": "files",
-          "required": false,
-          "hidden": false,
+          "name": "FILES",
+          "description": "Paths of the solution files to show. Can be .sln or .subsln files.",
+          "required": true,
           "arity": {
-            "minimum": 0,
-            "maximum": 1
+            "minimum": 1,
+            "maximum": 2147483647
           },
-          "description": "Paths of SubSolution configuration files to validate.\nAlso accept relative file path pattern using wildcards\n\"*\", \"**\" and \"?\". If not provided, all .subsln files in\nworking directory and its sub-directories will be\nvalidated.",
-          "metadata": [
-            {
-              "name": "ClrType",
-              "value": "System.Collections.Generic.IEnumerable<System.String>"
-            }
-          ]
+          "type": "IEnumerable`1"
         }
       ]
     }
