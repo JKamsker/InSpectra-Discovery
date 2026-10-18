@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "ai-raccoon",
-    "version": "1.58.0",
+    "version": "1.59.0",
     "description": "An MCP server that gives AI agents persistent, project-scoped memory: a memory bank over sqlite-memory with hybrid vector+BM25 search, workspace sandboxes, a shared promotion tier, and optional S3/Azure sync."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 112,
+    "helpDocumentCount": 115,
     "cliParsedDescription": "MCP server exposing agent memory over sqlite-memory"
   },
   "commands": [
@@ -2630,7 +2630,7 @@
         {
           "name": "watch",
           "hidden": false,
-          "description": "Watch configuration: enable/disable and concurrency per target. This node CONFIGURES watching — it does not register watches; use 'watch registered' to list registrations.",
+          "description": "Watch configuration: enable/disable and concurrency per target. This node CONFIGURES watching — it does not register watches; use 'watch add' to register and 'watch registered' to list registrations.",
           "options": [
             {
               "name": "--help",
@@ -2712,7 +2712,7 @@
             {
               "name": "enable",
               "hidden": false,
-              "description": "Enables or disables watching for a target (configuration only — does not register a watch; use memory_watch_add to register)",
+              "description": "Enables or disables watching for a target (configuration only — does not register a watch; use 'watch add' or memory_watch_add to register)",
               "options": [
                 {
                   "name": "--help",
@@ -2798,7 +2798,7 @@
     {
       "name": "watch",
       "hidden": false,
-      "description": "Registered watches. Watching is CONFIGURED under 'settings watch'; registrations are created by agents via the memory_watch_add MCP tool.",
+      "description": "Registered watches: add, remove, live status and the raw registration list. Watching is CONFIGURED under 'settings watch' (enable) and 'settings ingest scope' (allowlist); 'watch add' and the memory_watch_add MCP tool register through the same server-side checks.",
       "options": [
         {
           "name": "--help",
@@ -2813,9 +2813,111 @@
       ],
       "commands": [
         {
+          "name": "add",
+          "hidden": false,
+          "description": "Registers a file or directory to be mirrored into the project's memory (same checks and result as memory_watch_add). Watching must be enabled and the path inside the ingest scope; a path inside an existing watch is refused, a broader one prunes the watches it contains.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_ID",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            {
+              "name": "PATH",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "registered",
           "hidden": false,
-          "description": "Lists every REGISTERED watch (project, path, registered at, last change) from the watches table. Registrations are created via memory_watch_add; live state (scanning/healthy/…) is reported by memory_watch_status, not the CLI.",
+          "description": "Lists every REGISTERED watch (project, path, registered at, last change) from the watches table. Use 'watch status' for live state (scanning/healthy/…).",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_ID",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "hidden": false,
+          "description": "Stops watching a path and removes its registration (same as memory_watch_remove); removing a path that is not watched is a no-op.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_ID",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            {
+              "name": "PATH",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "hidden": false,
+          "description": "Shows each registered watch's live state (scanning/healthy/retrying/stopped), last sync and last error (same as memory_watch_status); without a project id, every project's watches.",
           "options": [
             {
               "name": "--help",
