@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "kdyf-auth",
-    "version": "1.0.0-preview.3",
+    "version": "1.0.0-preview.4",
     "description": "The kdyf-auth dotnet tool: detects, plans, scripts, applies and verifies the versioned schema of kdyf.Authorization on SQL Server."
   },
   "x-inspectra": {
@@ -24,7 +24,7 @@
     {
       "name": "cutover",
       "hidden": false,
-      "description": "Record CutoverCompleted: from then on the legacy import refuses to run."
+      "description": "Record CutoverCompleted: from then on the legacy import refuses to run.\nmigrate [--approve unresolved-users]\nEverything that can be repeated, in order, stopping where one refuses: apply, then (when\na legacy schema is there) resolve and import apply, then verify. In the host for a legacy schema.\nmigrate --finalize --approver <name> --confirm [--rollback-window 48h]\nWhat cannot be repeated: the cutover, then (after the window) the contraction and the\npromotion of the new schema to the legacy name. Run it again after the window."
     },
     {
       "name": "detect",
@@ -44,7 +44,7 @@
     {
       "name": "resolve",
       "hidden": false,
-      "description": "(host) Resolve the legacy users in Entra and snapshot both gates. --incremental keeps the unchanged.\nidentities export <file> | import <file> --approver <name>\n(host) The review of the identities: approvals, and object ids given by hand.\nimport plan | apply [--approve unresolved-users]\n(host) Copy the legacy schema into this one, reconciled and verified; plan is a dry run.\nNobody may gain: every gain is refused unless approved in the exceptions.\nimport reductions-accept --approver <name>\n(host) Accept what each person loses, as listed now.\nimport cutover --approver <name> [--rollback-window 48h]\n(host) The automatic go/no-go, then CutoverCompleted and the rollback window.\nrollback-sync plan | apply\nTake the revocations made since the cutover back to the legacy schema. Never grants.\ncontract rename | drop | promote --confirm\nAfter the window: the legacy schema renamed to <schema>_legacy_<date>, later dropped;\nthen promote: the new schema takes the legacy name (authz -> auth), role included.\nexceptions import <file> --approver <name>\n(host) The approved exceptions to the invariant (JSON); the file replaces the previous set."
+      "description": "(host) Resolve the legacy users in Entra and snapshot both gates. --incremental keeps the unchanged.\nidentities export <file> | import <file> --approver <name>\n(host) The review of the identities: approvals, and object ids given by hand.\nimport plan | apply [--approve unresolved-users]\n(host) Copy the legacy schema into this one, reconciled and verified; plan is a dry run.\nNobody may gain: every gain is refused unless approved in the exceptions.\nimport reductions-accept --approver <name>\n(host) Accept what each person loses, as listed now.\nimport cutover --approver <name> [--rollback-window 48h]\n(host) The automatic go/no-go, then CutoverCompleted and the rollback window.\nrollback-sync plan | apply\nTake the revocations made since the cutover back to the legacy schema. Never grants.\ncontract rename | drop | promote | cleanup --confirm\nAfter the window: the legacy schema renamed to <schema>_legacy_<date>, later dropped;\nthen promote: the new schema takes the legacy name (authz -> auth), role included;\ncleanup: the import's working tables (they hold e-mails) are dropped, what was approved\nstays in the run log.\nexceptions import <file> --approver <name>\n(host) The approved exceptions to the invariant (JSON); the file replaces the previous set."
     },
     {
       "name": "script",
@@ -154,6 +154,22 @@
           "required": false,
           "arity": {
             "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--connection-string",
+      "recursive": false,
+      "hidden": false,
+      "description": "The dotnet tool only. Otherwise the connection string is read from\nKDYF_AUTH_CONNECTION_STRING (first), or the host's configuration.",
+      "arguments": [
+        {
+          "name": "CS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
             "maximum": 1
           }
         }
