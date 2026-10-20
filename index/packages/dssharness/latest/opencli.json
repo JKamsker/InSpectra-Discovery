@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dssharness",
-    "version": "0.6.16",
+    "version": "0.6.17",
     "description": "Cross-platform repository harness CLI: git worktree management with Windows path-budget checks, driven entirely by .harness-config/config.json."
   },
   "x-inspectra": {
@@ -624,13 +624,13 @@
     },
     {
       "name": "delete-orchestrator",
-      "description": "Delete an orchestrator's directory, once every one of its agents is deleted and no worktree is left below its directory under the worktrees root.",
+      "description": "Delete an orchestrator's directory, once every one of its agents with a worktree is deleted and no worktree is left below its directory under the worktrees root; an agent with no worktree goes with it.",
       "options": [
         {
           "name": "--delete-evidence",
           "recursive": false,
           "hidden": false,
-          "description": "Delete the evidence and transcripts its agents kept with it, which it refuses to delete otherwise. [default: False]",
+          "description": "Delete the evidence, transcripts, steps and sessions its agents kept with it, which it refuses to delete otherwise. [default: False]",
           "arguments": [
             {
               "name": "DELETE_EVIDENCE",
@@ -808,7 +808,7 @@
     },
     {
       "name": "create-agent",
-      "description": "Create an agent of an orchestrator: its record, its worktree, and its seed - the main tree's uncommitted state handed to it, each changed file copied and each deletion made, every path recorded; refused past the orchestrator's limit.",
+      "description": "Create an agent of an orchestrator: its record, its worktree, and its seed - the main tree's uncommitted state handed to it, each changed file copied and each deletion made, every path recorded; refused past the orchestrator's limit. With --no-worktree, the engine's agent: a record, with no worktree or seed, counted against no limit.",
       "options": [
         {
           "name": "--model",
@@ -845,10 +845,27 @@
           ]
         },
         {
+          "name": "--no-worktree",
+          "recursive": false,
+          "hidden": false,
+          "description": "Used by the orchestrator engine for a step that only reads; of no use typed by hand. Makes an agent that has no worktree: it reads the main tree and keeps only records. Nothing of it is seeded, refreshed, rebased or folded. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_WORKTREE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--session",
           "recursive": false,
           "hidden": false,
-          "description": "The agent's Claude session id, or its subagent's id, whose transcripts delete-agent keeps. Run again, it records only this.",
+          "description": "The agent's Claude session id, or its subagent's id, whose transcripts delete-agent keeps. Run again, it records only this. Not with --no-worktree: that agent records none.",
           "arguments": [
             {
               "name": "SESSION",
@@ -1827,6 +1844,224 @@
         {
           "name": "AGENT",
           "description": "The agent to delete.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "validate-workflow",
+      "description": "Check the workflows config.json declares: that each definition file reads, holds, and names files that are there. Nothing is run.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the findings as JSON. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output. [default: False]",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_PROMPT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "WORKFLOW",
+          "description": "The workflow to check, as workflows in config.json declares it. Omit for every declared one.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "export-workflow",
+      "description": "Copy a workflow - its yml and every file it names - into a folder of its own: a declared one once it holds, or the shipped one with --shipped.",
+      "options": [
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "The folder to export into; the workflow is written into a folder of its own under it, named as the workflow, which must not be there.",
+          "arguments": [
+            {
+              "name": "TO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--shipped",
+          "recursive": false,
+          "hidden": false,
+          "description": "Export the workflow this tool ships (implementation), to make a version of your own. [default: False]",
+          "arguments": [
+            {
+              "name": "SHIPPED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write where the workflow went and each file as JSON. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output. [default: False]",
+          "aliases": [
+            "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_PROMPT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "WORKFLOW",
+          "description": "The workflow to export, as workflows in config.json declares it; with --shipped, the one this tool ships.",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -5165,7 +5400,7 @@
     },
     {
       "name": "help",
-      "description": "Explain what the answers mean, one topic at a time: exit-codes, config, legs, space, admission, worktrees, orchestrators, anchors, layout, secrets, tools, runners, setups, verdicts, mutations, ci.",
+      "description": "Explain what the answers mean, one topic at a time: exit-codes, config, legs, space, admission, worktrees, orchestrators, workflows, anchors, layout, secrets, tools, runners, setups, verdicts, mutations, ci.",
       "options": [
         {
           "name": "--verbose",
@@ -5228,7 +5463,7 @@
       "arguments": [
         {
           "name": "TOPIC",
-          "description": "Topic to explain: exit-codes, config, legs, space, admission, worktrees, orchestrators, anchors, layout, secrets, tools, runners, setups, verdicts, mutations, ci. Omit for an overview.",
+          "description": "Topic to explain: exit-codes, config, legs, space, admission, worktrees, orchestrators, workflows, anchors, layout, secrets, tools, runners, setups, verdicts, mutations, ci. Omit for an overview.",
           "required": false,
           "arity": {
             "minimum": 0,
@@ -5365,6 +5600,64 @@
             "maximum": 1
           },
           "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "contain-exec",
+      "description": "Join the container asked for, then become, or start and wait for, the program after '--'.",
+      "hidden": true,
+      "options": [
+        {
+          "name": "--job",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Windows job object to join, named by the process runner that made it.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--group",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start the program in a process group of its own, apart from the terminal. [default: False]",
+          "arguments": [
+            {
+              "name": "GROUP",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--status",
+          "recursive": false,
+          "hidden": false,
+          "description": "The channel the process runner reads whether the program started from.",
+          "arguments": [
+            {
+              "name": "CHANNEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         }
       ]
     }
