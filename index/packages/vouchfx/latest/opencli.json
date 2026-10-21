@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "vouchfx",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "End-to-end integration testing for distributed .NET systems, authored in declarative .e2e.yaml. vouchfx compiles YAML to memory-safe C# via Roslyn, orchestrates the required container topology with .NET Aspire + Testcontainers, and verifies one business transaction across HTTP (REST/SOAP), databases (PostgreSQL, MySQL, SQL Server, MongoDB, DynamoDB), message brokers (Kafka, RabbitMQ, NATS, Azure Service Bus, Redis Streams), cache/search (Redis, Elasticsearch), S3 object storage, Prometheus metrics, OTLP distributed traces, SMTP capture, webhooks and inline C# — twenty-five providers across eleven step families, with engine-owned RETRY polling, execution-time secret resolution with at-source redaction, and a four-verdict taxonomy where only Fail breaks CI by default."
   },
   "x-inspectra": {
@@ -316,6 +316,40 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Load trusted external providers from this directory. Repeat for additional directories.",
+          "arguments": [
+            {
+              "name": "PROVIDERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--no-default-providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not probe ~/.vouchfx/providers (explicit directories and VOUCHFX_PROVIDERS still apply). [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEFAULT_PROVIDERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -328,6 +362,188 @@
             "maximum": 1
           },
           "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "providers",
+      "description": "Install, list or uninstall trusted Community step providers. Provider code is not sandboxed.",
+      "commands": [
+        {
+          "name": "install",
+          "description": "Install or replace a provider from a NuGet ID or community registry step kind.",
+          "options": [
+            {
+              "name": "--package-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Treat the argument as an exact NuGet package ID and do not consult the Community registry. [default: False]",
+              "arguments": [
+                {
+                  "name": "PACKAGE_ID",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exact NuGet version; defaults to the latest stable root version.",
+              "arguments": [
+                {
+                  "name": "VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--source",
+              "recursive": false,
+              "hidden": false,
+              "description": "HTTPS NuGet v3 endpoint or an explicit local feed directory. [default: https://api.nuget.org/v3/index.json]",
+              "arguments": [
+                {
+                  "name": "SOURCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--directory",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override ~/.vouchfx/providers with this installation root. Listing this directory ignores environment and home paths.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "uninstall",
+          "description": "Remove a provider installed under its NuGet package ID.",
+          "options": [
+            {
+              "name": "--directory",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override ~/.vouchfx/providers with this installation root. Listing this directory ignores environment and home paths.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List installed providers and the public community registry; offline failures retain installed results.",
+          "options": [
+            {
+              "name": "--directory",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override ~/.vouchfx/providers with this installation root. Listing this directory ignores environment and home paths.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--offline",
+              "recursive": false,
+              "hidden": false,
+              "description": "List installed providers without contacting the community registry. [default: False]",
+              "arguments": [
+                {
+                  "name": "OFFLINE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write installed and available provider records as JSON. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -386,6 +602,40 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Load trusted external providers from this directory. Repeat for additional directories.",
+          "arguments": [
+            {
+              "name": "PROVIDERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--no-default-providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not probe ~/.vouchfx/providers (explicit directories and VOUCHFX_PROVIDERS still apply). [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEFAULT_PROVIDERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -430,6 +680,40 @@
           "arguments": [
             {
               "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Load trusted external providers from this directory. Repeat for additional directories.",
+          "arguments": [
+            {
+              "name": "PROVIDERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--no-default-providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not probe ~/.vouchfx/providers (explicit directories and VOUCHFX_PROVIDERS still apply). [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEFAULT_PROVIDERS",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -495,6 +779,40 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "--providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Load trusted external providers from this directory. Repeat for additional directories.",
+          "arguments": [
+            {
+              "name": "PROVIDERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--no-default-providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not probe ~/.vouchfx/providers (explicit directories and VOUCHFX_PROVIDERS still apply). [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEFAULT_PROVIDERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ]
     },
@@ -533,6 +851,40 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Load trusted external providers from this directory. Repeat for additional directories.",
+          "arguments": [
+            {
+              "name": "PROVIDERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--no-default-providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not probe ~/.vouchfx/providers (explicit directories and VOUCHFX_PROVIDERS still apply). [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEFAULT_PROVIDERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }
@@ -675,6 +1027,40 @@
                 "maximum": 1
               },
               "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Load trusted external providers from this directory. Repeat for additional directories.",
+          "arguments": [
+            {
+              "name": "PROVIDERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--no-default-providers",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not probe ~/.vouchfx/providers (explicit directories and VOUCHFX_PROVIDERS still apply). [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEFAULT_PROVIDERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }

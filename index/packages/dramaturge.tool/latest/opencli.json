@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Dramaturge - Command-Line Tool",
-    "version": "0.0.2",
-    "description": "The dramaturge command-line tool: installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches, and records browser actions as C#."
+    "version": "0.0.3",
+    "description": "The dramaturge command-line tool: installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches, records browser actions as C#, and drives browser sessions for coding agents, from the shell or as an MCP server."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
@@ -16,7 +16,7 @@
     },
     "cliFramework": "System.CommandLine",
     "cliParsedTitle": "dramaturge",
-    "cliParsedDescription": "Installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches, records browser actions as C#, and runs browser sessions that commands drive."
+    "cliParsedDescription": "Installs, lists, and removes the browsers and drivers that Dramaturge.Browsers caches, records browser actions as C#, runs browser sessions that commands drive, and serves those commands to MCP hosts."
   },
   "options": [
     {
@@ -895,6 +895,182 @@
                   "type": "Boolean"
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mcp",
+      "description": "Serve the session commands to an MCP host over standard input and output. Every session the host starts gets the options given here.",
+      "options": [
+        {
+          "name": "--headed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show the browser's window. By default the browser has none. [default: False]",
+          "arguments": [
+            {
+              "name": "HEADED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--user-data-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "A profile directory for the browser to keep. By default it gets a temporary one.",
+          "arguments": [
+            {
+              "name": "USER_DATA_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--idle-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "The minutes the session waits for a command before it stops. [default: 30]",
+          "arguments": [
+            {
+              "name": "IDLE_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--mask-passwords",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write values typed into, or expected of, password fields in the session's code as a read of the DRAMATURGE_PASSWORD environment variable. [default: False]",
+          "arguments": [
+            {
+              "name": "MASK_PASSWORDS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--allow-origin",
+          "recursive": false,
+          "hidden": false,
+          "description": "An origin, such as https://example.com, the session's pages may navigate to; give it once for each. By default every origin is allowed.",
+          "arguments": [
+            {
+              "name": "ALLOW_ORIGIN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--allow-file-urls",
+          "recursive": false,
+          "hidden": false,
+          "description": "Let the session open file: URLs. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_FILE_URLS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dialogs",
+          "recursive": false,
+          "hidden": false,
+          "description": "How the browser answers the dialogs pages open, such as confirm: dismiss (the default) or accept. [default: dismiss]",
+          "arguments": [
+            {
+              "name": "DIALOGS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--allow-upload-from",
+          "recursive": false,
+          "hidden": false,
+          "description": "A directory files may be uploaded from, with those below it, besides the one the session is started in; give it once for each.",
+          "arguments": [
+            {
+              "name": "ALLOW_UPLOAD_FROM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--downloads",
+          "recursive": false,
+          "hidden": false,
+          "description": "A directory to save downloads in. By default the session refuses them.",
+          "arguments": [
+            {
+              "name": "DOWNLOADS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--path",
+          "recursive": true,
+          "hidden": false,
+          "description": "The cache directory. Defaults to DRAMATURGE_BROWSERS_PATH, or the per-user cache directory.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         }
@@ -2126,7 +2302,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "The kind of file: program (the default), xunit, nunit, mstest, or tunit. [default: Program]",
+          "description": "The kind of file: program (the default), xunit, nunit, mstest, or tunit. [default: program]",
           "arguments": [
             {
               "name": "TARGET",
@@ -2135,14 +2311,7 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "CodeTarget",
-              "allowedValues": [
-                "Program",
-                "Xunit",
-                "NUnit",
-                "MSTest",
-                "TUnit"
-              ]
+              "type": "String"
             }
           ]
         },

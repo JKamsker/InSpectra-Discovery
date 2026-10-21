@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "webority-db-migrator - shared schema runner (DbUp), SQL Server or PostgreSQL",
-    "version": "5.0.0",
+    "version": "5.1.0",
     "description": "Shared DbUp-based schema runner for every Webority database project, SQL Server or PostgreSQL. Run-once journaled Scripts/ + StoredProcedures/ re-applied when changed, tracked in dbo.SchemaVersions on SQL Server and public.SchemaVersions on PostgreSQL, both stamped in UTC with a content checksum."
   },
   "x-inspectra": {
@@ -97,15 +97,6 @@
       ]
     },
     {
-      "name": "--tx-per-script",
-      "recursive": false,
-      "hidden": false,
-      "description": "Wrap each script in its own transaction (default: off)",
-      "aliases": [
-        "-x"
-      ]
-    },
-    {
       "name": "--timeout",
       "recursive": false,
       "hidden": false,
@@ -128,7 +119,7 @@
       "name": "--accept-checksum",
       "recursive": false,
       "hidden": false,
-      "description": "Accept the current content of one already-applied script (repeatable)\nThat rewrites the stored hash for that one script from the file on disk, printing the old and new\nvalues. There is deliberately no switch to turn the guard off everywhere.\nStored procedures:\nEach StoredProcedures/ file's content is hashed into SchemaVersionsRunAlways after it runs. A file\nwhose hash still matches is skipped. Every procedure runs when a run-once script is pending in\nthe same run, on the first run of this version (the table starts empty), and with\n--reapply-procedures. A procedure edited or dropped by hand on the server is not put back until\none of those happens.\nWhat the command line will not accept:\nA bare word with no option in front of it, so a connection string passed without --connection\nstops the run instead of being dropped in favour of MIGRATOR_CONNECTION. A value that is itself\nan option, so --connection --what-if is a typo rather than a connection string. --force without\n--mark-applied, which is the only thing it relaxes. --what-if together with --mark-applied,\nwhich ask for opposite things. --reapply-procedures with --mark-applied or with --lint alone,\nneither of which runs a procedure.\nExit codes:\n0  success\n1  migration failure\n2  usage/config error",
+      "description": "Accept the current content of one already-applied script (repeatable)\nThat rewrites the stored hash for that one script from the file on disk, printing the old and new\nvalues. There is deliberately no switch to turn the guard off everywhere.\nStored procedures:\nEach StoredProcedures/ file's content is hashed into SchemaVersionsRunAlways after it runs. A file\nwhose hash still matches is skipped. Every procedure runs when a run-once script is pending in\nthe same run, on the first run of this version (the table starts empty), and with\n--reapply-procedures. A procedure edited or dropped by hand on the server is not put back until\none of those happens.\nTransactions:\nEach script runs in one transaction together with its journal row, so a failure leaves none of it applied.\nA script that cannot (FULLTEXT, ALTER DATABASE, a chunked backfill) carries the comment -- migrator:no-transaction <reason>; its batches then commit one by one.\nWhat the command line will not accept:\nA bare word with no option in front of it, so a connection string passed without --connection\nstops the run instead of being dropped in favour of MIGRATOR_CONNECTION. A value that is itself\nan option, so --connection --what-if is a typo rather than a connection string. --force without\n--mark-applied, which is the only thing it relaxes. --what-if together with --mark-applied,\nwhich ask for opposite things. --reapply-procedures with --mark-applied or with --lint alone,\nneither of which runs a procedure.\nExit codes:\n0  success\n1  migration failure\n2  usage/config error\n3  an applied script changed (nothing was applied)",
       "arguments": [
         {
           "name": "ACCEPT_CHECKSUM",
@@ -159,7 +150,7 @@
       "name": "--report-json",
       "recursive": false,
       "hidden": false,
-      "description": "With --lint: write the pending scripts and the findings\nto a JSON file",
+      "description": "Write the pending scripts, the lint findings, any changed applied\nscripts and, on an apply, each script's time to a JSON file",
       "arguments": [
         {
           "name": "PATH",
@@ -175,7 +166,7 @@
       "name": "--help",
       "recursive": false,
       "hidden": false,
-      "description": "Show this help and exit\nThe lint (pending scripts only):\nErrors: a CREATE TABLE, ADD column or CREATE INDEX with no guard; DROP TABLE/COLUMN, ALTER COLUMN\nto a new type, TRUNCATE, or DELETE/UPDATE with no WHERE; a file\nname timestamp that is malformed or sorts before the newest applied script; ADD ... NOT NULL\nwith no DEFAULT. Warning (SQL Server): CREATE INDEX without ONLINE = ON.\nWaive one finding with a comment on or above its line, the reason being required:\n-- lint:allow destructive-statement table was never populated\nThe applied-script guard:\nEvery run-once script's content is hashed into SchemaVersions.Checksum when it is applied. On a\nlater run, a script whose content no longer matches its stored hash fails the run, because an\napplied script is immutable by convention and an edit to one is silently ignored on every\ndatabase that already ran it. Stored procedures are never refused by it.\nLine endings and a trailing newline are ignored, so the same script on Windows and Linux agrees.\nIf the change IS intended, review it and accept it by journal name:",
+      "description": "Show this help and exit\nThe lint (pending scripts only):\nErrors: a CREATE TABLE, ADD column or CREATE INDEX with no guard; DROP TABLE/COLUMN, ALTER COLUMN\nto a new type, TRUNCATE, or DELETE/UPDATE with no WHERE; a file\nname timestamp that is malformed or sorts before the newest applied script; ADD ... NOT NULL\nwith no DEFAULT. Warning (SQL Server): CREATE INDEX without ONLINE = ON.\nErrors also: a statement that cannot run in a transaction, or a chunked UPDATE or DELETE TOP loop,\nin a script without -- migrator:no-transaction, and that comment with no reason.\nWaive one finding with a comment on or above its line, the reason being required:\n-- lint:allow destructive-statement table was never populated\nThe applied-script guard:\nEvery run-once script's content is hashed into SchemaVersions.Checksum when it is applied. On a\nlater run, a script whose content no longer matches its stored hash fails the run, because an\napplied script is immutable by convention and an edit to one is silently ignored on every\ndatabase that already ran it. Stored procedures are never refused by it.\nLine endings and a trailing newline are ignored, so the same script on Windows and Linux agrees.\nIf the change IS intended, review it and accept it by journal name:",
       "aliases": [
         "-h"
       ]
