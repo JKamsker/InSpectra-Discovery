@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "aprscli",
-    "version": "0.4.0-alpha.12",
+    "version": "0.5.0-alpha.2",
     "description": "APRS.NET command-line tool: listen to APRS-IS, parse and replay packets, send as your callsign, serve a feed to local APRS-IS clients, and compute passcodes."
   },
   "x-inspectra": {
@@ -688,6 +688,168 @@
         }
       ],
       "commands": [
+        {
+          "name": "beacon",
+          "description": "Beacon a position to APRS-IS on a schedule until --count, --duration or Ctrl+C: every --every, or on a decay schedule with --decay. The first beacon goes at once.",
+          "options": [
+            {
+              "name": "--lat",
+              "recursive": false,
+              "hidden": false,
+              "description": "Latitude in degrees, north positive.",
+              "arguments": [
+                {
+                  "name": "LAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--lon",
+              "recursive": false,
+              "hidden": false,
+              "description": "Longitude in degrees, east positive.",
+              "arguments": [
+                {
+                  "name": "LON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--symbol",
+              "recursive": false,
+              "hidden": false,
+              "description": "Symbol as table and code, for example /> (car) or /- (house). Default: /- . [default: /-]",
+              "arguments": [
+                {
+                  "name": "SYMBOL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--comment",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comment after the position.",
+              "arguments": [
+                {
+                  "name": "COMMENT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--status",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also send this status text with each beacon.",
+              "arguments": [
+                {
+                  "name": "STATUS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--every",
+              "recursive": false,
+              "hidden": false,
+              "description": "How often to beacon, 1m or more. With --decay, the longest wait. Default: 30m. [default: 30m]",
+              "arguments": [
+                {
+                  "name": "EVERY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--decay",
+              "recursive": false,
+              "hidden": false,
+              "description": "Beacon on a decay schedule instead: wait this long after the first beacon, then double the wait up to --every, for example 1m (1, 2, 4, 8 … minutes).",
+              "arguments": [
+                {
+                  "name": "DECAY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--count",
+              "recursive": false,
+              "hidden": false,
+              "description": "Stop after this many beacons.",
+              "arguments": [
+                {
+                  "name": "COUNT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--duration",
+              "recursive": false,
+              "hidden": false,
+              "description": "Stop after this long, for example 2h.",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
         {
           "name": "status",
           "description": "Send a status report.",
@@ -1411,7 +1573,7 @@
               "name": "--tnc",
               "recursive": false,
               "hidden": false,
-              "description": "The TNC as host[:port] (default port 8001, Dire Wolf's KISS port), or a serial TNC as serial:PORT[@BAUD], such as serial:/dev/ttyUSB0 or serial:COM3@57600 (default 9600 baud). Add ,setup=th-d72 to switch a radio's built-in TNC into KISS.",
+              "description": "The TNC as host[:port] (default port 8001, Dire Wolf's KISS port), or a serial TNC as serial:PORT[@BAUD], such as serial:/dev/ttyUSB0 or serial:COM3@57600 (default 9600 baud). Add ,setup=th-d72 to switch a radio's built-in TNC into KISS, or ,text to read a radio in its APRS mode (receive only).",
               "aliases": [
                 "-t"
               ],
@@ -2800,6 +2962,157 @@
             "maximum": 1
           },
           "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "gps",
+      "description": "Read a GPS through gpsd, as NMEA over TCP or on a serial port, and print its fixes: time, fix, position, altitude, speed, course, satellites, HDOP and error. It keeps trying when the GPS source goes away (waiting 5s, doubling to 60s) until --count, --duration or Ctrl+C.",
+      "options": [
+        {
+          "name": "--gpsd",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read gpsd at host[:port] (default localhost:2947).",
+          "arguments": [
+            {
+              "name": "GPSD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--nmea",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read NMEA sentences over TCP from host:port, as a GPS-to-network bridge or gpsd's NMEA port sends them.",
+          "arguments": [
+            {
+              "name": "NMEA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--serial",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read NMEA sentences from a GPS on a serial port, as PORT[@BAUD], such as /dev/ttyACM0 or COM4@9600 (default 4800 baud, NMEA's standard speed).",
+          "arguments": [
+            {
+              "name": "SERIAL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--device",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --gpsd: the GPS to read when gpsd has several, such as /dev/ttyACM0.",
+          "arguments": [
+            {
+              "name": "DEVICE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--count",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stop after this many fixes.",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--duration",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stop after this long, for example 90s, 10m or 2h.",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DURATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--satellites",
+          "recursive": false,
+          "hidden": false,
+          "description": "After a fix, list the satellites in view when they have changed. [default: False]",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SATELLITES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--raw",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the lines as read (gpsd's JSON or the NMEA sentences) instead of the fixes. [default: False]",
+          "arguments": [
+            {
+              "name": "RAW",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ]
     }

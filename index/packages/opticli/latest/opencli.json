@@ -2,14 +2,14 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "opticli",
-    "version": "0.19.0",
+    "version": "0.20.0",
     "description": "Read and write local Optimizely CMS 12 and 13 sites from the command line, Visual Builder included."
   },
   "x-inspectra": {
     "artifactSource": "static-analysis",
     "generator": "InSpectra.Gen",
     "metadataEnriched": true,
-    "helpDocumentCount": 75,
+    "helpDocumentCount": 79,
     "staticAnalysis": {
       "framework": "System.CommandLine",
       "inspectorType": "dnlib",
@@ -5531,6 +5531,456 @@
             "maximum": 1
           },
           "description": "A ref is a content id (123), id_version (123_456), a content GUID, a URL/path (/en/about/ or https://host/en/about/), or content provider content as get prints it (63__provider)."
+        }
+      ]
+    },
+    {
+      "name": "ide",
+      "hidden": false,
+      "description": "IDE mode: the site you start from your IDE (Rider's run or debug, Visual Studio, dotnet run, dotnet watch) gets the\nopticli agent from its build, so writes go through that process and show there at once (no second site with\nits own cache, no restart). Nothing to set per run, nothing secret in the project or a launch profile.\n`ide on` adds a block to <Project>.csproj.user (MSBuild imports it; git normally ignores it, and opticli adds it to\n.git/info/exclude when not) that names opticli's copy of the agent as the Debug build's startup hook. Rebuild,\nthen start the site from the IDE as usual: the agent makes its own token and tells opticli where it listens\n(HTTPS with the development certificate works). It never changes how the site starts or stops it from starting:\nagainst another database, or outside Development, it just stays off for that run.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--connection",
+          "recursive": false,
+          "hidden": false,
+          "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--connection-name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force JSON output (the default when stdout is redirected)."
+        },
+        {
+          "name": "--text",
+          "recursive": false,
+          "hidden": false,
+          "description": "Force human-readable tables (the default on a terminal)."
+        }
+      ],
+      "commands": [
+        {
+          "name": "off",
+          "hidden": false,
+          "description": "Turn IDE mode off for this project: removes opticli's block from <Project>.csproj.user (the file too when nothing\nelse is in it) and the line opticli added to .git/info/exclude. The build loads the agent until it is rebuilt.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force JSON output (the default when stdout is redirected)."
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force human-readable tables (the default on a terminal)."
+            }
+          ]
+        },
+        {
+          "name": "on",
+          "hidden": false,
+          "description": "Turn IDE mode on for this project (again after `opticli` is updated or `db use` changes, to refresh it). Writes the\nblock to <Project>.csproj.user, copies the agent to opticli's state directory (it must stay put while builds name\nit) and keeps the file out of git. Refused when git tracks the .csproj.user. Rebuild and restart the site from the\nIDE afterwards. The agent accepts a local database, or the development database chosen with `db use`.",
+          "options": [
+            {
+              "name": "--configuration",
+              "recursive": false,
+              "hidden": false,
+              "description": "The build configuration that gets the agent. [default: Debug]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force JSON output (the default when stdout is redirected)."
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force human-readable tables (the default on a terminal)."
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "hidden": false,
+          "description": "Whether IDE mode is on for this project: the block in <Project>.csproj.user, opticli's copy of the agent (and\nwhether it is this opticli's), whether the build output has the hook (else rebuild), whether git ignores the file,\nand the site opticli writes through (the IDE's when it runs). Example: opticli ide status",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The site's .csproj, or a directory/solution to search. Default: found from the working directory.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Connection string to use for this run instead of the project's configuration (also: OPTICLI_DB). A remote one that isn't the development database is flagged in meta.warnings.",
+              "arguments": [
+                {
+                  "name": "STRING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--connection-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Name of the connection string in the site's configuration. [default: EPiServerDB]",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--db",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use another of the project's connection strings for this run: its id, name (`opticli db add`) or database name from `opticli db list`. Default: the development database. A prod database is only read.",
+              "arguments": [
+                {
+                  "name": "DB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Launch profile in Properties/launchSettings.json whose connection string to use.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force JSON output (the default when stdout is redirected)."
+            },
+            {
+              "name": "--text",
+              "recursive": false,
+              "hidden": false,
+              "description": "Force human-readable tables (the default on a terminal)."
+            }
+          ]
         }
       ]
     },

@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dotllm",
-    "version": "0.3.0-dev.3080",
+    "version": "0.3.0-dev.3089",
     "description": "Command-line tool for dotLLM — run, chat, serve, and manage GGUF models. Install with: dotnet tool install -g DotLLM.Cli"
   },
   "x-inspectra": {
@@ -49,19 +49,19 @@
           "name": "--kv-quant-k",
           "recursive": false,
           "hidden": false,
-          "description": "KV-cache key storage: f16, q8_0, q4_0.\nSynonym of --cache-type-k. For the CUDA\nhybrid-dense model (Bonsai-2 / qwen35)\noverrides DOTLLM_HYBRID_KV; quantized KV\nneeds numKvHeads*headDim % 32 == 0"
+          "description": "KV-cache key storage: f16, q8_0, q4_0.\nSynonym of --cache-type-k. For the CUDA\nhybrid-dense model (Bonsai-2 / qwen35)\noverrides DOTLLM_HYBRID_KV; quantized\nKV needs numKvHeads*headDim % 32 == 0"
         },
         {
           "name": "--kv-quant-v",
           "recursive": false,
           "hidden": false,
-          "description": "KV-cache value storage: f16, q8_0, q4_0.\nSynonym of --cache-type-v. See"
+          "description": "KV-cache value storage: f16, q8_0,\nq4_0. Synonym of --cache-type-v. See"
         },
         {
           "name": "--device",
           "recursive": false,
           "hidden": false,
-          "description": "auto       Compute device: 'auto' (default: CUDA if\nthe model fits, else Vulkan, else CPU -\nwith a warning if it ends on the CPU),\n'cpu', 'vulkan', 'gpu'/'cuda',\n'gpu:1'/'cuda:1'. An explicit GPU that\ncannot be honoured is an error, never a\nsilent CPU run",
+          "description": "auto       Compute device: 'auto' (default: CUDA\nif the model fits, else Vulkan, else\nCPU - with a warning if it ends on the\nCPU), 'cpu', 'vulkan', 'gpu'/'cuda',\n'gpu:1'/'cuda:1'. An explicit GPU that\ncannot be honoured is an error, never a\nsilent CPU run",
           "aliases": [
             "-d"
           ],
@@ -80,7 +80,7 @@
           "name": "--prompt-tokens",
           "recursive": false,
           "hidden": false,
-          "description": "512        Synthetic prompt length in tokens (tiled\nfrom the seed prompt)",
+          "description": "512        Synthetic prompt length in tokens\n(tiled from the seed prompt)",
           "aliases": [
             "-p"
           ],
@@ -99,7 +99,7 @@
           "name": "--gen-tokens",
           "recursive": false,
           "hidden": false,
-          "description": "128        Greedy decode steps to time per\nrepetition",
+          "description": "128        Greedy decode steps to time per\nrepetition\nrep runs first and is discarded)",
           "aliases": [
             "-n"
           ],
@@ -127,13 +127,13 @@
           "name": "--depth",
           "recursive": false,
           "hidden": false,
-          "description": "0          Extra synthetic context tokens fed\n(untimed) after prefill, before the timed\ndecode. Decode runs at context depth p +\ndepth"
+          "description": "0          Extra synthetic context tokens fed\n(untimed) after prefill, before the\ntimed decode. Decode runs at context\ndepth p + depth"
         },
         {
           "name": "--seed-prompt",
           "recursive": false,
           "hidden": false,
-          "description": "Seed text tiled to synthesize the prompt"
+          "description": "Seed text tiled to synthesize the\nprompt"
         },
         {
           "name": "--quant",
@@ -148,7 +148,7 @@
           "name": "--threads",
           "recursive": false,
           "hidden": false,
-          "description": "0          Number of CPU threads for inference. 0 =\nauto/all cores (default)",
+          "description": "0          Number of CPU threads for inference. 0\n= auto/all cores (default)",
           "arguments": [
             {
               "name": "THREADS",
@@ -186,7 +186,7 @@
           "name": "--n-cpu-moe",
           "recursive": false,
           "hidden": false,
-          "description": "0          MoE CPU/GPU expert offload (#370,\nllama.cpp --n-cpu-moe equivalent, Vulkan\nQwen3MoeHybrid only): put the first N MoE\nlayers' routed experts on the CPU instead\nof the GPU, trading decode/prefill\nthroughput for reduced device memory. 0 =\nfully GPU-resident/streaming (default).\nNo-op on cpu/cuda backends or\nnon-Qwen3MoeHybrid Vulkan models",
+          "description": "MoE CPU/GPU expert offload (llama.cpp\n--n-cpu-moe equivalent): put the routed\nexperts of the first N layers on the\nCPU, trading throughput for device\nmemory. Vulkan Qwen3MoeHybrid (#370):\nCPU expert compute for those layers.\nCUDA nemotron_h_moe (#1071): those\nlayers' experts are never cached and\nalways computed on the CPU. Unset =\nnone (env fallback DOTLLM_N_CPU_MOE).\nNo-op on the cpu backend",
           "arguments": [
             {
               "name": "N_CPU_MOE",
@@ -199,10 +199,118 @@
           ]
         },
         {
+          "name": "--moe-offload",
+          "recursive": false,
+          "hidden": false,
+          "description": "Routed-MoE expert placement on CUDA\n(nemotron_h_moe): 'auto' (default: keep\nexperts in VRAM when the model fits,\nelse offload them to a host store with\na VRAM expert cache), 'off' (refuse a\nmodel that does not fit), 'on' (always\noffload). Env fallback:\nDOTLLM_MOE_OFFLOAD",
+          "arguments": [
+            {
+              "name": "MOE_OFFLOAD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cache-mib",
+          "recursive": false,
+          "hidden": false,
+          "description": "VRAM expert-cache size in MiB when\nthe measured free-VRAM budget. Larger\nvalues are clamped to the budget. Env\nfallback: DOTLLM_MOE_CACHE_MIB\n(default), 'lru' or 'lfu'. Env\nfallback: DOTLLM_MOE_CACHE_POLICY\nthe VRAM cache run: 'auto' (default:\nper expert, CPU or copy-to-GPU by a\ncost model calibrated at load), 'copy'\n(compute every uncached expert on the\nCPU; an expert enters the cache only\nwhen its recent use beats the weakest\ncached one). Env fallback:\nDOTLLM_MOE_COLD\non the CPU (one expert per worker);\ndefault physical cores - 1. Env\nfallback: DOTLLM_MOE_CPU_THREADS",
+          "arguments": [
+            {
+              "name": "MOE_CACHE_MIB",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cache-policy",
+          "recursive": false,
+          "hidden": false,
+          "description": "Expert-cache replacement policy: 'slru'\n(default), 'lru' or 'lfu'. Env\nfallback: DOTLLM_MOE_CACHE_POLICY",
+          "arguments": [
+            {
+              "name": "MOE_CACHE_POLICY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where offloaded experts that are not in\nthe VRAM cache run: 'auto' (default:\nper expert, CPU or copy-to-GPU by a\ncost model calibrated at load), 'copy'\n(copy every miss into the cache), 'cpu'\n(compute every uncached expert on the\nCPU; an expert enters the cache only\nwhen its recent use beats the weakest\ncached one). Env fallback:\nDOTLLM_MOE_COLD",
+          "arguments": [
+            {
+              "name": "MOE_COLD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cpu-threads",
+          "recursive": false,
+          "hidden": false,
+          "description": "Worker threads for MoE experts computed\non the CPU (one expert per worker);\ndefault physical cores - 1. Env\nfallback: DOTLLM_MOE_CPU_THREADS",
+          "arguments": [
+            {
+              "name": "MOE_CPU_THREADS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--cpu-moe",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep every MoE layer's routed experts\non the CPU (llama.cpp --cpu-moe). CUDA\nnemotron_h_moe: never cached, always\ncomputed on the CPU; Vulkan\nQwen3MoeHybrid (bench): as --n-cpu-moe\nwith every layer. Env fallback:\nDOTLLM_CPU_MOE=1"
+        },
+        {
+          "name": "--moe-calibrate",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-run the MoE offload cost calibration\n(PCIe bandwidth, sync latency, CPU time\nper expert) instead of reading the\ncached record in\n%LOCALAPPDATA%/dotllm/moe-calibration.j\nson. Env fallback:\nDOTLLM_MOE_CALIBRATE=1"
+        },
+        {
+          "name": "--ctx-size",
+          "recursive": false,
+          "hidden": false,
+          "description": "Context window in tokens (llama.cpp\n-c). For nemotron_h_moe it caps the\nmodel's context and is what the MoE\nexpert-offload VRAM budget reserves KV\ncache for (default: the model's maximum\ncontext, e.g. 262144 for Nemotron 3.5\nBolt). Lower it to leave more VRAM for\nthe expert cache. Env fallback:\nDOTLLM_MOE_CTX",
+          "arguments": [
+            {
+              "name": "CTX_SIZE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--depth-list",
           "recursive": false,
           "hidden": false,
-          "description": "Comma-separated context depths for\nmulti-point sweep (e.g., 512,2048,8192).\nMeasures decode at each checkpoint in one\nprocess without reloading the model.\nMutually exclusive with --depth",
+          "description": "Comma-separated context depths for\nmulti-point sweep (e.g.,\n512,2048,8192). Measures decode at each\ncheckpoint in one process without\nreloading the model. Mutually exclusive\nwith --depth",
           "arguments": [
             {
               "name": "DEPTH_LIST",
@@ -218,7 +326,7 @@
           "name": "--warmup",
           "recursive": false,
           "hidden": false,
-          "description": "Number of warm-up repetitions to discard\nper checkpoint (default: 1). Use 0 to\nskip warm-up entirely",
+          "description": "Number of warm-up repetitions to\ndiscard per checkpoint (default: 1).\nUse 0 to skip warm-up entirely",
           "aliases": [
             "-1"
           ],
@@ -449,6 +557,110 @@
           ]
         },
         {
+          "name": "--moe-offload",
+          "recursive": false,
+          "hidden": false,
+          "description": "Routed-MoE expert placement\non CUDA (nemotron_h_moe):\n'auto' (default: keep\nexperts in VRAM when the\nmodel fits, else offload\nthem to a host store with a\nVRAM expert cache), 'off'\n(refuse a model that does\nnot fit), 'on' (always\noffload). Env fallback:\nDOTLLM_MOE_OFFLOAD",
+          "arguments": [
+            {
+              "name": "MOE_OFFLOAD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cache-mib",
+          "recursive": false,
+          "hidden": false,
+          "description": "VRAM expert-cache size in\nMiB when experts are\noffloaded; default 'auto' =\nthe measured free-VRAM\nbudget. Larger values are\nclamped to the budget. Env\nfallback:\nDOTLLM_MOE_CACHE_MIB"
+        },
+        {
+          "name": "--moe-cache-policy",
+          "recursive": false,
+          "hidden": false,
+          "description": "Expert-cache replacement\npolicy: 'slru' (default),\n'lru' or 'lfu'. Env\nDOTLLM_MOE_CACHE_POLICY",
+          "arguments": [
+            {
+              "name": "MOE_CACHE_POLICY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where offloaded experts that\nare not in the VRAM cache\nrun: 'auto' (default: per\nexpert, CPU or copy-to-GPU\nby a cost model calibrated\nat load), 'copy' (copy every\nmiss into the cache), 'cpu'\n(compute every uncached\nexpert on the CPU; an expert\nenters the cache only when\nits recent use beats the\nweakest cached one). Env\nfallback: DOTLLM_MOE_COLD",
+          "arguments": [
+            {
+              "name": "MOE_COLD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cpu-threads",
+          "recursive": false,
+          "hidden": false,
+          "description": "Worker threads for MoE\nexperts computed on the CPU\n(one expert per worker);\ndefault physical cores - 1.\nEnv fallback:\nDOTLLM_MOE_CPU_THREADS",
+          "arguments": [
+            {
+              "name": "MOE_CPU_THREADS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--cpu-moe",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep every MoE layer's\nrouted experts on the CPU\n(llama.cpp --cpu-moe). CUDA\nnemotron_h_moe: never\ncached, always computed on\nthe CPU; Vulkan\nQwen3MoeHybrid (bench): as\n--n-cpu-moe with every\nlayer. Env fallback:\nDOTLLM_CPU_MOE=1"
+        },
+        {
+          "name": "--n-cpu-moe",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep the routed experts of\nthe first N layers (by layer\nindex, llama.cpp\n--n-cpu-moe) on the CPU.\nCUDA nemotron_h_moe: never\nQwen3MoeHybrid: CPU expert\ncompute for those layers\n(#370). Env fallback:\nDOTLLM_N_CPU_MOE"
+        },
+        {
+          "name": "--moe-calibrate",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-run the MoE offload cost\ncalibration (PCIe bandwidth,\nsync latency, CPU time per\nexpert) instead of reading\nthe cached record in\n%LOCALAPPDATA%/dotllm/moe-ca\nlibration.json. Env\nDOTLLM_MOE_CALIBRATE=1"
+        },
+        {
+          "name": "--ctx-size",
+          "recursive": false,
+          "hidden": false,
+          "description": "Context window in tokens\n(llama.cpp -c). For\nnemotron_h_moe it caps the\nmodel's context and is what\nthe MoE expert-offload VRAM\nbudget reserves KV cache for\n(default: the model's\nmaximum context, e.g. 262144\nfor Nemotron 3.5 Bolt).\nLower it to leave more VRAM\nfor the expert cache. Env\nfallback: DOTLLM_MOE_CTX",
+          "arguments": [
+            {
+              "name": "CTX_SIZE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--quant",
           "recursive": false,
           "hidden": false,
@@ -509,17 +721,7 @@
           "name": "--grammar",
           "recursive": false,
           "hidden": false,
-          "description": "GBNF grammar string or file\ngrammar response format\nstring or file path\n(prefixed with @). Each\ntool: {\"name\": \"...\",\n\"description\": \"...\",\n\"parameters\": {...}}",
-          "arguments": [
-            {
-              "name": "GRAMMAR",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              }
-            }
-          ]
+          "description": "GBNF grammar string or file\ngrammar response format"
         },
         {
           "name": "--tools",
@@ -595,7 +797,7 @@
           "name": "--paged",
           "recursive": false,
           "hidden": false,
-          "description": "Use paged KV-cache with\nblock-based allocation\ninstead of pre-allocated\nsimple cache\nenabled (default), KV-cache"
+          "description": "Use paged KV-cache with\nblock-based allocation\ninstead of pre-allocated\nsimple cache"
         },
         {
           "name": "--no-prompt-cache",
@@ -1466,6 +1668,116 @@
           ]
         },
         {
+          "name": "--moe-offload",
+          "recursive": false,
+          "hidden": false,
+          "description": "Routed-MoE expert placement on CUDA\n(nemotron_h_moe): 'auto' (default:\nkeep experts in VRAM when the model\nfits, else offload them to a host\nstore with a VRAM expert cache),\n'off' (refuse a model that does not\nfit), 'on' (always offload). Env\nfallback: DOTLLM_MOE_OFFLOAD",
+          "arguments": [
+            {
+              "name": "MOE_OFFLOAD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cache-mib",
+          "recursive": false,
+          "hidden": false,
+          "description": "VRAM expert-cache size in MiB when\nexperts are offloaded; default\n'auto' = the measured free-VRAM\nbudget. Larger values are clamped\nto the budget. Env fallback:\nDOTLLM_MOE_CACHE_MIB"
+        },
+        {
+          "name": "--moe-cache-policy",
+          "recursive": false,
+          "hidden": false,
+          "description": "Expert-cache replacement policy:\n'slru' (default), 'lru' or 'lfu'.\nEnv fallback:\nDOTLLM_MOE_CACHE_POLICY",
+          "arguments": [
+            {
+              "name": "MOE_CACHE_POLICY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where offloaded experts that are\nnot in the VRAM cache run: 'auto'\n(default: per expert, CPU or\ncopy-to-GPU by a cost model\ncalibrated at load), 'copy' (copy\nevery miss into the cache), 'cpu'\n(compute every uncached expert on\nthe CPU; an expert enters the cache\nonly when its recent use beats the\nweakest cached one). Env fallback:\nDOTLLM_MOE_COLD",
+          "arguments": [
+            {
+              "name": "MOE_COLD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cpu-threads",
+          "recursive": false,
+          "hidden": false,
+          "description": "Worker threads for MoE experts\ncomputed on the CPU (one expert per\nworker); default physical cores -\n1. Env fallback:\nDOTLLM_MOE_CPU_THREADS",
+          "arguments": [
+            {
+              "name": "MOE_CPU_THREADS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--cpu-moe",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep every MoE layer's routed\nexperts on the CPU (llama.cpp\n--cpu-moe). CUDA nemotron_h_moe:\nnever cached, always computed on\nthe CPU; Vulkan Qwen3MoeHybrid\n(bench): as --n-cpu-moe with every\nlayer. Env fallback:\nDOTLLM_CPU_MOE=1"
+        },
+        {
+          "name": "--n-cpu-moe",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep the routed experts of the\nfirst N layers (by layer index,\nllama.cpp --n-cpu-moe) on the CPU.\nCUDA nemotron_h_moe: never cached,\nalways computed on the CPU; Vulkan\nQwen3MoeHybrid: CPU expert compute\nfor those layers (#370). Env\nfallback: DOTLLM_N_CPU_MOE"
+        },
+        {
+          "name": "--moe-calibrate",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-run the MoE offload cost\ncalibration (PCIe bandwidth, sync\nlatency, CPU time per expert)\ninstead of reading the cached\nrecord in\n%LOCALAPPDATA%/dotllm/moe-calibrati\non.json. Env fallback:\nDOTLLM_MOE_CALIBRATE=1"
+        },
+        {
+          "name": "--ctx-size",
+          "recursive": false,
+          "hidden": false,
+          "description": "Context window in tokens (llama.cpp\n-c). For nemotron_h_moe it caps the\nmodel's context and is what the MoE\nexpert-offload VRAM budget reserves\nKV cache for (default: the model's\nmaximum context, e.g. 262144 for\nNemotron 3.5 Bolt). Lower it to\nleave more VRAM for the expert\ncache. Env fallback: DOTLLM_MOE_CTX",
+          "arguments": [
+            {
+              "name": "CTX_SIZE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print extra diagnostics after the\nrun (e.g. the MoE expert-offload\nsummary: cache size, hit rate, H2D\nMB/token, copy wait)"
+        },
+        {
           "name": "--quant",
           "recursive": false,
           "hidden": false,
@@ -1826,6 +2138,94 @@
           ]
         },
         {
+          "name": "--moe-offload",
+          "recursive": false,
+          "hidden": false,
+          "description": "Routed-MoE expert\nplacement on CUDA\n(nemotron_h_moe): 'auto'\n(default: keep experts in\nVRAM when the model fits,\nelse offload them to a\nhost store with a VRAM\nexpert cache), 'off'\n(refuse a model that does\nnot fit), 'on' (always\noffload). Env fallback:\nDOTLLM_MOE_OFFLOAD",
+          "arguments": [
+            {
+              "name": "MOE_OFFLOAD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cache-mib",
+          "recursive": false,
+          "hidden": false,
+          "description": "VRAM expert-cache size in\nMiB when experts are\noffloaded; default 'auto'\n= the measured free-VRAM\nbudget. Larger values are\nclamped to the budget. Env\nfallback:\nDOTLLM_MOE_CACHE_MIB"
+        },
+        {
+          "name": "--moe-cache-policy",
+          "recursive": false,
+          "hidden": false,
+          "description": "Expert-cache replacement\npolicy: 'slru' (default),\n'lru' or 'lfu'. Env\nDOTLLM_MOE_CACHE_POLICY",
+          "arguments": [
+            {
+              "name": "MOE_CACHE_POLICY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where offloaded experts\nthat are not in the VRAM\ncache run: 'auto'\n(default: per expert, CPU\nor copy-to-GPU by a cost\nmodel calibrated at load),\n'copy' (copy every miss\ninto the cache), 'cpu'\n(compute every uncached\nexpert on the CPU; an\nexpert enters the cache\nonly when its recent use\nbeats the weakest cached\none). Env fallback:\nDOTLLM_MOE_COLD",
+          "arguments": [
+            {
+              "name": "MOE_COLD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--moe-cpu-threads",
+          "recursive": false,
+          "hidden": false,
+          "description": "Worker threads for MoE\nexperts computed on the\nCPU (one expert per\nworker); default physical\ncores - 1. Env fallback:\nDOTLLM_MOE_CPU_THREADS",
+          "arguments": [
+            {
+              "name": "MOE_CPU_THREADS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--cpu-moe",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep every MoE layer's\nrouted experts on the CPU\n(llama.cpp --cpu-moe).\nCUDA nemotron_h_moe: never\ncached, always computed on\nthe CPU; Vulkan\nQwen3MoeHybrid (bench): as\n--n-cpu-moe with every\nlayer. Env fallback:\nDOTLLM_CPU_MOE=1"
+        },
+        {
+          "name": "--n-cpu-moe",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep the routed experts of\nthe first N layers (by\nlayer index, llama.cpp\n--n-cpu-moe) on the CPU.\nQwen3MoeHybrid: CPU expert\ncompute for those layers\n(#370). Env fallback:\nDOTLLM_N_CPU_MOE"
+        },
+        {
+          "name": "--moe-calibrate",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-run the MoE offload\ncost calibration (PCIe\nbandwidth, sync latency,\nCPU time per expert)\ninstead of reading the\ncached record in\n%LOCALAPPDATA%/dotllm/moe-\ncalibration.json. Env\nDOTLLM_MOE_CALIBRATE=1"
+        },
+        {
           "name": "--threads",
           "recursive": false,
           "hidden": false,
@@ -1861,7 +2261,7 @@
           "name": "--quant",
           "recursive": false,
           "hidden": false,
-          "description": "Quantization filter when\nmultiple GGUF files exist\n(e.g., Q4_K_M, Q8_0)\nf32 (default), f16, q8_0,\nq4_0. Synonym of\nhybrid-dense model f32\nmeans 'not given'\n(DOTLLM_HYBRID_KV\nunquantized",
+          "description": "Quantization filter when\nmultiple GGUF files exist\n(e.g., Q4_K_M, Q8_0)",
           "aliases": [
             "-q"
           ]
@@ -1964,7 +2364,7 @@
           "name": "--speculative-model",
           "recursive": false,
           "hidden": false,
-          "description": "Path or HuggingFace repo\nID for a draft model.\nEnables speculative\ndecoding for faster\ngeneration. Must share\nvocabulary with the main\nmodel\nspeculative step (K).\nDefault 3. Also used as K\nfor MTP",
+          "description": "Path or HuggingFace repo\nID for a draft model.\nEnables speculative\ndecoding for faster\ngeneration. Must share\nvocabulary with the main\nmodel",
           "arguments": [
             {
               "name": "SPECULATIVE_MODEL",
@@ -1992,10 +2392,10 @@
           "name": "--expected-concurrency",
           "recursive": false,
           "hidden": false,
-          "description": "below 5 (adaptive: it\nbacks off when drafts stop\npaying). --mtp is accepted\nfor back-compat and only\nchanges the startup log;\nit does not override those\nrules. Use --no-mtp to opt\nout. Tradeoff: while MTP\nis active the\ncontinuous-batch scheduler\nis off for this model\nself-speculative decoding\nfor models with an\nembedded MTP head (keeps\nthe continuous-batch\nscheduler available for\nconcurrent clients)",
+          "description": "below 5 (adaptive: it\nbacks off when drafts stop\npaying). --mtp is accepted\nfor back-compat and only\nchanges the startup log;\nit does not override those\nrules. Use --no-mtp to opt\nout. Tradeoff: while MTP\nis active the\ncontinuous-batch scheduler\nis off for this model",
           "arguments": [
             {
-              "name": "EXPECTED_CONCURRENCY",
+              "name": "IS",
               "required": true,
               "arity": {
                 "minimum": 1,

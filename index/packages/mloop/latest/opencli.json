@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "mloop",
-    "version": "0.37.1",
+    "version": "0.40.0",
     "description": "MLoop - A modern CLI tool for ML.NET with filesystem-based MLOps"
   },
   "x-inspectra": {
@@ -614,6 +614,26 @@
           "arguments": [
             {
               "name": "MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--experiment",
+          "recursive": false,
+          "hidden": false,
+          "description": "Predict with this experiment (e.g. a staging candidate) instead of production — a shadow prediction; production is unchanged",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "EXPERIMENT",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -1545,6 +1565,83 @@
       ]
     },
     {
+      "name": "drift",
+      "description": "Compare recent inputs with the training data (PSI per column)",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Model name (default: 'default')",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--rows",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many of the most recent logged predictions to compare [default: 5000]",
+          "arguments": [
+            {
+              "name": "ROWS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--slice-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also report drift per value of this input column (values with at least 100 rows)",
+          "arguments": [
+            {
+              "name": "SLICE_BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output in JSON format [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "compare",
       "description": "Compare experiments side by side",
       "options": [
@@ -1784,6 +1881,23 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--history",
+          "recursive": false,
+          "hidden": false,
+          "description": "List every change of the production slot — what took it, what it replaced, how, and the quality gate's outcome — instead of promoting [default: False]",
+          "arguments": [
+            {
+              "name": "HISTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -1856,6 +1970,303 @@
               "type": "Boolean"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "threshold",
+      "description": "Choose a binary classifier's decision threshold for a target precision, or show or remove it",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Model name (default: 'default')",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--precision",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target precision, from 0 to 1, of the positive class (or of --precision-of): the threshold that reaches it on --data while keeping the most of that class's recall is chosen",
+          "arguments": [
+            {
+              "name": "PRECISION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--precision-of",
+          "recursive": false,
+          "hidden": false,
+          "description": "The class whose precision --precision targets, by its label value (default: the positive class) — e.g. the class a wrong answer is costly for",
+          "arguments": [
+            {
+              "name": "PRECISION_OF",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "Labeled evaluation file the threshold is chosen on (required with --precision)",
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--weight",
+          "recursive": false,
+          "hidden": false,
+          "description": "Column that weights the rows (defaults as `mloop evaluate --weight` does)",
+          "arguments": [
+            {
+              "name": "WEIGHT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--clear",
+          "recursive": false,
+          "hidden": false,
+          "description": "Remove the threshold: the model answers at the trainer's own 0.5 again [default: False]",
+          "arguments": [
+            {
+              "name": "CLEAR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output the result as JSON [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--records",
+          "recursive": false,
+          "hidden": false,
+          "description": "For a JSON data file: the dotted path to the array whose items are the rows, e.g. data.paragraphs.qas.answers. Each row also carries the fields of the items it sits in, named by their array (paragraphs.context).",
+          "arguments": [
+            {
+              "name": "RECORDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "EXPERIMENT_ID",
+          "description": "Experiment to set the threshold of (defaults to the production model)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "calibrate",
+      "description": "Fit a classifier's probability calibration on labeled rows without retraining, or show or remove it",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Model name (default: 'default')",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "Labeled rows the calibration is fit on — rows the model was not trained on",
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--method",
+          "recursive": false,
+          "hidden": false,
+          "description": "Binary: platt (default — two parameters, steady on a few hundred rows) or isotonic (no shape assumed, needs more rows). Multiclass: temperature (default — one parameter, answers unchanged)",
+          "arguments": [
+            {
+              "name": "METHOD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--weight",
+          "recursive": false,
+          "hidden": false,
+          "description": "Column that weights the rows (defaults as `mloop evaluate --weight` does)",
+          "arguments": [
+            {
+              "name": "WEIGHT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--clear",
+          "recursive": false,
+          "hidden": false,
+          "description": "Remove the calibration: the model answers with its own probabilities again [default: False]",
+          "arguments": [
+            {
+              "name": "CLEAR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output the result as JSON [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--records",
+          "recursive": false,
+          "hidden": false,
+          "description": "For a JSON data file: the dotted path to the array whose items are the rows, e.g. data.paragraphs.qas.answers. Each row also carries the fields of the items it sits in, named by their array (paragraphs.context).",
+          "arguments": [
+            {
+              "name": "RECORDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "EXPERIMENT_ID",
+          "description": "Experiment to calibrate (defaults to the production model)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
         }
       ]
     },
@@ -2777,6 +3188,23 @@
           "arguments": [
             {
               "name": "WEIGHT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--against",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also evaluate this experiment (or 'production') on the same rows and weights, and compare the two row by row",
+          "arguments": [
+            {
+              "name": "AGAINST",
               "required": true,
               "arity": {
                 "minimum": 1,
