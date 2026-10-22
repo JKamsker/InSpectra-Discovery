@@ -1,0 +1,1392 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "earm",
+    "version": "0.3.1",
+    "description": "ARM-style JSON templates for Microsoft Entra ID, deployed through the Microsoft Graph API."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.13.0",
+      "systemCommandLineVersion": "2.0.13.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "EARM - ARM-style JSON templates for Microsoft Entra ID, deployed through the Microsoft Graph API."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information [default: False]",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output format: table (default), json, jsonc (coloured JSON), yaml, yamlc (coloured YAML), tsv or none. [default: table]",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--query",
+      "recursive": true,
+      "hidden": false,
+      "description": "JMESPath query (https://jmespath.org) applied to the JSON document of the command. Without -o it selects -o json.",
+      "arguments": [
+        {
+          "name": "QUERY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--auth",
+      "recursive": true,
+      "hidden": false,
+      "description": "How to obtain tokens: auto (default: a cached 'earm auth login' sign-in when there is one, else the default chain), default (environment variables, workload identity, managed identity) or interactive. Default: EARM_AUTH.",
+      "arguments": [
+        {
+          "name": "AUTH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--tenant",
+      "recursive": true,
+      "hidden": false,
+      "description": "Tenant id or domain to sign in to. Default: EARM_TENANT_ID, then whatever the credential selects.",
+      "arguments": [
+        {
+          "name": "TENANT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--client-id",
+      "recursive": true,
+      "hidden": false,
+      "description": "App registration (client id) used by the interactive sign-in 'earm auth login'. Default: EARM_CLIENT_ID, then the client of the stored sign-in, then Microsoft Graph Command Line Tools (none in the china cloud).",
+      "arguments": [
+        {
+          "name": "CLIENT_ID",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "recursive": true,
+      "hidden": false,
+      "description": "Debug logging to stderr: every Graph call (method, path, status, timing, request id; query secrets redacted, tokens and bodies never logged). [default: False]",
+      "arguments": [
+        {
+          "name": "VERBOSE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--debug",
+      "recursive": true,
+      "hidden": false,
+      "description": "Trace logging to stderr: as --verbose plus token acquisition and retry details (tokens are never logged). Also prints the full exception of an unexpected error; EARM_DEBUG=1 does the same. [default: False]",
+      "arguments": [
+        {
+          "name": "DEBUG",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--evaluation-timeout",
+      "recursive": true,
+      "hidden": false,
+      "description": "Seconds one evaluation (a variable, the properties of a resource, an output) may take before the run fails with EvaluationBudgetExceeded; 0 disables the time limit. Default: EARM_EVALUATION_TIMEOUT, then 60.",
+      "arguments": [
+        {
+          "name": "EVALUATION_TIMEOUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "deployment",
+      "description": "Validate, preview, deploy and delete EARM deployments; mirrors 'az deployment group'.",
+      "commands": [
+        {
+          "name": "validate",
+          "description": "Validates a template offline (JSON Schema, type catalog, semantic checks); with --validation-level Provider also against the tenant (read only).",
+          "options": [
+            {
+              "name": "--template-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the template (*.entra.json).",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "TEMPLATE_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parameters",
+              "recursive": false,
+              "hidden": false,
+              "description": "Parameter values: @file.json or a path to a parameter file (ARM deploymentParameters shape), an https:// URL of one, an inline JSON object, name=value, or name=@file (the file content is the value). Several values per -p; repeatable; later values win. [default: System.String[]]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PARAMETERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--validation-level",
+              "recursive": false,
+              "hidden": false,
+              "description": "Template (default): offline validation, no tenant access. Provider: also sign in and plan against the tenant (read only), checking consent for the write scopes create needs. ProviderNoRbac: the same with the read-only scopes of what-if. [default: Template]",
+              "arguments": [
+                {
+                  "name": "VALIDATION_LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fetch-links",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also download the https linked templates and parameter files of nested deployments (https only, no credentials, no redirects, bounded size and time) and validate them. Off by default: validate does not use the network and reports LinkedTemplateNotFetched. [default: False]",
+              "arguments": [
+                {
+                  "name": "FETCH_LINKS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-prompt",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not ask for the value of a parameter that has none (an interactive run asks otherwise); the run then fails with MissingParameterValue. Accepts true or false. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_PROMPT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "what-if",
+          "description": "Shows the changes a deployment would make (Create / Modify / Delete / NoChange / Ignore) without applying them.",
+          "options": [
+            {
+              "name": "--template-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the template (*.entra.json).",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "TEMPLATE_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parameters",
+              "recursive": false,
+              "hidden": false,
+              "description": "Parameter values: @file.json or a path to a parameter file (ARM deploymentParameters shape), an https:// URL of one, an inline JSON object, name=value, or name=@file (the file content is the value). Several values per -p; repeatable; later values win. [default: System.String[]]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PARAMETERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Deployment name (a label shown in the output). Default: the template file stem.",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--mode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Incremental: create/update declared resources. Complete: additionally report (never delete) the live objects of the declared types that the template does not declare. [default: Incremental]",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parallelism",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum number of resources read/applied concurrently inside a dependency batch. [default: 4]",
+              "arguments": [
+                {
+                  "name": "PARALLELISM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--allow-ca-enforce",
+              "recursive": false,
+              "hidden": false,
+              "description": "Apply a Conditional Access policy's declared state 'enabled'. Without it the enforcement is held back with a warning: a new policy is created report-only, an existing policy keeps its live state. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALLOW_CA_ENFORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--on-soft-deleted-conflict",
+              "recursive": false,
+              "hidden": false,
+              "description": "What to do when the key of a resource to create is held by a soft-deleted object. [default: error]",
+              "arguments": [
+                {
+                  "name": "ON_SOFT_DELETED_CONFLICT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--device-code",
+              "recursive": false,
+              "hidden": false,
+              "description": "When the signed-in user must consent to a delegated scope this run needs, prompt with the device-code flow instead of a browser (interactive terminals only). [default: False]",
+              "arguments": [
+                {
+                  "name": "DEVICE_CODE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-prompt",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not ask for the value of a parameter that has none (an interactive run asks otherwise); the run then fails with MissingParameterValue. Accepts true or false. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_PROMPT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--result-format",
+              "recursive": false,
+              "hidden": false,
+              "description": "What-if detail: FullResourcePayloads (default) or ResourceIdOnly (resource ids only; an existing declared resource is reported as Deploy). [default: FullResourcePayloads]",
+              "aliases": [
+                "-r"
+              ],
+              "arguments": [
+                {
+                  "name": "RESULT_FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--exclude-change-types",
+              "recursive": false,
+              "hidden": false,
+              "description": "Space-separated change types the what-if does not show (Create, Delete, Deploy, Ignore, Modify, NoChange, Unsupported); they are still deployed. [default: System.String[]]",
+              "aliases": [
+                "-x"
+              ],
+              "arguments": [
+                {
+                  "name": "EXCLUDE_CHANGE_TYPES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--exit-code-on-changes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exit with code 5 when the what-if reports any Create, Modify or Delete (create: when the successful deployment applied one). [default: False]",
+              "arguments": [
+                {
+                  "name": "EXIT_CODE_ON_CHANGES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-pretty-print",
+              "recursive": false,
+              "hidden": false,
+              "description": "Compact JSON output (-o json). [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_PRETTY_PRINT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "create",
+          "description": "Deploys a template: creates and updates the declared resources in dependency order through Microsoft Graph with the signed-in identity.",
+          "options": [
+            {
+              "name": "--template-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the template (*.entra.json).",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "TEMPLATE_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parameters",
+              "recursive": false,
+              "hidden": false,
+              "description": "Parameter values: @file.json or a path to a parameter file (ARM deploymentParameters shape), an https:// URL of one, an inline JSON object, name=value, or name=@file (the file content is the value). Several values per -p; repeatable; later values win. [default: System.String[]]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PARAMETERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Deployment name (a label shown in the output). Default: the template file stem.",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--mode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Incremental: create/update declared resources. Complete: additionally report (never delete) the live objects of the declared types that the template does not declare. [default: Incremental]",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parallelism",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum number of resources read/applied concurrently inside a dependency batch. [default: 4]",
+              "arguments": [
+                {
+                  "name": "PARALLELISM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--allow-ca-enforce",
+              "recursive": false,
+              "hidden": false,
+              "description": "Apply a Conditional Access policy's declared state 'enabled'. Without it the enforcement is held back with a warning: a new policy is created report-only, an existing policy keeps its live state. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALLOW_CA_ENFORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--on-soft-deleted-conflict",
+              "recursive": false,
+              "hidden": false,
+              "description": "What to do when the key of a resource to create is held by a soft-deleted object. [default: error]",
+              "arguments": [
+                {
+                  "name": "ON_SOFT_DELETED_CONFLICT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--device-code",
+              "recursive": false,
+              "hidden": false,
+              "description": "When the signed-in user must consent to a delegated scope this run needs, prompt with the device-code flow instead of a browser (interactive terminals only). [default: False]",
+              "arguments": [
+                {
+                  "name": "DEVICE_CODE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-prompt",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not ask for the value of a parameter that has none (an interactive run asks otherwise); the run then fails with MissingParameterValue. Accepts true or false. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_PROMPT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--what-if",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what the deployment would do and exit without applying anything. [default: False]",
+              "aliases": [
+                "-w"
+              ],
+              "arguments": [
+                {
+                  "name": "WHAT_IF",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--confirm-with-what-if",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show the what-if first and ask for confirmation before applying (use -y to skip the prompt). [default: False]",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CONFIRM_WITH_WHAT_IF",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--proceed-if-no-change",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --confirm-with-what-if: deploy without asking when the what-if shows no change (only NoChange and Ignore rows, after --what-if-exclude-change-types). [default: False]",
+              "arguments": [
+                {
+                  "name": "PROCEED_IF_NO_CHANGE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip the confirmations: the one asked by --confirm-with-what-if, and the one asked before objects are replaced (deleted and created again because an immutable property changed). Without -y, a non-interactive run that would replace objects fails before any write. [default: False]",
+              "aliases": [
+                "-y"
+              ],
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--continue-on-error",
+              "recursive": false,
+              "hidden": false,
+              "description": "Keep deploying resources that do not depend on a failed one (default: stop at the batch boundary). [default: False]",
+              "arguments": [
+                {
+                  "name": "CONTINUE_ON_ERROR",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--reveal-secure-outputs",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print securestring/secureObject outputs in clear text instead of ***. [default: False]",
+              "arguments": [
+                {
+                  "name": "REVEAL_SECURE_OUTPUTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--secure-outputs-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the secure outputs (in clear text) to this file with owner-only permissions.",
+              "arguments": [
+                {
+                  "name": "SECURE_OUTPUTS_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--what-if-result-format",
+              "recursive": false,
+              "hidden": false,
+              "description": "What-if detail: FullResourcePayloads (default) or ResourceIdOnly (resource ids only; an existing declared resource is reported as Deploy). [default: FullResourcePayloads]",
+              "aliases": [
+                "-r",
+                "--result-format"
+              ],
+              "arguments": [
+                {
+                  "name": "WHAT_IF_RESULT_FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--what-if-exclude-change-types",
+              "recursive": false,
+              "hidden": false,
+              "description": "Space-separated change types the what-if of --what-if / -c does not show (Create, Delete, Deploy, Ignore, Modify, NoChange, Unsupported); they are still deployed. [default: System.String[]]",
+              "aliases": [
+                "-x",
+                "--exclude-change-types"
+              ],
+              "arguments": [
+                {
+                  "name": "WHAT_IF_EXCLUDE_CHANGE_TYPES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--exit-code-on-changes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exit with code 5 when the what-if reports any Create, Modify or Delete (create: when the successful deployment applied one). [default: False]",
+              "arguments": [
+                {
+                  "name": "EXIT_CODE_ON_CHANGES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-pretty-print",
+              "recursive": false,
+              "hidden": false,
+              "description": "Compact JSON output (-o json). [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_PRETTY_PRINT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "delete",
+          "description": "Deletes the objects a template declares (found by their keys, reverse dependency order) after confirmation.",
+          "options": [
+            {
+              "name": "--template-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the template (*.entra.json).",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "TEMPLATE_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parameters",
+              "recursive": false,
+              "hidden": false,
+              "description": "Parameter values: @file.json or a path to a parameter file (ARM deploymentParameters shape), an https:// URL of one, an inline JSON object, name=value, or name=@file (the file content is the value). Several values per -p; repeatable; later values win. [default: System.String[]]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PARAMETERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Deployment name (a label shown in the output). Default: the template file stem.",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parallelism",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum number of resources read/applied concurrently inside a dependency batch. [default: 4]",
+              "arguments": [
+                {
+                  "name": "PARALLELISM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--device-code",
+              "recursive": false,
+              "hidden": false,
+              "description": "When the signed-in user must consent to a delegated scope this run needs, prompt with the device-code flow instead of a browser (interactive terminals only). [default: False]",
+              "arguments": [
+                {
+                  "name": "DEVICE_CODE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not prompt for confirmation before deleting. [default: False]",
+              "aliases": [
+                "-y"
+              ],
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--continue-on-error",
+              "recursive": false,
+              "hidden": false,
+              "description": "Keep deleting after a failure (default: stop; the objects not yet deleted stay). [default: False]",
+              "arguments": [
+                {
+                  "name": "CONTINUE_ON_ERROR",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "auth",
+      "description": "Sign in interactively, sign out, and show who EARM is signed in as.",
+      "commands": [
+        {
+          "name": "login",
+          "description": "Signs in interactively (browser by default) as yourself and caches the sign-in encrypted for later runs. The sign-in app is Microsoft Graph Command Line Tools unless --client-id names another; --scopes and -f consent the delegated scopes runs will request.",
+          "options": [
+            {
+              "name": "--device-code",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use the device-code flow (print a code to enter at https://microsoft.com/devicelogin) instead of opening a browser; for machines without a browser. [default: False]",
+              "arguments": [
+                {
+                  "name": "DEVICE_CODE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--scopes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Extra delegated scopes to consent now, besides User.Read: Microsoft Graph names (Group.ReadWrite.All), qualified Graph scopes, or the Key Vault scope (https://vault.azure.net/user_impersonation). Space- or comma-separated. [default: System.String[]]",
+              "arguments": [
+                {
+                  "name": "SCOPES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--template-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "A template (*.entra.json) whose delegated scopes to consent now (computed offline, as 'earm permissions --verb' lists them).",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "TEMPLATE_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parameters",
+              "recursive": false,
+              "hidden": false,
+              "description": "Parameter values: @file.json or a path to a parameter file (ARM deploymentParameters shape), an https:// URL of one, an inline JSON object, name=value, or name=@file (the file content is the value). Several values per -p; repeatable; later values win. [default: System.String[]]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PARAMETERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--verb",
+              "recursive": false,
+              "hidden": false,
+              "description": "create|whatif|delete: the run of the template whose scopes count (default create). [default: create]",
+              "arguments": [
+                {
+                  "name": "VERB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "logout",
+          "description": "Forgets the interactive sign-in: deletes the sign-in record and the encrypted token cache entry."
+        },
+        {
+          "name": "status",
+          "description": "Shows how EARM signs in and who the access token belongs to (tenant, principal, client, scopes or roles); with -f, which delegated scopes a template run needs that the token lacks. Exits 3 when no credential works.",
+          "options": [
+            {
+              "name": "--template-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "A template (*.entra.json) whose delegated scopes to check against the token (lists the missing ones) (computed offline, as 'earm permissions --verb' lists them).",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "TEMPLATE_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--parameters",
+              "recursive": false,
+              "hidden": false,
+              "description": "Parameter values: @file.json or a path to a parameter file (ARM deploymentParameters shape), an https:// URL of one, an inline JSON object, name=value, or name=@file (the file content is the value). Several values per -p; repeatable; later values win. [default: System.String[]]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PARAMETERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--verb",
+              "recursive": false,
+              "hidden": false,
+              "description": "create|whatif|delete: the run of the template whose scopes count (default create). [default: create]",
+              "arguments": [
+                {
+                  "name": "VERB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "permissions",
+      "description": "Lists the Microsoft Graph permissions and Entra roles a template needs, offline (no tenant access).",
+      "options": [
+        {
+          "name": "--template-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the template (*.entra.json).",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TEMPLATE_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--parameters",
+          "recursive": false,
+          "hidden": false,
+          "description": "Parameter values: @file.json or a path to a parameter file (ARM deploymentParameters shape), an https:// URL of one, an inline JSON object, name=value, or name=@file (the file content is the value). Several values per -p; repeatable; later values win. [default: System.String[]]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PARAMETERS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "app: Microsoft Graph application permissions of a service principal login. delegated: delegated scopes plus the Entra roles of a user login. [default: app]",
+          "arguments": [
+            {
+              "name": "MODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--verb",
+          "recursive": false,
+          "hidden": false,
+          "description": "whatif|create|delete: the delegated scopes one run of that verb requests for a signed-in user (implies --mode delegated).",
+          "arguments": [
+            {
+              "name": "VERB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "schema",
+      "description": "Print or install the JSON Schemas of the template format.",
+      "commands": [
+        {
+          "name": "print",
+          "description": "Writes a JSON Schema to standard output: the template envelope, the parameter file, or the schema of one resource type (with its x-earm overlay).",
+          "arguments": [
+            {
+              "name": "WHAT",
+              "description": "template (default), parameters, or a resource type: Microsoft.Entra/applications, applications, conditionalAccess/policies, conditionalAccess.policies, ... [default: template]",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "install",
+          "description": "Extracts the schemas and maps them to **/*.entra.json and **/*.entra.jsonc in VS Code (json.schemas), preserving the other settings.",
+          "options": [
+            {
+              "name": "--global",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the mapping into the VS Code user settings instead of the workspace's .vscode/settings.json. [default: False]",
+              "arguments": [
+                {
+                  "name": "GLOBAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--workspace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Workspace directory whose .vscode/settings.json receives the mapping. Default: the current directory.",
+              "arguments": [
+                {
+                  "name": "WORKSPACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--settings-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Settings file to merge into (overrides --workspace and --global), for editors that read the VS Code format.",
+              "arguments": [
+                {
+                  "name": "SETTINGS_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--schema-dir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory to extract the schemas to. Default: %LOCALAPPDATA%\\EArm\\schemas\\2026-10-01 (~/Library/Application Support/EArm/schemas/2026-10-01 on macOS, ~/.local/share/EArm/schemas/2026-10-01 on Linux).",
+              "arguments": [
+                {
+                  "name": "SCHEMA_DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
