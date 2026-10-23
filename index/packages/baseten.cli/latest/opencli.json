@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Baseten.CLI",
-    "version": "1.0.1-dev.167",
+    "version": "1.0.1-dev.168",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -17502,7 +17502,7 @@
           "commands": [
             {
               "name": "create-sandbox-preview",
-              "description": "Create a sandbox preview\nExpose a port of the sandbox on an HTTPS URL. A public preview is reachable by anyone with the URL. A private preview requires a preview token, created with the tokens endpoint and sent as the bl_preview_token query parameter; the first request sets a bl_preview_token cookie so a browser can keep navigating without it. Port 80 and the sandbox's reserved system ports are rejected, and port 443 must stay private. Without a name, the name is generated from the sandbox name and port, or is public-&lt;port&gt; or private-&lt;port&gt; when create_if_not_exists is true.",
+              "description": "Create a sandbox preview\nExpose a port of the sandbox on an HTTPS URL. A public preview is reachable by anyone with the URL. A private preview requires a preview token, created with the tokens endpoint and sent as the preview_token query parameter; the first request sets a cookie so a browser can keep navigating without it. Port 80 and the sandbox's reserved system ports are rejected, and port 443 must stay private. Without a name, the name is generated from the sandbox name and port, or is public-&lt;port&gt; or private-&lt;port&gt; when create_if_not_exists is true.",
               "options": [
                 {
                   "name": "--team-id",
@@ -17605,7 +17605,7 @@
             },
             {
               "name": "create-sandbox-preview-token",
-              "description": "Create a preview token\nCreate a token granting access to a private preview until expires_at. Append it to the preview URL as ?bl_preview_token=&lt;token&gt;.",
+              "description": "Create a preview token\nCreate a token granting access to a private preview until expires_at. Append it to the preview URL as ?preview_token=&lt;token&gt;.",
               "options": [
                 {
                   "name": "--team-id",
@@ -17645,7 +17645,7 @@
                   "name": "--create-if-not-exists",
                   "recursive": false,
                   "hidden": false,
-                  "description": "When true, return an existing unexpired token of this preview that stays valid at least until expires_at instead of creating a new one. Defaults to false when omitted. Specify true/false; presence alone implies true; omit to inherit.",
+                  "description": "When true, may return an existing unexpired token of this preview that stays valid at least until expires_at instead of creating a new one. A token created a moment earlier may not be found yet, in which case a new token is created. Defaults to false when omitted. Specify true/false; presence alone implies true; omit to inherit.",
                   "arguments": [
                     {
                       "name": "CREATE_IF_NOT_EXISTS",
@@ -18184,64 +18184,13 @@
                   ]
                 },
                 {
-                  "name": "--public",
+                  "name": "--input",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Whether the URL is reachable without a preview token. Defaults to false. Specify true/false; presence alone implies true; omit to inherit.",
+                  "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
                   "arguments": [
                     {
-                      "name": "PUBLIC",
-                      "required": false,
-                      "arity": {
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "type": "Boolean"
-                    }
-                  ]
-                },
-                {
-                  "name": "--response-headers",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Headers added to every response served by the preview, for example CORS headers.",
-                  "arguments": [
-                    {
-                      "name": "RESPONSE_HEADERS",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 100000
-                      },
-                      "type": "Dictionary`2"
-                    }
-                  ]
-                },
-                {
-                  "name": "--request-headers",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Headers added to every request forwarded to the sandbox, for example an Authorization header expected by the application. Responses return each name with the value \"****\", except a GET with show_secrets=true by a workspace administrator. Sending \"****\" back as a value returns 400. A PATCH replaces the whole set.",
-                  "arguments": [
-                    {
-                      "name": "REQUEST_HEADERS",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 100000
-                      },
-                      "type": "Dictionary`2"
-                    }
-                  ]
-                },
-                {
-                  "name": "--ttl",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Lifetime counted from the request, using seconds, minutes, hours or composite durations such as 1h30m. Whole days are also supported, for example 7d; days cannot be combined with other units. The preview is deleted when it elapses.",
-                  "arguments": [
-                    {
-                      "name": "TTL",
+                      "name": "INPUT",
                       "required": true,
                       "arity": {
                         "minimum": 1,
@@ -18252,19 +18201,36 @@
                   ]
                 },
                 {
-                  "name": "--expires-at",
+                  "name": "--request-json",
                   "recursive": false,
-                  "hidden": false,
-                  "description": "Time at which the preview is deleted. Must be in the future.",
+                  "hidden": true,
+                  "description": "Request body as JSON.",
                   "arguments": [
                     {
-                      "name": "EXPIRES_AT",
+                      "name": "REQUEST_JSON",
                       "required": true,
                       "arity": {
                         "minimum": 1,
                         "maximum": 1
                       },
-                      "type": "DateTime"
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-file",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Path to a JSON request file, or '-' for stdin.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_FILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
                     }
                   ]
                 }
@@ -18452,6 +18418,23 @@
                         "maximum": 1
                       },
                       "type": "Int64"
+                    }
+                  ]
+                },
+                {
+                  "name": "--filesystem",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Filesystem configuration. Set at creation only.",
+                  "arguments": [
+                    {
+                      "name": "FILESYSTEM",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "SandboxFilesystemV1"
                     }
                   ]
                 },
