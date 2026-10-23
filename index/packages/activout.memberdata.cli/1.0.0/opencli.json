@@ -1,0 +1,534 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "member",
+    "version": "1.0.0",
+    "description": "The member command: sync your own LinkedIn Member Data Portability data into a local SQLite database and query it."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.13.0",
+      "systemCommandLineVersion": "2.0.13.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Sync your own LinkedIn Member Data Portability (DMA) data into a local SQLite database and query it.\nUnofficial; not affiliated with or endorsed by LinkedIn. Reads only; never changes your LinkedIn account."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--database",
+      "recursive": true,
+      "hidden": false,
+      "description": "SQLite database path (default: member.db in the platform's application data directory)",
+      "arguments": [
+        {
+          "name": "DATABASE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--format",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output format: json (default when stdout is redirected) or table",
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--credential-source",
+      "recursive": true,
+      "hidden": false,
+      "description": "keychain (default) or environment (MEMBERDATA_ACCESS_TOKEN, explicit opt-in at your own risk). Also settable with MEMBERDATA_CREDENTIAL_SOURCE",
+      "arguments": [
+        {
+          "name": "CREDENTIAL_SOURCE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "auth",
+      "description": "Access token management.",
+      "commands": [
+        {
+          "name": "status",
+          "description": "Show the credential source and safe token metadata (offline). Never prints the token."
+        },
+        {
+          "name": "import-token",
+          "description": "Store an access token from LinkedIn's OAuth Token Generator in the operating system's secure store.\nThe token is read from a hidden prompt or stdin, never from arguments, and is checked against LinkedIn.\nExamples:\n  member auth import-token\n  pbpaste | member auth import-token --stdin --expires-in-days 60",
+          "options": [
+            {
+              "name": "--stdin",
+              "recursive": false,
+              "hidden": false,
+              "description": "Read the token from standard input instead of a hidden prompt [default: False]",
+              "arguments": [
+                {
+                  "name": "STDIN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--expires-at",
+              "recursive": false,
+              "hidden": false,
+              "description": "Token expiry as shown by LinkedIn's token generator (ISO 8601)",
+              "arguments": [
+                {
+                  "name": "EXPIRES_AT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DateTimeOffset"
+                }
+              ]
+            },
+            {
+              "name": "--expires-in-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "Token lifetime in days from now, as shown by LinkedIn's token generator",
+              "arguments": [
+                {
+                  "name": "EXPIRES_IN_DAYS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--no-verify",
+              "recursive": false,
+              "hidden": false,
+              "description": "Store without checking the token against LinkedIn [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_VERIFY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "logout",
+          "description": "Remove the stored token from the secure store. The database is kept."
+        },
+        {
+          "name": "registration",
+          "description": "Check with LinkedIn whether the member is registered for DMA data generation (online, read-only).\nUse when no data appears a few minutes after generating the token."
+        },
+        {
+          "name": "register",
+          "description": "Ask LinkedIn to start DMA data generation for the member (online). LinkedIn normally does this\nautomatically when the token is generated; use only when 'member auth registration' reports none."
+        }
+      ]
+    },
+    {
+      "name": "domains",
+      "description": "Snapshot domains.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "Documented and discovered snapshot domains with their local status (offline)."
+        }
+      ]
+    },
+    {
+      "name": "sync",
+      "description": "Fetch the changelog and, when needed, the snapshot from LinkedIn into the database (online).\nWithout options the strategy is chosen safely: an initial full snapshot, a daily snapshot refresh, a\nrecovery snapshot after a changelog gap, otherwise only the changelog.\nExamples:\n  member sync\n  member sync --full\n  member sync --domain CONNECTIONS",
+      "options": [
+        {
+          "name": "--full",
+          "recursive": false,
+          "hidden": false,
+          "description": "Refresh every snapshot domain, then catch up the changelog [default: False]",
+          "arguments": [
+            {
+              "name": "FULL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--domain",
+          "recursive": false,
+          "hidden": false,
+          "description": "Refresh only this snapshot domain (case sensitive)",
+          "arguments": [
+            {
+              "name": "DOMAIN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "status",
+          "description": "Checkpoints, recent runs, changelog age and retention warnings (offline)."
+        }
+      ]
+    },
+    {
+      "name": "data",
+      "description": "Read the local database.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List stored snapshot records (offline), ordered by domain, first seen and key.\nExample: member data list --domain CONNECTIONS --limit 50 --offset 50",
+          "options": [
+            {
+              "name": "--domain",
+              "recursive": false,
+              "hidden": false,
+              "description": "Snapshot domain, e.g. CONNECTIONS",
+              "arguments": [
+                {
+                  "name": "DOMAIN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum records (1-1000) [default: 50]",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--offset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Records to skip [default: 0]",
+              "arguments": [
+                {
+                  "name": "OFFSET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--include-deleted",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include records no longer in LinkedIn's snapshot [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_DELETED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "description": "Show one stored snapshot record (offline).",
+          "options": [
+            {
+              "name": "--domain",
+              "recursive": false,
+              "hidden": false,
+              "description": "Snapshot domain",
+              "arguments": [
+                {
+                  "name": "DOMAIN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Record key from 'member data list'",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "query",
+          "description": "Run one read-only SQL SELECT against the local database (offline). Tables: snapshot_records,\nchangelog_events, snapshot_domains, sync_runs, sync_checkpoints, database_info. Use SQLite JSON\nfunctions on the json column. The database holds personal data about you and other people:\nnever expose this command to untrusted clients.\nExamples:\n  member data query \"SELECT domain, count(*) AS n FROM snapshot_records GROUP BY domain\"\n  member data query \"SELECT json_extract(json, '$.Company') AS company, count(*) AS n FROM snapshot_records WHERE domain = 'CONNECTIONS' AND deleted_at IS NULL GROUP BY 1 ORDER BY n DESC\"\n  member data query --file ./queries/overview.sql",
+          "options": [
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Read the SELECT statement from this file",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--max-rows",
+              "recursive": false,
+              "hidden": false,
+              "description": "Stop after this many rows (result marked truncated) [default: 1000]",
+              "arguments": [
+                {
+                  "name": "MAX_ROWS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "Seconds before the query is interrupted [default: 30]",
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "SQL",
+              "description": "One read-only SELECT statement",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "database",
+      "description": "The local database.",
+      "commands": [
+        {
+          "name": "info",
+          "description": "Path, schema version, member binding and record counts (offline)."
+        },
+        {
+          "name": "purge",
+          "description": "Delete the local database and its WAL files. Requires --yes. LinkedIn data and the token are untouched.",
+          "options": [
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Confirm deleting the local database [default: False]",
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "skill",
+      "description": "The agent skill for Claude Code, Codex and other coding agents.",
+      "commands": [
+        {
+          "name": "install",
+          "description": "Install the agent skill that teaches coding agents to use member (offline first, JSON, ask before\nsyncing). Writes member/SKILL.md into each target's user-level skills directory; running it again\nupdates the skill to this version.\nExamples:\n  member skill install\n  member skill install --target claude\n  member skill install --dir ./.agents/skills",
+          "options": [
+            {
+              "name": "--target",
+              "recursive": false,
+              "hidden": false,
+              "description": "claude (~/.claude/skills: Claude Code), agents (~/.agents/skills: Codex, Gemini CLI, GitHub Copilot, OpenCode) or all [default: all]",
+              "arguments": [
+                {
+                  "name": "TARGET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Install into this skills directory instead (a member/ folder is created in it)",
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite a member/SKILL.md that was not written by member [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Print the agent skill (SKILL.md) for agents with other skill locations."
+        }
+      ]
+    }
+  ]
+}

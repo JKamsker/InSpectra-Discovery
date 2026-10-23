@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "corvus",
-    "version": "2.4.0",
-    "description": "MCP server and command line for reverse engineering .NET assemblies and native PE, ELF and Mach-O binaries: decompile, search, compare builds, patch and save. Nothing is executed."
+    "version": "2.5.1",
+    "description": "MCP server and command line for reverse engineering .NET assemblies and native PE, ELF and Mach-O binaries: decompile, search, compare builds, patch and save. By default nothing is executed."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
@@ -14,12 +14,12 @@
     {
       "name": "batch",
       "hidden": false,
-      "description": "Run steps ({\"tool\": ..., \"args\": {...}} as a JSON array or JSON Lines) in one session,\nso ids and in-memory edits carry over. --stop-on-error, --json (one line per step)."
+      "description": "Read one file with fixed read-only steps (summary, container, strings, yara) into\none corvus.batch/1 document. --rules <file|folder>, --time-limit S,\n--limit containerFiles=N, --limit strings=N, --limit yaraMatches=N."
     },
     {
       "name": "call",
       "hidden": false,
-      "description": "The same. Values: name=value (typed by the parameter), name:=<json>, name=@file,\nname=@- (stdin); or --args '<json object>' (also --json '{...}'), --args-file F|-.\n--load PATH preloads (repeatable); any server option applies (docs/installation.md, \"Server options\").\n--json          print {tool, isError, text, structured, error}\n--structured    print only the structured content"
+      "description": "The same. Values: name=value (typed by the parameter), name:=<json>, name=@file,\nname=@- (stdin); or --args '<json object>' (also --json '{...}'), --args-file F|-.\n--load PATH preloads (repeatable); any server option applies (docs/configuration.md).\n--json          print {tool, isError, text, structured, error}\n--structured    print only the structured content"
     },
     {
       "name": "command-code",
@@ -47,7 +47,7 @@
     {
       "name": "install",
       "hidden": false,
-      "description": "Register the server with MCP clients, then start it once to check it works.\nExisting registrations are refreshed. Detected clients without one are listed in a\nplan and added after one confirmation (Enter = yes); without a terminal they are\nadded only with --yes (or CORVUS_YES=1) or --all-detected.\n--client X      only these clients (repeatable or comma-separated), detected or not\n--dry-run       print the plan and write nothing (--check also runs the server check)\n--json          print the plan and result as JSON (needs --yes to add new clients)\n--strict        write nothing when any client's file cannot be read\n--no-check      skip the server check\n--command PATH  register this program instead of the running one\n--dev-reload DIR  local development: register the relay, which runs the server\npublished in DIR (./publish.ps1) and switches to each new publish\n--skill         also write the agent skill for clients that read skills; skills\nwritten earlier are kept current by every install and update\n--enable        turn on an entry the client has turned off (its switch, disable\nlists, Claude Code's per-project list); otherwise it is kept off\nuninstall [client...] Remove the registration from every client (or the named ones). With no names it\nalso deletes an installed copy's program files; --keep-files keeps them. Your data\n(annotations, caches, symbols) is kept; --purge-data deletes it as well.\nSkill folders written by install --skill are removed.\n--dry-run and --json as for install."
+      "description": "Register the server with MCP clients, then start it once to check it works.\nExisting registrations are refreshed. Detected clients without one are listed in a\nplan and added after one confirmation (Enter = yes); without a terminal they are\nadded only with --yes (or CORVUS_YES=1) or --all-detected.\n--client X      only these clients (repeatable or comma-separated), detected or not\n--dry-run       print the plan and write nothing (--check also runs the server check)\n--json          print the plan and result as JSON (needs --yes to add new clients)\n--strict        write nothing when any client's file cannot be read\n--no-check      skip the server check\n--command PATH  register this program instead of the running one\n--dev-reload DIR  local development: register the relay, which runs the server\npublished in DIR (./publish.ps1) and switches to each new publish\n--skill         also write the agent skill for clients that read skills; skills\nwritten earlier are kept current by every install and update\n--enable        turn on an entry the client has turned off (its switch, disable\nlists, Claude Code's per-project list); otherwise it is kept off\n--set S         add a security switch to every entry, e.g. --set allow-live-attach\n--unset S       remove it (docs/configuration.md lists the switches)\n--project DIR   with --set/--unset: only this folder's Claude Code entry,\nmade from the global one when the folder has none\n--with-live     install the tested Frida into a private Python environment now\nand --set live-install-frida (sessions use it)\nuninstall [client...] Remove the registration from every client (or the named ones). With no names it\nalso deletes an installed copy's program files; --keep-files keeps them. Your data\n(annotations, caches, symbols) is kept; --purge-data deletes it as well.\nSkill folders written by install --skill are removed.\n--dry-run and --json as for install."
     },
     {
       "name": "prompts",
@@ -224,7 +224,7 @@
         {
           "name": "read_result",
           "hidden": false,
-          "description": "destructive  Read a kept result (resultId; kept on disk 7 days): page it, search it with query, or write it wh..."
+          "description": "destructive  Read a kept result (resultId; on disk 7 days): page it, search it with query, or write it whole t..."
         },
         {
           "name": "reload_assembly",
@@ -234,7 +234,7 @@
         {
           "name": "save_session",
           "hidden": false,
-          "description": "destructive  Write this session's work to one JSON file: loaded files (path, relative path, SHA-256), .NET edi..."
+          "description": "destructive  Write the session's work to one JSON file: loaded files (path, relative path, SHA-256), .NET edit..."
         },
         {
           "name": "server_status",
@@ -244,7 +244,7 @@
         {
           "name": "unload_assembly",
           "hidden": false,
-          "description": "destructive  Remove an assembly from the workspace (unsaved edits are discarded)."
+          "description": "destructive  Remove an assembly (unsaved edits are discarded) or close a dump id."
         }
       ]
     },
@@ -342,7 +342,61 @@
       "name": "--enable",
       "recursive": false,
       "hidden": false,
-      "description": "turn on an entry the client has turned off (its switch, disable\nlists, Claude Code's per-project list); otherwise it is kept off\nuninstall [client...] Remove the registration from every client (or the named ones). With no names it\nalso deletes an installed copy's program files; --keep-files keeps them. Your data\n(annotations, caches, symbols) is kept; --purge-data deletes it as well.\nSkill folders written by install --skill are removed.\n--dry-run and --json as for install.\nstatus | doctor       Read-only check. Starts each client's registered command with that entry's own args\nand env, checks this build's server and tool catalog (digest), the engines, and\ninstalled skills (aligned with this build, or stale)."
+      "description": "turn on an entry the client has turned off (its switch, disable\nlists, Claude Code's per-project list); otherwise it is kept off"
+    },
+    {
+      "name": "--set",
+      "recursive": false,
+      "hidden": false,
+      "description": "add a security switch to every entry, e.g. --set allow-live-attach",
+      "arguments": [
+        {
+          "name": "S",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--unset",
+      "recursive": false,
+      "hidden": false,
+      "description": "remove it (docs/configuration.md lists the switches)",
+      "arguments": [
+        {
+          "name": "S",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--project",
+      "recursive": false,
+      "hidden": false,
+      "description": "with --set/--unset: only this folder's Claude Code entry,\nmade from the global one when the folder has none",
+      "arguments": [
+        {
+          "name": "DIR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--with-live",
+      "recursive": false,
+      "hidden": false,
+      "description": "install the tested Frida into a private Python environment now\nand --set live-install-frida (sessions use it)\nuninstall [client...] Remove the registration from every client (or the named ones). With no names it\nalso deletes an installed copy's program files; --keep-files keeps them. Your data\n(annotations, caches, symbols) is kept; --purge-data deletes it as well.\nSkill folders written by install --skill are removed.\n--dry-run and --json as for install.\nstatus | doctor       Read-only check. Starts each client's registered command with that entry's own args\nand env, checks this build's server and tool catalog (digest), the engines, and\ninstalled skills (aligned with this build, or stale)."
     },
     {
       "name": "--engine",
