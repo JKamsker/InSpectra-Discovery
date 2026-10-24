@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "cb",
-    "version": "0.1.1",
+    "version": "0.3.1",
     "description": "Named, colour-coded Claude Code sessions in Windows Terminal tabs that come back after a reboot."
   },
   "x-inspectra": {
@@ -15,7 +15,7 @@
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "claudebox: named, restorable Claude Code sessions"
+    "cliParsedDescription": "BitMagic ClaudeBox 0.3.1: named, restorable Claude Code sessions. On its own, cb starts a session in this folder."
   },
   "options": [
     {
@@ -35,6 +35,23 @@
       "recursive": false,
       "hidden": false,
       "description": "Show version information"
+    },
+    {
+      "name": "--here",
+      "recursive": false,
+      "hidden": false,
+      "description": "Run in this tab instead of opening a new one (keeps this tab's colours) [default: False]",
+      "arguments": [
+        {
+          "name": "HERE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     }
   ],
   "commands": [
@@ -106,7 +123,7 @@
           "name": "--here",
           "recursive": false,
           "hidden": false,
-          "description": "Run in this tab instead of opening a new one [default: False]",
+          "description": "Run in this tab instead of opening a new one (keeps this tab's colours) [default: False]",
           "arguments": [
             {
               "name": "HERE",
@@ -219,7 +236,7 @@
           "name": "--here",
           "recursive": false,
           "hidden": false,
-          "description": "Run in this tab instead of opening a new one [default: False]",
+          "description": "Run in this tab instead of opening a new one (keeps this tab's colours) [default: False]",
           "arguments": [
             {
               "name": "HERE",
@@ -297,6 +314,26 @@
           ]
         },
         {
+          "name": "--work",
+          "recursive": false,
+          "hidden": false,
+          "description": "Reopen every session of this work type that isn't running",
+          "aliases": [
+            "-w"
+          ],
+          "arguments": [
+            {
+              "name": "WORK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--new-window",
           "recursive": false,
           "hidden": false,
@@ -329,12 +366,124 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--missing",
+          "recursive": false,
+          "hidden": false,
+          "description": "If a session's transcript is gone: fresh (start a new conversation), skip or remove (default: ask)",
+          "arguments": [
+            {
+              "name": "MISSING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "set",
+      "description": "Change a session's name, work type, colour or scheme",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "New name",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--work",
+          "recursive": false,
+          "hidden": false,
+          "description": "Work type from config.json (brings its colour and scheme)",
+          "aliases": [
+            "-w"
+          ],
+          "arguments": [
+            {
+              "name": "WORK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--colour",
+          "recursive": false,
+          "hidden": false,
+          "description": "Tab colour (#RRGGBB or a name), or none",
+          "aliases": [
+            "--color"
+          ],
+          "arguments": [
+            {
+              "name": "COLOUR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--scheme",
+          "recursive": false,
+          "hidden": false,
+          "description": "Windows Terminal colour scheme, or none",
+          "arguments": [
+            {
+              "name": "SCHEME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SESSION",
+          "description": "Session name, number from 'cb ls', or id prefix",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
         }
       ]
     },
     {
       "name": "rename",
-      "description": "Rename a session",
+      "description": "Rename a session (same as cb set --name)",
       "arguments": [
         {
           "name": "SESSION",
@@ -362,6 +511,63 @@
       "description": "Remove a session from cb",
       "options": [
         {
+          "name": "--exited",
+          "recursive": false,
+          "hidden": false,
+          "description": "Remove every session that was exited or closed (not interrupted ones) [default: False]",
+          "arguments": [
+            {
+              "name": "EXITED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--work",
+          "recursive": false,
+          "hidden": false,
+          "description": "Remove every session of this work type that isn't running",
+          "aliases": [
+            "-w"
+          ],
+          "arguments": [
+            {
+              "name": "WORK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--yes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Don't ask before removing several sessions [default: False]",
+          "aliases": [
+            "-y"
+          ],
+          "arguments": [
+            {
+              "name": "YES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--forget-transcript",
           "recursive": false,
           "hidden": false,
@@ -383,12 +589,339 @@
         {
           "name": "SESSION",
           "description": "Session name, number from 'cb ls', or id prefix",
-          "required": true,
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 1
           },
           "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "adopt",
+      "description": "Add a Claude session that was started outside cb",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name for it (default: the conversation's title)",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--work",
+          "recursive": false,
+          "hidden": false,
+          "description": "Work type from config.json",
+          "aliases": [
+            "-w"
+          ],
+          "arguments": [
+            {
+              "name": "WORK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--colour",
+          "recursive": false,
+          "hidden": false,
+          "description": "Tab colour (#RRGGBB or a name); overrides the work type's",
+          "aliases": [
+            "--color"
+          ],
+          "arguments": [
+            {
+              "name": "COLOUR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--here",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run in this tab instead of opening a new one (keeps this tab's colours) [default: False]",
+          "arguments": [
+            {
+              "name": "HERE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-open",
+          "recursive": false,
+          "hidden": false,
+          "description": "Just add it; don't resume it now [default: False]",
+          "arguments": [
+            {
+              "name": "NO_OPEN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--running",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add every Claude session that's running now, from any folder (they're left open where they are) [default: False]",
+          "arguments": [
+            {
+              "name": "RUNNING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SESSION_ID",
+          "description": "Claude's session ID, or the start of it (default: pick from this folder's sessions)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "startup",
+      "description": "Show or change whether cb restore runs when you log in",
+      "commands": [
+        {
+          "name": "enable",
+          "description": "Run cb restore when you log in"
+        },
+        {
+          "name": "disable",
+          "description": "Stop running cb restore when you log in"
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Show or change your settings",
+      "commands": [
+        {
+          "name": "set",
+          "description": "Change a setting",
+          "arguments": [
+            {
+              "name": "SETTING",
+              "description": "Setting name, e.g. defaultName or nameClash.action",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "unset",
+          "description": "Put a setting back to its default",
+          "arguments": [
+            {
+              "name": "SETTING",
+              "description": "Setting name, e.g. defaultName or nameClash.action",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "edit",
+          "description": "Open config.json in your editor"
+        }
+      ]
+    },
+    {
+      "name": "work",
+      "description": "List, add or remove work types",
+      "commands": [
+        {
+          "name": "ls",
+          "description": "List work types"
+        },
+        {
+          "name": "add",
+          "description": "Add a work type, or change one",
+          "options": [
+            {
+              "name": "--colour",
+              "recursive": false,
+              "hidden": false,
+              "description": "Tab colour (#RRGGBB or a name), or none",
+              "aliases": [
+                "--color"
+              ],
+              "arguments": [
+                {
+                  "name": "COLOUR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scheme",
+              "recursive": false,
+              "hidden": false,
+              "description": "Windows Terminal colour scheme for the whole pane, or none",
+              "arguments": [
+                {
+                  "name": "SCHEME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TYPE",
+              "description": "Work type name, e.g. hotfix",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "rm",
+          "description": "Remove a work type",
+          "arguments": [
+            {
+              "name": "TYPE",
+              "description": "Work type name, e.g. hotfix",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "alias",
+      "description": "List, add or remove shortcuts for cb commands",
+      "commands": [
+        {
+          "name": "ls",
+          "description": "List aliases"
+        },
+        {
+          "name": "add",
+          "description": "Add an alias, or change one",
+          "arguments": [
+            {
+              "name": "ALIAS",
+              "description": "Word to type after cb, e.g. c",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "COMMAND",
+              "description": "What it runs, in quotes, e.g. \"rm --exited --yes\"",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "rm",
+          "description": "Remove an alias",
+          "arguments": [
+            {
+              "name": "ALIAS",
+              "description": "Word to type after cb, e.g. c",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         }
       ]
     },

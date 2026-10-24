@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "vericairn",
-    "version": "0.8.2",
+    "version": "0.8.3",
     "description": "The vericairn command-line interface."
   },
   "x-inspectra": {
@@ -974,10 +974,44 @@
               "name": "--commit",
               "recursive": false,
               "hidden": false,
-              "description": "Commit of the Vericairn source to pin (40 hex digits).",
+              "description": "Commit of the Vericairn source to pin (40 hex digits). Defaults to the running build's recorded commit; required when the build records none.",
               "arguments": [
                 {
                   "name": "COMMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--release",
+              "recursive": false,
+              "hidden": false,
+              "description": "Verify and pin the running published release, including its platform archive. [default: False]",
+              "arguments": [
+                {
+                  "name": "RELEASE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --release, verify downloaded release responses, SHA256SUMS and archive in this directory without network access.",
+              "arguments": [
+                {
+                  "name": "FROM",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1231,7 +1265,7 @@
               "name": "--to",
               "recursive": false,
               "hidden": false,
-              "description": "Version of a published release recorded in this estate.",
+              "description": "Published Vericairn version to verify and pin, using that release's command line.",
               "arguments": [
                 {
                   "name": "TO",
@@ -1275,6 +1309,23 @@
                     "maximum": 1
                   },
                   "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "Verify downloaded release responses, SHA256SUMS and platform archive in this directory on the runtime's machine, without network access.",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             }
@@ -1701,8 +1752,303 @@
     },
     {
       "name": "work",
-      "description": "Briefs, assignments, attempts, results and amendments of work orders.",
+      "description": "Create work orders; read briefs and record assignments, attempts, results and amendments.",
       "commands": [
+        {
+          "name": "new",
+          "description": "Create a work order from flags, validate the estate with it, and sign as the author.",
+          "options": [
+            {
+              "name": "--by",
+              "recursive": false,
+              "hidden": false,
+              "description": "Authoring principal id (ULID).",
+              "arguments": [
+                {
+                  "name": "BY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--key",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required short upper-case key, for example W-1.",
+              "arguments": [
+                {
+                  "name": "KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--title",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required short title.",
+              "arguments": [
+                {
+                  "name": "TITLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--intent",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required intent: why this work exists.",
+              "arguments": [
+                {
+                  "name": "INTENT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "What is in scope; repeat for each item. At least one is required.",
+              "arguments": [
+                {
+                  "name": "SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--deliverable",
+              "recursive": false,
+              "hidden": false,
+              "description": "What will exist when the work is done; repeat for each item. At least one is required.",
+              "arguments": [
+                {
+                  "name": "DELIVERABLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--exit-question",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required question whose honest yes closes the work.",
+              "arguments": [
+                {
+                  "name": "EXIT_QUESTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "ordinary or milestone. [default: ordinary]",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--after",
+              "recursive": false,
+              "hidden": false,
+              "description": "Work-order record id this work starts after; repeat for each dependency.",
+              "arguments": [
+                {
+                  "name": "AFTER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--input",
+              "recursive": false,
+              "hidden": false,
+              "description": "Input reference as type:id; repeat for each input.",
+              "arguments": [
+                {
+                  "name": "INPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "move-plan",
+          "description": "Move every planned member of a release carrier together, checking the complete prepared set before writing.",
+          "options": [
+            {
+              "name": "--by",
+              "recursive": false,
+              "hidden": false,
+              "description": "Acting principal id.",
+              "arguments": [
+                {
+                  "name": "BY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--expected",
+              "recursive": false,
+              "hidden": false,
+              "description": "Expected current source carrier hash.",
+              "arguments": [
+                {
+                  "name": "EXPECTED",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--expected-work",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON file mapping every planned member's exact revision id to its expected hash; {} for an empty plan.",
+              "arguments": [
+                {
+                  "name": "EXPECTED_WORK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "Destination carrier key or id; choose this or --version.",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--expected-target",
+              "recursive": false,
+              "hidden": false,
+              "description": "Expected destination carrier hash, required with --to.",
+              "arguments": [
+                {
+                  "name": "EXPECTED_TARGET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "New version for the source carrier and its planned placements; choose this or --to.",
+              "arguments": [
+                {
+                  "name": "VERSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "CARRIER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
         {
           "name": "place",
           "description": "Prepare and sign a work revision in one current release plan or named backlog.",
@@ -4527,6 +4873,23 @@
           "description": "Record the intent, then dispatch the build through the provider; the run id and outcome are recorded as they are observed. Never publishes.",
           "options": [
             {
+              "name": "--check",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report every submission objection and its next action at the exact commit; signs, records, retains and dispatches nothing, and needs no presence. [default: False]",
+              "arguments": [
+                {
+                  "name": "CHECK",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
               "name": "--product",
               "recursive": false,
               "hidden": false,
@@ -4732,9 +5095,128 @@
           ]
         },
         {
+          "name": "withdraw",
+          "description": "Record a candidate's withdrawal and draft-deletion intent together; the operator deletes the draft and records dispatch before observation.",
+          "options": [
+            {
+              "name": "--by",
+              "recursive": false,
+              "hidden": false,
+              "description": "Acting principal id.",
+              "arguments": [
+                {
+                  "name": "BY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--expected",
+              "recursive": false,
+              "hidden": false,
+              "description": "Expected current candidate release hash.",
+              "arguments": [
+                {
+                  "name": "EXPECTED",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--provider",
+              "recursive": false,
+              "hidden": false,
+              "description": "Provider responsible for this draft; recorded explicitly.",
+              "arguments": [
+                {
+                  "name": "PROVIDER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--reason",
+              "recursive": false,
+              "hidden": false,
+              "description": "Why this candidate is withdrawn.",
+              "arguments": [
+                {
+                  "name": "REASON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--setting",
+              "recursive": false,
+              "hidden": false,
+              "description": "Provider setting as name=value; repeatable. Keeps the candidate's repository, version and product.",
+              "arguments": [
+                {
+                  "name": "SETTING",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "RELEASE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "observe",
           "description": "Observe the run and the draft through the provider the operation records; record the outcome, the candidate release, and later the operator's manual publication.",
           "options": [
+            {
+              "name": "--withdrawal",
+              "recursive": false,
+              "hidden": false,
+              "description": "Draft-deletion intent id; observe after the operator records dispatch.",
+              "arguments": [
+                {
+                  "name": "WITHDRAWAL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
             {
               "name": "--version",
               "recursive": false,
