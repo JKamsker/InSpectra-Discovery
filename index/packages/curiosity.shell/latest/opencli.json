@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "curio",
-    "version": "26.10.7177",
-    "description": "curio - the Curiosity Workspace admin sandbox (the one Sudo works in) from your terminal: sessions, a two-panel file manager, the shell, and the commit review loop."
+    "version": "26.10.7203",
+    "description": "curio - the Curiosity Workspace admin sandbox (the one Sudo works in) from your terminal: sessions, the shell, the commit review loop, JSON output for scripts and coding agents, and a two-panel file manager (curio tui)."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
@@ -15,7 +15,7 @@
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "curio - the Curiosity Workspace admin sandbox from your terminal. Run with no command for the two-panel interface."
+    "cliParsedDescription": "curio - the Curiosity Workspace admin sandbox from your terminal.\r\n\r\nRun a command: curio run -- <command line>. Open the two-panel interface (for people, never for scripts or coding agents): curio tui.\r\nFor scripts and coding agents: pass --json and --yes, start long commands with run --detach, and wait with --timeout.\r\n\r\nExit codes: 0 done | 1 failed or discarded | 64 usage, or a question that needs --yes | 75 conflict | 77 not signed in | 78 not allowed | 79 commit awaiting approval | 124 timed out, still running or pending.\r\ncurio run passes the sandbox command's own exit code through."
   },
   "options": [
     {
@@ -90,6 +90,60 @@
             "maximum": 1
           },
           "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--json",
+      "recursive": true,
+      "hidden": false,
+      "description": "Write the answer as one line of JSON on standard output, and errors as JSON on standard error; never ask a question (see the Readme for the shapes) [default: False]",
+      "arguments": [
+        {
+          "name": "JSON",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--yes",
+      "recursive": true,
+      "hidden": false,
+      "description": "Answer yes to the confirmation of a destructive command (session rm and reset, commit approve and discard). Without a terminal, and with --json, those commands stop with exit 64 unless it is given. Accepted by every command [default: False]",
+      "aliases": [
+        "-y"
+      ],
+      "arguments": [
+        {
+          "name": "YES",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--timeout",
+      "recursive": true,
+      "hidden": false,
+      "description": "Seconds before curio gives up (0 = no limit; or CURIO_TIMEOUT). Without a terminal the default is 120 (900 for run, export, upload, put, get and approving); at a terminal there is none. For run wait and commit wait it is how long to wait: exit 124 when it passes.",
+      "arguments": [
+        {
+          "name": "TIMEOUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
         }
       ]
     }
@@ -235,55 +289,11 @@
         },
         {
           "name": "rm",
-          "description": "Delete the current session (or --session): the conversation, and every uncommitted change in its sandbox",
-          "options": [
-            {
-              "name": "--yes",
-              "recursive": false,
-              "hidden": false,
-              "description": "Do not ask for confirmation [default: False]",
-              "aliases": [
-                "-y"
-              ],
-              "arguments": [
-                {
-                  "name": "YES",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            }
-          ]
+          "description": "Delete the current session (or --session): the conversation, and every uncommitted change in its sandbox"
         },
         {
           "name": "reset",
-          "description": "Throw away every uncommitted change in the session's sandbox",
-          "options": [
-            {
-              "name": "--yes",
-              "recursive": false,
-              "hidden": false,
-              "description": "Do not ask for confirmation [default: False]",
-              "aliases": [
-                "-y"
-              ],
-              "arguments": [
-                {
-                  "name": "YES",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            }
-          ]
+          "description": "Throw away every uncommitted change in the session's sandbox"
         },
         {
           "name": "stop",
@@ -293,7 +303,7 @@
     },
     {
       "name": "run",
-      "description": "Run a command (or a script) in the session's sandbox; its output and exit code are passed through",
+      "description": "Run a command (or a script) in the session's sandbox; its output and exit code are passed through. To run a sandbox command that is named status, logs, wait or list, put -- first: curio run -- status",
       "options": [
         {
           "name": "--file",
@@ -314,6 +324,23 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "--detach",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start the command in the sandbox and return its run id at once, without waiting. Follow it with curio run status|wait|logs <id> [default: False]",
+          "arguments": [
+            {
+              "name": "DETACH",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -327,7 +354,87 @@
           },
           "type": "String[]"
         }
+      ],
+      "commands": [
+        {
+          "name": "status",
+          "description": "Say whether a detached run is still going, and how it ended. Exits 0 whenever it could ask; wait is the one that passes the exit code through",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The run id curio run --detach printed",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "logs",
+          "description": "Print what a detached run printed: standard output on standard output, standard error on standard error. The sandbox hands the output over when the command ends, so a run still going has none yet",
+          "options": [
+            {
+              "name": "--tail",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only the last N lines of each of standard output and standard error",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "TAIL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The run id curio run --detach printed",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "wait",
+          "description": "Wait for a detached run, for --timeout seconds at most (default 120 without a terminal). When it ended: its output, and its exit code passed through. When the time ran out first: exit 124 and the run keeps going - ask again",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The run id curio run --detach printed",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List the commands this session started with --detach"
+        }
       ]
+    },
+    {
+      "name": "runs",
+      "description": "List the commands this session started with run --detach (the same as: curio run list)"
     },
     {
       "name": "status",
@@ -347,19 +454,33 @@
         },
         {
           "name": "approve",
-          "description": "Apply the staged commit to the workspace",
+          "description": "Apply the staged commit to the workspace. A sign-in that may not approve opens the review in the browser and waits for the answer there (for --timeout seconds; use --no-wait to return at once). Exit: 0 applied, 1 discarded or failed, 75 files changed meanwhile, 79 pending (--no-wait), 124 still waiting",
           "options": [
             {
-              "name": "--yes",
+              "name": "--no-wait",
               "recursive": false,
               "hidden": false,
-              "description": "Do not ask for confirmation [default: False]",
-              "aliases": [
-                "-y"
-              ],
+              "description": "When the approval happens in the browser: print the review link and the state, and exit 79 at once instead of waiting for the answer (then: curio commit wait --timeout N) [default: False]",
               "arguments": [
                 {
-                  "name": "YES",
+                  "name": "NO_WAIT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-browser",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not open the review in a browser; the link is printed either way [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_BROWSER",
                   "required": false,
                   "arity": {
                     "minimum": 0,
@@ -373,27 +494,21 @@
         },
         {
           "name": "discard",
-          "description": "Throw the staged commit away; the edits stay in the sandbox",
-          "options": [
+          "description": "Throw the staged commit away; the edits stay in the sandbox"
+        },
+        {
+          "name": "wait",
+          "description": "Wait for the staged commit to be answered, for --timeout seconds at most (default 120 without a terminal), and exit with how it went: 0 applied, 1 discarded or failed, 124 still unanswered. The answer is pushed over the session's live connection; nothing polls",
+          "arguments": [
             {
-              "name": "--yes",
-              "recursive": false,
-              "hidden": false,
-              "description": "Do not ask for confirmation [default: False]",
-              "aliases": [
-                "-y"
-              ],
-              "arguments": [
-                {
-                  "name": "YES",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
+              "name": "COMMIT",
+              "description": "The commit id curio commit approve --no-wait printed (default: the commit waiting now)",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         }
@@ -417,7 +532,7 @@
     },
     {
       "name": "cat",
-      "description": "Print a sandbox file",
+      "description": "Print a sandbox file (with --json: its text, or base64 when it is not UTF-8)",
       "arguments": [
         {
           "name": "PATH",
@@ -648,7 +763,7 @@
         },
         {
           "name": "search",
-          "description": "Search the skills without reading them all; best match first, with the passage that matched",
+          "description": "Search the skills without reading them all; best match first, with the passage that matched. Exit 1 when nothing matches",
           "options": [
             {
               "name": "--limit",
@@ -762,7 +877,7 @@
     },
     {
       "name": "tui",
-      "description": "Open the two-panel interface (the same as running curio with no command)"
+      "description": "Open the two-panel interface: a full-screen terminal UI for people. Never run it from a script or a coding agent - it needs a terminal and takes it over."
     }
   ]
 }

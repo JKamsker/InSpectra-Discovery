@@ -1,0 +1,309 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "AI.Sentinel.Cli",
+    "version": "3.2.2",
+    "description": "Offline replay CLI for AI.Sentinel — run the detector pipeline against saved conversations, browse the local audit file with 'sentinel dashboard', and build a compliance report from it with 'sentinel report'. The dashboard command needs the ASP.NET Core runtime, which the .NET SDK includes."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.13.0",
+      "systemCommandLineVersion": "2.0.13.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "AI.Sentinel - offline replay CLI"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "scan",
+      "description": "Run the AI.Sentinel detector pipeline against a saved conversation.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Conversation format. [default: Auto]",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "ConversationFormat",
+              "allowedValues": [
+                "Auto",
+                "OpenAIChatCompletion",
+                "AuditNdjson"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format. [default: Text]",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--expect",
+          "recursive": false,
+          "hidden": false,
+          "description": "Detector IDs that must fire (repeatable).",
+          "arguments": [
+            {
+              "name": "EXPECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--min-severity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum required max severity.",
+          "arguments": [
+            {
+              "name": "MIN_SEVERITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Severity",
+              "allowedValues": [
+                "None",
+                "Low",
+                "Medium",
+                "High",
+                "Critical"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to a prior ReplayResult JSON for regression comparison.",
+          "arguments": [
+            {
+              "name": "BASELINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--compliance",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also run the opt-in Art. 5 compliance detectors CMP-01 to CMP-04. SENTINEL_HOOK_COMPLIANCE=on does the same. [default: False]",
+          "arguments": [
+            {
+              "name": "COMPLIANCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FILE",
+          "description": "Path to the conversation file (OpenAI JSON or AI.Sentinel audit NDJSON).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "description": "Browse the local audit file in the AI.Sentinel dashboard.",
+      "options": [
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the audit SQLite file. Defaults to the file the hooks and the MCP proxy write. [default: <path>]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--port",
+          "recursive": false,
+          "hidden": false,
+          "description": "Port to listen on (127.0.0.1 only). Use 0 for any free port. [default: 5170]",
+          "arguments": [
+            {
+              "name": "PORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "description": "Build a compliance report from the local audit file.",
+      "options": [
+        {
+          "name": "--db",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the audit SQLite file. Defaults to the file the hooks and the MCP proxy write. [default: <path>]",
+          "arguments": [
+            {
+              "name": "DB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start of the period: an ISO date (yyyy-MM-dd, from 00:00 UTC) or an ISO 8601 timestamp. Defaults to 30 days before --to.",
+          "arguments": [
+            {
+              "name": "FROM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "End of the period, inclusive: an ISO date (yyyy-MM-dd, to the end of that UTC day) or an ISO 8601 timestamp. Defaults to now.",
+          "arguments": [
+            {
+              "name": "TO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: md, html or json. [default: md]",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "File to write the report to. Defaults to standard output.",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
