@@ -1,0 +1,1061 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Pmad.CodeCondenser.Cli",
+    "version": "0.0.2",
+    "description": "Roslyn-based static analysis CLI tool to detect C# code clones and condense verbose comments via local LLMs."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.13.0",
+      "systemCommandLineVersion": "2.0.13.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Static analysis tool for C# clone detection and comment summarization"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information",
+      "aliases": [
+        "-v"
+      ]
+    },
+    {
+      "name": "--apply",
+      "recursive": true,
+      "hidden": false,
+      "description": "Write shortened comments directly to source files [default: False]",
+      "aliases": [
+        "-a"
+      ],
+      "arguments": [
+        {
+          "name": "APPLY",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--incremental",
+      "recursive": true,
+      "hidden": false,
+      "description": "Use snapshot cache to analyze only modified or new files [default: False]",
+      "aliases": [
+        "-i"
+      ],
+      "arguments": [
+        {
+          "name": "INCREMENTAL",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--update-snapshot",
+      "recursive": true,
+      "hidden": false,
+      "description": "Refresh the snapshot baseline [default: False]",
+      "aliases": [
+        "-u"
+      ],
+      "arguments": [
+        {
+          "name": "UPDATE_SNAPSHOT",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--no-color",
+      "recursive": true,
+      "hidden": false,
+      "description": "Disable ANSI color formatting [default: False]",
+      "arguments": [
+        {
+          "name": "NO_COLOR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--no-comments",
+      "recursive": true,
+      "hidden": false,
+      "description": "Disable comment extraction and summarization (alias for --summary disabled) [default: False]",
+      "aliases": [
+        "--disable-comments",
+        "--no-comment-summarization"
+      ],
+      "arguments": [
+        {
+          "name": "NO_COMMENTS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--enable-comments",
+      "recursive": true,
+      "hidden": false,
+      "description": "Explicitly enable comment summarization [default: False]",
+      "aliases": [
+        "--enable-comment-summarization"
+      ],
+      "arguments": [
+        {
+          "name": "ENABLE_COMMENTS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--report-only",
+      "recursive": true,
+      "hidden": false,
+      "description": "Report-only mode for comments without calling an LLM [default: False]",
+      "arguments": [
+        {
+          "name": "REPORT_ONLY",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--summary",
+      "recursive": true,
+      "hidden": false,
+      "description": "Comment summary mode: disabled, summarize, or report",
+      "aliases": [
+        "--summary-mode"
+      ],
+      "arguments": [
+        {
+          "name": "SUMMARY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--no-duplication",
+      "recursive": true,
+      "hidden": false,
+      "description": "Disable structural code clone detection [default: False]",
+      "aliases": [
+        "--disable-duplication",
+        "--no-clone-detection"
+      ],
+      "arguments": [
+        {
+          "name": "NO_DUPLICATION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--enable-duplication",
+      "recursive": true,
+      "hidden": false,
+      "description": "Explicitly enable code clone detection [default: False]",
+      "aliases": [
+        "--enable-duplication-detection"
+      ],
+      "arguments": [
+        {
+          "name": "ENABLE_DUPLICATION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--no-strings",
+      "recursive": true,
+      "hidden": false,
+      "description": "Disable repeated inline string detection [default: False]",
+      "aliases": [
+        "--disable-strings",
+        "--no-repeated-strings"
+      ],
+      "arguments": [
+        {
+          "name": "NO_STRINGS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--enable-strings",
+      "recursive": true,
+      "hidden": false,
+      "description": "Explicitly enable repeated inline string detection [default: False]",
+      "aliases": [
+        "--enable-repeated-strings"
+      ],
+      "arguments": [
+        {
+          "name": "ENABLE_STRINGS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--exclude-tests",
+      "recursive": true,
+      "hidden": false,
+      "description": "Completely exclude test files [default: False]",
+      "aliases": [
+        "--production-only"
+      ],
+      "arguments": [
+        {
+          "name": "EXCLUDE_TESTS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--enforce-test-duplication",
+      "recursive": true,
+      "hidden": false,
+      "description": "Treat test clones as CI policy violation in gate check [default: False]",
+      "arguments": [
+        {
+          "name": "ENFORCE_TEST_DUPLICATION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--include-generated",
+      "recursive": true,
+      "hidden": false,
+      "description": "Disable automatic exclusion of generated files [default: False]",
+      "arguments": [
+        {
+          "name": "INCLUDE_GENERATED",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--sub-method-clones",
+      "recursive": true,
+      "hidden": false,
+      "description": "Enable sliding-window sub-method clone detection [default: False]",
+      "aliases": [
+        "--submethod-clones",
+        "--sub-method"
+      ],
+      "arguments": [
+        {
+          "name": "SUB_METHOD_CLONES",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--dry-run",
+      "recursive": true,
+      "hidden": false,
+      "description": "Preview actions without modifying files on disk [default: False]",
+      "aliases": [
+        "-n"
+      ],
+      "arguments": [
+        {
+          "name": "DRY_RUN",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--force",
+      "recursive": true,
+      "hidden": false,
+      "description": "Force overwrite skill files even if up to date [default: False]",
+      "arguments": [
+        {
+          "name": "FORCE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--clean",
+      "recursive": true,
+      "hidden": false,
+      "description": "Remove obsolete files from skill directories [default: False]",
+      "arguments": [
+        {
+          "name": "CLEAN",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--duplication-tolerance",
+      "recursive": true,
+      "hidden": false,
+      "description": "Maximum new clone clusters tolerated in incremental mode",
+      "aliases": [
+        "-dt"
+      ],
+      "arguments": [
+        {
+          "name": "DUPLICATION_TOLERANCE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--comment-tolerance",
+      "recursive": true,
+      "hidden": false,
+      "description": "Maximum new verbose comments tolerated in incremental mode",
+      "aliases": [
+        "-ct"
+      ],
+      "arguments": [
+        {
+          "name": "COMMENT_TOLERANCE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--string-tolerance",
+      "recursive": true,
+      "hidden": false,
+      "description": "Maximum new repeated string groups tolerated in incremental mode",
+      "aliases": [
+        "-st",
+        "--repeated-string-tolerance"
+      ],
+      "arguments": [
+        {
+          "name": "STRING_TOLERANCE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--threshold-statements",
+      "recursive": true,
+      "hidden": false,
+      "description": "Minimum statements for clone detection",
+      "aliases": [
+        "-ts"
+      ],
+      "arguments": [
+        {
+          "name": "THRESHOLD_STATEMENTS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--threshold-comments",
+      "recursive": true,
+      "hidden": false,
+      "description": "Minimum character length for verbose comments",
+      "aliases": [
+        "-tc"
+      ],
+      "arguments": [
+        {
+          "name": "THRESHOLD_COMMENTS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--threshold-strings",
+      "recursive": true,
+      "hidden": false,
+      "description": "Minimum character length for repeated string detection (default: 100)",
+      "aliases": [
+        "-tstr",
+        "--threshold-repeated-strings"
+      ],
+      "arguments": [
+        {
+          "name": "THRESHOLD_STRINGS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--string-occurrences",
+      "recursive": true,
+      "hidden": false,
+      "description": "Minimum occurrences for repeated string detection (default: 2)",
+      "aliases": [
+        "-so",
+        "--threshold-string-occurrences"
+      ],
+      "arguments": [
+        {
+          "name": "STRING_OCCURRENCES",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--threshold-xml-summary",
+      "recursive": true,
+      "hidden": false,
+      "description": "Minimum content length for XML summary/remarks",
+      "aliases": [
+        "-txs"
+      ],
+      "arguments": [
+        {
+          "name": "THRESHOLD_XML_SUMMARY",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--threshold-xml-param",
+      "recursive": true,
+      "hidden": false,
+      "description": "Minimum content length for XML param",
+      "aliases": [
+        "-txp"
+      ],
+      "arguments": [
+        {
+          "name": "THRESHOLD_XML_PARAM",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--threshold-submethod-statements",
+      "recursive": true,
+      "hidden": false,
+      "description": "Minimum statements for sub-method clone detection",
+      "aliases": [
+        "--submethod-threshold"
+      ],
+      "arguments": [
+        {
+          "name": "THRESHOLD_SUBMETHOD_STATEMENTS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--context-size",
+      "recursive": true,
+      "hidden": false,
+      "description": "Specify context window size in tokens",
+      "aliases": [
+        "-cs"
+      ],
+      "arguments": [
+        {
+          "name": "CONTEXT_SIZE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--max-line-length",
+      "recursive": true,
+      "hidden": false,
+      "description": "Maximum line length for formatted comments",
+      "aliases": [
+        "-mll"
+      ],
+      "arguments": [
+        {
+          "name": "MAX_LINE_LENGTH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--model",
+      "recursive": true,
+      "hidden": false,
+      "description": "Specify LLM model name",
+      "aliases": [
+        "-m"
+      ],
+      "arguments": [
+        {
+          "name": "MODEL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--max-retries",
+      "recursive": true,
+      "hidden": false,
+      "description": "Maximum number of LLM summarization retries",
+      "aliases": [
+        "-mr"
+      ],
+      "arguments": [
+        {
+          "name": "MAX_RETRIES",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "--estimator",
+      "recursive": true,
+      "hidden": false,
+      "description": "Token estimator preset: default, qwen, or gemma",
+      "aliases": [
+        "-te",
+        "--token-estimator"
+      ],
+      "arguments": [
+        {
+          "name": "ESTIMATOR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--endpoint",
+      "recursive": true,
+      "hidden": false,
+      "description": "Specify Ollama endpoint URL",
+      "aliases": [
+        "-e"
+      ],
+      "arguments": [
+        {
+          "name": "ENDPOINT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--config",
+      "recursive": true,
+      "hidden": false,
+      "description": "Path to custom codecondenser.json configuration file",
+      "aliases": [
+        "-c"
+      ],
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--global-config",
+      "recursive": true,
+      "hidden": false,
+      "description": "Path to custom global user profile configuration file",
+      "aliases": [
+        "-gc"
+      ],
+      "arguments": [
+        {
+          "name": "GLOBAL_CONFIG",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--no-global-config",
+      "recursive": true,
+      "hidden": false,
+      "description": "Disable loading of global user profile configuration [default: False]",
+      "arguments": [
+        {
+          "name": "NO_GLOBAL_CONFIG",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--summarized-comments",
+      "recursive": true,
+      "hidden": false,
+      "description": "Path to summarized comments JSON file stored in git",
+      "aliases": [
+        "-sc",
+        "--comments-file",
+        "-cf"
+      ],
+      "arguments": [
+        {
+          "name": "SUMMARIZED_COMMENTS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output file path",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--include",
+      "recursive": true,
+      "hidden": false,
+      "description": "Add glob pattern of files/directories to include",
+      "aliases": [
+        "-inc"
+      ],
+      "arguments": [
+        {
+          "name": "INCLUDE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--exclude",
+      "recursive": true,
+      "hidden": false,
+      "description": "Add glob pattern of files/directories to exclude",
+      "aliases": [
+        "-exc"
+      ],
+      "arguments": [
+        {
+          "name": "EXCLUDE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--format",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output format: console, sarif, json",
+      "aliases": [
+        "-f"
+      ],
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "OutputFormat",
+          "allowedValues": [
+            "Console",
+            "Sarif",
+            "Json"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--skill",
+      "recursive": true,
+      "hidden": false,
+      "description": "Specify a specific skill to install/update",
+      "aliases": [
+        "--skill-name"
+      ],
+      "arguments": [
+        {
+          "name": "SKILL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--skills-dir",
+      "recursive": true,
+      "hidden": false,
+      "description": "Override target skills directory",
+      "aliases": [
+        "--skills-directory"
+      ],
+      "arguments": [
+        {
+          "name": "SKILLS_DIR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ],
+  "arguments": [
+    {
+      "name": "PATH",
+      "required": false,
+      "arity": {
+        "minimum": 0,
+        "maximum": 100000
+      },
+      "type": "String[]"
+    }
+  ],
+  "commands": [
+    {
+      "name": "analyze",
+      "description": "Analyze C# codebase in dry-run mode (default)",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "apply",
+      "description": "Apply summarized comments directly to source files on disk",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "snapshot",
+      "description": "Create or refresh the snapshot baseline",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "skills",
+      "description": "Install or update AI agent skills in the workspace (.agents/skills)",
+      "aliases": [
+        "install-skills",
+        "install-skill"
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ],
+      "commands": [
+        {
+          "name": "install",
+          "description": "Install skills",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "update",
+          "description": "Update skills",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "measure",
+      "description": "Measure code in terms of estimated LLM tokens (total, comments, code)",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    }
+  ]
+}
