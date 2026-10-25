@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "swipewalk - accessibility scanner for Android and iOS apps (Windows planned",
-    "version": "0.6.2",
+    "version": "0.6.3",
     "description": "Accessibility scanner for running Android and iOS apps, tried on native Android (Views, Jetpack Compose), native iOS (UIKit, SwiftUI) and .NET MAUI apps, with extra help for .NET MAUI. Wraps Apple's accessibility audit and Google's Accessibility Test Framework, can capture what TalkBack says on Android, maps findings to WCAG 2.2 and labels the standards they are relevant to (Section 508, EN 301 549 and others), can point findings at a likely line in your own project (--source), and writes JSON, HTML, Markdown ticket, CSV, PDF and per-criterion evidence report output. It can also share a saved run as one file, signed by default. Automated checks find only some issues; manual testing is still required."
   },
   "x-inspectra": {
@@ -416,6 +416,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -448,6 +454,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -468,6 +480,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -601,7 +619,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -617,7 +635,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -879,7 +897,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -895,7 +913,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -1529,6 +1547,12 @@
               "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
             },
             {
+              "name": "--large-text-beyond",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+            },
+            {
               "name": "--appearance",
               "recursive": false,
               "hidden": false,
@@ -1561,6 +1585,12 @@
               ]
             },
             {
+              "name": "--small-screen",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+            },
+            {
               "name": "--auto-update-content",
               "recursive": false,
               "hidden": false,
@@ -1581,6 +1611,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--keyboard",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
             },
             {
               "name": "--standard",
@@ -2137,6 +2173,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -2169,6 +2211,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -2189,6 +2237,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -2322,7 +2376,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -2338,7 +2392,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -2599,7 +2653,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -2615,7 +2669,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -3249,6 +3303,12 @@
               "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
             },
             {
+              "name": "--large-text-beyond",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+            },
+            {
               "name": "--appearance",
               "recursive": false,
               "hidden": false,
@@ -3281,6 +3341,12 @@
               ]
             },
             {
+              "name": "--small-screen",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+            },
+            {
               "name": "--auto-update-content",
               "recursive": false,
               "hidden": false,
@@ -3301,6 +3367,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--keyboard",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
             },
             {
               "name": "--standard",
@@ -3857,6 +3929,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -3889,6 +3967,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -3909,6 +3993,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -4042,7 +4132,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -4058,7 +4148,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -4319,7 +4409,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -4335,7 +4425,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -4969,6 +5059,12 @@
               "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
             },
             {
+              "name": "--large-text-beyond",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+            },
+            {
               "name": "--appearance",
               "recursive": false,
               "hidden": false,
@@ -5001,6 +5097,12 @@
               ]
             },
             {
+              "name": "--small-screen",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+            },
+            {
               "name": "--auto-update-content",
               "recursive": false,
               "hidden": false,
@@ -5021,6 +5123,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--keyboard",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
             },
             {
               "name": "--standard",
@@ -5577,6 +5685,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -5609,6 +5723,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -5629,6 +5749,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -5762,7 +5888,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -5778,7 +5904,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -6039,7 +6165,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -6055,7 +6181,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -6689,6 +6815,12 @@
               "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
             },
             {
+              "name": "--large-text-beyond",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+            },
+            {
               "name": "--appearance",
               "recursive": false,
               "hidden": false,
@@ -6721,6 +6853,12 @@
               ]
             },
             {
+              "name": "--small-screen",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+            },
+            {
               "name": "--auto-update-content",
               "recursive": false,
               "hidden": false,
@@ -6741,6 +6879,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--keyboard",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
             },
             {
               "name": "--standard",
@@ -7318,6 +7462,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -7350,6 +7500,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -7370,6 +7526,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -7503,7 +7665,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -7519,7 +7681,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -7781,7 +7943,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -7797,7 +7959,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -8431,6 +8593,12 @@
               "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
             },
             {
+              "name": "--large-text-beyond",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+            },
+            {
               "name": "--appearance",
               "recursive": false,
               "hidden": false,
@@ -8463,6 +8631,12 @@
               ]
             },
             {
+              "name": "--small-screen",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+            },
+            {
               "name": "--auto-update-content",
               "recursive": false,
               "hidden": false,
@@ -8483,6 +8657,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--keyboard",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
             },
             {
               "name": "--standard",
@@ -8641,7 +8821,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -8657,7 +8837,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -9467,6 +9647,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -9499,6 +9685,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -9519,6 +9711,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -9652,7 +9850,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -9668,7 +9866,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -9934,7 +10132,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -9950,7 +10148,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -10579,6 +10777,12 @@
               "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
             },
             {
+              "name": "--large-text-beyond",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+            },
+            {
               "name": "--appearance",
               "recursive": false,
               "hidden": false,
@@ -10611,6 +10815,12 @@
               ]
             },
             {
+              "name": "--small-screen",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+            },
+            {
               "name": "--auto-update-content",
               "recursive": false,
               "hidden": false,
@@ -10631,6 +10841,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--keyboard",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
             },
             {
               "name": "--standard",
@@ -11186,6 +11402,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -11218,6 +11440,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -11238,6 +11466,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -11371,7 +11605,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -11387,7 +11621,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -11653,7 +11887,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -11669,7 +11903,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -12299,6 +12533,12 @@
               "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
             },
             {
+              "name": "--large-text-beyond",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+            },
+            {
               "name": "--appearance",
               "recursive": false,
               "hidden": false,
@@ -12331,6 +12571,12 @@
               ]
             },
             {
+              "name": "--small-screen",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+            },
+            {
               "name": "--auto-update-content",
               "recursive": false,
               "hidden": false,
@@ -12351,6 +12597,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--keyboard",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
             },
             {
               "name": "--standard",
@@ -12906,6 +13158,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -12938,6 +13196,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -12958,6 +13222,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -13091,7 +13361,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -13107,7 +13377,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -13373,7 +13643,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -13389,7 +13659,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -14261,6 +14531,12 @@
           "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
         },
         {
+          "name": "--large-text-beyond",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+        },
+        {
           "name": "--appearance",
           "recursive": false,
           "hidden": false,
@@ -14293,6 +14569,12 @@
           ]
         },
         {
+          "name": "--small-screen",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+        },
+        {
           "name": "--auto-update-content",
           "recursive": false,
           "hidden": false,
@@ -14313,6 +14595,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--keyboard",
+          "recursive": false,
+          "hidden": false,
+          "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
         },
         {
           "name": "--standard",
@@ -14446,7 +14734,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+          "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
           "arguments": [
             {
               "name": "FORMAT",
@@ -14462,7 +14750,7 @@
           "name": "--finding",
           "recursive": false,
           "hidden": false,
-          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+          "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
           "arguments": [
             {
               "name": "FINDING",
@@ -14728,7 +15016,7 @@
               "name": "--format",
               "recursive": false,
               "hidden": false,
-              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+              "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
               "arguments": [
                 {
                   "name": "FORMAT",
@@ -14744,7 +15032,7 @@
               "name": "--finding",
               "recursive": false,
               "hidden": false,
-              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+              "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
               "arguments": [
                 {
                   "name": "FINDING",
@@ -15378,6 +15666,12 @@
               "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
             },
             {
+              "name": "--large-text-beyond",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+            },
+            {
               "name": "--appearance",
               "recursive": false,
               "hidden": false,
@@ -15410,6 +15704,12 @@
               ]
             },
             {
+              "name": "--small-screen",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+            },
+            {
               "name": "--auto-update-content",
               "recursive": false,
               "hidden": false,
@@ -15430,6 +15730,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--keyboard",
+              "recursive": false,
+              "hidden": false,
+              "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
             },
             {
               "name": "--standard",
@@ -16080,6 +16386,12 @@
       "description": "scan: also capture at a large system text size (Android 200%; iOS AX3, about 235%,\nset through the Settings app on a physical iPhone). On a physical device this\nchanges the phone's text size and restores it; use a test device. record does\nthis by default"
     },
     {
+      "name": "--large-text-beyond",
+      "recursive": false,
+      "hidden": false,
+      "description": "scan, Android only, needs --large-text: also capture the screen at a text size\nABOVE the 200% WCAG 1.4.4 asks for -- Android font scale 2.25 (225%) by default,\nor give a scale from 2.1 to 3.0. Anything found only at that size is reported as a\nplatform advisory (the report states the size tested and that WCAG asks for 200%),\nnever as a WCAG issue. The text size is put back afterward, including on an error\nor Ctrl-C. Only runs when the text changes size while the app keeps running (not\nwhen the app needed a restart to show 200%). Above 200%, Android scales text in\nproportion to the setting again, so large text can jump in size compared with 200%.\nOff by default"
+    },
+    {
       "name": "--appearance",
       "recursive": false,
       "hidden": false,
@@ -16112,6 +16424,12 @@
       ]
     },
     {
+      "name": "--small-screen",
+      "recursive": false,
+      "hidden": false,
+      "description": "scan, Android only: also capture the screen with the display temporarily shrunk to a\nsmall phone (360 x 640 dp: `adb shell wm size 720x1280` and `wm density 320`), at\nnormal text size and, when the large-text check worked, at the large-text size\ntoo, and report controls that disappear or newly overlap there -- for review\nagainst WCAG 1.4.10 Reflow (and 1.4.4 Resize Text when it appears only with large\ntext); every message names the screen size tested. The device's size and density\nare read first and put back exactly (an override you had set comes back as that\noverride), including on an error or Ctrl-C; if Swipewalk is killed, the next scan\nor `swipewalk doctor` restores them (or run `adb shell wm size reset` and\n`adb shell wm density reset`). Off by default; skipped with a reason on iOS (scan\non a smaller Simulator device or iPhone instead) and on a screen that is already\nthat small. On a physical phone it changes the whole display while it runs, so\nuse a test device"
+    },
+    {
       "name": "--auto-update-content",
       "recursive": false,
       "hidden": false,
@@ -16132,6 +16450,12 @@
           }
         }
       ]
+    },
+    {
+      "name": "--keyboard",
+      "recursive": false,
+      "hidden": false,
+      "description": "scan, Android only: press Tab through the screen over adb, as an attached hardware\nkeyboard would, and record which control holds keyboard focus after each press.\nReports (all for review) controls with something to press that focus never\nreached (WCAG 2.1.1 Keyboard), focus that stops moving or goes round a smaller\ngroup of controls (2.1.2 No Keyboard Trap) and a Tab order that keeps jumping back\nup the screen (2.4.3 Focus Order); the report lists the Tab sequence. Moves focus\nwith Tab only (and Shift+Tab to check the reverse direction): never Enter, Space or a\ncharacter, so it never presses or activates a control the way Enter or Space would (Back and Delete are used only to undo what the walk\nitself caused), and the walk is discarded if the screen is not\nthe same afterward or a text field holds anything different (in a multi-line\nCompose text field Tab types a tab character; Swipewalk deletes it again and\nflags the field for review as a possible keyboard trap). Changes no device setting; works on a physical phone\ntoo. Because only Tab moves focus, a control it skipped may still be reachable another way (for example with\nthe arrow keys). Off by default: about a second per control. iOS is skipped with a\nreason (Full Keyboard Access cannot be driven safely from here)"
     },
     {
       "name": "--standard",
@@ -16265,7 +16589,7 @@
       "name": "--format",
       "recursive": false,
       "hidden": false,
-      "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed",
+      "description": "What to export a saved run's findings as: md writes one self-contained\nMarkdown ticket per finding (pasteable into Jira, GitHub Issues or Azure DevOps),\nplus an images/ folder of evidence screenshots alongside them; csv writes one row\nper finding for bulk import into Jira, Azure Boards or GitHub (never includes\nscreenshots -- an importer has nowhere to put them); html writes the whole report\nas one self-contained file (screenshots embedded, shareable by email); pdf writes\nthe whole report as a tagged PDF (targeting PDF/UA-1, checked with veraPDF when\nfirst added -- see docs/accessibility-statement.md for what's changed since;\nneeds nothing installed); evidence writes one readable HTML page (default\n./evidence-report.html) showing, for each WCAG 2.2 Level A and AA success\ncriterion, what Swipewalk checked automatically, what it found (with finding\nids), what still needs a manual check and what was not tested in this run, plus\nthe screens covered and the laws and standards that reference WCAG. It is not a\nconformance report (ACR/VPAT): completing one needs a person to evaluate each\ncriterion. --standard narrows the standards listed.\ntranscript writes\none plain text file (default ./screen-reader-transcript.txt) listing, for each\nscreen, what a screen reader is predicted to announce in reading order and, where\nthe run captured it, what TalkBack said (Android), what the Accessibility Inspector\nreported or the VoiceOver caption text Swipewalk read (iOS), the two labelled\napart and differences marked. It is text to read, not a pass or fail; it ignores\n--standard, --my-laws, --triage, --source and --no-screenshots",
       "arguments": [
         {
           "name": "FORMAT",
@@ -16281,7 +16605,7 @@
       "name": "--finding",
       "recursive": false,
       "hidden": false,
-      "description": "Export only this finding (repeat for several; md/csv only -- html, pdf and evidence\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
+      "description": "Export only this finding (repeat for several; md/csv only -- html, pdf, evidence and transcript\nalways write the whole report; not supported at all with --app, which always\nwrites the whole combined report). Ids are in each exported ticket's Provenance\nsection and the CSV's FindingId column; a given id that doesn't match anything\nprints the ids actually in this run. Without --finding, every finding in the run\nis exported\nThe finding to mark (with --status/--reason) or unmark (with --clear). With no\n--finding at all, lists every finding this run currently has a mark for, plus any\nmark that no longer matches a finding in this run (\"stale\")",
       "arguments": [
         {
           "name": "FINDING",
