@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dotnet-tia",
-    "version": "0.6.0",
+    "version": "0.7.0",
     "description": "Test impact analysis for .NET: takes a git diff and runs only the tests that diff can affect."
   },
   "x-inspectra": {
@@ -293,6 +293,23 @@
           ]
         },
         {
+          "name": "--annotations",
+          "recursive": false,
+          "hidden": false,
+          "description": "Under GitHub Actions, annotate each untested change on the pull request's diff. Does nothing elsewhere. [default: False]",
+          "arguments": [
+            {
+              "name": "ANNOTATIONS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--summary",
           "recursive": false,
           "hidden": false,
@@ -323,6 +340,23 @@
                 "maximum": 1
               },
               "type": "ShardSpec"
+            }
+          ]
+        },
+        {
+          "name": "--shard-durations",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --shard: balance shards by the test durations in this file (`run --record-durations` writes .tia/durations.json). Give every shard the same file.",
+          "arguments": [
+            {
+              "name": "SHARD_DURATIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         },
@@ -668,6 +702,23 @@
           ]
         },
         {
+          "name": "--record-durations",
+          "recursive": false,
+          "hidden": false,
+          "description": "Record what each selected test took in .tia/durations.json, for --shard-durations. Changes nothing about what runs. [default: False]",
+          "arguments": [
+            {
+              "name": "RECORD_DURATIONS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--parallel",
           "recursive": false,
           "hidden": false,
@@ -692,6 +743,23 @@
           "arguments": [
             {
               "name": "FAIL_ON_UNTESTED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--annotations",
+          "recursive": false,
+          "hidden": false,
+          "description": "Under GitHub Actions, annotate each untested change on the pull request's diff. Does nothing elsewhere. [default: False]",
+          "arguments": [
+            {
+              "name": "ANNOTATIONS",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -732,6 +800,23 @@
                 "maximum": 1
               },
               "type": "ShardSpec"
+            }
+          ]
+        },
+        {
+          "name": "--shard-durations",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --shard: balance shards by the test durations in this file (`run --record-durations` writes .tia/durations.json). Give every shard the same file.",
+          "arguments": [
+            {
+              "name": "SHARD_DURATIONS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         },
@@ -1022,6 +1107,40 @@
                 "maximum": 1
               },
               "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--no-server",
+          "recursive": false,
+          "hidden": false,
+          "description": "Analyse in this process even when a `dotnet tia server` is running here. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_SERVER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--symbol",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explain a symbol instead of a test: which tests reach it, or how close the nearest one gets. [default: False]",
+          "arguments": [
+            {
+              "name": "SYMBOL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }
@@ -1448,7 +1567,7 @@
           "name": "--seed",
           "recursive": false,
           "hidden": false,
-          "description": "Random seed, so a failing run can be replayed. [default: 185501]",
+          "description": "Random seed, so a failing run can be replayed. [default: 124526]",
           "arguments": [
             {
               "name": "SEED",
@@ -2505,6 +2624,152 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hook",
+      "description": "Run the selected tests from a git hook, before a push or a commit.",
+      "commands": [
+        {
+          "name": "install",
+          "description": "Write a git hook that runs `dotnet tia run` against the right base.",
+          "options": [
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository root. Defaults to the current directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--solution",
+              "recursive": false,
+              "hidden": false,
+              "description": "Solution or project to analyse. Discovered from the repository root when omitted; required when it holds several of one kind.",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SOLUTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--pre-push",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run before every push, against the branch's upstream. The default. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRE_PUSH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--pre-commit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run before every commit, against HEAD. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRE_COMMIT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "uninstall",
+          "description": "Remove the hook `hook install` wrote. A hook it did not write is left alone.",
+          "options": [
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repository root. Defaults to the current directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--pre-push",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run before every push, against the branch's upstream. The default. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRE_PUSH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--pre-commit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run before every commit, against HEAD. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRE_COMMIT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             }

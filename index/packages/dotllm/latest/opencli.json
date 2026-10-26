@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dotllm",
-    "version": "0.3.0-dev.3311",
+    "version": "0.3.0-dev.3351",
     "description": "Command-line tool for dotLLM — run, chat, serve, and manage GGUF models. Install with: dotnet tool install -g DotLLM.Cli"
   },
   "x-inspectra": {
@@ -759,7 +759,7 @@
           "name": "--cache-type-k",
           "recursive": false,
           "hidden": false,
-          "description": "f32        KV-cache key quantization:\nf32 (default), q8_0, q4_0\n--cache-type-v is set",
+          "description": "KV-cache key type: f32, f16,\nq8_0, q4_0. With --paged and\nneither K nor V given, Q8_0\nblocks are used; pass f16\nfor both to keep F16\n--cache-type-v is set",
           "arguments": [
             {
               "name": "CACHE_TYPE_K",
@@ -775,7 +775,7 @@
           "name": "--cache-type-v",
           "recursive": false,
           "hidden": false,
-          "description": "f32        KV-cache value quantization:",
+          "description": "KV-cache value type: f32,\nf16, q8_0, q4_0",
           "arguments": [
             {
               "name": "CACHE_TYPE_V",
@@ -842,6 +842,24 @@
           "recursive": false,
           "hidden": false,
           "description": "3          Number of draft tokens per\nspeculative step (K).\nDefault 3"
+        },
+        {
+          "name": "--prompt-lookup",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prompt-lookup speculative\ndecoding: drafts are copied\nfrom earlier prompt/output\ntext where the last tokens\nrecur, and verified by the\nmodel (greedy output is\nidentical to plain decode).\nNeeds no draft model; pays\noff on code edits and other\nself-repeating output.\nGreedy requests only; a\ndraft model or an MTP head\ntakes priority"
+        },
+        {
+          "name": "--lookup-draft",
+          "recursive": false,
+          "hidden": false,
+          "description": "8          Maximum drafts per\nprompt-lookup round. Default\n8"
+        },
+        {
+          "name": "--lookup-ngram",
+          "recursive": false,
+          "hidden": false,
+          "description": "6          Longest context suffix\n(tokens) prompt lookup\nmatches; shorter matches\ndown to 2 tokens are used\nwhen it does not recur.\nDefault 6"
         },
         {
           "name": "--no-mtp",
@@ -1896,7 +1914,7 @@
           "name": "--cache-type-k",
           "recursive": false,
           "hidden": false,
-          "description": "KV-cache key quantization: f32/f16\n(default), q8_0, q4_0. Synonym of",
+          "description": "KV-cache key type: f32/f16, q8_0,\nq4_0. Synonym of --kv-quant-k. With\n--paged and neither K nor V given,\nQ8_0 blocks are used; pass f16 for\nboth to keep F16",
           "arguments": [
             {
               "name": "CACHE_TYPE_K",
@@ -1912,7 +1930,7 @@
           "name": "--cache-type-v",
           "recursive": false,
           "hidden": false,
-          "description": "KV-cache value quantization:\nf32/f16 (default), q8_0, q4_0.\nSynonym of --kv-quant-v",
+          "description": "KV-cache value type: f32/f16, q8_0,\nq4_0. Synonym of --kv-quant-v",
           "arguments": [
             {
               "name": "CACHE_TYPE_V",
@@ -1983,6 +2001,24 @@
           "recursive": false,
           "hidden": false,
           "description": "3          Number of draft tokens per\nspeculative step (K). Default 3.\nAlso used as K for --no-mtp/MTP\nself-speculative decoding"
+        },
+        {
+          "name": "--prompt-lookup",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prompt-lookup speculative decoding:\ndrafts are copied from earlier\nprompt/output text where the last\ntokens recur, and verified by the\nmodel (greedy output is identical\nto plain decode). Needs no draft\nmodel; pays off on code edits and\nother self-repeating output. Greedy\nrequests only; a draft model or an\nMTP head takes priority"
+        },
+        {
+          "name": "--lookup-draft",
+          "recursive": false,
+          "hidden": false,
+          "description": "8          Maximum drafts per prompt-lookup\nround. Default 8"
+        },
+        {
+          "name": "--lookup-ngram",
+          "recursive": false,
+          "hidden": false,
+          "description": "6          Longest context suffix (tokens)\nprompt lookup matches; shorter\nmatches down to 2 tokens are used\nwhen it does not recur. Default 6"
         },
         {
           "name": "--no-mtp",
@@ -2306,7 +2342,7 @@
           "name": "--cache-type-k",
           "recursive": false,
           "hidden": false,
-          "description": "KV-cache key quantization:\nf32 (default), f16, q8_0,\nq4_0. Synonym of\n--kv-quant-k. For the CUDA\nhybrid-dense model f32\nmeans 'not given'\n(DOTLLM_HYBRID_KV\napplies); use f16 to force\nunquantized",
+          "description": "KV-cache key type: f32,\nof --kv-quant-k. Unset\n(with --cache-type-v\nunset): paged CPU KV uses\nQ8_0 blocks (half the\nmemory of f16); pass f16\nfor both to keep F16. For\nthe CUDA hybrid-dense\nmodel f32 means 'not\ngiven' (DOTLLM_HYBRID_KV\napplies); use f16 to force\nunquantized",
           "arguments": [
             {
               "name": "CACHE_TYPE_K",
@@ -2322,7 +2358,7 @@
           "name": "--cache-type-v",
           "recursive": false,
           "hidden": false,
-          "description": "KV-cache value\nquantization: f32\n(default), f16, q8_0,",
+          "description": "KV-cache value type: f32,\nof --kv-quant-v",
           "arguments": [
             {
               "name": "CACHE_TYPE_V",
@@ -2417,6 +2453,24 @@
           "recursive": false,
           "hidden": false,
           "description": "3            Number of draft tokens per\nspeculative step (K).\nDefault 3. Also used as K\nfor MTP"
+        },
+        {
+          "name": "--prompt-lookup",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prompt-lookup speculative\ndecoding: drafts are\ncopied from earlier\nprompt/output text where\nthe last tokens recur, and\nverified by the model\n(greedy output is\nidentical to plain\ndecode). Needs no draft\nmodel; pays off on code\nedits and other\nself-repeating output.\nGreedy requests only; a\ndraft model or an MTP head\ntakes priority"
+        },
+        {
+          "name": "--lookup-draft",
+          "recursive": false,
+          "hidden": false,
+          "description": "8            Maximum drafts per\nprompt-lookup round.\nDefault 8"
+        },
+        {
+          "name": "--lookup-ngram",
+          "recursive": false,
+          "hidden": false,
+          "description": "6            Longest context suffix\n(tokens) prompt lookup\nmatches; shorter matches\ndown to 2 tokens are used\nwhen it does not recur.\nDefault 6"
         },
         {
           "name": "--mtp",
