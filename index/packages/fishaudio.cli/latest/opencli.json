@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "FishAudio.CLI",
-    "version": "1.0.4-dev.55",
+    "version": "1.0.4-dev.57",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -250,19 +250,19 @@
               ]
             },
             {
-              "name": "--world-context",
+              "name": "--context",
               "recursive": false,
               "hidden": false,
-              "description": "Specify true/false; presence alone implies true; omit to inherit.",
+              "description": "Per-session overrides of the agent's context switches (`context.current_time` in the agent config). A switch you leave out follows the agent.",
               "arguments": [
                 {
-                  "name": "WORLD_CONTEXT",
-                  "required": false,
+                  "name": "CONTEXT",
+                  "required": true,
                   "arity": {
-                    "minimum": 0,
+                    "minimum": 1,
                     "maximum": 1
                   },
-                  "type": "Boolean"
+                  "type": "AgentSessionContextPayload"
                 }
               ]
             },
@@ -1164,23 +1164,6 @@
               ]
             },
             {
-              "name": "--simulation-world-context",
-              "recursive": false,
-              "hidden": false,
-              "description": "Specify true/false; presence alone implies true; omit to inherit.",
-              "arguments": [
-                {
-                  "name": "SIMULATION_WORLD_CONTEXT",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
               "name": "--input",
               "recursive": false,
               "hidden": false,
@@ -1567,23 +1550,6 @@
                     "maximum": 1
                   },
                   "type": "Int32"
-                }
-              ]
-            },
-            {
-              "name": "--simulation-world-context",
-              "recursive": false,
-              "hidden": false,
-              "description": "Specify true/false; presence alone implies true; omit to inherit.",
-              "arguments": [
-                {
-                  "name": "SIMULATION_WORLD_CONTEXT",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
                 }
               ]
             },
@@ -2092,7 +2058,7 @@
       "commands": [
         {
           "name": "create-agent-tools",
-          "description": "Create Tool\nCreate a workspace tool. `tool_type: webhook` calls your HTTP endpoint\nduring conversations; `tool_type: client` is executed by your own frontend\nthrough the SDK (no URL). Attach it to agents via the agent config's\n`tools.tool_ids`. Credential headers (authorization_bearer /\nauthorization_basic) are write-only and read back as `has_secret`.",
+          "description": "Create Tool\nCreate a workspace tool. `tool_type: webhook` calls your HTTP endpoint\nduring conversations; `tool_type: client` is executed by your own frontend\nthrough the SDK (no URL). Describe the call with `parameters` (a JSON\nSchema object, checked at call time under `parameter_mode: strict`) or\nthe older `arguments` list (every argument a required string, unchecked).\nAttach it to agents via the agent config's `tools.tool_ids`. Credential\nheaders (authorization_bearer / authorization_basic) are write-only and\nread back as `has_secret`.",
           "options": [
             {
               "name": "--description",
@@ -2134,6 +2100,7 @@
               "name": "--arguments",
               "recursive": false,
               "hidden": false,
+              "description": "Older shape of `parameters`: each entry becomes a required string parameter. Mutually exclusive with `parameters` in one request. Reads return both, `arguments` being the string parameters of the schema.",
               "arguments": [
                 {
                   "name": "ARGUMENTS",
@@ -2143,6 +2110,44 @@
                     "maximum": 100000
                   },
                   "type": "IList`1"
+                }
+              ]
+            },
+            {
+              "name": "--parameters",
+              "recursive": false,
+              "hidden": false,
+              "description": "Call parameters as a JSON Schema object (draft 2020-12): `type: object` (filled in when omitted), `properties`, `required`. Standard meaning throughout: `required` means the key must be present, `type: [\"string\", \"null\"]` allows null, `minLength: 1` makes a string non-empty, `enum` and `pattern` constrain the value, `default` fills a key the model left out. Mutually exclusive with `arguments` in one request. A tool created with `parameters` starts in `parameter_mode: strict`.",
+              "arguments": [
+                {
+                  "name": "PARAMETERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Object"
+                }
+              ]
+            },
+            {
+              "name": "--parameter-mode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Whether the agent runtime checks each call's arguments against `parameters` before running the tool. `legacy` (the default for tools created with `arguments`, and every tool from before this field existed): no check, the model's arguments run as sent. `strict` (the default for tools created with `parameters`): a call that does not satisfy the schema is refused and the model is told to ask the caller for the missing information, and the LLM provider's constrained decoding is turned on where the model supports it (OpenAI models and a custom OpenAI-compatible endpoint receive the tool with `strict: true`, Gemini on the platform's native channel runs validated function calling). Changing `parameters` never changes the mode, and the mode can be changed on its own.",
+              "arguments": [
+                {
+                  "name": "PARAMETER_MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "PublicAgentToolCreatePayloadParameterMode",
+                  "allowedValues": [
+                    "Legacy",
+                    "Strict"
+                  ]
                 }
               ]
             },
@@ -2443,6 +2448,7 @@
               "name": "--arguments",
               "recursive": false,
               "hidden": false,
+              "description": "Older shape of `parameters`: each entry becomes a required string parameter. Mutually exclusive with `parameters` in one request. Reads return both, `arguments` being the string parameters of the schema.",
               "arguments": [
                 {
                   "name": "ARGUMENTS",
@@ -2452,6 +2458,44 @@
                     "maximum": 100000
                   },
                   "type": "IList`1"
+                }
+              ]
+            },
+            {
+              "name": "--parameters",
+              "recursive": false,
+              "hidden": false,
+              "description": "Call parameters as a JSON Schema object (draft 2020-12): `type: object` (filled in when omitted), `properties`, `required`. Standard meaning throughout: `required` means the key must be present, `type: [\"string\", \"null\"]` allows null, `minLength: 1` makes a string non-empty, `enum` and `pattern` constrain the value, `default` fills a key the model left out. Mutually exclusive with `arguments` in one request. A tool created with `parameters` starts in `parameter_mode: strict`.",
+              "arguments": [
+                {
+                  "name": "PARAMETERS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Object"
+                }
+              ]
+            },
+            {
+              "name": "--parameter-mode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Whether the agent runtime checks each call's arguments against `parameters` before running the tool. `legacy` (the default for tools created with `arguments`, and every tool from before this field existed): no check, the model's arguments run as sent. `strict` (the default for tools created with `parameters`): a call that does not satisfy the schema is refused and the model is told to ask the caller for the missing information, and the LLM provider's constrained decoding is turned on where the model supports it (OpenAI models and a custom OpenAI-compatible endpoint receive the tool with `strict: true`, Gemini on the platform's native channel runs validated function calling). Changing `parameters` never changes the mode, and the mode can be changed on its own.",
+              "arguments": [
+                {
+                  "name": "PARAMETER_MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "PublicAgentToolUpdatePayloadParameterMode",
+                  "allowedValues": [
+                    "Legacy",
+                    "Strict"
+                  ]
                 }
               ]
             },
@@ -3372,6 +3416,22 @@
                     "maximum": 1
                   },
                   "type": "PublicAgentGuardrailsPatch"
+                }
+              ]
+            },
+            {
+              "name": "--context",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "CONTEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "PublicAgentContextPatch"
                 }
               ]
             },

@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Kahuna.Server",
-    "version": "1.13.5",
+    "version": "1.14.2",
     "description": "Kahuna server node — distributed key-value store, lock manager and sequencer. Run `kahuna-server` to start a standalone node."
   },
   "x-inspectra": {
@@ -15,7 +15,7 @@
       "inspectorType": "dnlib",
       "confidence": "high",
       "verbCount": 0,
-      "optionCount": 280,
+      "optionCount": 284,
       "valueCount": 0,
       "limitations": [
         "property-defaults-not-captured",
@@ -444,16 +444,28 @@
       "name": "--rocksdb-shared-memory",
       "recursive": false,
       "hidden": false,
-      "description": "Share one RocksDB block\ncache + write-buffer\nmanager between the\nKV/locks backend and\nthe Raft WAL (requires\nboth storage and\nwal-storage = rocksdb).\nDefault: disabled"
+      "description": "Share one RocksDB block\ncache + write-buffer\nmanager between the\nKV/locks backend and\nthe Raft WAL (requires\nboth storage and\nwal-storage = rocksdb,\nand"
     },
     {
-      "name": "--rocksdb-shared-memory-budget-mb",
+      "name": "--storage-shared-cache-",
       "recursive": false,
       "hidden": false,
-      "description": "(Default: 320) Total\nshared RocksDB\nblock-cache budget in\nMiB (memtable\nsub-budget lives inside\nit)",
+      "description": "mb and"
+    },
+    {
+      "name": "--storage-shared-memtab",
+      "recursive": false,
+      "hidden": false,
+      "description": "le-budget-mb above 0).\nDefault: disabled"
+    },
+    {
+      "name": "--storage-shared-cache-mb",
+      "recursive": false,
+      "hidden": false,
+      "description": "(Default: 0) One cache\nin MiB that the Raft\nWAL and the KV/locks\nstore share; a shared\nmemtable budget is\ncharged into it. 0 =\nnone. rocksdb applies\nit as its shared block\ncache with",
       "arguments": [
         {
-          "name": "ROCKSDBSHAREDMEMORYBUDGETMB",
+          "name": "STORAGESHAREDCACHEMB",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -469,13 +481,13 @@
       ]
     },
     {
-      "name": "--rocksdb-shared-memtable-budget-mb",
+      "name": "--storage-shared-memtable-budget-mb",
       "recursive": false,
       "hidden": false,
-      "description": "(Default: 128) Shared\nRocksDB memtable\nsub-budget in MiB,\ncost-charged into the\nshared cache (must be\n<= budget)",
+      "description": "(Default: 0) One\nmemtable budget in MiB\nthat the Raft WAL and\nthe KV/locks store\nshare; past it, a\nmemtable flushes early.\n0 = none. With\nmb it is charged into\nthe cache and must be\n<= it. rocksdb applies\nit with",
       "arguments": [
         {
-          "name": "ROCKSDBSHAREDMEMTABLEBUDGETMB",
+          "name": "STORAGESHAREDMEMTABLEBUDGETMB",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -501,6 +513,50 @@
       "recursive": false,
       "hidden": false,
       "description": "Enable RocksDB\nstatistics collection\nand periodic LOG dumps\n(adds per-operation\noverhead; for\ntuning/diagnosis)."
+    },
+    {
+      "name": "--storage-compaction-rate-mbps",
+      "recursive": false,
+      "hidden": false,
+      "description": "(Default: 0) Throughput\nbudget in MB/s for the\nstore's flush and\ncompaction writes, so\ncompactions leave the\ndisk to the store's\nsynced writes; a\nfraction of what the\ndisk commits in synced\nwrites. 0 = unlimited.",
+      "arguments": [
+        {
+          "name": "STORAGECOMPACTIONRATEMBPS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--storage-max-background-compactions",
+      "recursive": false,
+      "hidden": false,
+      "description": "(Default: 0) The most\nstore compactions that\nrun at once. 0 = the\nbackend's default\n(rocksdb: max(2, CPUs /\n2)).",
+      "arguments": [
+        {
+          "name": "STORAGEMAXBACKGROUNDCOMPACTIONS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Int32"
+            }
+          ]
+        }
+      ]
     },
     {
       "name": "--initial-cluster",

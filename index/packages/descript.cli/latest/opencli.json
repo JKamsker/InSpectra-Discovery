@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Descript.CLI",
-    "version": "1.0.1-dev.79",
+    "version": "1.0.1-dev.81",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -895,6 +895,114 @@
           "description": "Check API status\nCheck API availability and validate authentication token.\n\nThis endpoint can be used to:\n- Verify that your authentication token is valid\n- Check API connectivity without performing any heavy operations\n- Identify which drive (workspace) your token is connected to\n\nReturns the connected drive ID and name, plus the API version.\n"
         },
         {
+          "name": "import-drive-media",
+          "description": "Import media to drive library\nImport media files into the drive media library (shared workspace-level media collection).\n\nUnlike project media import, this endpoint adds files to the drive's shared media library\nrather than to a specific project. Files can optionally be placed in a folder.\n\n### Media URL requirements\n- URLs must be accessible by Descript servers\n- URLs must support HTTP Range requests\n- Recommended to sign URLs for 12-48 hours to reduce chance of failure\n- [Supported file types](https://help.descript.com/add-and-manage-media/supported-file-types)\n\n### Direct file upload\n\nInstead of providing a URL, you can upload files directly by specifying `content_type` and `file_size` for a media item. The response will include a signed `upload_url` for each direct upload item. PUT the file bytes to that URL, and the import job will process it automatically. See the [Direct file upload](#tag/Direct-file-upload) guide for a full walkthrough.\n\n### Async Operations\n\nImports run in the background and return a `job_id`. Monitor progress via the [GET /jobs/{job_id}](#operation/getJob) endpoint.\n\n### Dynamic webhook\n\nIf `callback_url` is provided, Descript will POST the job status to that URL when the job finishes (successfully or not).\n",
+          "options": [
+            {
+              "name": "--folder-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target drive media folder ID (UUID) or \"root\" for the root folder. If not provided, defaults to root.",
+              "arguments": [
+                {
+                  "name": "FOLDER_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--add-media",
+              "recursive": false,
+              "hidden": false,
+              "description": "Map of media reference IDs to their import definitions. Key is the display name\nor path (e.g. \"video.mp4\" or \"Folder/SubFolder/video.mp4\"). Paths with forward\nslashes create nested folders automatically.",
+              "arguments": [
+                {
+                  "name": "ADD_MEDIA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Object"
+                }
+              ]
+            },
+            {
+              "name": "--callback-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional callback URL to receive notifications about job status changes.",
+              "arguments": [
+                {
+                  "name": "CALLBACK_URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--input",
+              "recursive": false,
+              "hidden": false,
+              "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+              "arguments": [
+                {
+                  "name": "INPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--request-json",
+              "recursive": false,
+              "hidden": true,
+              "description": "Request body as JSON.",
+              "arguments": [
+                {
+                  "name": "REQUEST_JSON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--request-file",
+              "recursive": false,
+              "hidden": true,
+              "description": "Path to a JSON request file, or '-' for stdin.",
+              "arguments": [
+                {
+                  "name": "REQUEST_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "import-project-media",
           "description": "Import media and sequences\nImport media files into a new or existing project and create compositions.\n\nThis endpoint can:\n- Create a new project if `project_id` is not provided\n- Import media files from URLs\n- Create multitrack sequences\n- Create compositions (timelines) from existing or new media in the project\n- Trigger transcription and other background processing tasks\n\n### Media URL requirements\n- URLs must be accessible by Descript servers\n- URLs must support HTTP Range requests\n- Recommended to sign URLs for 12-48 hours to reduce chance of failure\n- [Supported file types](https://help.descript.com/add-and-manage-media/supported-file-types)\n\n### Direct file upload\n\nInstead of providing a URL, you can upload files directly by specifying `content_type` and `file_size` for a media item. The response will include a signed `upload_url` for each direct upload item. PUT the file bytes to that URL, and the import job will process it automatically. See the [Direct file upload](#tag/Direct-file-upload) guide for a full walkthrough.\n\n### Async Operations\n\nImports\u00A0run in the background and return a `job_id`. Monitor progress via the [GET /jobs/{job_id}](#operation/getJob) endpoint.\n\n### Dynamic webhook\n\nIf `callback_url` is provided, Descript will POST the job status to that URL when the job finishes (successfully or not).\n\nThe payload will match the format returned by [GET /jobs/{job_id}](#operation/getJob).\n",
           "options": [
@@ -1099,7 +1207,7 @@
         },
         {
           "name": "list-jobs",
-          "description": "List jobs\nList recent jobs with optional filtering by project or job type.\n\nBy default, jobs created within the last 7 days are returned. Use `created_after` and\n`created_before` to customize the time range. The maximum lookback is 30 days.\n\nResults are paginated. Use the `cursor` from the response `pagination.next_cursor` to\nfetch subsequent pages.\n\nQuery parameters allow you to filter the results:\n* Filter by `project_id` to see all jobs for a project\n* Filter by `type` to see specific job types (import/project_media, agent)\n",
+          "description": "List jobs\nList recent jobs with optional filtering by project or job type.\n\nBy default, jobs created within the last 7 days are returned. Use `created_after` and\n`created_before` to customize the time range. The maximum lookback is 30 days.\n\nResults are paginated. Use the `cursor` from the response `pagination.next_cursor` to\nfetch subsequent pages.\n\nQuery parameters allow you to filter the results:\n* Filter by `project_id` to see all jobs for a project\n* Filter by `type` to see specific job types (import/project_media, import/drive_media, agent, publish)\n",
           "options": [
             {
               "name": "--project-id",
@@ -1134,7 +1242,9 @@
                   "type": "ListJobsType",
                   "allowedValues": [
                     "Agent",
-                    "ImportProjectMedia"
+                    "ImportDriveMedia",
+                    "ImportProjectMedia",
+                    "Publish"
                   ]
                 }
               ]
