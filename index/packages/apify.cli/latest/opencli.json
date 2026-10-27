@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Apify.CLI",
-    "version": "1.0.1-dev.121",
+    "version": "1.0.1-dev.122",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -762,6 +762,23 @@
                       "type": "DateTime"
                     }
                   ]
+                },
+                {
+                  "name": "--deployment",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Single Actor Standby deployment or comma-separated list of deployments (`SINGLE_TENANT`, `MULTI_TENANT_FREE_USERS`,\n`MULTI_TENANT_PAYING_USERS` or `MULTI_TENANT_OWNER_PAID`). Used to filter Actor Standby runs by the pool that\nserves them. Requires the `status` parameter with only non-terminal statuses (`READY`, `RUNNING`, `TIMING-OUT` or\n`ABORTING`).",
+                  "arguments": [
+                    {
+                      "name": "DEPLOYMENT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "IList`1"
+                    }
+                  ]
                 }
               ]
             },
@@ -1076,7 +1093,7 @@
             },
             {
               "name": "input-put",
-              "description": "Update Actor task input\nUpdates the input of a task using values specified by an object passed as\nJSON in the PUT payload.\n\nIf the object does not define a specific property, its value is not updated.\n\nThe response is the full task input as returned by the\n[Get Actor task input](/api/v2/actor-task-input-get) endpoint.\n\nThe request needs to specify the `Content-Type: application/json` HTTP\nheader!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2/getting-started#authentication).\n",
+              "description": "Update Actor task input\nUpdates the input of a task using values specified by an object passed as\nJSON in the PUT payload.\n\nIf the object does not define a specific property, its value is not updated.\n\nThe response is the full task input as returned by the\n[Get Actor task input](/api/v2/actor-task-input-get) endpoint.\n\nThe request needs to specify the `Content-Type: application/json` HTTP\nheader!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2#authentication).\n",
               "options": [
                 {
                   "name": "--input",
@@ -1398,6 +1415,57 @@
                   ]
                 },
                 {
+                  "name": "--actor-standby-tenancy",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether each user gets their own standby runs (`SINGLE_TENANT`) or runs are shared across users (`MULTI_TENANT`). Set by Apify.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_TENANCY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--actor-standby-is-console-auth-enabled",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether standby requests can be authenticated with an Apify Console session. Set by Apify. Specify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_IS_CONSOLE_AUTH_ENABLED",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--actor-standby-is-tokenless-enabled",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether standby requests can be made without an API token. Set by Apify. Specify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_IS_TOKENLESS_ENABLED",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
                   "name": "--request-input",
                   "recursive": false,
                   "hidden": false,
@@ -1531,6 +1599,23 @@
                         "maximum": 1
                       },
                       "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--restart-on-error",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Determines whether the run will be restarted if it fails.\nSpecify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "RESTART_ON_ERROR",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
                     }
                   ]
                 },
@@ -3489,8 +3574,56 @@
               ]
             },
             {
+              "name": "oauth-account-get",
+              "description": "Get Actor OAuth account\nGets an account connected through an Actor OAuth connection, including its OAuth tokens.\n\nThis endpoint only accepts the API token of an Actor run (the `APIFY_TOKEN` environment variable of the run).\nThe run must belong to the Actor that the account's OAuth connection is configured on, and the account must\nbelong to the user the run's token acts for. Any other token gets a `403` error.\n",
+              "arguments": [
+                {
+                  "name": "ACCOUNT_ID",
+                  "description": "Actor OAuth account ID.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "oauth-accounts-get",
+              "description": "Get list of Actor OAuth accounts\nGets the accounts you connected through the Actor OAuth connection, including their OAuth tokens. Only accounts\nthat finished authorization are returned.\n\nThere are at most 5 accounts per user and connection, so the list is not paginated.\n",
+              "arguments": [
+                {
+                  "name": "CONNECTION_ID",
+                  "description": "Actor OAuth connection ID.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "oauth-connections-get",
+              "description": "Get list of Actor OAuth connections\nGets the OAuth connections configured on the Actor. Each connection defines an OAuth provider that users of the\nActor can connect their accounts through. Only public credential fields are returned, never the client secret.\n\nAn Actor has at most 5 connections, so the list is not paginated.\n\nYou need read access to the Actor.\n",
+              "arguments": [
+                {
+                  "name": "ACTOR_ID",
+                  "description": "Actor ID or the username of the Actor owner and the Actor name, separated by a tilde (`~`).",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "put",
-              "description": "Update Actor\nUpdates an Actor's settings with the values specified in an `Actor` object\npassed as JSON in the POST payload. Only the fields specified in the request body are updated.\n\nReturns the full `Actor` object, the same as the\n[Get Actor](/api/v2/actor-get) endpoint.\n\nIn the HTTP request, set the `Content-Type` header to `application/json`.\n\n### Authentication\n\nTo provide the authentication token, we recommend using the request's\n`Authorization` header, rather than the URL. For details,\nsee [Authentication](/api/v2/getting-started#authentication).\n\n### Make an Actor public\n\nTo make your Actor [public](https://docs.apify.com/platform/actors/publishing):\n- Set `isPublic` to `true`.\n- Provide `title` and `categories`. For reference, see [constants from the `apify-shared-js`\npackage](https://github.com/apify/apify-shared-js/blob/2d43ebc41ece9ad31cd6525bd523fb86939bf860/packages/consts/src/consts.ts#L452-L471)\n\n### Update build tags\n\nTo change tags assigned to Actor builds, use the `taggedBuilds` object. It's a dictionary that maps tag names\nto specific builds, where:\n- the key is the tag name, for example `latest` or `beta`\n- the value is either `null` or an object with a build ID\n\nChanging tags is a patch operation. Only the tags that you provide in this object are updated.\n\nNote that you can assign multiple tags to a single build, but you can't assign the same tag to multiple builds.\n\n- To create or reassign a tag, provide the tag name with a build ID. For example, to assign\nthe `latest` tag to a build, use:\n\n```json\n{\n  \"latest\": { \"buildId\": \"z2EryhbfhgSyqj6Hn\" }\n}\n```\n\n- To remove a tag from a build, provide the tag name with a `null` value. For example, to remove the `beta` tag, use:\n\n```json\n{\n  \"beta\": null\n}\n```\n\n- You can perform multiple actions at once. The following example reassigns `latest`\nand removes `beta`, while preserving other existing tags:\n\n```json\n{\n  \"latest\": { \"buildId\": \"z2EryhbfhgSyqj6Hn\" },\n  \"beta\": null\n}\n```\n",
+              "description": "Update Actor\nUpdates an Actor's settings with the values specified in an `Actor` object\npassed as JSON in the POST payload. Only the fields specified in the request body are updated.\n\nReturns the full `Actor` object, the same as the\n[Get Actor](/api/v2/actor-get) endpoint.\n\nIn the HTTP request, set the `Content-Type` header to `application/json`.\n\n### Authentication\n\nTo provide the authentication token, we recommend using the request's\n`Authorization` header, rather than the URL. For details,\nsee [Authentication](/api/v2#authentication).\n\n### Make an Actor public\n\nTo make your Actor [public](https://docs.apify.com/platform/actors/publishing):\n- Set `isPublic` to `true`.\n- Provide `title` and `categories`. For reference, see [constants from the `apify-shared-js`\npackage](https://github.com/apify/apify-shared-js/blob/2d43ebc41ece9ad31cd6525bd523fb86939bf860/packages/consts/src/consts.ts#L452-L471)\n\n### Update build tags\n\nTo change tags assigned to Actor builds, use the `taggedBuilds` object. It's a dictionary that maps tag names\nto specific builds, where:\n- the key is the tag name, for example `latest` or `beta`\n- the value is either `null` or an object with a build ID\n\nChanging tags is a patch operation. Only the tags that you provide in this object are updated.\n\nNote that you can assign multiple tags to a single build, but you can't assign the same tag to multiple builds.\n\n- To create or reassign a tag, provide the tag name with a build ID. For example, to assign\nthe `latest` tag to a build, use:\n\n```json\n{\n  \"latest\": { \"buildId\": \"z2EryhbfhgSyqj6Hn\" }\n}\n```\n\n- To remove a tag from a build, provide the tag name with a `null` value. For example, to remove the `beta` tag, use:\n\n```json\n{\n  \"beta\": null\n}\n```\n\n- You can perform multiple actions at once. The following example reassigns `latest`\nand removes `beta`, while preserving other existing tags:\n\n```json\n{\n  \"latest\": { \"buildId\": \"z2EryhbfhgSyqj6Hn\" },\n  \"beta\": null\n}\n```\n",
               "options": [
                 {
                   "name": "--name",
@@ -3786,6 +3919,40 @@
                   ]
                 },
                 {
+                  "name": "--default-run-max-total-charge-usd",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Maximum cost in USD that a pay-per-event run can charge to the user.",
+                  "arguments": [
+                    {
+                      "name": "DEFAULT_RUN_MAX_TOTAL_CHARGE_USD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--default-run-is-max-total-charge-usd-set-by-user",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether `maxTotalChargeUsd` was set explicitly by the user. Specify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "DEFAULT_RUN_IS_MAX_TOTAL_CHARGE_USD_SET_BY_USER",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
                   "name": "--actor-standby-is-enabled",
                   "recursive": false,
                   "hidden": false,
@@ -3912,6 +4079,57 @@
                   "arguments": [
                     {
                       "name": "ACTOR_STANDBY_SHOULD_PASS_ACTOR_INPUT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--actor-standby-tenancy",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether each user gets their own standby runs (`SINGLE_TENANT`) or runs are shared across users (`MULTI_TENANT`). Set by Apify.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_TENANCY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--actor-standby-is-console-auth-enabled",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether standby requests can be authenticated with an Apify Console session. Set by Apify. Specify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_IS_CONSOLE_AUTH_ENABLED",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--actor-standby-is-tokenless-enabled",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether standby requests can be made without an API token. Set by Apify. Specify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_IS_TOKENLESS_ENABLED",
                       "required": false,
                       "arity": {
                         "minimum": 0,
@@ -4465,6 +4683,40 @@
                   ]
                 },
                 {
+                  "name": "--default-run-max-total-charge-usd",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Maximum cost in USD that a pay-per-event run can charge to the user.",
+                  "arguments": [
+                    {
+                      "name": "DEFAULT_RUN_MAX_TOTAL_CHARGE_USD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--default-run-is-max-total-charge-usd-set-by-user",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether `maxTotalChargeUsd` was set explicitly by the user. Specify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "DEFAULT_RUN_IS_MAX_TOTAL_CHARGE_USD_SET_BY_USER",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
                   "name": "--actor-standby-is-enabled",
                   "recursive": false,
                   "hidden": false,
@@ -4591,6 +4843,57 @@
                   "arguments": [
                     {
                       "name": "ACTOR_STANDBY_SHOULD_PASS_ACTOR_INPUT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--actor-standby-tenancy",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether each user gets their own standby runs (`SINGLE_TENANT`) or runs are shared across users (`MULTI_TENANT`). Set by Apify.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_TENANCY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--actor-standby-is-console-auth-enabled",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether standby requests can be authenticated with an Apify Console session. Set by Apify. Specify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_IS_CONSOLE_AUTH_ENABLED",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--actor-standby-is-tokenless-enabled",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether standby requests can be made without an API token. Set by Apify. Specify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_STANDBY_IS_TOKENLESS_ENABLED",
                       "required": false,
                       "arity": {
                         "minimum": 0,
@@ -5167,6 +5470,27 @@
                       "type": "Byte[]"
                     }
                   ]
+                },
+                {
+                  "name": "--force-permission-level",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Overrides the Actor's permission level for this specific run. Use to test restricted permissions\nbefore deploying changes to your Actor or to temporarily elevate or restrict access. If you don't specify this\nparameter, the Actor uses its configured default permission level. For more information on permissions, see the\n[documentation](https://docs.apify.com/platform/actors/development/permissions).",
+                  "arguments": [
+                    {
+                      "name": "FORCE_PERMISSION_LEVEL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "ActorRunSyncGetForcePermissionLevel",
+                      "allowedValues": [
+                        "FullPermissions",
+                        "LimitedPermissions"
+                      ]
+                    }
+                  ]
                 }
               ],
               "arguments": [
@@ -5302,6 +5626,27 @@
                         "maximum": 100000
                       },
                       "type": "Byte[]"
+                    }
+                  ]
+                },
+                {
+                  "name": "--force-permission-level",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Overrides the Actor's permission level for this specific run. Use to test restricted permissions\nbefore deploying changes to your Actor or to temporarily elevate or restrict access. If you don't specify this\nparameter, the Actor uses its configured default permission level. For more information on permissions, see the\n[documentation](https://docs.apify.com/platform/actors/development/permissions).",
+                  "arguments": [
+                    {
+                      "name": "FORCE_PERMISSION_LEVEL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "ActorRunSyncGetDatasetItemsGetForcePermissionLevel",
+                      "allowedValues": [
+                        "FullPermissions",
+                        "LimitedPermissions"
+                      ]
                     }
                   ]
                 },
@@ -5830,6 +6175,27 @@
                         "maximum": 100000
                       },
                       "type": "Byte[]"
+                    }
+                  ]
+                },
+                {
+                  "name": "--force-permission-level",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Overrides the Actor's permission level for this specific run. Use to test restricted permissions\nbefore deploying changes to your Actor or to temporarily elevate or restrict access. If you don't specify this\nparameter, the Actor uses its configured default permission level. For more information on permissions, see the\n[documentation](https://docs.apify.com/platform/actors/development/permissions).",
+                  "arguments": [
+                    {
+                      "name": "FORCE_PERMISSION_LEVEL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "ActorRunSyncGetDatasetItemsPostForcePermissionLevel",
+                      "allowedValues": [
+                        "FullPermissions",
+                        "LimitedPermissions"
+                      ]
                     }
                   ]
                 },
@@ -6430,6 +6796,27 @@
                   ]
                 },
                 {
+                  "name": "--force-permission-level",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Overrides the Actor's permission level for this specific run. Use to test restricted permissions\nbefore deploying changes to your Actor or to temporarily elevate or restrict access. If you don't specify this\nparameter, the Actor uses its configured default permission level. For more information on permissions, see the\n[documentation](https://docs.apify.com/platform/actors/development/permissions).",
+                  "arguments": [
+                    {
+                      "name": "FORCE_PERMISSION_LEVEL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "ActorRunSyncPostForcePermissionLevel",
+                      "allowedValues": [
+                        "FullPermissions",
+                        "LimitedPermissions"
+                      ]
+                    }
+                  ]
+                },
+                {
                   "name": "--input",
                   "recursive": false,
                   "hidden": false,
@@ -6681,6 +7068,23 @@
                       "type": "DateTime"
                     }
                   ]
+                },
+                {
+                  "name": "--deployment",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Single Actor Standby deployment or comma-separated list of deployments (`SINGLE_TENANT`, `MULTI_TENANT_FREE_USERS`,\n`MULTI_TENANT_PAYING_USERS` or `MULTI_TENANT_OWNER_PAID`). Used to filter Actor Standby runs by the pool that\nserves them. Requires the `status` parameter with only non-terminal statuses (`READY`, `RUNNING`, `TIMING-OUT` or\n`ABORTING`).",
+                  "arguments": [
+                    {
+                      "name": "DEPLOYMENT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "IList`1"
+                    }
+                  ]
                 }
               ],
               "arguments": [
@@ -6929,6 +7333,68 @@
           "description": "Actors/Actor versions endpoint commands.",
           "commands": [
             {
+              "name": "actor-version-build-on-push-put",
+              "description": "Update Actor version build on push\nTurns automatic builds on push on or off for an Actor version whose source is a git repository.\n\nEnabling registers a push webhook on the repository through the connected git account given by `providerId`, so\nthat every push to the repository builds the version. Disabling turns the webhook off on GitHub, or removes it\non GitLab and Bitbucket.\n\nYou need write access to the Actor. The version must have its source type set to a git repository, and the\nconnected account must have permission to manage the repository's webhooks.\n",
+              "options": [
+                {
+                  "name": "--provider-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The connected git account to register the push webhook through: `github-app` for the GitHub App, or the ID\nof a connected GitLab or Bitbucket integration, as returned by the [Get git provider integrations](/api/v2/integrations-git-get) endpoint.",
+                  "arguments": [
+                    {
+                      "name": "PROVIDER_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--enabled",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "`true` registers the push webhook so that pushes to the repository build the version; `false` turns it off. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "ENABLED",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "ACTOR_ID",
+                  "description": "Actor ID or the username of the Actor owner and the Actor name, separated by a tilde (`~`).",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                },
+                {
+                  "name": "VERSION_NUMBER",
+                  "description": "Actor version.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "actor-version-delete",
               "description": "Delete Actor version\nDeletes a specific version of Actor's source code.\n",
               "arguments": [
@@ -7168,7 +7634,7 @@
             },
             {
               "name": "actor-version-env-var-put",
-              "description": "Update environment variable in Actor version\nUpdates Actor environment variable using values specified by an `EnvVar`\nobject\npassed as JSON in the POST payload.\nIf the object does not define a specific property, its value will not be\nupdated.\n\nThe request needs to specify the `Content-Type: application/json` HTTP\nheader!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2/getting-started#authentication).\n\nThe response is the `EnvVar` object as returned by the\n[Get environment variable of Actor version](/api/v2/actor-version-env-var-get)\nendpoint.\n",
+              "description": "Update environment variable in Actor version\nUpdates Actor environment variable using values specified by an `EnvVar`\nobject\npassed as JSON in the POST payload.\nIf the object does not define a specific property, its value will not be\nupdated.\n\nThe request needs to specify the `Content-Type: application/json` HTTP\nheader!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2#authentication).\n\nThe response is the `EnvVar` object as returned by the\n[Get environment variable of Actor version](/api/v2/actor-version-env-var-get)\nendpoint.\n",
               "options": [
                 {
                   "name": "--name",
@@ -7728,7 +8194,7 @@
             },
             {
               "name": "actor-version-put",
-              "description": "Update Actor version\nUpdates Actor version using values specified by a `Version` object passed as JSON in the POST payload.\n\nIf the object does not define a specific property, its value will not be\nupdated.\n\nThe request needs to specify the `Content-Type: application/json` HTTP\nheader!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2/getting-started#authentication).\n\nThe response is the `Version` object as\nreturned by the [Get Actor version](/api/v2/actor-version-get) endpoint.\n",
+              "description": "Update Actor version\nUpdates Actor version using values specified by a `Version` object passed as JSON in the POST payload.\n\nIf the object does not define a specific property, its value will not be\nupdated.\n\nThe request needs to specify the `Content-Type: application/json` HTTP\nheader!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2#authentication).\n\nThe response is the `Version` object as\nreturned by the [Get Actor version](/api/v2/actor-version-get) endpoint.\n",
               "options": [
                 {
                   "name": "--env-vars",
@@ -24170,6 +24636,22 @@
               ]
             },
             {
+              "name": "invoke-post",
+              "description": "Invoke schedule\nImmediately runs all actions of the schedule, the same way as the **Run now** button in Apify Console.\n\nThe invocation is recorded in the [schedule log](/api/v2/schedule-log-get). It doesn't change the schedule's\n`lastRunAt` or `nextRunAt`. The response doesn't contain the started runs.\n",
+              "arguments": [
+                {
+                  "name": "SCHEDULE_ID",
+                  "description": "Schedule ID.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "log-get",
               "description": "Get schedule log\nGets the schedule log as a JSON array containing information about up to a\n1000 invocations of the schedule.\n",
               "arguments": [
@@ -24187,7 +24669,7 @@
             },
             {
               "name": "put",
-              "description": "Update schedule\nUpdates a schedule using values specified by a schedule object passed as\nJSON in the POST payload. If the object does not define a specific property,\nits value will not be updated.\n\nThe response is the full schedule object as returned by the\n[Get schedule](/api/v2/schedule-get) endpoint.\n\n**The request needs to specify the `Content-Type: application/json` HTTP\nheader!**\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2/getting-started#authentication).\n",
+              "description": "Update schedule\nUpdates a schedule using values specified by a schedule object passed as\nJSON in the POST payload. If the object does not define a specific property,\nits value will not be updated.\n\nThe response is the full schedule object as returned by the\n[Get schedule](/api/v2/schedule-get) endpoint.\n\n**The request needs to specify the `Content-Type: application/json` HTTP\nheader!**\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2#authentication).\n",
               "options": [
                 {
                   "name": "--actions",
@@ -24460,7 +24942,7 @@
             },
             {
               "name": "post",
-              "description": "Create schedule\nCreates a new schedule with settings provided by the schedule object passed\nas JSON in the payload. The response is the created schedule object.\n\nThe request needs to specify the `Content-Type: application/json` HTTP header!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2/getting-started#authentication).\n",
+              "description": "Create schedule\nCreates a new schedule with settings provided by the schedule object passed\nas JSON in the payload. The response is the created schedule object.\n\nThe request needs to specify the `Content-Type: application/json` HTTP header!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2#authentication).\n",
               "options": [
                 {
                   "name": "--actions",
@@ -29591,6 +30073,23 @@
                       "type": "Boolean"
                     }
                   ]
+                },
+                {
+                  "name": "--include-input-schema",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "If `true`, each Actor in the results includes an `inputSchema` field with a compact version of the input\nschema of its default build (property types and required properties only). With this parameter, `limit`\ndefaults to and can't exceed `10`.\nSpecify true/false; presence alone implies true; omit to inherit.",
+                  "arguments": [
+                    {
+                      "name": "INCLUDE_INPUT_SCHEMA",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
                 }
               ]
             }
@@ -29852,8 +30351,216 @@
           "description": "Users endpoint commands.",
           "commands": [
             {
+              "name": "integrations-git-create-repo-post",
+              "description": "Create git repository\nCreates a repository through a connected git account and commits the initial files into it, either the given\n`files` or the files of an Actor template archive (`templateArchiveUrl`).\n",
+              "options": [
+                {
+                  "name": "--workspace",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Where to create the repository, as the `id` of one of the provider's workspaces. On GitLab, this is the\nnumeric namespace ID.",
+                  "arguments": [
+                    {
+                      "name": "WORKSPACE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo-name",
+                  "recursive": false,
+                  "hidden": false,
+                  "arguments": [
+                    {
+                      "name": "REPO_NAME",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--is-private",
+                  "recursive": false,
+                  "hidden": false,
+                  "arguments": [
+                    {
+                      "name": "IS_PRIVATE",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--files",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Files to commit as the initial commit. Can't be combined with `templateArchiveUrl`.",
+                  "arguments": [
+                    {
+                      "name": "FILES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "IList`1"
+                    }
+                  ]
+                },
+                {
+                  "name": "--template-archive-url",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "URL of an Actor template archive whose files are committed as the initial commit. Can't be combined with\n`files`.",
+                  "arguments": [
+                    {
+                      "name": "TEMPLATE_ARCHIVE_URL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--input",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+                  "arguments": [
+                    {
+                      "name": "INPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-json",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Request body as JSON.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_JSON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-file",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Path to a JSON request file, or '-' for stdin.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_FILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "PROVIDER_ID",
+                  "description": "The connected git account to use: `github-app` for the GitHub App, or the ID of a connected GitLab or\nBitbucket integration, as returned by [Get git provider integrations](/api/v2/integrations-git-get).\n",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "integrations-git-get",
+              "description": "Get git provider integrations\nGets your connected git provider accounts (GitHub App, GitLab and Bitbucket), each with the workspaces you can\ncreate a repository in. Only authorized accounts are returned, and accounts whose access was revoked are left\nout.\n\nUse the `id` of an integration as the `providerId` in the\n[Create git repository](/api/v2/integrations-git-create-repo-post) and\n[Register deployment key](/api/v2/integrations-git-register-deployment-key-post) endpoints.\n"
+            },
+            {
+              "name": "integrations-git-register-deployment-key-post",
+              "description": "Register deployment key\nRegisters the Actor's deployment key (a read-only SSH key generated for every Actor) on a repository through a\nconnected git account, so that Apify can clone the repository when building the Actor.\n\nYou need write access to the Actor. The repository's host must match the provider of the connected account.\nIf the key is already registered on the repository, nothing changes. On GitHub, registering the key on another\nrepository removes it from the previously linked one.\n",
+              "options": [
+                {
+                  "name": "--actor-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "ID or `username~name` of the Actor whose deployment key to register.",
+                  "arguments": [
+                    {
+                      "name": "ACTOR_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repo-name",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "URL of the repository to register the key on. Its host must match the provider.",
+                  "arguments": [
+                    {
+                      "name": "REPO_NAME",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "PROVIDER_ID",
+                  "description": "The connected git account to use: `github-app` for the GitHub App, or the ID of a connected GitLab or\nBitbucket integration, as returned by [Get git provider integrations](/api/v2/integrations-git-get).\n",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "get",
-              "description": "Get public user data\nReturns public information about a specific user account, similar to what\ncan be seen on public profile pages (e.g. https://apify.com/apify).\n\nThis operation requires no authentication token.\n",
+              "description": "Get public user data\nReturns public information about a specific user account, similar to what\ncan be seen on public profile pages (e.g. https://apify.com/apify).\n\nThis operation requires no authentication token.\n\nWhen the request is authenticated with an API token of the requested user account, or with a token\nthat impersonates it, the response also contains the private information, the same as in\n[Get private user data](/api/v2/users-me-get). Tokens with limited permissions never receive it.\n",
               "arguments": [
                 {
                   "name": "USER_ID",
@@ -29877,6 +30584,125 @@
           "name": "users-usage",
           "description": "Users/Usage endpoint commands.",
           "commands": [
+            {
+              "name": "users-limits-get",
+              "description": "Get user's limits by ID\nReturns the same summary of limits as [Get user's limits](/api/v2/users-me-limits-get), for an account given by\nits ID or username.\n\nYou can only access your own account, or the organization your API token belongs to. API tokens with\nlimited permissions can't use this endpoint.\n",
+              "arguments": [
+                {
+                  "name": "USER_ID",
+                  "description": "User ID or username of your account, or of the organization your API token belongs to.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "users-limits-put",
+              "description": "Update user's limits by ID\nUpdates the same limits as [Update user's limits](/api/v2/users-me-limits-put), for an account given by its ID\nor username.\n\nYou can only access your own account, or the organization your API token belongs to. API tokens with\nlimited permissions can't use this endpoint.\nFor an organization, you also need the permission to manage the organization.\n",
+              "options": [
+                {
+                  "name": "--max-monthly-usage-usd",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "If your platform usage in the billing period exceeds the prepaid usage, you will be charged extra. Setting this property you can update your hard limit on monthly platform usage to prevent accidental overage or to limit the extra charges.",
+                  "arguments": [
+                    {
+                      "name": "MAX_MONTHLY_USAGE_USD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Double"
+                    }
+                  ]
+                },
+                {
+                  "name": "--data-retention-days",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Apify securely stores your ten most recent Actor runs indefinitely, ensuring they are always accessible. Unnamed storages and other Actor runs are automatically deleted after the retention period. If you're subscribed, you can change it to keep data for longer or to limit your usage. [Lear more](https://docs.apify.com/storage#data-retention).",
+                  "arguments": [
+                    {
+                      "name": "DATA_RETENTION_DAYS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--input",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+                  "arguments": [
+                    {
+                      "name": "INPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-json",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Request body as JSON.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_JSON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-file",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Path to a JSON request file, or '-' for stdin.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_FILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "USER_ID",
+                  "description": "User ID or username of your account, or of the organization your API token belongs to.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
             {
               "name": "users-me-limits-get",
               "description": "Get user's limits\nReturns a complete summary of your account's limits. It is the same\ninformation you will see on your account's [Limits page](https://console.apify.com/billing#/limits). The returned data\nincludes the current usage cycle, a summary of your limits, and your current usage.\n"
@@ -29992,6 +30818,41 @@
                       "type": "String"
                     }
                   ]
+                }
+              ]
+            },
+            {
+              "name": "monthly-get",
+              "description": "Get user's monthly usage by ID\nReturns the same summary of monthly usage as [Get user's monthly usage](/api/v2/users-me-usage-monthly-get),\nfor an account given by its ID or username.\n\nYou can only access your own account, or the organization your API token belongs to. API tokens with\nlimited permissions can't use this endpoint.\n\nUsing the `date` parameter will show the usage in the monthly usage cycle that\nincludes that date.\n",
+              "options": [
+                {
+                  "name": "--date",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Date in the YYYY-MM-DD format.",
+                  "arguments": [
+                    {
+                      "name": "DATE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "USER_ID",
+                  "description": "User ID or username of your account, or of the organization your API token belongs to.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             }
@@ -30114,7 +30975,7 @@
             },
             {
               "name": "webhook-put",
-              "description": "Update webhook\nUpdates a webhook using values specified by a webhook object passed as JSON\nin the POST payload.\nIf the object does not define a specific property, its value will not be\nupdated.\n\nThe response is the full webhook object as returned by the\n[Get webhook](/api/v2/webhook-get) endpoint.\n\nThe request needs to specify the `Content-Type: application/json` HTTP\nheader!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2/getting-started#authentication).\n",
+              "description": "Update webhook\nUpdates a webhook using values specified by a webhook object passed as JSON\nin the POST payload.\nIf the object does not define a specific property, its value will not be\nupdated.\n\nThe response is the full webhook object as returned by the\n[Get webhook](/api/v2/webhook-get) endpoint.\n\nThe request needs to specify the `Content-Type: application/json` HTTP\nheader!\n\nWhen providing your API authentication token, we recommend using the\nrequest's `Authorization` header, rather than the URL.\nFor details, see [Authentication](/api/v2#authentication).\n",
               "options": [
                 {
                   "name": "--is-ad-hoc",

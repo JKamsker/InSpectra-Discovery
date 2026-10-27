@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dotnet-tia",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "description": "Test impact analysis for .NET: takes a git diff and runs only the tests that diff can affect."
   },
   "x-inspectra": {
@@ -46,7 +46,7 @@
           "name": "--base",
           "recursive": false,
           "hidden": false,
-          "description": "Base revision to diff against. [default: origin/main]",
+          "description": "Base revision to diff against. Defaults to the remote's default branch: origin/HEAD, else origin/main, else origin/master.",
           "aliases": [
             "-b"
           ],
@@ -296,7 +296,7 @@
           "name": "--annotations",
           "recursive": false,
           "hidden": false,
-          "description": "Under GitHub Actions, annotate each untested change on the pull request's diff. Does nothing elsewhere. [default: False]",
+          "description": "Under GitHub Actions or Azure Pipelines, annotate each untested change on the pull request's diff. Does nothing elsewhere. [default: False]",
           "arguments": [
             {
               "name": "ANNOTATIONS",
@@ -306,6 +306,23 @@
                 "maximum": 1
               },
               "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--codequality",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the untested changes as a GitLab Code Quality report to this file, for the merge request widget.",
+          "arguments": [
+            {
+              "name": "CODEQUALITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         },
@@ -378,6 +395,23 @@
           ]
         },
         {
+          "name": "--report-inventory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also list every discovered test in the JSON report, so that `run --from-report` can --shard it. [default: False]",
+          "arguments": [
+            {
+              "name": "REPORT_INVENTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--report",
           "recursive": false,
           "hidden": false,
@@ -421,7 +455,7 @@
           "name": "--base",
           "recursive": false,
           "hidden": false,
-          "description": "Base revision to diff against. [default: origin/main]",
+          "description": "Base revision to diff against. Defaults to the remote's default branch: origin/HEAD, else origin/main, else origin/master.",
           "aliases": [
             "-b"
           ],
@@ -736,6 +770,60 @@
           ]
         },
         {
+          "name": "--configuration",
+          "recursive": false,
+          "hidden": false,
+          "description": "Build and test this configuration, such as Release. Unlike passing it after --, it keeps the build running alongside the analysis.",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONFIGURATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--results-directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep TRX results here, in a folder per test project, for a test reporter or cifail. Asks each runner in its own way.",
+          "arguments": [
+            {
+              "name": "RESULTS_DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--from-report",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run the selection in this report instead of analysing: one written with --report at this commit by this version. Write it with --report-inventory to --shard it here.",
+          "arguments": [
+            {
+              "name": "FROM_REPORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--fail-on-untested",
           "recursive": false,
           "hidden": false,
@@ -756,7 +844,7 @@
           "name": "--annotations",
           "recursive": false,
           "hidden": false,
-          "description": "Under GitHub Actions, annotate each untested change on the pull request's diff. Does nothing elsewhere. [default: False]",
+          "description": "Under GitHub Actions or Azure Pipelines, annotate each untested change on the pull request's diff. Does nothing elsewhere. [default: False]",
           "arguments": [
             {
               "name": "ANNOTATIONS",
@@ -766,6 +854,23 @@
                 "maximum": 1
               },
               "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--codequality",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the untested changes as a GitLab Code Quality report to this file, for the merge request widget.",
+          "arguments": [
+            {
+              "name": "CODEQUALITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         },
@@ -838,6 +943,23 @@
           ]
         },
         {
+          "name": "--report-inventory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also list every discovered test in the JSON report, so that `run --from-report` can --shard it. [default: False]",
+          "arguments": [
+            {
+              "name": "REPORT_INVENTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--report",
           "recursive": false,
           "hidden": false,
@@ -881,7 +1003,7 @@
           "name": "--base",
           "recursive": false,
           "hidden": false,
-          "description": "Base revision to diff against. [default: origin/main]",
+          "description": "Base revision to diff against. Defaults to the remote's default branch: origin/HEAD, else origin/main, else origin/master.",
           "aliases": [
             "-b"
           ],
@@ -1567,7 +1689,7 @@
           "name": "--seed",
           "recursive": false,
           "hidden": false,
-          "description": "Random seed, so a failing run can be replayed. [default: 124526]",
+          "description": "Random seed, so a failing run can be replayed. [default: 107941]",
           "arguments": [
             {
               "name": "SEED",
@@ -1624,7 +1746,7 @@
           "name": "--base",
           "recursive": false,
           "hidden": false,
-          "description": "Base revision to diff against. [default: origin/main]",
+          "description": "Base revision to diff against. Defaults to the remote's default branch: origin/HEAD, else origin/main, else origin/master.",
           "aliases": [
             "-b"
           ],
@@ -1846,6 +1968,26 @@
           ]
         },
         {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Solution or project to analyse. Discovered from the repository root when omitted; required when it holds several of one kind.",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SOLUTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--json",
           "recursive": false,
           "hidden": false,
@@ -2048,7 +2190,7 @@
           "name": "--base",
           "recursive": false,
           "hidden": false,
-          "description": "Base revision to diff against. [default: origin/main]",
+          "description": "Base revision to diff against. Defaults to the remote's default branch: origin/HEAD, else origin/main, else origin/master.",
           "aliases": [
             "-b"
           ],

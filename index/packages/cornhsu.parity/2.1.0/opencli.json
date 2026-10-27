@@ -1,0 +1,718 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Parity — property-level design fidelity checking",
+    "version": "2.1.0",
+    "description": "Parity — property-level design fidelity checking. Compares the real numeric values of your Figma design and the rendered UI programmatically; runs locally, in CI, or fully on-premises."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 13
+  },
+  "commands": [
+    {
+      "name": "baseline",
+      "hidden": false,
+      "commands": [
+        {
+          "name": "list",
+          "hidden": false,
+          "options": [
+            {
+              "name": "--refresh",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ignore the local Figma cache and re-fetch"
+            },
+            {
+              "name": "--headed",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show the browser window (for debugging)"
+            },
+            {
+              "name": "--baseline",
+              "recursive": false,
+              "hidden": false,
+              "description": "Regression mode: only gate on diffs that are new or worse than the baseline (see `parity baseline`)",
+              "arguments": [
+                {
+                  "name": "BASELINE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--reverse",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reverse view: \"expected\" = the implementation, \"actual\" = the design file; never gates.\n(For designers redrawing an existing page: see how the draft differs from what ships.)"
+            },
+            {
+              "name": "--md",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--stats-preview",
+              "recursive": false,
+              "hidden": false,
+              "description": "Send no anonymous usage statistics; print to stderr the exact JSON this run would send and\nwhether it would be sent. Exit code, stdout and report files are unchanged.\ncheck sends anonymous usage statistics (counts and score ranges only) once per run, on by default:\nwhat and why: https://stats.cornhsu.com/ — turn off with \"stats\": { \"share\": false } in the config,\nPARITY_SHARE_STATS=false, CORNHSU_SHARE_STATS=false or DO_NOT_TRACK=1\nA target's url may be:\nhttp(s):// or file://          a normal web page / local file\ncdp:http://host:port           attach to a running Electron desktop app (live window)\ncdp:http://host:port#fragment  with several windows, pick the one whose URL contains the fragment\n(start Electron with --remote-debugging-port=<port>)\nparity report [--config <path>] [--in <report.json>] [--md <path>]\nRe-render a Markdown report from an existing report.json without re-scanning\n(defaults to .parity/report.json; prints to stdout when --md is omitted).\nparity push --server <url> [--config <path>] [--in <report.json>] [--token <token>] [--commit <sha>] [--branch <name>] [--gate-exit <code>]\n(experimental) The push command and its server protocol are not covered by the interface freeze:\nthey may change in a 2.x minor release until the Parity.Server dashboard is publicly deployed.\nSend an existing report.json to a Parity.Server dashboard (no re-scan; the server never\nruns a browser — scanning always happens where `parity check` ran).\nToken comes from the PARITY_TOKEN environment variable (a project token from the server);\n--token is for local trials only — flag values end up in shell history and CI logs.\n--server may also come from PARITY_SERVER. Commit/branch default to the GitHub Actions\nenvironment when present (GITHUB_SHA; GITHUB_HEAD_REF on pull requests, else GITHUB_REF_NAME)."
+            },
+            {
+              "name": "--gate-exit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Pass `parity check`'s real exit code so the dashboard shows the same\nverdict as CI (covers custom failOn and --baseline semantics);\nomitted → recomputed from the config's gate settings.\nReports over 1 MB are sent with Expect: 100-continue so an oversized report gets a clean 413:\nthe upload waits up to 15 s for the server's go-ahead, and is resent without it on a 417.\nEach attempt times out after 60 s, so a push can take up to about 2 minutes when it is resent.\nparity snapshot [--config <path>] [--target <route>] [--out <path>] [--width <n>] [--height <n>] [--headed] [--stabilize]\nFreeze the currently running implementation into a design baseline (JSON + reference screenshot)\n— a refactor/redesign guard: today's rendering is correct, and later checks prove it has not drifted.\nNo Figma required. Overwrites an existing baseline (backed up to .parity/snapshot.bak.json first).",
+              "arguments": [
+                {
+                  "name": "CODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--stabilize",
+              "recursive": false,
+              "hidden": false,
+              "description": "Capture 3 times and report regions that changed between captures (rotating ads,\nanimations, lazy media) with a ready-to-paste \"ignore\" suggestion — freeze only\nwhat is actually stable.\nparity serve [--config <path>] [--port <n>] [--watch] [--open]\nLocal report UI (binds 127.0.0.1 only): diff list plus a screenshot overlay view."
+            },
+            {
+              "name": "--watch",
+              "recursive": false,
+              "hidden": false,
+              "description": "Re-scan automatically when the config, design or page files change\nparity map [--config <path>] [--port <n>] [--watch] [--open]\nInteractive matching: pick an unmatched design node → click the page element → writes parity.map.json\nAlways opens the browser (--open is accepted for symmetry with serve); --watch as in serve.\nparity lint [--config <path>] [--target <route>] [--refresh]\nDesign lint: looks only at the design file and checks its values against the allowed design-token set\n(color/font size/padding/spacing/corner radius; requires tokensFile).\nFor designers keeping a new page inside the design system.\nparity baseline save [--config <path>] [--target <route>] [--headed]\nparity baseline list [--config <path>]\nSave or list diff baseline snapshots (SQLite); pair with `check --baseline` for regression gating.\nparity init             Generate a parity.config.json template\nparity install-browser [--with-deps]\nDownload Playwright Chromium (required on first use); --with-deps also installs system\ndependencies (needed on CI Linux runners).\nparity bug-report [--config <path>] [--open]\n(experimental) Collect diagnostics on this machine for a bug report and print them, plus a link that\nopens a pre-filled GitHub issue. bug-report makes no network connection and only prints the link. The masked\nreport is in the link's query string: opening it (yourself, or with --open) sends that text to github.com\nand leaves it in your browser history; no issue is created until you submit the form.\nCollected: Parity version, OS and architecture, .NET, Node, Playwright and Chromium revision, install\nchannel; with --config, a structural summary (counts, source types, tolerances, gate and compare\nsettings). Never collected: URLs, routes, selectors, node names, text, Figma keys, tokens, file paths\n(shown as <path>) or environment variable values.",
+              "arguments": [
+                {
+                  "name": "WATCH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "baseline",
+              "hidden": false,
+              "commands": [
+                {
+                  "name": "save",
+                  "hidden": false
+                }
+              ]
+            },
+            {
+              "name": "bug-report",
+              "hidden": false
+            },
+            {
+              "name": "check",
+              "hidden": false
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Generate a parity.config.json template"
+            },
+            {
+              "name": "install-browser",
+              "hidden": false
+            },
+            {
+              "name": "lint",
+              "hidden": false
+            },
+            {
+              "name": "map",
+              "hidden": false
+            },
+            {
+              "name": "push",
+              "hidden": false
+            },
+            {
+              "name": "report",
+              "hidden": false
+            },
+            {
+              "name": "serve",
+              "hidden": false
+            },
+            {
+              "name": "snapshot",
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "save",
+          "hidden": false,
+          "options": [
+            {
+              "name": "--refresh",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ignore the local Figma cache and re-fetch"
+            },
+            {
+              "name": "--headed",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show the browser window (for debugging)"
+            },
+            {
+              "name": "--baseline",
+              "recursive": false,
+              "hidden": false,
+              "description": "Regression mode: only gate on diffs that are new or worse than the baseline (see `parity baseline`)",
+              "arguments": [
+                {
+                  "name": "BASELINE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--reverse",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reverse view: \"expected\" = the implementation, \"actual\" = the design file; never gates.\n(For designers redrawing an existing page: see how the draft differs from what ships.)"
+            },
+            {
+              "name": "--md",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--stats-preview",
+              "recursive": false,
+              "hidden": false,
+              "description": "Send no anonymous usage statistics; print to stderr the exact JSON this run would send and\nwhether it would be sent. Exit code, stdout and report files are unchanged.\ncheck sends anonymous usage statistics (counts and score ranges only) once per run, on by default:\nwhat and why: https://stats.cornhsu.com/ — turn off with \"stats\": { \"share\": false } in the config,\nPARITY_SHARE_STATS=false, CORNHSU_SHARE_STATS=false or DO_NOT_TRACK=1\nA target's url may be:\nhttp(s):// or file://          a normal web page / local file\ncdp:http://host:port           attach to a running Electron desktop app (live window)\ncdp:http://host:port#fragment  with several windows, pick the one whose URL contains the fragment\n(start Electron with --remote-debugging-port=<port>)\nparity report [--config <path>] [--in <report.json>] [--md <path>]\nRe-render a Markdown report from an existing report.json without re-scanning\n(defaults to .parity/report.json; prints to stdout when --md is omitted).\nparity push --server <url> [--config <path>] [--in <report.json>] [--token <token>] [--commit <sha>] [--branch <name>] [--gate-exit <code>]\n(experimental) The push command and its server protocol are not covered by the interface freeze:\nthey may change in a 2.x minor release until the Parity.Server dashboard is publicly deployed.\nSend an existing report.json to a Parity.Server dashboard (no re-scan; the server never\nruns a browser — scanning always happens where `parity check` ran).\nToken comes from the PARITY_TOKEN environment variable (a project token from the server);\n--token is for local trials only — flag values end up in shell history and CI logs.\n--server may also come from PARITY_SERVER. Commit/branch default to the GitHub Actions\nenvironment when present (GITHUB_SHA; GITHUB_HEAD_REF on pull requests, else GITHUB_REF_NAME)."
+            },
+            {
+              "name": "--gate-exit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Pass `parity check`'s real exit code so the dashboard shows the same\nverdict as CI (covers custom failOn and --baseline semantics);\nomitted → recomputed from the config's gate settings.\nReports over 1 MB are sent with Expect: 100-continue so an oversized report gets a clean 413:\nthe upload waits up to 15 s for the server's go-ahead, and is resent without it on a 417.\nEach attempt times out after 60 s, so a push can take up to about 2 minutes when it is resent.\nparity snapshot [--config <path>] [--target <route>] [--out <path>] [--width <n>] [--height <n>] [--headed] [--stabilize]\nFreeze the currently running implementation into a design baseline (JSON + reference screenshot)\n— a refactor/redesign guard: today's rendering is correct, and later checks prove it has not drifted.\nNo Figma required. Overwrites an existing baseline (backed up to .parity/snapshot.bak.json first).",
+              "arguments": [
+                {
+                  "name": "CODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--stabilize",
+              "recursive": false,
+              "hidden": false,
+              "description": "Capture 3 times and report regions that changed between captures (rotating ads,\nanimations, lazy media) with a ready-to-paste \"ignore\" suggestion — freeze only\nwhat is actually stable.\nparity serve [--config <path>] [--port <n>] [--watch] [--open]\nLocal report UI (binds 127.0.0.1 only): diff list plus a screenshot overlay view."
+            },
+            {
+              "name": "--watch",
+              "recursive": false,
+              "hidden": false,
+              "description": "Re-scan automatically when the config, design or page files change\nparity map [--config <path>] [--port <n>] [--watch] [--open]\nInteractive matching: pick an unmatched design node → click the page element → writes parity.map.json\nAlways opens the browser (--open is accepted for symmetry with serve); --watch as in serve.\nparity lint [--config <path>] [--target <route>] [--refresh]\nDesign lint: looks only at the design file and checks its values against the allowed design-token set\n(color/font size/padding/spacing/corner radius; requires tokensFile).\nFor designers keeping a new page inside the design system.\nparity baseline save [--config <path>] [--target <route>] [--headed]\nparity baseline list [--config <path>]\nSave or list diff baseline snapshots (SQLite); pair with `check --baseline` for regression gating.\nparity init             Generate a parity.config.json template\nparity install-browser [--with-deps]\nDownload Playwright Chromium (required on first use); --with-deps also installs system\ndependencies (needed on CI Linux runners).\nparity bug-report [--config <path>] [--open]\n(experimental) Collect diagnostics on this machine for a bug report and print them, plus a link that\nopens a pre-filled GitHub issue. bug-report makes no network connection and only prints the link. The masked\nreport is in the link's query string: opening it (yourself, or with --open) sends that text to github.com\nand leaves it in your browser history; no issue is created until you submit the form.\nCollected: Parity version, OS and architecture, .NET, Node, Playwright and Chromium revision, install\nchannel; with --config, a structural summary (counts, source types, tolerances, gate and compare\nsettings). Never collected: URLs, routes, selectors, node names, text, Figma keys, tokens, file paths\n(shown as <path>) or environment variable values.",
+              "arguments": [
+                {
+                  "name": "WATCH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "baseline",
+              "hidden": false,
+              "commands": [
+                {
+                  "name": "list",
+                  "hidden": false
+                }
+              ]
+            },
+            {
+              "name": "bug-report",
+              "hidden": false
+            },
+            {
+              "name": "check",
+              "hidden": false
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Generate a parity.config.json template"
+            },
+            {
+              "name": "install-browser",
+              "hidden": false
+            },
+            {
+              "name": "lint",
+              "hidden": false
+            },
+            {
+              "name": "map",
+              "hidden": false
+            },
+            {
+              "name": "push",
+              "hidden": false
+            },
+            {
+              "name": "report",
+              "hidden": false
+            },
+            {
+              "name": "serve",
+              "hidden": false
+            },
+            {
+              "name": "snapshot",
+              "hidden": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bug-report",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--open",
+          "recursive": false,
+          "hidden": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--refresh",
+          "recursive": false,
+          "hidden": false,
+          "description": "Ignore the local Figma cache and re-fetch"
+        },
+        {
+          "name": "--headed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show the browser window (for debugging)"
+        },
+        {
+          "name": "--baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Regression mode: only gate on diffs that are new or worse than the baseline (see `parity baseline`)",
+          "arguments": [
+            {
+              "name": "BASELINE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--reverse",
+          "recursive": false,
+          "hidden": false,
+          "description": "Reverse view: \"expected\" = the implementation, \"actual\" = the design file; never gates.\n(For designers redrawing an existing page: see how the draft differs from what ships.)"
+        },
+        {
+          "name": "--md",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--stats-preview",
+          "recursive": false,
+          "hidden": false,
+          "description": "Send no anonymous usage statistics; print to stderr the exact JSON this run would send and\nwhether it would be sent. Exit code, stdout and report files are unchanged.\ncheck sends anonymous usage statistics (counts and score ranges only) once per run, on by default:\nwhat and why: https://stats.cornhsu.com/ — turn off with \"stats\": { \"share\": false } in the config,\nPARITY_SHARE_STATS=false, CORNHSU_SHARE_STATS=false or DO_NOT_TRACK=1\nA target's url may be:\nhttp(s):// or file://          a normal web page / local file\ncdp:http://host:port           attach to a running Electron desktop app (live window)\ncdp:http://host:port#fragment  with several windows, pick the one whose URL contains the fragment\n(start Electron with --remote-debugging-port=<port>)"
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "hidden": false,
+      "description": "Generate a parity.config.json template"
+    },
+    {
+      "name": "install-browser",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--with-deps",
+          "recursive": false,
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "lint",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "ROUTE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--refresh",
+          "recursive": false,
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "map",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--port",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--watch",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--open",
+          "recursive": false,
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "push",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--gate-exit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Pass `parity check`'s real exit code so the dashboard shows the same\nverdict as CI (covers custom failOn and --baseline semantics);\nomitted → recomputed from the config's gate settings.\nReports over 1 MB are sent with Expect: 100-continue so an oversized report gets a clean 413:\nthe upload waits up to 15 s for the server's go-ahead, and is resent without it on a 417.\nEach attempt times out after 60 s, so a push can take up to about 2 minutes when it is resent.",
+          "arguments": [
+            {
+              "name": "CODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--in",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "REPORTJSON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--md",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "serve",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--watch",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-scan automatically when the config, design or page files change"
+        }
+      ]
+    },
+    {
+      "name": "snapshot",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--stabilize",
+          "recursive": false,
+          "hidden": false,
+          "description": "Capture 3 times and report regions that changed between captures (rotating ads,\nanimations, lazy media) with a ready-to-paste \"ignore\" suggestion — freeze only\nwhat is actually stable."
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--refresh",
+      "recursive": false,
+      "hidden": false,
+      "description": "Ignore the local Figma cache and re-fetch"
+    },
+    {
+      "name": "--headed",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show the browser window (for debugging)"
+    },
+    {
+      "name": "--baseline",
+      "recursive": false,
+      "hidden": false,
+      "description": "Regression mode: only gate on diffs that are new or worse than the baseline (see `parity baseline`)",
+      "arguments": [
+        {
+          "name": "BASELINE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--reverse",
+      "recursive": false,
+      "hidden": false,
+      "description": "Reverse view: \"expected\" = the implementation, \"actual\" = the design file; never gates.\n(For designers redrawing an existing page: see how the draft differs from what ships.)"
+    },
+    {
+      "name": "--md",
+      "recursive": false,
+      "hidden": false,
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--stats-preview",
+      "recursive": false,
+      "hidden": false,
+      "description": "Send no anonymous usage statistics; print to stderr the exact JSON this run would send and\nwhether it would be sent. Exit code, stdout and report files are unchanged.\ncheck sends anonymous usage statistics (counts and score ranges only) once per run, on by default:\nwhat and why: https://stats.cornhsu.com/ — turn off with \"stats\": { \"share\": false } in the config,\nPARITY_SHARE_STATS=false, CORNHSU_SHARE_STATS=false or DO_NOT_TRACK=1\nA target's url may be:\nhttp(s):// or file://          a normal web page / local file\ncdp:http://host:port           attach to a running Electron desktop app (live window)\ncdp:http://host:port#fragment  with several windows, pick the one whose URL contains the fragment\n(start Electron with --remote-debugging-port=<port>)\nparity report [--config <path>] [--in <report.json>] [--md <path>]\nRe-render a Markdown report from an existing report.json without re-scanning\n(defaults to .parity/report.json; prints to stdout when --md is omitted).\nparity push --server <url> [--config <path>] [--in <report.json>] [--token <token>] [--commit <sha>] [--branch <name>] [--gate-exit <code>]\n(experimental) The push command and its server protocol are not covered by the interface freeze:\nthey may change in a 2.x minor release until the Parity.Server dashboard is publicly deployed.\nSend an existing report.json to a Parity.Server dashboard (no re-scan; the server never\nruns a browser — scanning always happens where `parity check` ran).\nToken comes from the PARITY_TOKEN environment variable (a project token from the server);\n--token is for local trials only — flag values end up in shell history and CI logs.\n--server may also come from PARITY_SERVER. Commit/branch default to the GitHub Actions\nenvironment when present (GITHUB_SHA; GITHUB_HEAD_REF on pull requests, else GITHUB_REF_NAME)."
+    },
+    {
+      "name": "--gate-exit",
+      "recursive": false,
+      "hidden": false,
+      "description": "Pass `parity check`'s real exit code so the dashboard shows the same\nverdict as CI (covers custom failOn and --baseline semantics);\nomitted → recomputed from the config's gate settings.\nReports over 1 MB are sent with Expect: 100-continue so an oversized report gets a clean 413:\nthe upload waits up to 15 s for the server's go-ahead, and is resent without it on a 417.\nEach attempt times out after 60 s, so a push can take up to about 2 minutes when it is resent.\nparity snapshot [--config <path>] [--target <route>] [--out <path>] [--width <n>] [--height <n>] [--headed] [--stabilize]\nFreeze the currently running implementation into a design baseline (JSON + reference screenshot)\n— a refactor/redesign guard: today's rendering is correct, and later checks prove it has not drifted.\nNo Figma required. Overwrites an existing baseline (backed up to .parity/snapshot.bak.json first).",
+      "arguments": [
+        {
+          "name": "CODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--stabilize",
+      "recursive": false,
+      "hidden": false,
+      "description": "Capture 3 times and report regions that changed between captures (rotating ads,\nanimations, lazy media) with a ready-to-paste \"ignore\" suggestion — freeze only\nwhat is actually stable.\nparity serve [--config <path>] [--port <n>] [--watch] [--open]\nLocal report UI (binds 127.0.0.1 only): diff list plus a screenshot overlay view."
+    },
+    {
+      "name": "--watch",
+      "recursive": false,
+      "hidden": false,
+      "description": "Re-scan automatically when the config, design or page files change\nparity map [--config <path>] [--port <n>] [--watch] [--open]\nInteractive matching: pick an unmatched design node → click the page element → writes parity.map.json\nAlways opens the browser (--open is accepted for symmetry with serve); --watch as in serve.\nparity lint [--config <path>] [--target <route>] [--refresh]\nDesign lint: looks only at the design file and checks its values against the allowed design-token set\n(color/font size/padding/spacing/corner radius; requires tokensFile).\nFor designers keeping a new page inside the design system.\nparity baseline save [--config <path>] [--target <route>] [--headed]\nparity baseline list [--config <path>]\nSave or list diff baseline snapshots (SQLite); pair with `check --baseline` for regression gating.\nparity init             Generate a parity.config.json template\nparity install-browser [--with-deps]\nDownload Playwright Chromium (required on first use); --with-deps also installs system\ndependencies (needed on CI Linux runners).\nparity bug-report [--config <path>] [--open]\n(experimental) Collect diagnostics on this machine for a bug report and print them, plus a link that\nopens a pre-filled GitHub issue. bug-report makes no network connection and only prints the link. The masked\nreport is in the link's query string: opening it (yourself, or with --open) sends that text to github.com\nand leaves it in your browser history; no issue is created until you submit the form.\nCollected: Parity version, OS and architecture, .NET, Node, Playwright and Chromium revision, install\nchannel; with --config, a structural summary (counts, source types, tolerances, gate and compare\nsettings). Never collected: URLs, routes, selectors, node names, text, Figma keys, tokens, file paths\n(shown as <path>) or environment variable values.",
+      "arguments": [
+        {
+          "name": "WATCH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}
