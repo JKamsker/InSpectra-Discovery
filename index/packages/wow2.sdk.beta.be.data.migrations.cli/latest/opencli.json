@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "wow-migrate",
-    "version": "10.0.76-beta",
-    "description": "Web-free SQL migrator CLI (`wow-migrate`) over the WoW Two be sdk bespoke migrator — status, apply (+--dry-run), new, promote, rollback, verify (+--repair) against a Postgres database."
+    "version": "10.0.82-beta",
+    "description": "Web-free SQL migrator CLI (`wow-migrate`) over the WoW Two be sdk bespoke migrator — status, apply (+--dry-run), check, new, promote, rollback, verify (+--repair) against a Postgres database, for one migration set or every set in a --sets manifest."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
@@ -57,10 +57,95 @@
       "name": "--sql-dir",
       "recursive": true,
       "hidden": false,
-      "description": "Migrations dir (else WOW_MIGRATE_SQL_DIR, else auto-discovered).",
+      "description": "Migrations dir of a single set (else WOW_MIGRATE_SQL_DIR, else auto-discovered).",
       "arguments": [
         {
           "name": "SQL_DIR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--sets",
+      "recursive": true,
+      "hidden": false,
+      "description": "Migration-sets manifest (JSON) listing every set (else WOW_MIGRATE_SETS); verbs run all of them unless --set picks one.",
+      "arguments": [
+        {
+          "name": "SETS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--set",
+      "recursive": true,
+      "hidden": false,
+      "description": "Run one named set: pick it from --sets, or name the set read from --sql-dir (else 'default').",
+      "arguments": [
+        {
+          "name": "SET",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--schema",
+      "recursive": true,
+      "hidden": false,
+      "description": "Schema of a single set: holds its history and fills {{schema}} (else 'public').",
+      "arguments": [
+        {
+          "name": "SCHEMA",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--schema-owner",
+      "recursive": true,
+      "hidden": false,
+      "description": "Claim the single set's schema under this owner; creates the schema and refuses one claimed by another owner.",
+      "arguments": [
+        {
+          "name": "SCHEMA_OWNER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--owner-instance",
+      "recursive": true,
+      "hidden": false,
+      "description": "The instance the single set's schema is claimed as (required with --schema-owner): the host's Migrations:OwnerInstance, else {applicationName}@{DEPLOY_ENVIRONMENT}.",
+      "arguments": [
+        {
+          "name": "OWNER_INSTANCE",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -100,8 +185,12 @@
       ]
     },
     {
+      "name": "check",
+      "description": "Exit 1 unless every set's database level matches its source; writes nothing."
+    },
+    {
       "name": "rollback",
-      "description": "Roll back the latest migration (or down to ordinal N). Dev only.",
+      "description": "Roll back the latest migration (or down to ordinal N) of one set. Dev only.",
       "options": [
         {
           "name": "--to",
@@ -164,7 +253,7 @@
           "name": "--repair",
           "recursive": false,
           "hidden": false,
-          "description": "Re-record edited checksums instead of failing on drift. [default: False]",
+          "description": "Re-record edited checksums of one set instead of failing on drift. [default: False]",
           "arguments": [
             {
               "name": "REPAIR",
@@ -199,6 +288,63 @@
           "recursive": false,
           "hidden": false,
           "description": "Skip the interactive [y/N] confirmation prompt when repairing. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "baseline",
+      "description": "Mark one set's migrations as applied without running them; refuses a set that records history.",
+      "options": [
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "Mark migrations up to and including this ordinal (else every source migration).",
+          "arguments": [
+            {
+              "name": "TO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--i-understand-this-is",
+          "recursive": false,
+          "hidden": false,
+          "description": "Confirm the target database name (must match the connection's database).",
+          "arguments": [
+            {
+              "name": "I_UNDERSTAND_THIS_IS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the interactive [y/N] confirmation prompt. [default: False]",
           "arguments": [
             {
               "name": "FORCE",
