@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "mloop",
-    "version": "0.45.1",
+    "version": "0.47.0",
     "description": "MLoop - A modern CLI tool for ML.NET with filesystem-based MLOps"
   },
   "x-inspectra": {
@@ -10,8 +10,8 @@
     "generator": "InSpectra.Gen",
     "hookCapture": {
       "cliFramework": "System.CommandLine",
-      "frameworkVersion": "2.0.10.0",
-      "systemCommandLineVersion": "2.0.10.0",
+      "frameworkVersion": "2.0.13.0",
+      "systemCommandLineVersion": "2.0.13.0",
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine"
@@ -45,7 +45,7 @@
           "name": "--task",
           "recursive": false,
           "hidden": false,
-          "description": "ML task type (regression, binary-classification, multiclass-classification, anomaly-detection, clustering, ranking, forecasting, time-series-anomaly, image-classification, object-detection, text-classification, sentence-similarity, ner, question-answering, recommendation) [default: binary-classification]",
+          "description": "ML task type (regression, binary-classification, multiclass-classification, anomaly-detection, clustering, ranking, forecasting, time-series-anomaly, image-classification, object-detection, image-anomaly, text-classification, sentence-similarity, ner, question-answering, recommendation) [default: binary-classification]",
           "aliases": [
             "-t"
           ],
@@ -120,6 +120,23 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit the created project as JSON to stdout (narration goes to stderr) [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -183,7 +200,7 @@
           "name": "--task",
           "recursive": false,
           "hidden": false,
-          "description": "ML task type (regression, binary-classification, multiclass-classification, anomaly-detection, clustering, ranking, forecasting, time-series-anomaly, image-classification, object-detection, text-classification, sentence-similarity, ner, question-answering, recommendation)",
+          "description": "ML task type (regression, binary-classification, multiclass-classification, anomaly-detection, clustering, ranking, forecasting, time-series-anomaly, image-classification, object-detection, image-anomaly, text-classification, sentence-similarity, ner, question-answering, recommendation)",
           "aliases": [
             "-t"
           ],
@@ -220,10 +237,7 @@
           "name": "--metric",
           "recursive": false,
           "hidden": false,
-          "description": "Optimization metric (accuracy, auc, f1, r_squared, etc.)",
-          "aliases": [
-            "-m"
-          ],
+          "description": "Optimization metric (accuracy, auc, f1, r_squared, etc.). Default auto: AUC for binary, log-loss for multiclass classification, the task's primary metric otherwise",
           "arguments": [
             {
               "name": "METRIC",
@@ -397,9 +411,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Class balancing strategy: 'auto' (balance to 10:1 if ratio > 10:1), 'none' (no balancing), or target ratio (e.g., '5' for 5:1). Use without value for 'auto'.",
-          "aliases": [
-            "-b"
-          ],
           "arguments": [
             {
               "name": "BALANCE",
@@ -443,6 +454,40 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--encoder",
+          "recursive": false,
+          "hidden": false,
+          "description": "Image encoder an image-anomaly model embeds its images with (an installed encoder's id; default: the only one installed)",
+          "arguments": [
+            {
+              "name": "ENCODER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--bank-size",
+          "recursive": false,
+          "hidden": false,
+          "description": "The most patches an image-anomaly model's bank holds (default: every patch of the images; more are subsampled with a fixed seed)",
+          "arguments": [
+            {
+              "name": "BANK_SIZE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
             }
           ]
         },
@@ -535,7 +580,7 @@
           "name": "--json",
           "recursive": false,
           "hidden": false,
-          "description": "Emit newline-delimited JSON events (phase/trial/warning/result/error) on stdout instead of the rich display [default: False]",
+          "description": "Emit newline-delimited JSON events (phase/trial/warning/result/promotion/error) on stdout instead of the rich display [default: False]",
           "arguments": [
             {
               "name": "JSON",
@@ -685,9 +730,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Log predictions to .mloop/logs/ for monitoring and analysis [default: False]",
-          "aliases": [
-            "-l"
-          ],
           "arguments": [
             {
               "name": "LOG",
@@ -767,7 +809,7 @@
     },
     {
       "name": "preprocess",
-      "description": "Run preprocessing on data. Default path executes IPreprocessingScript files in .mloop/scripts/preprocess/ (alphabetical, chained); --incremental runs the detector-based rule-discovery workflow instead.",
+      "description": "Run preprocessing on data: executes the IPreprocessingScript files in .mloop/scripts/preprocess/ (alphabetical, chained).",
       "options": [
         {
           "name": "--output",
@@ -806,57 +848,6 @@
                 "maximum": 1
               },
               "type": "String"
-            }
-          ]
-        },
-        {
-          "name": "--incremental",
-          "recursive": false,
-          "hidden": false,
-          "description": "Use the incremental rule-discovery workflow (pattern detectors → rule application, with HITL validation). Rule discovery covers every detector; most rule types have no application strategy yet, and a run that changes no rows writes no cleaned data and exits 1. NOTE: custom IPreprocessingScript files in .mloop/scripts/preprocess/ run only in the DEFAULT (non-incremental) path, not here. [default: False]",
-          "arguments": [
-            {
-              "name": "INCREMENTAL",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
-          "name": "--skip-hitl",
-          "recursive": false,
-          "hidden": false,
-          "description": "Skip HITL prompts and use recommended defaults (incremental mode only) [default: False]",
-          "arguments": [
-            {
-              "name": "SKIP_HITL",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
-          "name": "--auto-approve",
-          "recursive": false,
-          "hidden": false,
-          "description": "Automatically approve rules at confidence checkpoint (incremental mode only) [default: False]",
-          "arguments": [
-            {
-              "name": "AUTO_APPROVE",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
             }
           ]
         }
@@ -903,9 +894,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Show all experiments including failed ones (default: completed only) [default: False]",
-          "aliases": [
-            "-a"
-          ],
           "arguments": [
             {
               "name": "ALL",
@@ -983,9 +971,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Maximum number of entries to show [default: 20]",
-          "aliases": [
-            "-l"
-          ],
           "arguments": [
             {
               "name": "LIMIT",
@@ -1123,9 +1108,6 @@
               "recursive": false,
               "hidden": false,
               "description": "ID of the prediction to provide feedback for",
-              "aliases": [
-                "-p"
-              ],
               "arguments": [
                 {
                   "name": "PREDICTION_ID",
@@ -1143,9 +1125,6 @@
               "recursive": false,
               "hidden": false,
               "description": "The actual (ground truth) value",
-              "aliases": [
-                "-v"
-              ],
               "arguments": [
                 {
                   "name": "ACTUAL_VALUE",
@@ -1163,9 +1142,6 @@
               "recursive": false,
               "hidden": false,
               "description": "Where the value came from (e.g., 'user', 'reviewer-llm', 'system')",
-              "aliases": [
-                "-s"
-              ],
               "arguments": [
                 {
                   "name": "SOURCE",
@@ -1197,6 +1173,23 @@
                   "type": "Double"
                 }
               ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit the recorded feedback as JSON to stdout (narration goes to stderr) [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ]
         },
@@ -1205,16 +1198,16 @@
           "description": "List feedback entries for a model",
           "options": [
             {
-              "name": "--model",
+              "name": "--name",
               "recursive": false,
               "hidden": false,
               "description": "Model name [default: default]",
               "aliases": [
-                "-m"
+                "-n"
               ],
               "arguments": [
                 {
-                  "name": "MODEL",
+                  "name": "NAME",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1229,9 +1222,6 @@
               "recursive": false,
               "hidden": false,
               "description": "Maximum number of entries to show [default: 20]",
-              "aliases": [
-                "-l"
-              ],
               "arguments": [
                 {
                   "name": "LIMIT",
@@ -1302,16 +1292,16 @@
           "description": "Calculate accuracy metrics from feedback",
           "options": [
             {
-              "name": "--model",
+              "name": "--name",
               "recursive": false,
               "hidden": false,
               "description": "Model name [default: default]",
               "aliases": [
-                "-m"
+                "-n"
               ],
               "arguments": [
                 {
-                  "name": "MODEL",
+                  "name": "NAME",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1385,16 +1375,16 @@
           "description": "Create a sampled dataset from CSV file or prediction logs",
           "options": [
             {
-              "name": "--model",
+              "name": "--name",
               "recursive": false,
               "hidden": false,
               "description": "Model name to sample from (prediction log mode)",
               "aliases": [
-                "-m"
+                "-n"
               ],
               "arguments": [
                 {
-                  "name": "MODEL",
+                  "name": "NAME",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1409,9 +1399,6 @@
               "recursive": false,
               "hidden": false,
               "description": "CSV file to sample from (general-purpose mode)",
-              "aliases": [
-                "-f"
-              ],
               "arguments": [
                 {
                   "name": "FROM",
@@ -1430,7 +1417,6 @@
               "hidden": false,
               "description": "Number of rows to sample [default: 1000]",
               "aliases": [
-                "-n",
                 "--size"
               ],
               "arguments": [
@@ -1450,9 +1436,6 @@
               "recursive": false,
               "hidden": false,
               "description": "Sampling strategy: random, head, stratified (CSV) / random, recent, feedback-priority, stratified, low-confidence (logs) [default: random]",
-              "aliases": [
-                "-s"
-              ],
               "arguments": [
                 {
                   "name": "STRATEGY",
@@ -1504,6 +1487,23 @@
                   "type": "String"
                 }
               ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit the sampling result as JSON to stdout (narration goes to stderr) [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ]
         },
@@ -1512,16 +1512,16 @@
           "description": "Show sampling statistics for a model",
           "options": [
             {
-              "name": "--model",
+              "name": "--name",
               "recursive": false,
               "hidden": false,
               "description": "Model name [default: default]",
               "aliases": [
-                "-m"
+                "-n"
               ],
               "arguments": [
                 {
-                  "name": "MODEL",
+                  "name": "NAME",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1566,9 +1566,7 @@
               "hidden": false,
               "description": "Model name to evaluate [default: default]",
               "aliases": [
-                "-n",
-                "--model",
-                "-m"
+                "-n"
               ],
               "arguments": [
                 {
@@ -1587,9 +1585,6 @@
               "recursive": false,
               "hidden": false,
               "description": "Accuracy threshold (0.0-1.0). Triggers if accuracy drops below this value.",
-              "aliases": [
-                "-a"
-              ],
               "arguments": [
                 {
                   "name": "ACCURACY",
@@ -1607,9 +1602,6 @@
               "recursive": false,
               "hidden": false,
               "description": "Feedback volume threshold. Triggers once the feedback count reaches this value.",
-              "aliases": [
-                "-f"
-              ],
               "arguments": [
                 {
                   "name": "FEEDBACK",
@@ -1749,9 +1741,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Compare top N experiments by metric (default: all completed)",
-          "aliases": [
-            "-b"
-          ],
           "arguments": [
             {
               "name": "BEST",
@@ -1769,9 +1758,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Sort by specific metric (default: best metric from training)",
-          "aliases": [
-            "-m"
-          ],
           "arguments": [
             {
               "name": "METRIC",
@@ -2513,9 +2499,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Run deep analysis: correlation, feature importance, distribution, anomaly detection [default: False]",
-          "aliases": [
-            "-a"
-          ],
           "arguments": [
             {
               "name": "ANALYZE",
@@ -3294,6 +3277,23 @@
           ]
         },
         {
+          "name": "--normal-class",
+          "recursive": false,
+          "hidden": false,
+          "description": "For an image-anomaly model: the subfolder of the test folder that holds the normal images (default: normal, good or ok); every other subfolder is anomalous",
+          "arguments": [
+            {
+              "name": "NORMAL_CLASS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--records",
           "recursive": false,
           "hidden": false,
@@ -3517,9 +3517,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Run server in background [default: False]",
-          "aliases": [
-            "-d"
-          ],
           "arguments": [
             {
               "name": "DETACH",
@@ -3563,9 +3560,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Subject (sub) claim identifying the caller [default: mloop-cli]",
-          "aliases": [
-            "-s"
-          ],
           "arguments": [
             {
               "name": "SUBJECT",
@@ -3781,9 +3775,6 @@
               "recursive": false,
               "hidden": false,
               "description": "Comma-separated target columns",
-              "aliases": [
-                "-c"
-              ],
               "arguments": [
                 {
                   "name": "COLUMNS",
@@ -4085,7 +4076,7 @@
     },
     {
       "name": "encoder",
-      "description": "Manage the pretrained image encoders mloop embed runs",
+      "description": "Manage the pretrained image and text encoders that mloop embed and encoder-read text columns run",
       "commands": [
         {
           "name": "list",
@@ -4135,7 +4126,7 @@
           "arguments": [
             {
               "name": "ENCODER",
-              "description": "The catalog encoder to install (dinov2-small)",
+              "description": "The catalog encoder to install (dinov2-small, multilingual-minilm)",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -4147,7 +4138,7 @@
         },
         {
           "name": "add",
-          "description": "Install an encoder from its definition and ONNX graph",
+          "description": "Install an encoder from its definition and ONNX graph (and, for text, its tokenizer model)",
           "options": [
             {
               "name": "--model",
@@ -4157,6 +4148,23 @@
               "arguments": [
                 {
                   "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--tokenizer",
+              "recursive": false,
+              "hidden": false,
+              "description": "A text encoder's tokenizer model (SentencePiece .model)",
+              "arguments": [
+                {
+                  "name": "TOKENIZER",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -4200,8 +4208,42 @@
     },
     {
       "name": "embed",
-      "description": "Embed images as vectors with a pretrained encoder",
+      "description": "Embed images or texts as vectors with a pretrained encoder",
       "options": [
+        {
+          "name": "--text",
+          "recursive": false,
+          "hidden": false,
+          "description": "A text to embed with a text encoder, instead of images; give it once per text",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--text-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "A UTF-8 file of texts to embed, one per line (at most 256 with --text)",
+          "arguments": [
+            {
+              "name": "TEXT_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
         {
           "name": "--encoder",
           "recursive": false,
@@ -4235,15 +4277,32 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--patches",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also one vector per patch of each image, on the encoder's grid (at most 8 images) [default: False]",
+          "arguments": [
+            {
+              "name": "PATCHES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
         {
           "name": "IMAGES",
           "description": "Image files (PNG, JPEG, …), at most 64",
-          "required": true,
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 100000
           },
           "type": "String[]"
@@ -4259,9 +4318,6 @@
           "recursive": false,
           "hidden": false,
           "description": "Check for updates without installing [default: False]",
-          "aliases": [
-            "-c"
-          ],
           "arguments": [
             {
               "name": "CHECK",
