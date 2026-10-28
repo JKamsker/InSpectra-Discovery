@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "wow-migrate",
-    "version": "10.0.88-beta",
-    "description": "Web-free SQL migrator CLI (`wow-migrate`) over the WoW Two be sdk bespoke migrator — status, apply (+--dry-run), check, new, promote, rollback, verify (+--repair) against a Postgres database, for one migration set or every set in a --sets manifest."
+    "version": "10.0.89-beta",
+    "description": "Web-free SQL migrator CLI (`wow-migrate`) over the WoW Two be sdk bespoke migrator — the image's migrate verb tree (check, plan, apply, seed, sets, rollback, forget, repair, baseline, claim, locks, unlock) plus new and promote, against a Postgres database, for one migration set or every set in a --sets manifest."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
@@ -15,7 +15,7 @@
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "wow-migrate — web-free SQL migrator CLI."
+    "cliParsedDescription": "wow-migrate — the migrate verb tree over a manifest of sets, plus the authoring verbs new and promote."
   },
   "options": [
     {
@@ -88,23 +88,6 @@
       ]
     },
     {
-      "name": "--set",
-      "recursive": true,
-      "hidden": false,
-      "description": "Run one named set: pick it from --sets, or name the set read from --sql-dir (else 'default').",
-      "arguments": [
-        {
-          "name": "SET",
-          "required": true,
-          "arity": {
-            "minimum": 1,
-            "maximum": 1
-          },
-          "type": "String"
-        }
-      ]
-    },
-    {
       "name": "--schema",
       "recursive": true,
       "hidden": false,
@@ -154,22 +137,60 @@
           "type": "String"
         }
       ]
+    },
+    {
+      "name": "--set",
+      "recursive": true,
+      "hidden": false,
+      "description": "Run one set by name; without it every set. A writing operator verb needs it when the host has several sets.",
+      "arguments": [
+        {
+          "name": "SET",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--json",
+      "recursive": true,
+      "hidden": false,
+      "description": "Print the verb's JSON report on stdout before the migrate-result line, instead of the human report on stderr. [default: False]",
+      "arguments": [
+        {
+          "name": "JSON",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
     }
   ],
   "commands": [
     {
-      "name": "status",
-      "description": "Show applied / pending / drift / orphaned."
+      "name": "check",
+      "description": "Compare each set with this image, read-only: 0 when it may run (current, or a compatible ahead), else 1."
+    },
+    {
+      "name": "plan",
+      "description": "List each set's pending migrations with their kinds; takes no lock and writes nothing."
     },
     {
       "name": "apply",
-      "description": "Ensure the DB exists, then apply pending migrations (or rehearse them with --dry-run).",
+      "description": "Create the database when missing, then apply every set's pending migrations in dependency order.",
       "options": [
         {
           "name": "--dry-run",
           "recursive": false,
           "hidden": false,
-          "description": "Rehearse pending migrations in one transaction and roll back; exit 2 when one fails. Never creates the DB. [default: False]",
+          "description": "Rehearse the pending migrations in one transaction and roll back; never creates the database. [default: False]",
           "arguments": [
             {
               "name": "DRY_RUN",
@@ -185,18 +206,22 @@
       ]
     },
     {
-      "name": "check",
-      "description": "Exit 1 unless every set's database level matches its source; writes nothing."
+      "name": "seed",
+      "description": "Apply every set's seed files not yet journalled, after apply."
+    },
+    {
+      "name": "sets",
+      "description": "Describe every set this image carries — level, contracts, dependencies, extensions, package — without settings or a database."
     },
     {
       "name": "rollback",
-      "description": "Roll back the latest migration (or down to ordinal N) of one set. Dev only.",
+      "description": "Run Rollback.sql newest first down to --to N and delete their rows; one set, confirmed.",
       "options": [
         {
           "name": "--to",
           "recursive": false,
           "hidden": false,
-          "description": "Roll back down to this ordinal (else just the latest).",
+          "description": "The level to roll back to.",
           "arguments": [
             {
               "name": "TO",
@@ -210,53 +235,53 @@
           ]
         },
         {
-          "name": "--i-understand-this-is",
+          "name": "--confirm",
           "recursive": false,
           "hidden": false,
-          "description": "Confirm the target database name (must match the connection's database).",
+          "description": "The name of the database this verb writes to; it must match the database the set connects to.",
           "arguments": [
             {
-              "name": "I_UNDERSTAND_THIS_IS",
+              "name": "CONFIRM",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
               },
               "type": "String"
-            }
-          ]
-        },
-        {
-          "name": "--force",
-          "recursive": false,
-          "hidden": false,
-          "description": "Skip the interactive [y/N] confirmation prompt. [default: False]",
-          "arguments": [
-            {
-              "name": "FORCE",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
             }
           ]
         }
       ]
     },
     {
-      "name": "verify",
-      "description": "Exit 1 on checksum drift; --repair re-records edited checksums.",
+      "name": "forget",
+      "description": "Delete history rows above --above N without running SQL; one set, confirmed.",
       "options": [
         {
-          "name": "--repair",
+          "name": "--above",
           "recursive": false,
           "hidden": false,
-          "description": "Re-record edited checksums of one set instead of failing on drift. [default: False]",
+          "description": "The level to keep; rows above it are forgotten.",
           "arguments": [
             {
-              "name": "REPAIR",
+              "name": "ABOVE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--include-contracts",
+          "recursive": false,
+          "hidden": false,
+          "description": "Forget a contract or a row with no kind too. [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_CONTRACTS",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -267,13 +292,13 @@
           ]
         },
         {
-          "name": "--i-understand-this-is",
+          "name": "--confirm",
           "recursive": false,
           "hidden": false,
-          "description": "Confirm the target database name (required with --repair).",
+          "description": "The name of the database this verb writes to; it must match the database the set connects to.",
           "arguments": [
             {
-              "name": "I_UNDERSTAND_THIS_IS",
+              "name": "CONFIRM",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -282,21 +307,27 @@
               "type": "String"
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      "name": "repair",
+      "description": "Re-record drifted checksums; one set, confirmed.",
+      "options": [
         {
-          "name": "--force",
+          "name": "--confirm",
           "recursive": false,
           "hidden": false,
-          "description": "Skip the interactive [y/N] confirmation prompt when repairing. [default: False]",
+          "description": "The name of the database this verb writes to; it must match the database the set connects to.",
           "arguments": [
             {
-              "name": "FORCE",
-              "required": false,
+              "name": "CONFIRM",
+              "required": true,
               "arity": {
-                "minimum": 0,
+                "minimum": 1,
                 "maximum": 1
               },
-              "type": "Boolean"
+              "type": "String"
             }
           ]
         }
@@ -304,13 +335,13 @@
     },
     {
       "name": "baseline",
-      "description": "Mark one set's migrations as applied without running them; refuses a set that records history.",
+      "description": "Record migrations as applied without running them, so an existing database adopts the set; one set, confirmed.",
       "options": [
         {
           "name": "--to",
           "recursive": false,
           "hidden": false,
-          "description": "Mark migrations up to and including this ordinal (else every source migration).",
+          "description": "The last ordinal to record as applied; every source migration without it.",
           "arguments": [
             {
               "name": "TO",
@@ -324,13 +355,36 @@
           ]
         },
         {
-          "name": "--i-understand-this-is",
+          "name": "--confirm",
           "recursive": false,
           "hidden": false,
-          "description": "Confirm the target database name (must match the connection's database).",
+          "description": "The name of the database this verb writes to; it must match the database the set connects to.",
           "arguments": [
             {
-              "name": "I_UNDERSTAND_THIS_IS",
+              "name": "CONFIRM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "claim",
+      "description": "Record the set's schema marker under an owner and instance, replacing any marker; one set, confirmed.",
+      "options": [
+        {
+          "name": "--owner",
+          "recursive": false,
+          "hidden": false,
+          "description": "The owner kind, such as module or service.",
+          "arguments": [
+            {
+              "name": "OWNER",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -341,23 +395,71 @@
           ]
         },
         {
-          "name": "--force",
+          "name": "--instance",
           "recursive": false,
           "hidden": false,
-          "description": "Skip the interactive [y/N] confirmation prompt. [default: False]",
+          "description": "The instance, such as identity-haven@prod.",
           "arguments": [
             {
-              "name": "FORCE",
-              "required": false,
+              "name": "INSTANCE",
+              "required": true,
               "arity": {
-                "minimum": 0,
+                "minimum": 1,
                 "maximum": 1
               },
-              "type": "Boolean"
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--confirm",
+          "recursive": false,
+          "hidden": false,
+          "description": "The name of the database this verb writes to; it must match the database the set connects to.",
+          "arguments": [
+            {
+              "name": "CONFIRM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         }
       ]
+    },
+    {
+      "name": "locks",
+      "description": "List the sessions holding each set's migrator locks, read-only."
+    },
+    {
+      "name": "unlock",
+      "description": "End every session holding the set's migrator locks; one set, confirmed.",
+      "options": [
+        {
+          "name": "--confirm",
+          "recursive": false,
+          "hidden": false,
+          "description": "The name of the database this verb writes to; it must match the database the set connects to.",
+          "arguments": [
+            {
+              "name": "CONFIRM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "bg",
+      "description": "Control background migrations — pause, resume, retry, rollback; refused until they ship."
     },
     {
       "name": "new",

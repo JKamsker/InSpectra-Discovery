@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Spectra.CLI",
-    "version": "2.4.0",
+    "version": "2.7.0",
     "description": "AI-native test generation CLI. Generate test cases from documentation with dual-model grounding verification, coverage analysis, and visual dashboards."
   },
   "x-inspectra": {
@@ -233,6 +233,40 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "AI agents to install SPECTRA for, comma-separated: claude, copilot, cursor, devin, codex, gemini, antigravity, kiro, opencode (aliases: windsurf → devin, agy → antigravity), or auto to detect. Default: claude",
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--regenerate",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --agent: overwrite agent files you edited since SPECTRA wrote them",
+          "arguments": [
+            {
+              "name": "REGENERATE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ]
     },
@@ -437,7 +471,7 @@
               "name": "--skip-criteria",
               "recursive": false,
               "hidden": false,
-              "description": "Skip automatic acceptance criteria extraction after indexing",
+              "description": "Accepted and ignored: docs index no longer extracts criteria (use the spectra-criteria skill)",
               "arguments": [
                 {
                   "name": "SKIP_CRITERIA",
@@ -471,7 +505,7 @@
               "name": "--include-archived",
               "recursive": false,
               "hidden": false,
-              "description": "Include suites flagged skip_analysis: true in any auto-extracted criteria step",
+              "description": "Accepted and ignored: docs index no longer extracts criteria (use the spectra-criteria skill)",
               "arguments": [
                 {
                   "name": "INCLUDE_ARCHIVED",
@@ -562,6 +596,133 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "migrate-criteria",
+          "description": "Move criteria files to the per-document layout (deterministic, idempotent)",
+          "options": [
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report what would move, but write nothing",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "retire",
+          "description": "Retire a deleted document's acceptance criteria (explicit; --dry-run to preview)",
+          "options": [
+            {
+              "name": "--doc",
+              "recursive": false,
+              "hidden": false,
+              "description": "The deleted document (as listed by 'docs changed')",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DOC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report the changeset, but write nothing",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "apply-move",
+          "description": "Apply a document move reported by 'docs changed' (keeps criteria and IDs)",
+          "options": [
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "The document's old path",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "The document's new path",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report what would change, but write nothing",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "topology",
+          "description": "List the git repositories that own referenced docs (read-only diagnostic)"
         }
       ]
     },
@@ -571,7 +732,7 @@
       "commands": [
         {
           "name": "update",
-          "description": "Update test cases based on documentation changes",
+          "description": "Legacy word-overlap classifier — use update-triage for documentation changes",
           "options": [
             {
               "name": "--suite",
@@ -597,7 +758,7 @@
               "name": "--diff",
               "recursive": false,
               "hidden": false,
-              "description": "Show diff of proposed changes without applying",
+              "description": "Show diff of proposed changes",
               "aliases": [
                 "-d"
               ],
@@ -965,6 +1126,23 @@
                   "type": "String"
                 }
               ]
+            },
+            {
+              "name": "--batch",
+              "recursive": false,
+              "hidden": false,
+              "description": "Compile the prompt for one batch of the generation plan (an id from ingest-analysis, or 'unsourced')",
+              "arguments": [
+                {
+                  "name": "BATCH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
             }
           ],
           "arguments": [
@@ -1204,6 +1382,23 @@
                   "type": "String"
                 }
               ]
+            },
+            {
+              "name": "--full-docs",
+              "recursive": false,
+              "hidden": false,
+              "description": "Give the critic each referenced document whole (the pre-101 input) instead of the cited sections",
+              "arguments": [
+                {
+                  "name": "FULL_DOCS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ]
         },
@@ -1262,6 +1457,23 @@
                     "maximum": 1
                   },
                   "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--ids",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --all: only these tests (comma-separated) (Spec 093)",
+              "arguments": [
+                {
+                  "name": "IDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             }
@@ -1412,13 +1624,13 @@
         },
         {
           "name": "compile-update-prompt",
-          "description": "Compile an edit prompt for one OUTDATED test (deterministic, no model call)",
+          "description": "Compile an edit prompt for one test or a triage group (deterministic, no model call)",
           "options": [
             {
               "name": "--suite",
               "recursive": false,
               "hidden": false,
-              "description": "Suite containing the test to update",
+              "description": "Suite containing the tests to update",
               "aliases": [
                 "-s"
               ],
@@ -1438,10 +1650,27 @@
               "name": "--test-id",
               "recursive": false,
               "hidden": false,
-              "description": "Id of the OUTDATED test to compile an update prompt for",
+              "description": "One test to compile an update prompt for",
               "arguments": [
                 {
                   "name": "TEST_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--group",
+              "recursive": false,
+              "hidden": false,
+              "description": "A group from the last update-triage (G1, G2, …): one prompt for all its tests",
+              "arguments": [
+                {
+                  "name": "GROUP",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1499,6 +1728,40 @@
               "arguments": [
                 {
                   "name": "ALL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--keep-baseline",
+              "recursive": false,
+              "hidden": false,
+              "description": "Keep the existing source-change baseline (critic repairs); only add entries for new refs and criteria (Spec 085)",
+              "arguments": [
+                {
+                  "name": "KEEP_BASELINE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report the outcome each edit would get, with the same exit code, and write nothing (Spec 090)",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
                   "required": false,
                   "arity": {
                     "minimum": 0,
@@ -1631,6 +1894,40 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--ids",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --all: only these tests (comma-separated); required with --all --repaired (Spec 091)",
+              "arguments": [
+                {
+                  "name": "IDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--re-verify",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --all: also rewrite grounded tests that have a newer verdict, keeping the review record (Spec 103)",
+              "arguments": [
+                {
+                  "name": "RE_VERIFY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             }
@@ -1776,6 +2073,40 @@
                   "type": "String"
                 }
               ]
+            },
+            {
+              "name": "--feedback",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reviewer feedback text to include in the repair prompt (Spec 103)",
+              "arguments": [
+                {
+                  "name": "FEEDBACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--feedback-from-review",
+              "recursive": false,
+              "hidden": false,
+              "description": "Use the note already recorded on the test grounding block as the reviewer feedback (Spec 103)",
+              "arguments": [
+                {
+                  "name": "FEEDBACK_FROM_REVIEW",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ]
         },
@@ -1819,6 +2150,111 @@
                   "type": "Boolean"
                 }
               ]
+            },
+            {
+              "name": "--action",
+              "recursive": false,
+              "hidden": false,
+              "description": "Action to perform non-interactively: accept | delete (feedback and retry-repair per Spec 103)",
+              "arguments": [
+                {
+                  "name": "ACTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--test",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target test id (required with --action unless --all)",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TEST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--all",
+              "recursive": false,
+              "hidden": false,
+              "description": "Apply the action to every eligible test in scope",
+              "arguments": [
+                {
+                  "name": "ALL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--note",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reviewer's note recorded on the grounding block",
+              "arguments": [
+                {
+                  "name": "NOTE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--reviewer",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit reviewer identity (default: git user.name)",
+              "arguments": [
+                {
+                  "name": "REVIEWER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fix",
+              "recursive": false,
+              "hidden": false,
+              "description": "feedback only: also request a repair. Records the review and emits the repair chain for the skill to drive",
+              "arguments": [
+                {
+                  "name": "FIX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ]
         },
@@ -1837,6 +2273,40 @@
               "arguments": [
                 {
                   "name": "SUITE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--action",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only entries needing this action: critic, ground, repair, review, none (repeatable or comma-separated)",
+              "arguments": [
+                {
+                  "name": "ACTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--ids",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only these tests (comma-separated); ids not in the suite are reported",
+              "arguments": [
+                {
+                  "name": "IDS",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1869,6 +2339,387 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "update-triage",
+          "description": "Report which tests' doc sections and criteria changed since their baseline",
+          "options": [
+            {
+              "name": "--suite",
+              "recursive": false,
+              "hidden": false,
+              "description": "The suite to triage",
+              "arguments": [
+                {
+                  "name": "SUITE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--all-suites",
+              "recursive": false,
+              "hidden": false,
+              "description": "Triage every suite",
+              "arguments": [
+                {
+                  "name": "ALL_SUITES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-auto-ack",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report COSMETIC changes instead of acknowledging them",
+              "arguments": [
+                {
+                  "name": "NO_AUTO_ACK",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report, but write nothing (no auto-ack, no detail file)",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "update-ack",
+          "description": "Acknowledge reviewed tests: refresh their source-change baseline (no test edit)",
+          "options": [
+            {
+              "name": "--suite",
+              "recursive": false,
+              "hidden": false,
+              "description": "The suite of the tests",
+              "arguments": [
+                {
+                  "name": "SUITE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--ids",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated test IDs",
+              "arguments": [
+                {
+                  "name": "IDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--group",
+              "recursive": false,
+              "hidden": false,
+              "description": "A group ID from the last update-triage (e.g. G2)",
+              "arguments": [
+                {
+                  "name": "GROUP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report what would be written, but write nothing",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "source-baseline",
+          "description": "Create source-change baselines for tests from current content (--init)",
+          "options": [
+            {
+              "name": "--init",
+              "recursive": false,
+              "hidden": false,
+              "description": "Create entries for tests without one (required)",
+              "arguments": [
+                {
+                  "name": "INIT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--from-date",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fill missing entries from each repository's last commit at or before this ISO date (follows renames back)",
+              "arguments": [
+                {
+                  "name": "FROM_DATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--from-ref",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fill missing entries from this commit of the --owner repository",
+              "arguments": [
+                {
+                  "name": "FROM_REF",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "The repository (a path inside it) that --from-ref names a commit in",
+              "arguments": [
+                {
+                  "name": "OWNER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--min-similarity",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --from-*: rename similarity threshold in percent for following renames back (50–100, default 90)",
+              "arguments": [
+                {
+                  "name": "MIN_SIMILARITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--suite",
+              "recursive": false,
+              "hidden": false,
+              "description": "The suite to baseline",
+              "arguments": [
+                {
+                  "name": "SUITE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--all-suites",
+              "recursive": false,
+              "hidden": false,
+              "description": "Baseline every suite",
+              "arguments": [
+                {
+                  "name": "ALL_SUITES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Recompute every entry in scope from current content",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report what would be written, but write nothing",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "relink-sources",
+          "description": "Rewrite source_refs whose doc files were renamed in git history (path only; anchor kept)",
+          "options": [
+            {
+              "name": "--suite",
+              "recursive": false,
+              "hidden": false,
+              "description": "The suite to relink",
+              "arguments": [
+                {
+                  "name": "SUITE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--all-suites",
+              "recursive": false,
+              "hidden": false,
+              "description": "Relink every suite",
+              "arguments": [
+                {
+                  "name": "ALL_SUITES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--min-similarity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Rename similarity threshold in percent (50–100)",
+              "arguments": [
+                {
+                  "name": "MIN_SIMILARITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report old → new refs, but write nothing",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             }
@@ -2011,7 +2862,7 @@
       "arguments": [
         {
           "name": "KEY",
-          "description": "Configuration key (e.g., 'source.dir', 'ai.defaultProvider')",
+          "description": "Configuration key (e.g., 'source.local_dir', 'tests.dir')",
           "required": false,
           "arity": {
             "minimum": 0,
@@ -2777,7 +3628,7 @@
     },
     {
       "name": "run",
-      "description": "Drive deterministic test execution from the CLI (no MCP server required)",
+      "description": "Drive deterministic test execution from the CLI",
       "commands": [
         {
           "name": "start",
