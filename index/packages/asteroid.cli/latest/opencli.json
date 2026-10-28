@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Asteroid.Cli",
-    "version": "1.28.1",
+    "version": "1.30.0",
     "description": "Asteroid framework CLI toolchain (ws/log/doc/code/mcp/scaffold) — single package, single entry, subcommand dispatch."
   },
   "x-inspectra": {
@@ -148,7 +148,7 @@
         },
         {
           "name": "style-fix",
-          "description": "样式+格式修复（编排 dotnet format style/analyzers/whitespace；verify 探测/apply 落盘——apply 先探后修：探针轮干净的面跳过 apply 与复验；逐趟计时走 stderr；-p 传 .slnx/.sln=方案级单趟，csproj/目录=逐工程+变更感知跳过）",
+          "description": "（兼容壳）样式修复已并入 `code fix-all`：保留旧参数面并转发到进程内通道（不再起 dotnet format 子进程；缺省面=fix-all 全清面）",
           "options": [
             {
               "name": "--project",
@@ -174,7 +174,7 @@
               "name": "--rule",
               "recursive": false,
               "hidden": false,
-              "description": "规则 ID（可多值，如 IDE0037；点名时只跑 style 趟；缺省 = .editorconfig 生效集双趟，排除 IDE0130 IDE0060 IDE1006 IDE0042——引擎无修法器的契约/惯例面噪音，点名后尊重选择）。自研通道规则（IDE0060/IDE0031/IDE0065）apply 时接管：IDE0060 走弃元改名自研件（七重安全闸，仅 private/internal），IDE0031/IDE0065 转 IDE 修复引擎",
+              "description": "点名规则（可多值，如 IDE0037/CA1826/IDE0060/IDE0055）——语义同 `code fix-all --rule`：只跑点名规则所在的面，不做全清",
               "aliases": [
                 "-r"
               ],
@@ -194,7 +194,7 @@
               "name": "--include",
               "recursive": false,
               "hidden": false,
-              "description": "限定作用的文件或目录（可多值，相对或绝对路径；目录自动展开为 dir/** glob；缺省 = 整个工程）",
+              "description": "限定作用的文件或目录（可多值，相对或绝对路径；缺省 = 整个工程）",
               "aliases": [
                 "-i"
               ],
@@ -272,7 +272,7 @@
               "name": "--timeout",
               "recursive": false,
               "hidden": false,
-              "description": "单轮 dotnet format 看门狗秒数（缺省 -1=自动：方案级单趟 1800/逐工程 300；0=关闭）——一轮卡死只损失该轮，整场继续并记错误 [default: -1]",
+              "description": "整场看门狗秒数（转发到 fix-all：缺省 -1=自动 1800；0=关闭） [default: -1]",
               "arguments": [
                 {
                   "name": "TIMEOUT",
@@ -306,7 +306,7 @@
         },
         {
           "name": "fix-all",
-          "description": "一键全清（全进程内多趟：using 空行归一→外部分析器趟（点名提级 CA/NUnit 清单，实例按清单滤）→自研点名趟（IDE0060 弃元改名）→IDE 修复引擎殿后（全量 IDE 诊断驱动，含名称简化族 IDE0001/IDE0002 与预定义类型关键字替换——severity 即授权面；分析器按立法域滤；前趟回归当场收敛）→.cs 空白格式化（dotnet format whitespace 同引擎）→非 .cs 文本面；一次装载一个编译跑完，复验折进修复循环（拒修残余当场转错误，零复验遍）；--include 收窄轮带推送范围备忘——清单文件内容/闭包指纹/覆盖键全同于已验账即免装载（被拦重推/重试/多分支共享历史秒过）；作用域=显式目标工程，被引工程只读；写入许可在诊断选择前生效（范围外文档不调修复器、不推进内存改动集）；装载失败（缺 SDK/求值失败/必需引用缺失）=错误档且不登记台账（合法空工程照常）；输出=单份聚合报告；-p 缺省=当前目录——agent 零参可跑；分趟耗时与引擎逐轮观测走 stderr）",
+          "description": "一键全清（全进程内多趟：using 空行归一→外部分析器趟（点名提级 CA/NUnit 清单，实例按清单滤；立法但无修法器的规则照样报发现）→自研点名趟（IDE0060 弃元改名）→IDE 修复引擎殿后（全量 IDE 诊断驱动，含名称简化族 IDE0001/IDE0002、预定义类型关键字替换与未使用 using 清理——severity 即授权面；分析器按立法域滤；前趟回归当场收敛）→.cs 空白格式化（dotnet format whitespace 同引擎）→非 .cs 文本面（editorconfig 节匹配认路径/花括号全形）；--rule 点名规则只跑点名所在面（IDE 修法器/外部分析器清单/自研/IDE0055 格式化），未识别规则按参数错拒绝；一次装载一个编译跑完，复验折进修复循环（拒修残余当场转错误，零复验遍）；--include 收窄轮带推送范围备忘——清单文件内容/闭包指纹/覆盖键全同于已验账即免装载（被拦重推/重试/多分支共享历史秒过）；作用域=显式目标工程，被引工程只读；写入许可在诊断选择前生效（范围外文档不调修复器、不推进内存改动集）；装载失败（缺 SDK/求值失败/必需引用缺失）=错误档且不登记台账（合法空工程照常）；输出=单份聚合报告；-p 缺省=当前目录——agent 零参可跑；分趟耗时与引擎逐轮观测走 stderr）",
           "options": [
             {
               "name": "--project",
@@ -376,6 +376,26 @@
               "arguments": [
                 {
                   "name": "EXCLUDE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--rule",
+              "recursive": false,
+              "hidden": false,
+              "description": "点名规则（可多值，如 IDE0037/CA1826/IDE0060/IDE0055）：只跑点名规则所在的面（IDE 修法器/外部分析器清单/自研弃元改名/IDE0055=.cs 格式化），不做全清；点名后引擎缺省排除面解除（点名者自担；IDE0060 仍归自研安全闸）。缺省=全清面",
+              "aliases": [
+                "-r"
+              ],
+              "arguments": [
+                {
+                  "name": "RULE",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -457,6 +477,26 @@
                     "maximum": 1
                   },
                   "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--jobs",
+              "recursive": false,
+              "hidden": false,
+              "description": "跨工程并行度（0=自动 min(逻辑核数,4)；1=串行）——三个分析趟按工程并行，写面重叠的工程自动串行；报告与盘面结果与串行同构 [default: 0]",
+              "aliases": [
+                "-j"
+              ],
+              "arguments": [
+                {
+                  "name": "JOBS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
                 }
               ]
             }
