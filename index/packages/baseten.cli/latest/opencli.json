@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Baseten.CLI",
-    "version": "1.0.1-dev.176",
+    "version": "1.0.1-dev.177",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -16818,7 +16818,7 @@
           "commands": [
             {
               "name": "cleanup-images",
-              "description": "Clean up unused images\nRemove unused sandbox image versions. Versions referenced by active deployments are preserved.",
+              "description": "Clean up unused images\nRemove unused sandbox image versions. Versions referenced by active deployments are preserved. One call runs for a limited time; when has_more is true, only part of the unused versions were removed and the call should be repeated.",
               "options": [
                 {
                   "name": "--team-id",
@@ -18425,7 +18425,7 @@
                   "name": "--region",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Region where the sandbox runs (for example us-pdx-1 or eu-lon-1). When omitted at creation, the closest region is selected.",
+                  "description": "Region where the sandbox runs (for example us-pdx-1 or eu-lon-1). When omitted at creation, the default sandbox region is used.",
                   "arguments": [
                     {
                       "name": "REGION",
@@ -18503,6 +18503,23 @@
                         "maximum": 1
                       },
                       "type": "SandboxFilesystemV1"
+                    }
+                  ]
+                },
+                {
+                  "name": "--volumes",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Volumes mounted in the sandbox. Set at creation only.",
+                  "arguments": [
+                    {
+                      "name": "VOLUMES",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "IList`1"
                     }
                   ]
                 },
@@ -19121,7 +19138,7 @@
             },
             {
               "name": "update-sandbox",
-              "description": "Update a sandbox\nPartially update configuration. Omitted fields remain unchanged; supplied arrays and maps replace their previous values. Structured objects update only supplied fields. The name, memory, network, region, image, and ports are immutable after creation. Supplying any of these fields returns 400, including unchanged, empty, or null values.",
+              "description": "Update a sandbox\nPartially update configuration. Omitted fields remain unchanged; supplied arrays and maps replace their previous values. Structured objects update only supplied fields. The name, memory, network, region, image, ports, filesystem, and volumes are immutable after creation. Supplying any of these fields returns 400, including unchanged, empty, or null values.",
               "options": [
                 {
                   "name": "--team-id",
@@ -19280,6 +19297,520 @@
               "arguments": [
                 {
                   "name": "SANDBOX_NAME",
+                  "description": "This is a missing parameter that was added automatically. Please check the OpenAPI spec.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "volumes",
+          "description": "Volumes endpoint commands.",
+          "commands": [
+            {
+              "name": "create-sandbox-volume",
+              "description": "Create a volume\nCreate a persistent volume that outlives the sandboxes it is mounted in. Mount it at sandbox creation with the volumes field; a volume is mounted in at most one sandbox at a time and must be in the same region. The name is generated when omitted. Volume size and count are limited by the team's plan.",
+              "options": [
+                {
+                  "name": "--team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match X-Team-Id when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--x-team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match the team_id query parameter when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "X_TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--name",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Volume name, unique in the team. Generated when omitted.",
+                  "arguments": [
+                    {
+                      "name": "NAME",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--size",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Capacity, as a size (e.g. \"10Gi\", \"512Mi\") or a number of Mi (e.g. 1024). Can grow later, never shrink.",
+                  "arguments": [
+                    {
+                      "name": "SIZE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "OneOf`2"
+                    }
+                  ]
+                },
+                {
+                  "name": "--region",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Region of the volume. Defaults to the default sandbox region. Sandboxes mounting it must be in the same region.",
+                  "arguments": [
+                    {
+                      "name": "REGION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--labels",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Key-value pairs for organizing and filtering resources. Labels can be used to categorize resources by environment, project, team, or any custom taxonomy.",
+                  "arguments": [
+                    {
+                      "name": "LABELS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "Dictionary`2"
+                    }
+                  ]
+                },
+                {
+                  "name": "--input",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+                  "arguments": [
+                    {
+                      "name": "INPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-json",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Request body as JSON.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_JSON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-file",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Path to a JSON request file, or '-' for stdin.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_FILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "delete-sandbox-volume",
+              "description": "Delete a volume\nPermanently delete the volume and its data asynchronously. The returned resource has status DELETING. A volume mounted in a sandbox cannot be deleted (409); delete the sandbox first. Repeating the call while it is deleting returns the same resource.",
+              "options": [
+                {
+                  "name": "--team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match X-Team-Id when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--x-team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match the team_id query parameter when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "X_TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "VOLUME_NAME",
+                  "description": "This is a missing parameter that was added automatically. Please check the OpenAPI spec.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "get-sandbox-volume",
+              "description": "Get a volume\nReturn the volume, its status and the sandbox it is mounted in, if any.",
+              "options": [
+                {
+                  "name": "--team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match X-Team-Id when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--x-team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match the team_id query parameter when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "X_TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "VOLUME_NAME",
+                  "description": "This is a missing parameter that was added automatically. Please check the OpenAPI spec.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "list-sandbox-volumes",
+              "description": "List volumes\nReturn a cursor-paginated page of persistent volumes, newest first. Keep q and status unchanged when following a cursor.",
+              "options": [
+                {
+                  "name": "--team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match X-Team-Id when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--x-team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match the team_id query parameter when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "X_TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--cursor",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Opaque cursor from the previous page; omit for the first page.",
+                  "arguments": [
+                    {
+                      "name": "CURSOR",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Maximum number of items to return.",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--q",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Search volume names. Search is applied before pagination.",
+                  "arguments": [
+                    {
+                      "name": "Q",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--status",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Volume statuses. Repeat the query parameter for each status, for example status=DEPLOYED&status=FAILED. Unknown values are rejected.",
+                  "arguments": [
+                    {
+                      "name": "STATUS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "IList`1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "update-sandbox-volume",
+              "description": "Update a volume\nGrow the volume or replace its labels. size can only increase. The name and region are immutable; supplying either returns 400.",
+              "options": [
+                {
+                  "name": "--team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match X-Team-Id when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--x-team-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional team ID. Must match the team_id query parameter when both are supplied. If neither selector is supplied, defaults to the caller's only accessible team. Callers with multiple accessible teams must select a team. Requests without access to any team are forbidden.",
+                  "arguments": [
+                    {
+                      "name": "X_TEAM_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--size",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "New capacity, as a size (e.g. \"20Gi\") or a number of Mi, greater than or equal to the current size.",
+                  "arguments": [
+                    {
+                      "name": "SIZE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "OneOf`2"
+                    }
+                  ]
+                },
+                {
+                  "name": "--labels",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Labels replacing all current labels, not merged with them. Omit to keep them.",
+                  "arguments": [
+                    {
+                      "name": "LABELS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "Dictionary`2"
+                    }
+                  ]
+                },
+                {
+                  "name": "--input",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+                  "arguments": [
+                    {
+                      "name": "INPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-json",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Request body as JSON.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_JSON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-file",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Path to a JSON request file, or '-' for stdin.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_FILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "VOLUME_NAME",
                   "description": "This is a missing parameter that was added automatically. Please check the OpenAPI spec.",
                   "required": true,
                   "arity": {
