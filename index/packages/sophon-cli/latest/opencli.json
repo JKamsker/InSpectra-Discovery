@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Sophon CLI",
-    "version": "2.0.0",
+    "version": "2.1.0",
     "description": "Sophon — enterprise AI personal assistant CLI. Chat, manage agents/skills/workflows/channels, approve tool calls, run scheduled jobs, and drive remote desktop nodes from your terminal. Installs the 'sophon' command globally."
   },
   "x-inspectra": {
@@ -130,6 +130,46 @@
           "type": "Boolean"
         }
       ]
+    },
+    {
+      "name": "--continue",
+      "recursive": false,
+      "hidden": false,
+      "description": "Continue the last session for this repository [default: False]",
+      "aliases": [
+        "-c"
+      ],
+      "arguments": [
+        {
+          "name": "CONTINUE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--model",
+      "recursive": false,
+      "hidden": false,
+      "description": "The conversation's model: <id>[:<model>], auto[:<profile>] or inherit",
+      "aliases": [
+        "-m"
+      ],
+      "arguments": [
+        {
+          "name": "MODEL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
     }
   ],
   "commands": [
@@ -200,11 +240,66 @@
       "commands": [
         {
           "name": "list",
-          "description": "List configured model providers"
+          "description": "List configured model providers",
+          "options": [
+            {
+              "name": "--details",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also show each provider's priority, whether it is the default, and its models [default: False]",
+              "arguments": [
+                {
+                  "name": "DETAILS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
         },
         {
           "name": "add",
-          "description": "Add a new model provider (interactive)"
+          "description": "Add a new model provider (interactive)",
+          "options": [
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Model id(s), comma-separated; the first is the provider's default model (default: asked, with the type's default)",
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--priority",
+              "recursive": false,
+              "hidden": false,
+              "description": "Provider priority, 1 or more (1 first after the default provider; default 1)",
+              "arguments": [
+                {
+                  "name": "PRIORITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
         },
         {
           "name": "test",
@@ -233,6 +328,865 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "set-default",
+          "description": "Make a provider the default, optionally with its model",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "Provider id (see 'sophon models list')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "MODEL",
+              "description": "One of the provider's model ids to make its default model (see 'sophon models list --details')",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "priority",
+          "description": "Set a provider's priority",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "Provider id (see 'sophon models list')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "PRIORITY",
+              "description": "1 or more; after the default provider, 1 answers first",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "enable",
+          "description": "Turn a provider on",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "Provider id (see 'sophon models list')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "disable",
+          "description": "Turn a provider off",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "Provider id (see 'sophon models list')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "add-model",
+          "description": "List a model on a provider, with its context, tier and roles",
+          "options": [
+            {
+              "name": "--context",
+              "recursive": false,
+              "hidden": false,
+              "description": "The context window the server serves, in tokens (0 clears; 256 to 10,000,000)",
+              "arguments": [
+                {
+                  "name": "CONTEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--tier",
+              "recursive": false,
+              "hidden": false,
+              "description": "fast, balanced or powerful",
+              "arguments": [
+                {
+                  "name": "TIER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--roles",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated roles the model suits: orchestrator, executor, researcher, utility, vision",
+              "arguments": [
+                {
+                  "name": "ROLES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PROVIDERID",
+              "description": "Provider id (see 'sophon models list')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "MODELID",
+              "description": "The model id as the provider serves it",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "context",
+          "description": "Declare a model's served context window",
+          "arguments": [
+            {
+              "name": "PROVIDERID",
+              "description": "Provider id (see 'sophon models list')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "MODELID",
+              "description": "A model the provider lists (see 'sophon models list --details')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "TOKENS",
+              "description": "The context window the server serves (0 clears; 256 to 10,000,000)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "discover",
+          "description": "List the models a local server has installed and add them",
+          "options": [
+            {
+              "name": "--add",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated installed model ids to list on the provider",
+              "arguments": [
+                {
+                  "name": "ADD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--add-all",
+              "recursive": false,
+              "hidden": false,
+              "description": "List every installed model that is not listed yet (embedding models skipped) [default: False]",
+              "arguments": [
+                {
+                  "name": "ADD_ALL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--refresh",
+              "recursive": false,
+              "hidden": false,
+              "description": "Ask the server again instead of the listing cached for 60 seconds [default: False]",
+              "arguments": [
+                {
+                  "name": "REFRESH",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PROVIDERID",
+              "description": "Provider id (see 'sophon models list')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "roles",
+          "description": "Show or set the host's model routing defaults",
+          "options": [
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Auto for new chats: quality, balanced, economy, local-first, local-only; inherit turns host Auto off",
+              "arguments": [
+                {
+                  "name": "PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--local-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "on or off: nothing is sent to a cloud provider",
+              "arguments": [
+                {
+                  "name": "LOCAL_ONLY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--allow-fallback",
+              "recursive": false,
+              "hidden": false,
+              "description": "on, off or inherit",
+              "arguments": [
+                {
+                  "name": "ALLOW_FALLBACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--reset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Clear the roles, the profile and Allow fallback (Local only is kept) [default: False]",
+              "arguments": [
+                {
+                  "name": "RESET",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ASSIGNMENTS",
+              "description": "role=<id>[:<model>] or role=inherit (roles: orchestrator, executor, researcher, utility, vision)",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "resolve",
+          "description": "Explain which model each role uses and why",
+          "options": [
+            {
+              "name": "--session",
+              "recursive": false,
+              "hidden": false,
+              "description": "A conversation id: explain its routing",
+              "arguments": [
+                {
+                  "name": "SESSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--agent",
+              "recursive": false,
+              "hidden": false,
+              "description": "An agent id: preview a new chat of that agent",
+              "arguments": [
+                {
+                  "name": "AGENT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--role",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only this role: orchestrator, executor, researcher, utility or vision",
+              "arguments": [
+                {
+                  "name": "ROLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "embeddings",
+          "description": "Show, choose, test or reindex the host embedder",
+          "commands": [
+            {
+              "name": "status",
+              "description": "Show the embedder, the vector store and whether semantic search runs"
+            },
+            {
+              "name": "rebuild",
+              "description": "Recreate the vector collections at the current embedder's dimension and re-embed every user (Admin)",
+              "options": [
+                {
+                  "name": "--yes",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Rebuild without asking [default: False]",
+                  "aliases": [
+                    "-y"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "YES",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--log-days",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Days of daily logs to re-embed (1-365; the Gateway's default is 30)",
+                  "arguments": [
+                    {
+                      "name": "LOG_DAYS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "use",
+              "description": "Choose the host embedder: a provider, tested before it is saved (Admin)",
+              "options": [
+                {
+                  "name": "--model",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The embedding model (default: the provider's)",
+                  "arguments": [
+                    {
+                      "name": "MODEL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--dimensions",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Vector size, when the model supports it (1-8192)",
+                  "arguments": [
+                    {
+                      "name": "DIMENSIONS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--no-test",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Save without embedding a test text first [default: False]",
+                  "arguments": [
+                    {
+                      "name": "NO_TEST",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--reindex",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Start the reindex the new embedder needs [default: False]",
+                  "arguments": [
+                    {
+                      "name": "REINDEX",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--yes",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Send text to a cloud embedder, and build its index, without asking [default: False]",
+                  "aliases": [
+                    "-y"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "YES",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "PROVIDERID",
+                  "description": "The model provider to embed with",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "auto",
+              "description": "Let the Gateway choose the embedder, a local one first (Admin)",
+              "options": [
+                {
+                  "name": "--prefer-local",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Prefer a local embedder over a cloud one [default: False]",
+                  "arguments": [
+                    {
+                      "name": "PREFER_LOCAL",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--no-prefer-local",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Do not prefer a local embedder [default: False]",
+                  "arguments": [
+                    {
+                      "name": "NO_PREFER_LOCAL",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "local",
+              "description": "Embed only with a local server such as Ollama (Admin)"
+            },
+            {
+              "name": "off",
+              "description": "Turn embeddings off: memory and document search become keyword-only (Admin)"
+            },
+            {
+              "name": "consent",
+              "description": "Show what the waiting cloud embedder would receive, and consent to it (Admin)",
+              "options": [
+                {
+                  "name": "--reindex",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Also start the reindex it needs [default: False]",
+                  "arguments": [
+                    {
+                      "name": "REINDEX",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--log-days",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Days of daily logs to re-embed (1-365; the Gateway's default is 30)",
+                  "arguments": [
+                    {
+                      "name": "LOG_DAYS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--yes",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Consent without asking [default: False]",
+                  "aliases": [
+                    "-y"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "YES",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "install-local",
+              "description": "Ask the configured Ollama to pull the local embedding model (Admin)",
+              "options": [
+                {
+                  "name": "--provider",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The Ollama provider id (default: the one the status names)",
+                  "arguments": [
+                    {
+                      "name": "PROVIDER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--wait",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Follow the install until it ends [default: False]",
+                  "arguments": [
+                    {
+                      "name": "WAIT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "description": "The model to pull (default: nomic-embed-text)",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "test",
+              "description": "Embed one fixed text with the selected (or a named) embedder and probe the vector store",
+              "options": [
+                {
+                  "name": "--model",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The embedding model to test",
+                  "arguments": [
+                    {
+                      "name": "MODEL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--dimensions",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Vector size to request (1-8192)",
+                  "arguments": [
+                    {
+                      "name": "DIMENSIONS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "PROVIDERID",
+                  "description": "The provider to test (default: the selected, else the pending embedder)",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "reindex",
+              "description": "Start, follow or cancel the background vector reindex of every user's memories and documents (Admin)",
+              "options": [
+                {
+                  "name": "--wait",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Follow the reindex until it ends [default: False]",
+                  "arguments": [
+                    {
+                      "name": "WAIT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--yes",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Send text to a cloud embedder without asking [default: False]",
+                  "aliases": [
+                    "-y"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "YES",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--log-days",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Days of daily logs to re-embed (1-365; the Gateway's default is 30)",
+                  "arguments": [
+                    {
+                      "name": "LOG_DAYS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--cancel",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Cancel the running reindex [default: False]",
+                  "arguments": [
+                    {
+                      "name": "CANCEL",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -315,7 +1269,7 @@
           "name": "--non-interactive",
           "recursive": false,
           "hidden": false,
-          "description": "Run in non-interactive mode using environment variables (SOPHON_PROVIDER_TYPE, SOPHON_API_KEY, SOPHON_ENDPOINT) [default: False]",
+          "description": "Run in non-interactive mode using environment variables (SOPHON_PROVIDER_TYPE, SOPHON_API_KEY, SOPHON_ENDPOINT, SOPHON_MODEL) [default: False]",
           "arguments": [
             {
               "name": "NON_INTERACTIVE",
@@ -816,10 +1770,30 @@
               "name": "--system-prompt",
               "recursive": false,
               "hidden": false,
-              "description": "System prompt (SOUL.md content)",
+              "description": "The agent's SOUL.md (system prompt); empty keeps the default",
+              "aliases": [
+                "--personality"
+              ],
               "arguments": [
                 {
                   "name": "SYSTEM_PROMPT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Pin the agent to a model: <provider id>[:<model>]",
+              "arguments": [
+                {
+                  "name": "MODEL",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -877,6 +1851,102 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "models",
+          "description": "Show or set an agent's model routing",
+          "options": [
+            {
+              "name": "--auto",
+              "recursive": false,
+              "hidden": false,
+              "description": "Auto for the agent's chats, with an optional profile: quality, balanced, economy, local-first, local-only",
+              "arguments": [
+                {
+                  "name": "AUTO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--pin",
+              "recursive": false,
+              "hidden": false,
+              "description": "Pin the agent to a model: <provider id>[:<model>]",
+              "arguments": [
+                {
+                  "name": "PIN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--allow-fallback",
+              "recursive": false,
+              "hidden": false,
+              "description": "on, off or inherit",
+              "arguments": [
+                {
+                  "name": "ALLOW_FALLBACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--reset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Clear the agent's routing (its chats follow your and the host's defaults) [default: False]",
+              "arguments": [
+                {
+                  "name": "RESET",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "Agent id (see 'sophon agents list')",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "EDIT",
+              "description": "role <role> <id>[:<model>]|inherit",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
             }
           ]
         }
@@ -1032,7 +2102,7 @@
         },
         {
           "name": "reindex",
-          "description": "Rebuild the memory graph (entities + links) from existing memory entries",
+          "description": "Rebuild the memory graph (the default), or re-embed your memories and documents with --vectors",
           "options": [
             {
               "name": "--llm",
@@ -1048,6 +2118,40 @@
                     "maximum": 1
                   },
                   "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--vectors",
+              "recursive": false,
+              "hidden": false,
+              "description": "Re-embed your own memories, daily logs and documents into the vector index instead (the host-wide backlog is: sophon models embeddings reindex) [default: False]",
+              "arguments": [
+                {
+                  "name": "VECTORS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--log-days",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --vectors: days of daily logs to re-embed (1-365; the Gateway's default is 30)",
+              "arguments": [
+                {
+                  "name": "LOG_DAYS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
                 }
               ]
             }
@@ -2969,14 +4073,120 @@
     },
     {
       "name": "plans",
-      "description": "Cancel active plans via the chat hub",
+      "description": "List, inspect, resume, retry and cancel chat plans",
       "commands": [
         {
+          "name": "list",
+          "description": "List chat plans (graph runs), newest first",
+          "options": [
+            {
+              "name": "--session",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only this chat session's plans",
+              "arguments": [
+                {
+                  "name": "SESSION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--status",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only plans in this state (Pending, Running, WaitingApproval, Interrupted, Completed, Failed, Cancelled)",
+              "arguments": [
+                {
+                  "name": "STATUS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Most plans to show (default 20, at most 200) [default: 20]",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Show a plan's run and each step's latest state",
+          "arguments": [
+            {
+              "name": "RUNID",
+              "description": "A graph run id, a unique prefix of one, or its plan id",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "resume",
+          "description": "Resume a paused plan",
+          "arguments": [
+            {
+              "name": "RUNID",
+              "description": "A graph run id, a unique prefix of one, or its plan id",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "retry",
+          "description": "Retry a stopped plan's failed steps, or continue it after a budget stop",
+          "arguments": [
+            {
+              "name": "RUNID",
+              "description": "A graph run id, a unique prefix of one, or its plan id",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "cancel",
-          "description": "Cancel a plan by id",
+          "description": "Cancel a plan (running or paused) by run id, or a legacy plan by plan id",
           "arguments": [
             {
               "name": "ID",
+              "description": "A graph run id, a unique prefix of one, or a plan id",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -4810,7 +6020,7 @@
     },
     {
       "name": "claude-code",
-      "description": "Manage ClaudeCode IDE sessions (sandboxed)",
+      "description": "Manage ClaudeCode IDE sessions run by the Gateway",
       "commands": [
         {
           "name": "sessions",
@@ -4818,7 +6028,43 @@
         },
         {
           "name": "send",
-          "description": "Send a message to a ClaudeCode session",
+          "description": "Send a message to a ClaudeCode session. The Gateway runs Claude Code with bypassPermissions directly on the Gateway host unless Sophon:CodingAgents:Mode is Container",
+          "options": [
+            {
+              "name": "--working-directory",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory the agent runs in: a path on the Gateway host, sent verbatim and not confined by the Gateway (no WorkspaceRoot check) (default: Sophon:ClaudeCode:CodingAgent:WorkspaceRoot, else the Gateway's current directory)",
+              "arguments": [
+                {
+                  "name": "WORKING_DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Model for this run (default: Sophon:ClaudeCode:DefaultModel)",
+              "arguments": [
+                {
+                  "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
           "arguments": [
             {
               "name": "SESSIONID",
@@ -5596,6 +6842,348 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "The conversation's model: <id>[:<model>], auto[:<profile>] or inherit",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "exec",
+      "description": "Run one prompt without a person (headless)",
+      "options": [
+        {
+          "name": "--prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "The prompt, as a flag (instead of the argument)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROMPT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output-format",
+          "recursive": false,
+          "hidden": false,
+          "description": "text (default), json or stream-json",
+          "arguments": [
+            {
+              "name": "OUTPUT_FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--permission-mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "default (default), acceptEdits or plan",
+          "arguments": [
+            {
+              "name": "PERMISSION_MODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--include-agents",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also stream child agents' activity and tool calls [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_AGENTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--include-diffs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep each file's unified diff in tool lines [default: False]",
+          "arguments": [
+            {
+              "name": "INCLUDE_DIFFS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--workspace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Bind this folder, as given",
+          "arguments": [
+            {
+              "name": "WORKSPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-workspace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Bind no workspace [default: False]",
+          "arguments": [
+            {
+              "name": "NO_WORKSPACE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--trust-workspace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Trust the bound workspace for this run [default: False]",
+          "arguments": [
+            {
+              "name": "TRUST_WORKSPACE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--allow",
+          "recursive": false,
+          "hidden": false,
+          "description": "Let the run use this tool, or os.execute:<command prefix>, without a card (needs --trust-workspace; repeatable)",
+          "arguments": [
+            {
+              "name": "ALLOW",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--session",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run in this existing session",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SESSION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "Agent to run (default: from config)",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--thinking",
+          "recursive": false,
+          "hidden": false,
+          "description": "auto, off, fast or full (default: from config)",
+          "arguments": [
+            {
+              "name": "THINKING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds before the run is cancelled (default: 1800)",
+          "arguments": [
+            {
+              "name": "TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--continue",
+          "recursive": false,
+          "hidden": false,
+          "description": "Continue the last session for this repository [default: False]",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONTINUE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "The conversation's model: <id>[:<model>], auto[:<profile>] or inherit",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--model-role",
+          "recursive": false,
+          "hidden": false,
+          "description": "One role's model: <role>=<id>[:<model>] or <role>=inherit (repeatable)",
+          "arguments": [
+            {
+              "name": "MODEL_ROLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--allow-fallback",
+          "recursive": false,
+          "hidden": false,
+          "description": "Let another model answer when the chosen one cannot [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_FALLBACK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PROMPT",
+          "description": "The prompt; \"-\" (or a piped stdin) reads it from stdin",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
         }
       ]
     },
@@ -6029,7 +7617,7 @@
           "arguments": [
             {
               "name": "KEY",
-              "description": "Config key (gatewayUrl, authToken, defaultAgent, defaultFormat, theme)",
+              "description": "Config key (gatewayUrl, authToken, defaultAgent, defaultFormat, theme, defaultModel, allowModelFallback, modelRoles.<role>)",
               "required": true,
               "arity": {
                 "minimum": 1,

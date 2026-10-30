@@ -1,0 +1,515 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "database-converter - converts a Pleasanter database between SQL Server, PostgreSQL and MySQL.",
+    "version": "0.2.0",
+    "description": "Pleasanter の DB を、SQL Server・PostgreSQL・MySQL の間で相互に変換するコマンドラインツール。"
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 2
+  },
+  "commands": [
+    {
+      "name": "convert",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "show what would be copied; write nothing"
+        },
+        {
+          "name": "--resume",
+          "recursive": false,
+          "hidden": false,
+          "description": "skip tables recorded as completed; reload unfinished tables from the start"
+        },
+        {
+          "name": "--tables",
+          "recursive": false,
+          "hidden": false,
+          "description": "copy only these tables",
+          "arguments": [
+            {
+              "name": "AB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--exclude-tables",
+          "recursive": false,
+          "hidden": false,
+          "description": "do not copy these tables",
+          "arguments": [
+            {
+              "name": "AB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--batch-size",
+          "recursive": false,
+          "hidden": false,
+          "description": "rows per batch (default 1000, 1-100000)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max-batch-bytes",
+          "recursive": false,
+          "hidden": false,
+          "description": "also flush a batch at about N bytes (default 4194304)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--command-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "per-command timeout (default 600; 0 = no limit)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--disable-constraints",
+          "recursive": false,
+          "hidden": false,
+          "description": "disable foreign keys on the target while copying"
+        },
+        {
+          "name": "--cleanup-progress",
+          "recursive": false,
+          "hidden": false,
+          "description": "drop the progress table (__DatabaseConverterProgress) after a fully successful run"
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "show this help",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "show the version\nExit codes: 0 = everything succeeded, 1 = failures occurred, 2 = invalid arguments."
+        },
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "source DBMS: sqlserver | postgresql | mysql",
+          "arguments": [
+            {
+              "name": "DBMS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "target DBMS (must differ from --from)",
+          "arguments": [
+            {
+              "name": "DBMS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--source-connection-env",
+          "recursive": false,
+          "hidden": false,
+          "description": "environment variable holding the source connection string",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--source-connection-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "file whose first non-empty line is the source connection string",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--source-connection-stdin",
+          "recursive": false,
+          "hidden": false,
+          "description": "read the source connection string from standard input",
+          "arguments": [
+            {
+              "name": "SOURCE_CONNECTION_STDIN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--target-connection-env",
+          "recursive": false,
+          "hidden": false,
+          "description": "(default: DBCONV_TARGET_CONNECTION)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--target-connection-file",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--target-connection-stdin",
+          "recursive": false,
+          "hidden": false,
+          "description": "(only one side can use standard input)",
+          "arguments": [
+            {
+              "name": "TARGET_CONNECTION_STDIN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--dry-run",
+      "recursive": false,
+      "hidden": false,
+      "description": "show what would be copied; write nothing"
+    },
+    {
+      "name": "--resume",
+      "recursive": false,
+      "hidden": false,
+      "description": "skip tables recorded as completed; reload unfinished tables from the start"
+    },
+    {
+      "name": "--tables",
+      "recursive": false,
+      "hidden": false,
+      "description": "copy only these tables",
+      "arguments": [
+        {
+          "name": "AB",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--exclude-tables",
+      "recursive": false,
+      "hidden": false,
+      "description": "do not copy these tables",
+      "arguments": [
+        {
+          "name": "AB",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--batch-size",
+      "recursive": false,
+      "hidden": false,
+      "description": "rows per batch (default 1000, 1-100000)",
+      "arguments": [
+        {
+          "name": "N",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--max-batch-bytes",
+      "recursive": false,
+      "hidden": false,
+      "description": "also flush a batch at about N bytes (default 4194304)",
+      "arguments": [
+        {
+          "name": "N",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--command-timeout",
+      "recursive": false,
+      "hidden": false,
+      "description": "per-command timeout (default 600; 0 = no limit)",
+      "arguments": [
+        {
+          "name": "SECONDS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--disable-constraints",
+      "recursive": false,
+      "hidden": false,
+      "description": "disable foreign keys on the target while copying"
+    },
+    {
+      "name": "--cleanup-progress",
+      "recursive": false,
+      "hidden": false,
+      "description": "drop the progress table (__DatabaseConverterProgress) after a fully successful run"
+    },
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false,
+      "description": "show this help",
+      "aliases": [
+        "-h"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "show the version\nExit codes: 0 = everything succeeded, 1 = failures occurred, 2 = invalid arguments."
+    },
+    {
+      "name": "--from",
+      "recursive": false,
+      "hidden": false,
+      "description": "source DBMS: sqlserver | postgresql | mysql",
+      "arguments": [
+        {
+          "name": "DBMS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--to",
+      "recursive": false,
+      "hidden": false,
+      "description": "target DBMS (must differ from --from)",
+      "arguments": [
+        {
+          "name": "DBMS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--source-connection-env",
+      "recursive": false,
+      "hidden": false,
+      "description": "environment variable holding the source connection string",
+      "arguments": [
+        {
+          "name": "NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--source-connection-file",
+      "recursive": false,
+      "hidden": false,
+      "description": "file whose first non-empty line is the source connection string",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--source-connection-stdin",
+      "recursive": false,
+      "hidden": false,
+      "description": "read the source connection string from standard input",
+      "arguments": [
+        {
+          "name": "SOURCE_CONNECTION_STDIN",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--target-connection-env",
+      "recursive": false,
+      "hidden": false,
+      "description": "(default: DBCONV_TARGET_CONNECTION)",
+      "arguments": [
+        {
+          "name": "NAME",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--target-connection-file",
+      "recursive": false,
+      "hidden": false,
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--target-connection-stdin",
+      "recursive": false,
+      "hidden": false,
+      "description": "(only one side can use standard input)",
+      "arguments": [
+        {
+          "name": "TARGET_CONNECTION_STDIN",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}
