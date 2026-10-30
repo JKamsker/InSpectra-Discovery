@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "mloop",
-    "version": "0.47.0",
+    "version": "0.48.0",
     "description": "MLoop - A modern CLI tool for ML.NET with filesystem-based MLOps"
   },
   "x-inspectra": {
@@ -10,8 +10,8 @@
     "generator": "InSpectra.Gen",
     "hookCapture": {
       "cliFramework": "System.CommandLine",
-      "frameworkVersion": "2.0.13.0",
-      "systemCommandLineVersion": "2.0.13.0",
+      "frameworkVersion": "2.0.14.0",
+      "systemCommandLineVersion": "2.0.14.0",
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine"
@@ -224,6 +224,23 @@
           "arguments": [
             {
               "name": "TIME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--max-trials",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stop the trainer search after this many trials (within --time) — the same search on a fast machine and a slow one",
+          "arguments": [
+            {
+              "name": "MAX_TRIALS",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -478,7 +495,7 @@
           "name": "--bank-size",
           "recursive": false,
           "hidden": false,
-          "description": "The most patches an image-anomaly model's bank holds (default: every patch of the images; more are subsampled with a fixed seed)",
+          "description": "The most patches an image-anomaly model's bank holds (default: every patch of the images; with a limit, a greedy k-center coreset keeps the patches that cover what the images showed, chosen with a fixed seed)",
           "arguments": [
             {
               "name": "BANK_SIZE",
@@ -1680,7 +1697,7 @@
           "name": "--slice-by",
           "recursive": false,
           "hidden": false,
-          "description": "Also report drift per value of this input column (values with at least 100 rows)",
+          "description": "Also report drift per value of this input column (values with at least 300 rows)",
           "arguments": [
             {
               "name": "SLICE_BY",
@@ -1720,7 +1737,7 @@
           "name": "--name",
           "recursive": false,
           "hidden": false,
-          "description": "Model name (required when comparing all experiments)",
+          "description": "Model name (defaults to 'default'; used when comparing all experiments)",
           "aliases": [
             "-n"
           ],
@@ -2093,6 +2110,23 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--guarantee",
+          "recursive": false,
+          "hidden": false,
+          "description": "Risk δ, above 0 and below 1 (e.g. 0.05): choose the lowest threshold whose precision is certified to reach --precision, wrong in at most δ of the files it could be run on — or refuse when no threshold on --data can be certified",
+          "arguments": [
+            {
+              "name": "GUARANTEE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
             }
           ]
         },
@@ -2578,7 +2612,7 @@
     },
     {
       "name": "analyze",
-      "description": "Granular, read-only EDA aspects (profile, correlation, importance, outliers, distribution)",
+      "description": "Granular, read-only EDA aspects (profile, correlation, importance, outliers, distribution, series)",
       "commands": [
         {
           "name": "profile",
@@ -2989,6 +3023,112 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output structured JSON instead of a console table [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--records",
+              "recursive": false,
+              "hidden": false,
+              "description": "For a JSON data file: the dotted path to the array whose items are the rows, e.g. data.paragraphs.qas.answers. Each row also carries the fields of the items it sits in, named by their array (paragraphs.context).",
+              "arguments": [
+                {
+                  "name": "RECORDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DATA_FILE",
+              "description": "Path to the CSV dataset to analyze (defaults to the project's data.train if omitted)",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "series",
+          "description": "Time-series structure: ACF/PACF with bands, ADF and KPSS stationarity tests, dominant period",
+          "options": [
+            {
+              "name": "--column",
+              "recursive": false,
+              "hidden": false,
+              "description": "Series column to analyze (auto-selected when the CSV has a single column)",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "COLUMN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--max-lag",
+              "recursive": false,
+              "hidden": false,
+              "description": "Largest lag of the autocorrelation functions (default: min(10*log10 n, n - 1))",
+              "arguments": [
+                {
+                  "name": "MAX_LAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--around-trend",
+              "recursive": false,
+              "hidden": false,
+              "description": "Test stationarity around a linear trend instead of a constant level [default: False]",
+              "arguments": [
+                {
+                  "name": "AROUND_TREND",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             },

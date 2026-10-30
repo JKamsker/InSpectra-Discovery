@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "sharpyc",
-    "version": "0.22.1",
+    "version": "0.23.0",
     "description": "Sharpy compiler — a statically-typed Pythonic language for .NET. Compile .spy files to C# and run them on the CLR."
   },
   "x-inspectra": {
@@ -10,8 +10,8 @@
     "generator": "InSpectra.Gen",
     "hookCapture": {
       "cliFramework": "System.CommandLine",
-      "frameworkVersion": "2.0.12.0",
-      "systemCommandLineVersion": "2.0.12.0",
+      "frameworkVersion": "2.0.14.0",
+      "systemCommandLineVersion": "2.0.14.0",
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
@@ -204,7 +204,7 @@
   "commands": [
     {
       "name": "build",
-      "description": "Compile a Sharpy source file to a binary or library",
+      "description": "Compile a Sharpy source file to a binary or library. Copies its runtime dependencies and references beside the output, so it runs from there (--no-deps writes the assembly only)",
       "options": [
         {
           "name": "--type",
@@ -270,7 +270,7 @@
           "name": "--project-reference",
           "recursive": false,
           "hidden": false,
-          "description": "Add a .NET project reference (repeatable; refused: sharpyc does not build .NET projects; build it with `dotnet build` and pass the assembly with --reference)",
+          "description": "Add a .NET project reference (repeatable) (refused: sharpyc does not build .NET projects; build it with `dotnet build` and pass the assembly with --reference)",
           "aliases": [
             "-p"
           ],
@@ -303,6 +303,23 @@
                 "maximum": 100000
               },
               "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--no-deps",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip copying runtime dependencies alongside the output [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEPS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -608,7 +625,7 @@
           "name": "--project-reference",
           "recursive": false,
           "hidden": false,
-          "description": "Add a .NET project reference (repeatable; refused: sharpyc does not build .NET projects; build it with `dotnet build` and pass the assembly with --reference)",
+          "description": "Add a .NET project reference (repeatable) (refused: sharpyc does not build .NET projects; build it with `dotnet build` and pass the assembly with --reference)",
           "aliases": [
             "-p"
           ],
@@ -731,7 +748,7 @@
     },
     {
       "name": "project",
-      "description": "Build a Sharpy project from a .spyproj file",
+      "description": "Build a Sharpy project from a .spyproj file. Copies its runtime dependencies and references beside the output, so it runs from there (--no-deps writes the assembly only)",
       "options": [
         {
           "name": "--configuration",
@@ -803,6 +820,63 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--reference",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add a .NET assembly reference (repeatable)",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "REFERENCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--module-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additional path to search for modules (repeatable)",
+          "aliases": [
+            "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MODULE_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--no-deps",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip copying runtime dependencies alongside the output [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEPS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -824,7 +898,7 @@
       "commands": [
         {
           "name": "tokens",
-          "description": "Emit tokenized output",
+          "description": "Emit tokenized output. Global options without effect here: --metrics-format, --metrics-output, --warn-as-error, --nowarn, --enable-feature.",
           "arguments": [
             {
               "name": "INPUT",
@@ -840,7 +914,7 @@
         },
         {
           "name": "ast",
-          "description": "Emit abstract syntax tree",
+          "description": "Emit abstract syntax tree. Global options without effect here: --metrics-format, --metrics-output, --warn-as-error, --nowarn, --enable-feature.",
           "arguments": [
             {
               "name": "INPUT",
@@ -991,7 +1065,7 @@
         },
         {
           "name": "parse",
-          "description": "Validate lexing and parsing only",
+          "description": "Validate lexing and parsing only. Global options without effect here: --metrics-format, --metrics-output, --warn-as-error, --nowarn, --enable-feature.",
           "arguments": [
             {
               "name": "INPUT",
@@ -1007,7 +1081,7 @@
         },
         {
           "name": "diagnostics",
-          "description": "Emit compiler diagnostics",
+          "description": "Emit compiler diagnostics. Global options without effect here: --metrics-format, --metrics-output.",
           "options": [
             {
               "name": "--format",
@@ -1045,6 +1119,46 @@
                   "type": "Boolean"
                 }
               ]
+            },
+            {
+              "name": "--reference",
+              "recursive": false,
+              "hidden": false,
+              "description": "Add a .NET assembly reference (repeatable)",
+              "aliases": [
+                "-r"
+              ],
+              "arguments": [
+                {
+                  "name": "REFERENCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--module-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Additional path to search for modules (repeatable)",
+              "aliases": [
+                "-m"
+              ],
+              "arguments": [
+                {
+                  "name": "MODULE_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
             }
           ],
           "arguments": [
@@ -1062,7 +1176,7 @@
         },
         {
           "name": "hover",
-          "description": "Emit LSP hover information at a position",
+          "description": "Emit LSP hover information at a position. Global options without effect here: --metrics-format, --metrics-output.",
           "options": [
             {
               "name": "--line",
@@ -1097,6 +1211,46 @@
                   "type": "Int32"
                 }
               ]
+            },
+            {
+              "name": "--reference",
+              "recursive": false,
+              "hidden": false,
+              "description": "Add a .NET assembly reference (repeatable)",
+              "aliases": [
+                "-r"
+              ],
+              "arguments": [
+                {
+                  "name": "REFERENCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--module-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Additional path to search for modules (repeatable)",
+              "aliases": [
+                "-m"
+              ],
+              "arguments": [
+                {
+                  "name": "MODULE_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
             }
           ],
           "arguments": [
@@ -1120,7 +1274,7 @@
       "commands": [
         {
           "name": "clear",
-          "description": "Clear the cache",
+          "description": "Clear the cache. Global options without effect here: --log-level, --log-file, --metrics-format, --metrics-output, --warn-as-error, --nowarn, --max-errors, --verbose, --enable-feature.",
           "options": [
             {
               "name": "--cache-dir",
@@ -1143,7 +1297,7 @@
         },
         {
           "name": "info",
-          "description": "Display cache information",
+          "description": "Display cache information. Global options without effect here: --log-level, --log-file, --metrics-format, --metrics-output, --warn-as-error, --nowarn, --max-errors, --verbose, --enable-feature.",
           "options": [
             {
               "name": "--cache-dir",
@@ -1168,7 +1322,7 @@
     },
     {
       "name": "explain",
-      "description": "Show detailed explanation for a diagnostic code",
+      "description": "Show detailed explanation for a diagnostic code. Global options without effect here: --log-level, --log-file, --metrics-format, --metrics-output, --warn-as-error, --nowarn, --max-errors, --verbose, --enable-feature.",
       "options": [
         {
           "name": "--list",
@@ -1203,13 +1357,13 @@
     },
     {
       "name": "lsp",
-      "description": "Start the Sharpy Language Server (stdio transport)",
+      "description": "Start the Sharpy Language Server (stdio transport). Global options without effect here: --log-file, --metrics-format, --metrics-output, --warn-as-error, --nowarn, --max-errors, --verbose, --enable-feature.",
       "options": [
         {
           "name": "--stdio",
           "recursive": false,
           "hidden": false,
-          "description": "Use stdio transport (default, accepted for compatibility) [default: False]",
+          "description": "Use stdio transport (default, accepted for compatibility) (ignored: stdio is the only transport; the flag is accepted for editor compatibility) [default: False]",
           "arguments": [
             {
               "name": "STDIO",
@@ -1226,11 +1380,11 @@
     },
     {
       "name": "repl",
-      "description": "Start an interactive Sharpy REPL"
+      "description": "Start an interactive Sharpy REPL. Global options without effect here: --metrics-format, --metrics-output, --warn-as-error, --nowarn, --max-errors."
     },
     {
       "name": "format",
-      "description": "Format Sharpy source files",
+      "description": "Format Sharpy source files. Global options without effect here: --log-level, --log-file, --metrics-format, --metrics-output, --warn-as-error, --nowarn, --max-errors, --verbose, --enable-feature.",
       "options": [
         {
           "name": "--check",
@@ -1313,7 +1467,7 @@
           "name": "--tabs",
           "recursive": false,
           "hidden": false,
-          "description": "Not supported: Sharpy does not allow tabs for indentation (usage error) [default: False]",
+          "description": "Indent with tabs (refused: Sharpy does not allow tabs for indentation; it is exactly 4 spaces per level (docs/language_specification/indentation.md)) [default: False]",
           "arguments": [
             {
               "name": "TABS",
@@ -1342,7 +1496,7 @@
     },
     {
       "name": "server",
-      "description": "Start a keep-alive compile server on a named pipe (warm subsequent compiles)",
+      "description": "Start a keep-alive compile server on a named pipe (warm subsequent compiles). Global options without effect here: --metrics-format, --metrics-output, --warn-as-error, --nowarn, --max-errors, --enable-feature.",
       "options": [
         {
           "name": "--pipe",
