@@ -1,0 +1,980 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "oneocr - read text from images, and fine-tune the OneOcr line recognizer on your own documents",
+    "version": "1.0.0",
+    "description": "The oneocr command-line tool: fine-tune a recognition model from your own documents (train), measure it (eval) and work through the lines that need a human look (review)."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 6
+  },
+  "commands": [
+    {
+      "name": "eval",
+      "hidden": false,
+      "description": "--model <file> --work <dir> [--seed N] [--held-out F]",
+      "options": [
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "tuned model (default <work>/model.onm)    --steps N (200)       --batch N (16)\n--lr X (1e-4)       --seed N (1)       --held-out F (0.2)     --max-cer F (0: lines must read the same)\n--degree N (min(4, cores))             --stop-after N",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--restart",
+          "recursive": false,
+          "hidden": false,
+          "description": "throw away the checkpoint and start over (needed after a review import or new labels)\ntrain --extract fine-tunes the document-extraction model for your own document type: --extract names a JSON Schema\nwhose top-level scalar properties are the fields; the labelling model reads each page for them, only values found\non the page become labels, and a new tag head (and, gently, the backbone) is trained on them. --model is a\ndocextract model file. The report gives per-field accuracy on held-out pages before and after, agreement with the\nlabelling model and a suggested LocalFirst threshold. Pages are read locally with the bundled models."
+        },
+        {
+          "name": "--steps",
+          "recursive": false,
+          "hidden": false,
+          "description": "(200)  --batch N (8)  --lr X (3e-3)  --seed N (1)  --held-out F (0.2)\n--backbone-scale X (0.05; 0 trains only the new head)  --field-weight X (3)  --max-words N (384)",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--instruction",
+          "recursive": false,
+          "hidden": false,
+          "description": "--stop-after N  --restart\nKeys given with --key are visible to other users of the machine in the process list; prefer --key-from-env.",
+          "aliases": [
+            "--degree"
+          ],
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--openai-compatible",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "--provider",
+            "--anthropic",
+            "--gemini",
+            "--azure-openai"
+          ]
+        },
+        {
+          "name": "--llm-model",
+          "recursive": false,
+          "hidden": false,
+          "description": "model name (the deployment name for azure-openai)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--base-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "for azure-openai (the endpoint) and openai-compatible",
+          "arguments": [
+            {
+              "name": "URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--key",
+          "recursive": false,
+          "hidden": false,
+          "description": "the API key; or --key-from-env <VAR> to read it from that environment variable\n(nothing is read from the environment unless you name the variable)",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--budget-usd",
+          "recursive": false,
+          "hidden": false,
+          "description": "spend cap for this run; required except for openai-compatible",
+          "arguments": [
+            {
+              "name": "AMOUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "ocr",
+          "hidden": false,
+          "description": "--in <image or folder> [--out <dir>] [--model <file> --detector <file> [--wordlm <file>] [--wordfreq <file>]] [--degree N] [--json] [--stats <file>]"
+        },
+        {
+          "name": "review",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "export",
+              "hidden": false
+            },
+            {
+              "name": "import",
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "train",
+          "hidden": false,
+          "description": "--extract <schema.json> --model <docextract file> --work <dir> [--docs <dir>] [labelling options] [extraction options]"
+        }
+      ]
+    },
+    {
+      "name": "ocr",
+      "hidden": false,
+      "description": "--in <image or folder> [--out <dir>] [--model <file> --detector <file> [--wordlm <file>] [--wordfreq <file>]] [--degree N] [--json] [--stats <file>]",
+      "options": [
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "tuned model (default <work>/model.onm)    --steps N (200)       --batch N (16)\n--lr X (1e-4)       --seed N (1)       --held-out F (0.2)     --max-cer F (0: lines must read the same)\n--degree N (min(4, cores))             --stop-after N",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--restart",
+          "recursive": false,
+          "hidden": false,
+          "description": "throw away the checkpoint and start over (needed after a review import or new labels)\ntrain --extract fine-tunes the document-extraction model for your own document type: --extract names a JSON Schema\nwhose top-level scalar properties are the fields; the labelling model reads each page for them, only values found\non the page become labels, and a new tag head (and, gently, the backbone) is trained on them. --model is a\ndocextract model file. The report gives per-field accuracy on held-out pages before and after, agreement with the\nlabelling model and a suggested LocalFirst threshold. Pages are read locally with the bundled models."
+        },
+        {
+          "name": "--steps",
+          "recursive": false,
+          "hidden": false,
+          "description": "(200)  --batch N (8)  --lr X (3e-3)  --seed N (1)  --held-out F (0.2)\n--backbone-scale X (0.05; 0 trains only the new head)  --field-weight X (3)  --max-words N (384)",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--instruction",
+          "recursive": false,
+          "hidden": false,
+          "description": "--stop-after N  --restart\nKeys given with --key are visible to other users of the machine in the process list; prefer --key-from-env.",
+          "aliases": [
+            "--degree"
+          ],
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--openai-compatible",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "--provider",
+            "--anthropic",
+            "--gemini",
+            "--azure-openai"
+          ]
+        },
+        {
+          "name": "--llm-model",
+          "recursive": false,
+          "hidden": false,
+          "description": "model name (the deployment name for azure-openai)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--base-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "for azure-openai (the endpoint) and openai-compatible",
+          "arguments": [
+            {
+              "name": "URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--key",
+          "recursive": false,
+          "hidden": false,
+          "description": "the API key; or --key-from-env <VAR> to read it from that environment variable\n(nothing is read from the environment unless you name the variable)",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--budget-usd",
+          "recursive": false,
+          "hidden": false,
+          "description": "spend cap for this run; required except for openai-compatible",
+          "arguments": [
+            {
+              "name": "AMOUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "eval",
+          "hidden": false,
+          "description": "--model <file> --work <dir> [--seed N] [--held-out F]"
+        },
+        {
+          "name": "review",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "export",
+              "hidden": false
+            },
+            {
+              "name": "import",
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "train",
+          "hidden": false,
+          "description": "--extract <schema.json> --model <docextract file> --work <dir> [--docs <dir>] [labelling options] [extraction options]"
+        }
+      ]
+    },
+    {
+      "name": "review",
+      "hidden": false,
+      "commands": [
+        {
+          "name": "export",
+          "hidden": false,
+          "options": [
+            {
+              "name": "--out",
+              "recursive": false,
+              "hidden": false,
+              "description": "tuned model (default <work>/model.onm)    --steps N (200)       --batch N (16)\n--lr X (1e-4)       --seed N (1)       --held-out F (0.2)     --max-cer F (0: lines must read the same)\n--degree N (min(4, cores))             --stop-after N",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--restart",
+              "recursive": false,
+              "hidden": false,
+              "description": "throw away the checkpoint and start over (needed after a review import or new labels)\ntrain --extract fine-tunes the document-extraction model for your own document type: --extract names a JSON Schema\nwhose top-level scalar properties are the fields; the labelling model reads each page for them, only values found\non the page become labels, and a new tag head (and, gently, the backbone) is trained on them. --model is a\ndocextract model file. The report gives per-field accuracy on held-out pages before and after, agreement with the\nlabelling model and a suggested LocalFirst threshold. Pages are read locally with the bundled models."
+            },
+            {
+              "name": "--steps",
+              "recursive": false,
+              "hidden": false,
+              "description": "(200)  --batch N (8)  --lr X (3e-3)  --seed N (1)  --held-out F (0.2)\n--backbone-scale X (0.05; 0 trains only the new head)  --field-weight X (3)  --max-words N (384)",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--instruction",
+              "recursive": false,
+              "hidden": false,
+              "description": "--stop-after N  --restart\nKeys given with --key are visible to other users of the machine in the process list; prefer --key-from-env.",
+              "aliases": [
+                "--degree"
+              ],
+              "arguments": [
+                {
+                  "name": "TEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--openai-compatible",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--provider",
+                "--anthropic",
+                "--gemini",
+                "--azure-openai"
+              ]
+            },
+            {
+              "name": "--llm-model",
+              "recursive": false,
+              "hidden": false,
+              "description": "model name (the deployment name for azure-openai)",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--base-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "for azure-openai (the endpoint) and openai-compatible",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--key",
+              "recursive": false,
+              "hidden": false,
+              "description": "the API key; or --key-from-env <VAR> to read it from that environment variable\n(nothing is read from the environment unless you name the variable)",
+              "arguments": [
+                {
+                  "name": "VALUE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--budget-usd",
+              "recursive": false,
+              "hidden": false,
+              "description": "spend cap for this run; required except for openai-compatible",
+              "arguments": [
+                {
+                  "name": "AMOUNT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "eval",
+              "hidden": false,
+              "description": "--model <file> --work <dir> [--seed N] [--held-out F]"
+            },
+            {
+              "name": "ocr",
+              "hidden": false,
+              "description": "--in <image or folder> [--out <dir>] [--model <file> --detector <file> [--wordlm <file>] [--wordfreq <file>]] [--degree N] [--json] [--stats <file>]"
+            },
+            {
+              "name": "review",
+              "hidden": false,
+              "commands": [
+                {
+                  "name": "import",
+                  "hidden": false
+                }
+              ]
+            },
+            {
+              "name": "train",
+              "hidden": false,
+              "description": "--extract <schema.json> --model <docextract file> --work <dir> [--docs <dir>] [labelling options] [extraction options]"
+            }
+          ]
+        },
+        {
+          "name": "import",
+          "hidden": false,
+          "options": [
+            {
+              "name": "--out",
+              "recursive": false,
+              "hidden": false,
+              "description": "tuned model (default <work>/model.onm)    --steps N (200)       --batch N (16)\n--lr X (1e-4)       --seed N (1)       --held-out F (0.2)     --max-cer F (0: lines must read the same)\n--degree N (min(4, cores))             --stop-after N",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--restart",
+              "recursive": false,
+              "hidden": false,
+              "description": "throw away the checkpoint and start over (needed after a review import or new labels)\ntrain --extract fine-tunes the document-extraction model for your own document type: --extract names a JSON Schema\nwhose top-level scalar properties are the fields; the labelling model reads each page for them, only values found\non the page become labels, and a new tag head (and, gently, the backbone) is trained on them. --model is a\ndocextract model file. The report gives per-field accuracy on held-out pages before and after, agreement with the\nlabelling model and a suggested LocalFirst threshold. Pages are read locally with the bundled models."
+            },
+            {
+              "name": "--steps",
+              "recursive": false,
+              "hidden": false,
+              "description": "(200)  --batch N (8)  --lr X (3e-3)  --seed N (1)  --held-out F (0.2)\n--backbone-scale X (0.05; 0 trains only the new head)  --field-weight X (3)  --max-words N (384)",
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--instruction",
+              "recursive": false,
+              "hidden": false,
+              "description": "--stop-after N  --restart\nKeys given with --key are visible to other users of the machine in the process list; prefer --key-from-env.",
+              "aliases": [
+                "--degree"
+              ],
+              "arguments": [
+                {
+                  "name": "TEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--openai-compatible",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--provider",
+                "--anthropic",
+                "--gemini",
+                "--azure-openai"
+              ]
+            },
+            {
+              "name": "--llm-model",
+              "recursive": false,
+              "hidden": false,
+              "description": "model name (the deployment name for azure-openai)",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--base-url",
+              "recursive": false,
+              "hidden": false,
+              "description": "for azure-openai (the endpoint) and openai-compatible",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--key",
+              "recursive": false,
+              "hidden": false,
+              "description": "the API key; or --key-from-env <VAR> to read it from that environment variable\n(nothing is read from the environment unless you name the variable)",
+              "arguments": [
+                {
+                  "name": "VALUE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--budget-usd",
+              "recursive": false,
+              "hidden": false,
+              "description": "spend cap for this run; required except for openai-compatible",
+              "arguments": [
+                {
+                  "name": "AMOUNT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "eval",
+              "hidden": false,
+              "description": "--model <file> --work <dir> [--seed N] [--held-out F]"
+            },
+            {
+              "name": "ocr",
+              "hidden": false,
+              "description": "--in <image or folder> [--out <dir>] [--model <file> --detector <file> [--wordlm <file>] [--wordfreq <file>]] [--degree N] [--json] [--stats <file>]"
+            },
+            {
+              "name": "review",
+              "hidden": false,
+              "commands": [
+                {
+                  "name": "export",
+                  "hidden": false
+                }
+              ]
+            },
+            {
+              "name": "train",
+              "hidden": false,
+              "description": "--extract <schema.json> --model <docextract file> --work <dir> [--docs <dir>] [labelling options] [extraction options]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "train",
+      "hidden": false,
+      "description": "--extract <schema.json> --model <docextract file> --work <dir> [--docs <dir>] [labelling options] [extraction options]",
+      "options": [
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "tuned model (default <work>/model.onm)    --steps N (200)       --batch N (16)\n--lr X (1e-4)       --seed N (1)       --held-out F (0.2)     --max-cer F (0: lines must read the same)\n--degree N (min(4, cores))             --stop-after N",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--restart",
+          "recursive": false,
+          "hidden": false,
+          "description": "throw away the checkpoint and start over (needed after a review import or new labels)\ntrain --extract fine-tunes the document-extraction model for your own document type: --extract names a JSON Schema\nwhose top-level scalar properties are the fields; the labelling model reads each page for them, only values found\non the page become labels, and a new tag head (and, gently, the backbone) is trained on them. --model is a\ndocextract model file. The report gives per-field accuracy on held-out pages before and after, agreement with the\nlabelling model and a suggested LocalFirst threshold. Pages are read locally with the bundled models."
+        },
+        {
+          "name": "--steps",
+          "recursive": false,
+          "hidden": false,
+          "description": "(200)  --batch N (8)  --lr X (3e-3)  --seed N (1)  --held-out F (0.2)\n--backbone-scale X (0.05; 0 trains only the new head)  --field-weight X (3)  --max-words N (384)",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--instruction",
+          "recursive": false,
+          "hidden": false,
+          "description": "--stop-after N  --restart\nKeys given with --key are visible to other users of the machine in the process list; prefer --key-from-env.",
+          "aliases": [
+            "--degree"
+          ],
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--openai-compatible",
+          "recursive": false,
+          "hidden": false,
+          "aliases": [
+            "--provider",
+            "--anthropic",
+            "--gemini",
+            "--azure-openai"
+          ]
+        },
+        {
+          "name": "--llm-model",
+          "recursive": false,
+          "hidden": false,
+          "description": "model name (the deployment name for azure-openai)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--base-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "for azure-openai (the endpoint) and openai-compatible",
+          "arguments": [
+            {
+              "name": "URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--key",
+          "recursive": false,
+          "hidden": false,
+          "description": "the API key; or --key-from-env <VAR> to read it from that environment variable\n(nothing is read from the environment unless you name the variable)",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--budget-usd",
+          "recursive": false,
+          "hidden": false,
+          "description": "spend cap for this run; required except for openai-compatible",
+          "arguments": [
+            {
+              "name": "AMOUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "eval",
+          "hidden": false,
+          "description": "--model <file> --work <dir> [--seed N] [--held-out F]"
+        },
+        {
+          "name": "ocr",
+          "hidden": false,
+          "description": "--in <image or folder> [--out <dir>] [--model <file> --detector <file> [--wordlm <file>] [--wordfreq <file>]] [--degree N] [--json] [--stats <file>]"
+        },
+        {
+          "name": "review",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "export",
+              "hidden": false
+            },
+            {
+              "name": "import",
+              "hidden": false
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--out",
+      "recursive": false,
+      "hidden": false,
+      "description": "tuned model (default <work>/model.onm)    --steps N (200)       --batch N (16)\n--lr X (1e-4)       --seed N (1)       --held-out F (0.2)     --max-cer F (0: lines must read the same)\n--degree N (min(4, cores))             --stop-after N",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--restart",
+      "recursive": false,
+      "hidden": false,
+      "description": "throw away the checkpoint and start over (needed after a review import or new labels)\ntrain --extract fine-tunes the document-extraction model for your own document type: --extract names a JSON Schema\nwhose top-level scalar properties are the fields; the labelling model reads each page for them, only values found\non the page become labels, and a new tag head (and, gently, the backbone) is trained on them. --model is a\ndocextract model file. The report gives per-field accuracy on held-out pages before and after, agreement with the\nlabelling model and a suggested LocalFirst threshold. Pages are read locally with the bundled models."
+    },
+    {
+      "name": "--steps",
+      "recursive": false,
+      "hidden": false,
+      "description": "(200)  --batch N (8)  --lr X (3e-3)  --seed N (1)  --held-out F (0.2)\n--backbone-scale X (0.05; 0 trains only the new head)  --field-weight X (3)  --max-words N (384)",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--instruction",
+      "recursive": false,
+      "hidden": false,
+      "description": "--stop-after N  --restart\nKeys given with --key are visible to other users of the machine in the process list; prefer --key-from-env.",
+      "aliases": [
+        "--degree"
+      ],
+      "arguments": [
+        {
+          "name": "TEXT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--openai-compatible",
+      "recursive": false,
+      "hidden": false,
+      "aliases": [
+        "--provider",
+        "--anthropic",
+        "--gemini",
+        "--azure-openai"
+      ]
+    },
+    {
+      "name": "--llm-model",
+      "recursive": false,
+      "hidden": false,
+      "description": "model name (the deployment name for azure-openai)",
+      "arguments": [
+        {
+          "name": "NAME",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--base-url",
+      "recursive": false,
+      "hidden": false,
+      "description": "for azure-openai (the endpoint) and openai-compatible",
+      "arguments": [
+        {
+          "name": "URL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--key",
+      "recursive": false,
+      "hidden": false,
+      "description": "the API key; or --key-from-env <VAR> to read it from that environment variable\n(nothing is read from the environment unless you name the variable)",
+      "arguments": [
+        {
+          "name": "VALUE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--budget-usd",
+      "recursive": false,
+      "hidden": false,
+      "description": "spend cap for this run; required except for openai-compatible",
+      "arguments": [
+        {
+          "name": "AMOUNT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}

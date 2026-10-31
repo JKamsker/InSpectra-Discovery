@@ -1,0 +1,997 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "KirillMaster.QualityGates.Cli",
+    "version": "0.5.2",
+    "description": "qg dotnet tool: PR and new-code gates, baseline ratchet, coverage, duplication, format, size, coupling, fan-out, architecture and complexity deltas, mutation budget and debt report for CI."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.13.0",
+      "systemCommandLineVersion": "2.0.13.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Quality gates for .NET repositories"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "pr",
+      "description": "Run the pull-request gates",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repo root",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target branch (origin/develop)",
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Source branch name",
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--coverage",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cobertura files (unit + integration globs)",
+          "arguments": [
+            {
+              "name": "COVERAGE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--sarif",
+          "recursive": false,
+          "hidden": false,
+          "description": "SARIF files glob",
+          "arguments": [
+            {
+              "name": "SARIF",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--integration-enabled",
+          "recursive": false,
+          "hidden": false,
+          "description": "Default from gates.json",
+          "arguments": [
+            {
+              "name": "INTEGRATION_ENABLED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output dir for quality-report.json + html",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--branch-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "Branch build: format findings are reported (warn) instead of blocking [default: False]",
+          "arguments": [
+            {
+              "name": "BRANCH_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--baseline-glob",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repo-relative globs of baseline files checked by BaselineGrowth (default: quality/baseline.json, quality/**/*baseline*.json, **/*architecture-baseline*.json, quality/grandfathered/*.GlobalSuppressions.cs)",
+          "arguments": [
+            {
+              "name": "BASELINE_GLOB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--growth-approved-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "GitHub login of an APPROVED review on the PR (passed by CI, not read from the PR); must be listed in CODEOWNERS on the target branch and differ from --pr-author",
+          "arguments": [
+            {
+              "name": "GROWTH_APPROVED_BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--pr-author",
+          "recursive": false,
+          "hidden": false,
+          "description": "GitHub login of the PR author; required for --growth-approved-by to count",
+          "arguments": [
+            {
+              "name": "PR_AUTHOR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--coupling-commits",
+          "recursive": false,
+          "hidden": false,
+          "description": "Commits of target history for ChangeCoupling [default: 500]",
+          "arguments": [
+            {
+              "name": "COUPLING_COMMITS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--coupling-confidence",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum co-change confidence for ChangeCoupling [default: 0.8]",
+          "arguments": [
+            {
+              "name": "COUPLING_CONFIDENCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--coupling-support",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum co-change commits for ChangeCoupling [default: 5]",
+          "arguments": [
+            {
+              "name": "COUPLING_SUPPORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--pr-max-lines",
+          "recursive": false,
+          "hidden": false,
+          "description": "PrSize warns above this many changed lines [default: 400]",
+          "arguments": [
+            {
+              "name": "PR_MAX_LINES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--pr-max-files",
+          "recursive": false,
+          "hidden": false,
+          "description": "PrSize warns above this many changed files [default: 20]",
+          "arguments": [
+            {
+              "name": "PR_MAX_FILES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--coupling-block",
+          "recursive": false,
+          "hidden": false,
+          "description": "ChangeCoupling fails (instead of warning) for a new coupling cluster the PR does not cover [default: False]",
+          "arguments": [
+            {
+              "name": "COUPLING_BLOCK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--change-kind",
+          "recursive": false,
+          "hidden": false,
+          "description": "behavioral (default), bugfix or structural: structural changes need no test diff and no diff coverage [default: behavioral]",
+          "arguments": [
+            {
+              "name": "CHANGE_KIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--feature-root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Globs of feature folders that need a README.md when added (default: **/Features/*)",
+          "arguments": [
+            {
+              "name": "FEATURE_ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--new-method-complexity",
+          "recursive": false,
+          "hidden": false,
+          "description": "CognitiveComplexityDelta: maximum cognitive complexity of a method added by the PR [default: 15]",
+          "arguments": [
+            {
+              "name": "NEW_METHOD_COMPLEXITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--fanout-limit",
+          "recursive": false,
+          "hidden": false,
+          "description": "TransitiveFanOut warns above this many transitive project references [default: 25]",
+          "arguments": [
+            {
+              "name": "FANOUT_LIMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--assemblies",
+          "recursive": false,
+          "hidden": false,
+          "description": "Built assemblies at HEAD (globs) for the compiled ArchDelta and the main-sequence report",
+          "arguments": [
+            {
+              "name": "ASSEMBLIES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--assemblies-base",
+          "recursive": false,
+          "hidden": false,
+          "description": "Assemblies built at the merge base (globs); enables the compiled edge delta",
+          "arguments": [
+            {
+              "name": "ASSEMBLIES_BASE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--base-coverage",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cobertura files of the target branch (globs); enables moved-line coverage for --change-kind structural",
+          "arguments": [
+            {
+              "name": "BASE_COVERAGE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--base-coverage-commit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Commit the --base-coverage files were built at; must be the merge base (git merge-base <target> HEAD)",
+          "arguments": [
+            {
+              "name": "BASE_COVERAGE_COMMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--base-coverage-root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Checkout root the --base-coverage files were built in (the base worktree); default: detected from the report paths",
+          "arguments": [
+            {
+              "name": "BASE_COVERAGE_ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--build-history",
+          "recursive": false,
+          "hidden": false,
+          "description": "CI build history JSON file (builds[number,result,duration]) for the build trend",
+          "arguments": [
+            {
+              "name": "BUILD_HISTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--max-branch-age",
+          "recursive": false,
+          "hidden": false,
+          "description": "BranchAge warns above this many days [default: 7]",
+          "arguments": [
+            {
+              "name": "MAX_BRANCH_AGE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--skip",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable gate groups: static, coverage, mutation, format, duplication, baselinegrowth, coupling, prsize, archdelta, complexity, toggles, deadpublic, fanout, reports, featurereadme, flows, testdiff, ilgraph, branchage, buildtrend, movedcoverage or all (comma separated)",
+          "arguments": [
+            {
+              "name": "SKIP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--bypass-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "User who bypassed the gates (implies --skip all)",
+          "arguments": [
+            {
+              "name": "BYPASS_BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mutation-diff",
+      "description": "Run mutation testing on the diff",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repo root",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target branch",
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "Source branch (branch matrix input)",
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output dir; writes mutation-verdict.json",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--skip",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable gate groups: static, coverage, mutation, format, duplication, baselinegrowth, coupling, prsize, archdelta, complexity, toggles, deadpublic, fanout, reports, featurereadme, flows, testdiff, ilgraph, branchage, buildtrend, movedcoverage or all (comma separated)",
+          "arguments": [
+            {
+              "name": "SKIP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--bypass-by",
+          "recursive": false,
+          "hidden": false,
+          "description": "User who bypassed the gates (implies --skip all)",
+          "arguments": [
+            {
+              "name": "BYPASS_BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "mutation-ratchet",
+      "description": "Report the mutation score against the committed baseline",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repo root",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--report",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stryker mutation-report.json",
+          "arguments": [
+            {
+              "name": "REPORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output dir for mutation-ratchet.json and the proposed mutation-baseline.json",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Committed baseline (default: <repo>/quality/mutation-baseline.json)",
+          "arguments": [
+            {
+              "name": "BASELINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "nightly",
+      "description": "Run the nightly ratchet on develop",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repo root on develop",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output dir",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--open-pr",
+          "recursive": false,
+          "hidden": false,
+          "description": "Open baseline PR when improved (default true)",
+          "arguments": [
+            {
+              "name": "OPEN_PR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "audit",
+      "description": "Produce the hotspot audit report",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repo root",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output dir: hotspots.json, hotspots.html",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--with-mutation",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run full mutation (slow) or reuse nightly results",
+          "arguments": [
+            {
+              "name": "WITH_MUTATION",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "grandfather",
+      "description": "Grandfather existing RS0030 call sites into quality/grandfathered (EC-7).",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repository root to scan for banned (RS0030) call sites.",
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--quality-root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory holding quality/ (the build's QualityGatesRoot, the folder of Directory.Build.props); defaults to --repo.",
+          "arguments": [
+            {
+              "name": "QUALITY_ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--sarif",
+          "recursive": false,
+          "hidden": false,
+          "description": "Use these SARIF files/directories instead of running a scan build.",
+          "arguments": [
+            {
+              "name": "SARIF",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "baseline",
+      "description": "Maintain quality/baseline.json",
+      "commands": [
+        {
+          "name": "merge-new",
+          "description": "Add counts for (project, rule) pairs absent from the baseline; existing values stay untouched",
+          "options": [
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repo root holding quality/baseline.json",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--sarif",
+              "recursive": false,
+              "hidden": false,
+              "description": "SARIF files glob",
+              "arguments": [
+                {
+                  "name": "SARIF",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "fan-out",
+          "description": "Record the transitive fan-out of projects over the limit in the baseline fanOut section; recorded values only shrink",
+          "options": [
+            {
+              "name": "--repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Repo root holding quality/baseline.json and the csproj files",
+              "arguments": [
+                {
+                  "name": "REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--fanout-limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Projects with more transitive project references than this are recorded [default: 25]",
+              "arguments": [
+                {
+                  "name": "FANOUT_LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
