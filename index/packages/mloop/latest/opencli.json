@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "mloop",
-    "version": "0.48.0",
+    "version": "0.49.0",
     "description": "MLoop - A modern CLI tool for ML.NET with filesystem-based MLOps"
   },
   "x-inspectra": {
@@ -241,6 +241,23 @@
           "arguments": [
             {
               "name": "MAX_TRIALS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--epochs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Epochs a deep-learning task trains for (default 10) — the time limit does not shorten such a fit; text, sentence-similarity, NER, question-answering and object-detection tasks",
+          "arguments": [
+            {
+              "name": "EPOCHS",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -709,7 +726,7 @@
           "name": "--output",
           "recursive": false,
           "hidden": false,
-          "description": "Output path for predictions (defaults to predictions/predictions.csv)",
+          "description": "Output path for predictions (defaults to a time-stamped CSV named for the model, in predictions/)",
           "aliases": [
             "-o"
           ],
@@ -790,6 +807,23 @@
                 "maximum": 1
               },
               "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--score-threshold",
+          "recursive": false,
+          "hidden": false,
+          "description": "Object detection: report only boxes with at least this confidence, 0 to 1 (default 0.5). A detector trained since 0.05 keeps every box down to 0.05, so a lower value shows boxes a not-yet-confident detector finds; a model trained before keeps only boxes of 0.5 and over",
+          "arguments": [
+            {
+              "name": "SCORE_THRESHOLD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
             }
           ]
         },
@@ -1415,10 +1449,27 @@
               "name": "--from",
               "recursive": false,
               "hidden": false,
-              "description": "CSV file to sample from (general-purpose mode)",
+              "description": "Data file to sample from (general-purpose mode): CSV, TSV, JSON, Excel or Parquet; the sample is written as CSV",
               "arguments": [
                 {
                   "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--records",
+              "recursive": false,
+              "hidden": false,
+              "description": "For a JSON data file: the dotted path to the array whose items are the rows, e.g. data.paragraphs.qas.answers. Each row also carries the fields of the items it sits in, named by their array (paragraphs.context).",
+              "arguments": [
+                {
+                  "name": "RECORDS",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -2360,6 +2411,166 @@
         {
           "name": "EXPERIMENT_ID",
           "description": "Experiment to calibrate (defaults to the production model)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "explain",
+      "description": "Show which input columns a trained model relies on (permutation importance on a labeled file)",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "Model name (default: 'default')",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "Labeled file the model is scored on, with the label column (default: datasets/test.csv)",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--weight",
+          "recursive": false,
+          "hidden": false,
+          "description": "Column that weights the rows (defaults as `mloop evaluate --weight` does)",
+          "arguments": [
+            {
+              "name": "WEIGHT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--repeats",
+          "recursive": false,
+          "hidden": false,
+          "description": "Shuffles per column; the importance is their mean [default: 3]",
+          "arguments": [
+            {
+              "name": "REPEATS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--rows",
+          "recursive": false,
+          "hidden": false,
+          "description": "Most rows scored; a larger file is sampled (every column costs --repeats scorings) [default: 2000]",
+          "arguments": [
+            {
+              "name": "ROWS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--seed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seed of the sample and the shuffles — the same seed gives the same numbers [default: 1]",
+          "arguments": [
+            {
+              "name": "SEED",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output the result as JSON [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--records",
+          "recursive": false,
+          "hidden": false,
+          "description": "For a JSON data file: the dotted path to the array whose items are the rows, e.g. data.paragraphs.qas.answers. Each row also carries the fields of the items it sits in, named by their array (paragraphs.context).",
+          "arguments": [
+            {
+              "name": "RECORDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "EXPERIMENT_ID",
+          "description": "Experiment to explain (defaults to the production model)",
           "required": false,
           "arity": {
             "minimum": 0,
@@ -3780,7 +3991,7 @@
               "name": "--input",
               "recursive": false,
               "hidden": false,
-              "description": "Input CSV file path (defaults to datasets/train.csv)",
+              "description": "Input data file path: CSV, TSV, JSON, Excel or Parquet (defaults to data.train, else datasets/train.csv)",
               "aliases": [
                 "-i"
               ],
