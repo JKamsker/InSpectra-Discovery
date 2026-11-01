@@ -1359,6 +1359,28 @@
               "name": "set",
               "options": [
                 {
+                  "name": "--binding",
+                  "arguments": [
+                    {
+                      "name": "STRICT|POSSESSION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "How a certificate is tied to its holder (ADR  1017). strict (the default): it carries the holder's address or one of  their identity aliases. possession: an administrator enrols the key for its  holder, who cannot enrol one themselves until they can prove holding it.",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
                   "name": "--san-must-match-account",
                   "arguments": [
                     {
@@ -1376,7 +1398,29 @@
                       ]
                     }
                   ],
-                  "description": "Whether a certificate's e-mail address  must be its holder's (ADR 0971). On by default; switch it off only for an  authority that issues certificates without e-mail addresses.",
+                  "description": "The earlier spelling of --binding: on is  strict, off is possession.",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--trust-anchors",
+                  "arguments": [
+                    {
+                      "name": "FILE|NONE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "The certificate authorities a certificate must chain to: a PEM file with one certificate or several, any of which suffices (ADR 1017). none removes the rule.",
                   "recursive": false,
                   "hidden": false
                 },
@@ -1822,13 +1866,244 @@
       "hidden": false
     },
     {
+      "name": "mail-domain",
+      "commands": [
+        {
+          "name": "add",
+          "options": [
+            {
+              "name": "--identity-only",
+              "description": "Account addresses live on it; no mail is received  for it. Another tenant may hold it too.",
+              "recursive": false,
+              "hidden": false
+            },
+            {
+              "name": "--receiving-only",
+              "description": "Mail to it is received and filed; no account  addresses or aliases live on it.",
+              "recursive": false,
+              "hidden": false
+            },
+            {
+              "name": "--url",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "metadata": [
+                    {
+                      "name": "ClrType",
+                      "value": "System.String"
+                    }
+                  ]
+                }
+              ],
+              "description": "Base URL of the installation, e.g.  https://archive.example.com. Defaults to $ALCIFRA_URL.",
+              "recursive": false,
+              "hidden": false
+            }
+          ],
+          "arguments": [
+            {
+              "name": "domain",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "description": "The domain, for example example.com.",
+              "hidden": false,
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Claim a domain; prints the DNS record that proves  it.",
+          "hidden": false
+        },
+        {
+          "name": "list",
+          "options": [
+            {
+              "name": "--url",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "metadata": [
+                    {
+                      "name": "ClrType",
+                      "value": "System.String"
+                    }
+                  ]
+                }
+              ],
+              "description": "Base URL of the installation, e.g.  https://archive.example.com. Defaults to $ALCIFRA_URL.",
+              "recursive": false,
+              "hidden": false
+            }
+          ],
+          "description": "List the domains with their roles.",
+          "hidden": false
+        },
+        {
+          "name": "roles",
+          "options": [
+            {
+              "name": "--identity",
+              "description": "true: account addresses and identity aliases live  on it.",
+              "recursive": false,
+              "hidden": false
+            },
+            {
+              "name": "--receiving",
+              "description": "true: mail to it is received and filed. Switching  it off stops mail arriving.",
+              "recursive": false,
+              "hidden": false
+            },
+            {
+              "name": "--url",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "metadata": [
+                    {
+                      "name": "ClrType",
+                      "value": "System.String"
+                    }
+                  ]
+                }
+              ],
+              "description": "Base URL of the installation, e.g.  https://archive.example.com. Defaults to $ALCIFRA_URL.",
+              "recursive": false,
+              "hidden": false
+            }
+          ],
+          "arguments": [
+            {
+              "name": "domain",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "description": "A domain the tenant has registered.",
+              "hidden": false,
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ],
+          "description": "Set a domain's roles.",
+          "hidden": false
+        }
+      ],
+      "description": "The tenant's registered domains: identity (account  addresses live there), receiving (mail is filed), or both.",
+      "hidden": false
+    },
+    {
       "name": "me",
       "commands": [
         {
-          "name": "certificate",
+          "name": "device",
           "commands": [
             {
-              "name": "delete",
+              "name": "enrol",
+              "options": [
+                {
+                  "name": "--encrypt-mail",
+                  "description": "Seal this device's mail to your hardware  keys. Refused, with the reason, without an enrolled hardware key.",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--no-calendars",
+                  "description": "Do not let this device reach calendars  (CalDAV).",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--no-contacts",
+                  "description": "Do not let this device reach contacts  (CardDAV).",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--no-files",
+                  "description": "Do not let this device reach files (WebDAV).",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--no-mail",
+                  "description": "Do not let this device reach mail (IMAP).",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--url",
+                  "arguments": [
+                    {
+                      "name": "URL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "Base URL of the installation, e.g.  https://archive.example.com. Defaults to $ALCIFRA_URL.",
+                  "recursive": false,
+                  "hidden": false
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "name",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "description": "A name for the device, unique among yours  (e.g. 'Laptop').",
+                  "hidden": false,
+                  "metadata": [
+                    {
+                      "name": "ClrType",
+                      "value": "System.String"
+                    }
+                  ]
+                }
+              ],
+              "description": "Enrol a device; its password is printed once, on  stdout.",
+              "hidden": false
+            },
+            {
+              "name": "list",
               "options": [
                 {
                   "name": "--url",
@@ -1853,11 +2128,11 @@
                   "hidden": false
                 }
               ],
-              "description": "Remove the registered certificate.",
+              "description": "List your devices, their protocols and when each  was last used.",
               "hidden": false
             },
             {
-              "name": "register",
+              "name": "revoke",
               "options": [
                 {
                   "name": "--url",
@@ -1884,13 +2159,13 @@
               ],
               "arguments": [
                 {
-                  "name": "file",
+                  "name": "name",
                   "required": true,
                   "arity": {
                     "minimum": 1,
                     "maximum": 1
                   },
-                  "description": "The certificate file to register — PEM  (.pem/.crt) or DER (.cer/.der).",
+                  "description": "The device's name, as the list shows  it.",
                   "hidden": false,
                   "metadata": [
                     {
@@ -1900,40 +2175,11 @@
                   ]
                 }
               ],
-              "description": "Register a certificate from a file (the public  certificate only).",
-              "hidden": false
-            },
-            {
-              "name": "show",
-              "options": [
-                {
-                  "name": "--url",
-                  "arguments": [
-                    {
-                      "name": "URL",
-                      "required": true,
-                      "arity": {
-                        "minimum": 1,
-                        "maximum": 1
-                      },
-                      "metadata": [
-                        {
-                          "name": "ClrType",
-                          "value": "System.String"
-                        }
-                      ]
-                    }
-                  ],
-                  "description": "Base URL of the installation, e.g.  https://archive.example.com. Defaults to $ALCIFRA_URL.",
-                  "recursive": false,
-                  "hidden": false
-                }
-              ],
-              "description": "Report the registered certificate, or that there  is none.",
+              "description": "Revoke a device; its password stops working at  once.",
               "hidden": false
             }
           ],
-          "description": "The certificate this user's content is enveloped  to.",
+          "description": "The devices that reach your mail, files, calendars and contacts, each with its own password.",
           "hidden": false
         }
       ],
@@ -4035,6 +4281,202 @@
     {
       "name": "user",
       "commands": [
+        {
+          "name": "alias",
+          "commands": [
+            {
+              "name": "add",
+              "options": [
+                {
+                  "name": "--email",
+                  "arguments": [
+                    {
+                      "name": "EMAIL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "The user, by the address they sign in with.",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--url",
+                  "arguments": [
+                    {
+                      "name": "URL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "Base URL of the installation, e.g.  https://archive.example.com. Defaults to $ALCIFRA_URL.",
+                  "recursive": false,
+                  "hidden": false
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "address",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "description": "The alias: an address on one of the  tenant's verified identity domains.",
+                  "hidden": false,
+                  "metadata": [
+                    {
+                      "name": "ClrType",
+                      "value": "System.String"
+                    }
+                  ]
+                }
+              ],
+              "description": "Add an identity alias, on a verified identity  domain; adding one twice changes nothing.",
+              "hidden": false
+            },
+            {
+              "name": "list",
+              "options": [
+                {
+                  "name": "--email",
+                  "arguments": [
+                    {
+                      "name": "EMAIL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "The user, by the address they sign in with.",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--url",
+                  "arguments": [
+                    {
+                      "name": "URL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "Base URL of the installation, e.g.  https://archive.example.com. Defaults to $ALCIFRA_URL.",
+                  "recursive": false,
+                  "hidden": false
+                }
+              ],
+              "description": "List a user's identity aliases.",
+              "hidden": false
+            },
+            {
+              "name": "remove",
+              "options": [
+                {
+                  "name": "--email",
+                  "arguments": [
+                    {
+                      "name": "EMAIL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "The user, by the address they sign in with.",
+                  "recursive": false,
+                  "hidden": false
+                },
+                {
+                  "name": "--url",
+                  "arguments": [
+                    {
+                      "name": "URL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "metadata": [
+                        {
+                          "name": "ClrType",
+                          "value": "System.String"
+                        }
+                      ]
+                    }
+                  ],
+                  "description": "Base URL of the installation, e.g.  https://archive.example.com. Defaults to $ALCIFRA_URL.",
+                  "recursive": false,
+                  "hidden": false
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "address",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "description": "The alias: an address on one of the  tenant's verified identity domains.",
+                  "hidden": false,
+                  "metadata": [
+                    {
+                      "name": "ClrType",
+                      "value": "System.String"
+                    }
+                  ]
+                }
+              ],
+              "description": "Remove an identity alias.",
+              "hidden": false
+            }
+          ],
+          "description": "A user's identity aliases: further addresses they are known by. An alias does not sign in; Strict certificate binding accepts a  certificate naming one.",
+          "hidden": false
+        },
         {
           "name": "create",
           "options": [
