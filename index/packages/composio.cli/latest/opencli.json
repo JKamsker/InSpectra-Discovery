@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Composio.CLI",
-    "version": "1.0.1-dev.133",
+    "version": "1.0.1-dev.136",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -4309,7 +4309,26 @@
             },
             {
               "name": "get-toolkits-changelog",
-              "description": "Get toolkits changelog\nRetrieves the last 10 versions changelog for all toolkits. This endpoint provides version history and changelog information for each toolkit."
+              "description": "Get toolkits changelog\nRetrieves the last 10 versions changelog for all toolkits. This endpoint provides version history and changelog information for each toolkit.",
+              "options": [
+                {
+                  "name": "--user-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "[EXPERIMENTAL] Include the custom toolkits this user can use. Without it, only custom toolkits with access \"all\" are included.",
+                  "arguments": [
+                    {
+                      "name": "USER_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
             },
             {
               "name": "post-custom-toolkits-sync",
@@ -4905,7 +4924,7 @@
             },
             {
               "name": "get-tools-enum",
-              "description": "Get tool enum list\nRetrieve a list of all available tool enumeration values (tool slugs) from latest version of each toolkit. This endpoint returns a comma-separated string of tool slugs that can be used in other API calls."
+              "description": "Get tool enum list\nLists the slug of every tool in the latest version of each Composio-managed toolkit, such as GMAIL_SEND_EMAIL. Tools of custom toolkits are not included."
             },
             {
               "name": "post-tools-execute-by-tool-slug",
@@ -5743,7 +5762,7 @@
             },
             {
               "name": "post-trigger-instances-by-slug-upsert",
-              "description": "Create or update a trigger\nCreates a new trigger instance or updates an existing one with the same configuration. Triggers listen for events from external services (webhooks or polling) and can invoke your workflows. If a matching trigger already exists and is disabled, it will be re-enabled. Provide either a connected_account_id to pin a specific user connection, or a user_id to auto-resolve the first active connection for that user and the trigger's toolkit.",
+              "description": "Create or update a trigger\nCreates a new trigger instance or updates an existing one with the same configuration. Triggers listen for events from external services (webhooks or polling) and can invoke your workflows. If a matching trigger already exists and is disabled, it will be re-enabled. Provide either a connected_account_id to pin a specific user connection, or a user_id to auto-resolve the first active connection for that user and the trigger's toolkit. For a trigger that supports both webhooks and polling, Composio chooses the best way for the instance to receive events unless type sets one. When the instance polls because a webhook could not be set up, fallback_reason says why. An existing instance keeps its type, so an upsert asking for the other type returns 409.",
               "options": [
                 {
                   "name": "--connected-account-id",
@@ -5810,6 +5829,44 @@
                         "maximum": 100000
                       },
                       "type": "Dictionary`2"
+                    }
+                  ]
+                },
+                {
+                  "name": "--type",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Whether this instance receives events by webhook or by polling, for a trigger that supports both. Omit it to let Composio choose the best one.",
+                  "arguments": [
+                    {
+                      "name": "TYPE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "PostTriggerInstancesBySlugUpsertRequestType",
+                      "allowedValues": [
+                        "Poll",
+                        "Webhook"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "--polling-interval",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Minutes between polls, for an instance that polls for its events. It is checked whenever the instance could poll, even when Composio tries a webhook first, so an interval outside the toolkit's allowed range fails the request.",
+                  "arguments": [
+                    {
+                      "name": "POLLING_INTERVAL",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
                     }
                   ]
                 },
