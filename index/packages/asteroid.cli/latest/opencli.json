@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Asteroid.Cli",
-    "version": "1.32.0",
+    "version": "1.36.0",
     "description": "Asteroid framework CLI toolchain (ws/log/doc/code/mcp/scaffold) — single package, single entry, subcommand dispatch."
   },
   "x-inspectra": {
@@ -369,7 +369,7 @@
               "name": "--exclude",
               "recursive": false,
               "hidden": false,
-              "description": "从目标集里排除的目录或工程（可多值；前缀匹配）——外层仓推子模块前跑全量时排除子模块根，免改到别的仓的树",
+              "description": "从目标集里排除的目录、工程或文件（可多值；目录/工程前缀匹配，文件按精确路径排除）——外层仓推子模块前跑全量时排除子模块根，免改到别的仓的树；保护单个文件用它",
               "aliases": [
                 "-x"
               ],
@@ -450,7 +450,7 @@
               "name": "--timeout",
               "recursive": false,
               "hidden": false,
-              "description": "整场看门狗秒数（缺省 -1=自动 1800；0=关闭）——超时整场终止转错误档 [default: -1]",
+              "description": "整场看门狗秒数（缺省 -1=按通道策略：gate/cleanup 各自的 timeoutSeconds；0=关闭）——超时整场终止转错误档，已接受成果保留 [default: -1]",
               "arguments": [
                 {
                   "name": "TIMEOUT",
@@ -460,6 +460,40 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--mode",
+              "recursive": false,
+              "hidden": false,
+              "description": "通道档：gate=推送范围快速核对（轮次/超时取策略 gate 段，缺省 3 轮/300s）；cleanup=全仓/批次收口（缺省 60 轮/1800s）。缺省：--push-refs/--push-base 为 gate，其余为 cleanup",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--policy",
+              "recursive": false,
+              "hidden": false,
+              "description": "样式策略文件（缺省找运行仓根 .asteroid/config/fixall/stylefix.json；旧仓根 .stylefix.json 仍兼容读取）：auto 自动修 / report 只报告（附建议 diff）/ ignore 忽略；engine.exclude 声明引擎不修不报的项目特有冲突；gate/cleanup 可覆盖轮数与超时。未列名规则缺省只报告。策略内容进覆盖键，改策略即令旧 clean 记录失效；调参取舍见策略文件注释",
+              "arguments": [
+                {
+                  "name": "POLICY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             },
@@ -484,7 +518,7 @@
               "name": "--jobs",
               "recursive": false,
               "hidden": false,
-              "description": "跨工程并行度（0=自动 min(逻辑核数,4)；1=串行）——三个分析趟按工程并行，写面重叠的工程自动串行；报告与盘面结果与串行同构 [default: 0]",
+              "description": "并行度（0=自动 min(逻辑核数,4)；1=串行）——三个分析趟按工程并行（写面重叠的工程自动串行），单轮修复动作按 target 并行求值、按 target 序回放；报告与盘面结果与串行同构 [default: 0]",
               "aliases": [
                 "-j"
               ],
@@ -2351,7 +2385,7 @@
         },
         {
           "name": "align",
-          "description": "共享文件对齐检查（.editorconfig/.gitignore 对齐 framework/ 副本=包含式、项目自加行不拦；docs/.gitignore 边界自持；AGENTS.md=领地对分，模板段内的非模板行逐行报出、自加内容归自填段；框架进位或 CLI 更新后跑）",
+          "description": "共享文件对齐检查（.editorconfig/.gitignore 对齐 framework/ 副本=包含式、项目自加行不拦；.asteroid/ 工具状态根按规范落盘并迁移旧位置；docs/.gitignore 边界自持；AGENTS.md=领地对分，模板段内的非模板行逐行报出、自加内容归自填段；框架进位或 CLI 更新后跑）",
           "options": [
             {
               "name": "--path",
@@ -2374,7 +2408,7 @@
               "name": "--write",
               "recursive": false,
               "hidden": false,
-              "description": "落盘修复（.gitignore 补缺行；.editorconfig 无自加行时替换；docs/.gitignore 补建＋根残留清理；AGENTS.md 重生成模板部分——模板段内非模板行会删并逐行报出，项目自填段与标题行尾段逐字保留） [default: False]",
+              "description": "落盘修复（.gitignore 补缺行；.editorconfig 无自加行时替换；.asteroid/ 状态根补建并迁移旧策略/缓存位置；docs/.gitignore 补建＋根残留清理；AGENTS.md 重生成模板部分——模板段内非模板行会删并逐行报出，项目自填段与标题行尾段逐字保留） [default: False]",
               "arguments": [
                 {
                   "name": "WRITE",
