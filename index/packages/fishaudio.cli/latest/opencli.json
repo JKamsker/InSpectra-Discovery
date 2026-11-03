@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "FishAudio.CLI",
-    "version": "1.0.4-dev.58",
+    "version": "1.0.4-dev.62",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -165,7 +165,7 @@
       "commands": [
         {
           "name": "create-agent-sessions",
-          "description": "Create Agent Session\nStart a conversation session with an agent and receive a join token for the\nsession transport (currently LiveKit WebRTC). Authenticate with an API key to\nstart sessions with any agent in your team; without credentials only agents\npublished as public are reachable, and the request `Origin` must match the\nagent's allowed origins.\n\n`language` (and `overrides.language`) accepts `en`, `ja`, `zh`, `ko`, `es`,\n`fr`, `de`, `pt`, `it`, `nl`; anything else is 422. Omit it to use the agent's configured\nspeaking language.\n\n`overrides.asr.model` picks the speech recognition model for this session,\nnested like the agent config's `asr` section and with the same values as\n`asr.model`. It needs an API key.",
+          "description": "Create Agent Session\nStart a conversation session with an agent and receive a join token for the\nsession transport (currently LiveKit WebRTC). Authenticate with an API key to\nstart sessions with any agent in your team; without credentials only agents\npublished as public are reachable, and the request `Origin` must match the\nagent's allowed origins.\n\n`language` (and `overrides.language`) accepts `en`, `ja`, `zh`, `ko`, `es`,\n`fr`, `de`, `pt`, `it`, `nl`; anything else is 422. Omit it to use the agent's configured\nspeaking language.\n\n`overrides.asr.model` picks the speech recognition model for this session,\nnested like the agent config's `asr` section and with the same values as\n`asr.model`. It needs an API key.\n\n`overrides.llm.fallback` replaces the agent's `llm.fallback` for this\nsession, with the same shape and rules; each `custom` model needs its\n`api_key`. It needs an API key and `llm.fallback` in the agent's\n`overrides_allowed`.",
           "options": [
             {
               "name": "--origin",
@@ -2986,7 +2986,7 @@
         },
         {
           "name": "create-agent-agents-by-agent-id-publish",
-          "description": "Publish Agent\nFreeze the current draft into an immutable version (version_number\nauto-increments) and make it the live configuration for new sessions. If\nthe draft already matches the live version, return that version unchanged.\nThe body is optional; the title and description label a newly created\nversion for audit and rollback.",
+          "description": "Publish Agent\nFreeze the current draft into an immutable version and make it the live\nconfiguration for new sessions. Each new version gets the next\nversion_number. If the draft already matches the live version, no version\nis created and the live version comes back with `created: false`.\n\nThe response describes what was published:\n- `version_number` and `config_hash` identify the version.\n- `config` is the configuration exactly as published. Check your\n  read-back against it, not against the request you sent.\n- `created` tells whether this call made a new version.\n\nPublishing copies the draft as it is stored. It does not change any field.\nWrites do normalize some values, see Update Draft Config.\n\nThe body is optional:\n- `expected_config_hash` publishes only while the draft still has that\n  config_hash. Take it from Get Draft Config or Update Draft Config. On a\n  mismatch the call returns 409 with `reason: \"draft_changed\"` and the\n  draft's current `config_hash`. Nothing is written.\n- `config` applies draft changes first, in the same shape as Update Draft\n  Config. The changes and the publish are one atomic step. If either fails,\n  the draft stays as it was.\n- With both, `expected_config_hash` is checked against the draft before\n  `config` is applied.\n- `version_title` and `version_description` label a new version.",
           "options": [
             {
               "name": "--version-title",
@@ -3019,6 +3019,40 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--expected-config-hash",
+              "recursive": false,
+              "hidden": false,
+              "description": "Publish only while the draft has this config_hash. Otherwise 409 with reason `draft_changed` and nothing is written.",
+              "arguments": [
+                {
+                  "name": "EXPECTED_CONFIG_HASH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--config",
+              "recursive": false,
+              "hidden": false,
+              "description": "Draft changes to apply before publishing, same shape as Update Draft Config. The write and the publish succeed or fail together.",
+              "arguments": [
+                {
+                  "name": "CONFIG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "PublicAgentConfigPatchPayload"
                 }
               ]
             },
@@ -3273,7 +3307,7 @@
         },
         {
           "name": "edit-agent-agents-by-agent-id-config",
-          "description": "Update Draft Config\nPatch the draft configuration section by section; omitted sections keep\ntheir value. Changes only affect live sessions after the next publish.\n`prompt.system_prompt` is limited to 32000 tokens (422 beyond); keeping it\nunder 2000 tokens is recommended for latency and cost.\n`voice.voice_id` accepts any public voice model id.\n`voice.speaking_language` accepts any of the 52 supported ISO 639-1 codes\n(the same set the console offers, see the Voice &amp; language docs); anything else is 422. `voice.expressive` (default `true`) enables richer\nexpressive delivery (emotion steering, laughter and sounds, pauses); off\nkeeps the standard delivery. The `asr` section configures speech\nrecognition. `asr.model` picks the model: `deepgram:nova-3` (default),\n`elevenlabs:scribe_v2_realtime`, `elevenlabs:scribe_v2_medical`, or\n`fish_audio:transcribe-stream-1` (Fish realtime recognition, which\nalso decides end of turn and whether the caller is interrupting).\nIts former id `fish_audio:transcribe-1-pro-realtime` is still accepted\nand reads back as the current id.\n`asr.multilingual` (default `false`) lets recognition follow callers who\nswitch language mid-call, off tells the recognizer to expect\n`voice.speaking_language` (models other than `deepgram:nova-3` may still\ntranscribe clear speech in another language). `asr.strict_language`\n(default `false`) enforces `voice.speaking_language` whatever\n`asr.multilingual` says: speech recognized as another language reaches the\nagent as `[unintelligible speech]`. Language is detected per utterance, so\na short or heavily accented phrase in the speaking language can\noccasionally be detected as another language and replaced too. Only\nenable it when you explicitly need to stop the agent from understanding\nother languages.\n`asr.keyterms` is a recognition\nvocabulary of up to 50 plain terms (brand names, product terms, personal\nnames), each at most 100 characters with no commas or semicolons. `[]`\nclears it and 20-50 focused terms work best. `tool_ids` and\n`knowledge_source_ids` replace their attachment lists wholesale and every\nid must resolve, else 422. `llm.custom` points the agent at your own\nOpenAI-compatible endpoint; mutually exclusive with `llm.model`, cleared\nwith an explicit null.",
+          "description": "Update Draft Config\nPatch the draft configuration section by section; omitted sections keep\ntheir value. Changes only affect live sessions after the next publish.\n`prompt.system_prompt` is limited to 32000 tokens (422 beyond); keeping it\nunder 2000 tokens is recommended for latency and cost.\n`voice.voice_id` accepts any public voice model id.\n`voice.speaking_language` accepts any of the 52 supported ISO 639-1 codes\n(the same set the console offers, see the Voice &amp; language docs); anything else is 422. `voice.expressive` (default `true`) enables richer\nexpressive delivery (emotion steering, laughter and sounds, pauses); off\nkeeps the standard delivery. The `asr` section configures speech\nrecognition. `asr.model` picks the model: `deepgram:nova-3` (default),\n`elevenlabs:scribe_v2_realtime`, `elevenlabs:scribe_v2_medical`, or\n`fish_audio:transcribe-stream-1` (Fish realtime recognition, which\nalso decides end of turn and whether the caller is interrupting).\nIts former id `fish_audio:transcribe-1-pro-realtime` is still accepted\nand reads back as the current id.\n`asr.multilingual` (default `false`) lets recognition follow callers who\nswitch language mid-call, off tells the recognizer to expect\n`voice.speaking_language` (models other than `deepgram:nova-3` may still\ntranscribe clear speech in another language). `asr.strict_language`\n(default `false`) enforces `voice.speaking_language` whatever\n`asr.multilingual` says: speech recognized as another language reaches the\nagent as `[unintelligible speech]`. Language is detected per utterance, so\na short or heavily accented phrase in the speaking language can\noccasionally be detected as another language and replaced too. Only\nenable it when you explicitly need to stop the agent from understanding\nother languages.\n`asr.keyterms` is a recognition\nvocabulary of up to 50 plain terms (brand names, product terms, personal\nnames), each at most 100 characters with no commas or semicolons. `[]`\nclears it and 20-50 focused terms work best. `tool_ids` and\n`knowledge_source_ids` replace their attachment lists wholesale and every\nid must resolve, else 422. `llm.custom` points the agent at your own\nOpenAI-compatible endpoint; mutually exclusive with `llm.model`, cleared\nwith an explicit null. `llm.fallback` sets what the agent tries after its\nmodel fails: `platform` (default), `manual` (`models` in order, 1 to 3)\nor `off`. In `manual`, each model and `primary` (the agent's own model)\ntake optional `ttft_timeout_ms` (500-30000, default 5000 ms, i.e. 5\nseconds, when not set) and `total_timeout_ms` (1000-120000, at least\n`ttft_timeout_ms` when both are set, no limit when not set), and the\nfirst model can set\n`parallel.kick_in_ms` (300-10000, default 1500) to run alongside the\nagent's own model.\n\nThe response is the draft as stored, which can differ from the request:\n- Every field comes back. Omitted fields keep their value or default.\n- `asr.keyterms` and `voice.pronunciation_dictionary_ids` are trimmed\n  and de-duplicated in order. `tool_ids` is de-duplicated in order.\n- A tool that was archived drops out of `tool_ids` at the next tools\n  write.\n- `conversation.interruption_ignore_phrases` collapses inner spaces and\n  drops case-insensitive duplicates.\n- `conversation.timezone`, transfer phone numbers and transfer text\n  fields are trimmed.\n- `conversation.eagerness` and `conversation.response_wait_ms` move\n  together. The wait wins when both are sent, and the tier is derived\n  from it.\n- `conversation.response_max_wait_ms: 0` reads back as `null`\n  (automatic).\n- `knowledge_base.enabled` becomes `true` when you attach sources and\n  omit it.\n- `llm.custom.base_url` drops a trailing `/` and `/chat/completions`.\n  `llm.custom.model` is trimmed. Setting `llm.custom` resets `llm.model`\n  to the platform default.\n- Secrets read back as `has_secret`, and `llm.custom.api_key` as `null`.\n- `voice` also returns `keyterms`, `multilingual_asr` and `asr_model`\n  copied from `asr`. They are deprecated.\n- `config_hash` and `updated_at` are set by the server.\n\nCompare against this response, or against `config_hash`, rather than the\nrequest body. Publishing never rewrites these values.",
           "options": [
             {
               "name": "--prompt",
@@ -3692,7 +3726,7 @@
         },
         {
           "name": "get-agent-agents-by-agent-id-versions",
-          "description": "List Agent Versions\nThe publish history, newest first. The highest version_number is what live\nsessions run. Compare a version's config_hash with the draft's to detect\nunpublished changes.",
+          "description": "List Agent Versions\nThe publish history, newest first. The highest version_number is what live\nsessions run. Compare a version's config_hash with the draft's to detect\nunpublished changes. A version published before a change in how the hash\nis computed keeps the hash it froze with; a publish that finds the draft\nunchanged realigns the live version's hash instead of creating an\nidentical version. Superseded versions keep their frozen hash.",
           "options": [
             {
               "name": "--cursor",
@@ -3775,7 +3809,7 @@
         },
         {
           "name": "get-agent-agents-by-agent-id-versions-by-version-number",
-          "description": "Get Agent Version\nOne published version with its full frozen configuration snapshot —\nincluding the current live version. Secrets inside the snapshot are\nredacted the same way as the draft config.",
+          "description": "Get Agent Version\nOne published version with its full frozen configuration snapshot —\nincluding the current live version. Secrets inside the snapshot are\nredacted the same way as the draft config. The snapshot equals the draft\nit froze, except `config.updated_at`, which is the publish time.",
           "arguments": [
             {
               "name": "AGENT_ID",

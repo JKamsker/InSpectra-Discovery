@@ -2,19 +2,124 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "corvus",
-    "version": "2.9.0",
+    "version": "2.10.0",
     "description": "MCP server and command line for reverse engineering and security analysis of .NET assemblies and native PE, ELF and Mach-O binaries: decompile, search, compare builds, patch and save. By default nothing is executed."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 4
+    "helpDocumentCount": 5
   },
   "commands": [
     {
+      "name": "analyze",
+      "hidden": false,
+      "description": "Run auto-analysis of a native image (reanalyze_native arguments follow);\n--wait runs it as a background job, polls its status and reports the outcome."
+    },
+    {
       "name": "batch",
       "hidden": false,
-      "description": "Read one file with fixed read-only steps (summary, container, strings,\nyara) into one corvus.batch/1 document. --rules <file|folder>, --time-limit S,\n--limit containerFiles=N, --limit strings=N, --limit yaraMatches=N.\n--recurse: every file under a folder, one record per SHA-256.\n--fail-on noteworthy|review: exit 1 on a finding at that level or an\nincomplete record; --allow-incomplete fails on findings only.\n--extract <folder>: write decoded payloads with their chain.\n--password-file <file>: password for encrypted members of --recurse.\n--baseline <file>: drop known findings by key until each entry expires;\nan earlier result's findings are entries that do not expire.\n--report <file>: also write a Markdown report, one section per record.\n--sarif <file>: also write SARIF 2.1.0 for code scanning upload.\n--jsonl instead of --json: one record per line; --out <file> for a file."
+      "description": "Read one file with fixed read-only steps (summary, container, strings,\nyara) into one corvus.batch/1 document. --rules <file|folder>, --time-limit S, --step-timeout S,\n--limit containerFiles=N, --limit strings=N, --limit yaraMatches=N.\n--recurse: every file under a folder, one record per SHA-256.\n--fail-on noteworthy|review: exit 1 on a finding at that level or an\nincomplete record; --allow-incomplete fails on findings only.\n--extract <folder>: write decoded payloads with their chain.\n--dump-modules <folder>: write the module images of a minidump.\n--password-file <file>: password for encrypted members of --recurse.\n--baseline <file>: drop known findings by key until each entry expires;\nan earlier result's findings are entries that do not expire.\n--report <file>: also write a Markdown report, one section per record.\n--sarif <file>: also write SARIF 2.1.0 for code scanning upload.\n--jsonl instead of --json: one record per line; --out <file> for a file.",
+      "options": [
+        {
+          "name": "--recurse",
+          "recursive": false,
+          "hidden": false,
+          "description": "--fail-on noteworthy|review: exit 1 on a finding at that level or an\nincomplete record; --allow-incomplete fails on findings only."
+        },
+        {
+          "name": "--extract",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FOLDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--dump-modules",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FOLDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--password-file",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--baseline",
+          "recursive": false,
+          "hidden": false,
+          "description": "an earlier result's findings are entries that do not expire.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--report",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--sarif",
+          "recursive": false,
+          "hidden": false,
+          "description": "--jsonl instead of --json: one record per line; --out <file> for a file.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "name": "call",
@@ -51,7 +156,7 @@
     {
       "name": "ida-script",
       "hidden": false,
-      "description": "Write corvus_connect.py and its worker for IDA's File > Script file; it serves\nthe open database to Corvus when CORVUS_IDA_CONNECT=1.\nTool exit codes: 0 success, 1 tool error, 2 usage or invalid_argument, 3 engine missing or unsupported,\n124 timeout, 130 cancelled (Ctrl+C)."
+      "description": "Write corvus_connect.py and its worker for IDA's File > Script file; it serves\nthe open database to Corvus when CORVUS_IDA_CONNECT=1."
     },
     {
       "name": "install",
@@ -206,6 +311,11 @@
       "description": "Installed and known YARA rule packs; rules fetch <pack> downloads one, rules import\n<archive> [pack] installs one from a local archive (SHA-256 checked both ways)\nfor search_container kind=yara query=pack:<name>."
     },
     {
+      "name": "serve",
+      "hidden": false,
+      "description": "Keep a named session open; call --session NAME (or CORVUS_SESSION) routes to it.\nTool exit codes: 0 success, 1 tool error, 2 usage or invalid_argument, 3 engine missing or unsupported,\n124 timeout, 130 cancelled (Ctrl+C)."
+    },
+    {
       "name": "status",
       "hidden": false,
       "description": "Read-only check: starts each client's registered command with its args and env,\nand checks this build's server and catalog digest, the engines and installed skills.\n--client X      only these clients (fails only for them)\n--engine E      only ida, python, ghidra or all (--deep also starts IDA's worker)\n--target PATH   what the file is and which engines read it\n--json          the report as JSON"
@@ -223,7 +333,7 @@
         {
           "name": "list_assemblies",
           "hidden": false,
-          "description": "read-only    Loaded assemblies and native images with ids, versions, flags and unsaved edits, plus the referen..."
+          "description": "read-only    Loaded assemblies and native images: ids, versions, flags, unsaved edits, index state."
         },
         {
           "name": "load_assembly",
@@ -253,12 +363,12 @@
         {
           "name": "server_status",
           "hidden": false,
-          "description": "read-only    Server version, program, client, catalog digest, loaded files, limits, capabilities with fixes an..."
+          "description": "read-only    Version, program, client, catalog digest, loaded files, limits, capabilities with fixes and unusa..."
         },
         {
           "name": "unload_assembly",
           "hidden": false,
-          "description": "destructive  Remove an assembly (unsaved edits are discarded) or close a dump id."
+          "description": "destructive  Remove an assembly, discarding unsaved edits, or close a dump id."
         }
       ]
     },
