@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "bowire",
-    "version": "2.9.1",
+    "version": "2.10.0",
     "description": "Bowire — the API workbench that embeds in your own service. This is the standalone CLI + browser UI. Discover, invoke, record, mock, and replay across gRPC, REST, GraphQL, MQTT, SignalR, WebSocket, SSE, MCP, OData, and Socket.IO — every first-party plugin pre-bundled. Run `bowire --url …` for the browser UI or `bowire list/describe/call` / `bowire mock` for grpcurl-style scripting and recording replay."
   },
   "x-inspectra": {
@@ -10,12 +10,12 @@
     "generator": "InSpectra.Gen",
     "hookCapture": {
       "cliFramework": "System.CommandLine",
-      "frameworkVersion": "2.0.13.0",
-      "systemCommandLineVersion": "2.0.13.0",
+      "frameworkVersion": "2.0.14.0",
+      "systemCommandLineVersion": "2.0.14.0",
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "Bowire — multi-protocol API workbench. Run without a subcommand to launch the browser UI; run a subcommand (discover / list / describe / call / catalogue / mock / mcp / plugin / test) for scripting."
+    "cliParsedDescription": "Bowire — multi-protocol API workbench. Run without a subcommand to launch the browser UI; run a subcommand (discover / list / describe / call / send / catalogue / mock / mcp / plugin / test) for scripting."
   },
   "options": [
     {
@@ -514,7 +514,7 @@
     },
     {
       "name": "--plugin-dir",
-      "recursive": false,
+      "recursive": true,
       "hidden": false,
       "description": "Override the plugin directory.",
       "arguments": [
@@ -1179,6 +1179,212 @@
             "maximum": 1
           },
           "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "send",
+      "description": "Send a request you spell out, directly: no discovery, no schema. The protocol comes next and decides the arguments. Proxy and CA bundle come from --proxy-url / --no-proxy / --ca-bundle, as for every command.",
+      "commands": [
+        {
+          "name": "http",
+          "description": "Send one HTTP request, URL first, in HTTPie's item notation: `bowire send http post api.example.com/pets name=ada age:=3 Authorization:\"Bearer {{token}}\"`. The body goes to stdout, the status line and time to stderr; exit 0 for 2xx and 3xx, 2 for 4xx and 5xx, 1 when the request could not be sent.",
+          "options": [
+            {
+              "name": "-d",
+              "recursive": false,
+              "hidden": false,
+              "description": "A raw body instead of body items, sent as application/json unless a Content-Type:… item says otherwise. @file reads it from a file.",
+              "aliases": [
+                "--data"
+              ],
+              "arguments": [
+                {
+                  "name": "BODY|@FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--include",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the status line and the response headers to stdout before the body. [default: False]",
+              "aliases": [
+                "-i"
+              ],
+              "arguments": [
+                {
+                  "name": "INCLUDE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the body to this file as the server sent it, whatever its type, and print it nowhere else. - writes the raw bytes to stdout, for a pipe.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "FILE|_",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--var",
+              "recursive": false,
+              "hidden": false,
+              "description": "Variable for {{name}} / ${name} in the URL and the items. KEY=VALUE; repeatable.",
+              "aliases": [
+                "--env"
+              ],
+              "arguments": [
+                {
+                  "name": "VAR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--env-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "File with one KEY=VALUE per line (dotenv-style) for the variables. Repeatable; --var wins.",
+              "arguments": [
+                {
+                  "name": "ENV_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--compact",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print a JSON response on one line. [default: False]",
+              "arguments": [
+                {
+                  "name": "COMPACT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--offline",
+              "recursive": false,
+              "hidden": false,
+              "description": "Build the request and print it, variables resolved, without sending anything. [default: False]",
+              "arguments": [
+                {
+                  "name": "OFFLINE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--negotiate",
+              "recursive": false,
+              "hidden": false,
+              "description": "Windows-integrated authentication (Kerberos, falling back to NTLM) as the signed-in account. Windows only. [default: False]",
+              "arguments": [
+                {
+                  "name": "NEGOTIATE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--ntlm",
+              "recursive": false,
+              "hidden": false,
+              "description": "NTLM with explicit credentials: [DOMAIN\\]user:password. Pass the password from a variable.",
+              "arguments": [
+                {
+                  "name": "NTLM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--digest",
+              "recursive": false,
+              "hidden": false,
+              "description": "HTTP Digest (RFC 7616, MD5 / SHA-256, qop auth / auth-int): user:password.",
+              "arguments": [
+                {
+                  "name": "DIGEST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "REQUEST",
+              "description": "[METHOD] URL [ITEM…]. METHOD is optional and case-insensitive: GET, or POST when body items are given; any token works (PROPFIND). The URL may leave out the scheme (Bowire:Cli:Send:DefaultScheme, http by default) and :3000/x means http://localhost:3000/x. Items: Header:value, param==value (query), field=value (JSON string), field:=json (raw JSON), field@file (multipart file upload). A backslash keeps a separator in the name: a\\=b=c.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
         }
       ]
     },
@@ -2405,6 +2611,40 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "A CSV (header row names the columns) or JSON (array of objects) data set: the collection runs once per row, the row's columns bound as variables over the environment. {{iteration}} and {{iterationCount}} are set in every run. Test collections only.",
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--fail-fast",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --data: stop after the first iteration that has a failure. [default: False]",
+          "arguments": [
+            {
+              "name": "FAIL_FAST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -2422,7 +2662,78 @@
     },
     {
       "name": "import",
-      "description": "Convert external trace formats into Bowire recordings.",
+      "description": "Import an Insomnia export, a Bruno collection or .http files as a Bowire workspace (#674); `import har` converts a HAR trace into a recording.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip sniffing: insomnia, bruno, opencollection or http.",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "The collection name when the source has none.",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where to write the .bww workspace file. \"-\" writes it to stdout. Default: <name>.bww next to the input. Import it with the workbench or `bowire workspace import`.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "description": "An Insomnia export (v4 JSON/YAML or v5 YAML), a Bruno collection directory (.bru files or OpenCollection YAML) or a bundled OpenCollection file, or a .http file or a directory of them with http-client.env.json.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ],
       "commands": [
         {
           "name": "har",
@@ -3286,6 +3597,78 @@
             {
               "name": "URL",
               "description": "URL to run discovery against (http(s)://, mqtt://, nats://, kafka://, ws://, amqp://, ...).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "http",
+          "description": "Write collections as a .http file (and environments as http-client.env.json) the IDEs run.",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "The .http file to write. Default: <file>.http next to the input; \"-\" for stdout.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--env-output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to write http-client.env.json. Default: next to the .http file.",
+              "arguments": [
+                {
+                  "name": "ENV_OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dialect",
+              "recursive": false,
+              "hidden": false,
+              "description": "jetbrains (default: Rider, IntelliJ, Visual Studio 2022) or vscode (REST Client).",
+              "arguments": [
+                {
+                  "name": "DIALECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "A .bww workspace file, a workspace's collections.json, or an array of collections.",
               "required": true,
               "arity": {
                 "minimum": 1,
