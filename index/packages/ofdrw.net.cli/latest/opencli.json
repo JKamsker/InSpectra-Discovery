@@ -2,19 +2,19 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Ofdrw.Net CLI",
-    "version": "0.1.0-preview.9",
+    "version": "0.2.0",
     "description": "Command-line DOCX, PDF, OFD, and SVG conversion tool for Ofdrw.Net."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 12
+    "helpDocumentCount": 16
   },
   "commands": [
     {
-      "name": "convert",
+      "name": "attachments",
       "hidden": false,
-      "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination.",
+      "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments.",
       "options": [
         {
           "name": "--input",
@@ -64,6 +64,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -73,7 +79,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -101,7 +107,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -212,6 +218,21 @@
       ],
       "commands": [
         {
+          "name": "convert",
+          "hidden": false,
+          "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
+        },
+        {
           "name": "merge",
           "hidden": false,
           "description": "Merge OFD pages into a self-contained output document."
@@ -229,7 +250,7 @@
         {
           "name": "ofd-to-svg",
           "hidden": false,
-          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
         },
         {
           "name": "pdf-to-ofd",
@@ -237,9 +258,818 @@
           "description": "Convert PDF to OFD."
         },
         {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
           "name": "reorder",
           "hidden": false,
-          "description": "Reorder every page using a complete 1-based page list."
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
+        },
+        {
+          "name": "split",
+          "hidden": false,
+          "description": "Select distinct pages in 1-based list order into a new OFD."
+        },
+        {
+          "name": "watermark",
+          "hidden": false,
+          "description": "Add ordinary text/image objects to selected layers (millimeters)."
+        }
+      ]
+    },
+    {
+      "name": "convert",
+      "hidden": false,
+      "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination.",
+      "options": [
+        {
+          "name": "--input",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input file path.",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "INPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pages",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based page list or ranges, for example 1,3-5.",
+          "aliases": [
+            "-p"
+          ]
+        },
+        {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
+          "name": "--ppm",
+          "recursive": false,
+          "hidden": false,
+          "description": "Image commands: finite positive pixels per millimeter; default 144/25.4."
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--skip-unsupported",
+          "recursive": false,
+          "hidden": false,
+          "description": "Drop unsupported raw objects during merge."
+        },
+        {
+          "name": "--docx-engine",
+          "recursive": false,
+          "hidden": false,
+          "description": "DOCX renderer: auto, word (macOS), libreoffice, or built-in."
+        },
+        {
+          "name": "--docx-ofd-mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
+        },
+        {
+          "name": "--libreoffice",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the LibreOffice soffice executable for DOCX conversion.",
+          "arguments": [
+            {
+              "name": "LIBREOFFICE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--font-directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additional font directory for DOCX rendering; may be repeated.",
+          "arguments": [
+            {
+              "name": "FONT_DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help.",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "INPUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUTOFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUTPNG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUTOFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUT1OFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUT2OFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
+        },
+        {
+          "name": "merge",
+          "hidden": false,
+          "description": "Merge OFD pages into a self-contained output document."
+        },
+        {
+          "name": "mix",
+          "hidden": false,
+          "description": "Overlay source/page pairs in input order, first page dimensions.\nclean-signatures Remove all declarations and unreferenced owned signature payloads."
+        },
+        {
+          "name": "ofd-to-pdf",
+          "hidden": false,
+          "description": "Convert OFD to PDF."
+        },
+        {
+          "name": "ofd-to-svg",
+          "hidden": false,
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
+        },
+        {
+          "name": "pdf-to-ofd",
+          "hidden": false,
+          "description": "Convert PDF to OFD."
+        },
+        {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
+          "name": "reorder",
+          "hidden": false,
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
+        },
+        {
+          "name": "split",
+          "hidden": false,
+          "description": "Select distinct pages in 1-based list order into a new OFD."
+        },
+        {
+          "name": "watermark",
+          "hidden": false,
+          "description": "Add ordinary text/image objects to selected layers (millimeters)."
+        }
+      ]
+    },
+    {
+      "name": "crop",
+      "hidden": false,
+      "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved.",
+      "options": [
+        {
+          "name": "--input",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input file path.",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "INPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pages",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based page list or ranges, for example 1,3-5.",
+          "aliases": [
+            "-p"
+          ]
+        },
+        {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
+          "name": "--ppm",
+          "recursive": false,
+          "hidden": false,
+          "description": "Image commands: finite positive pixels per millimeter; default 144/25.4."
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--skip-unsupported",
+          "recursive": false,
+          "hidden": false,
+          "description": "Drop unsupported raw objects during merge."
+        },
+        {
+          "name": "--docx-engine",
+          "recursive": false,
+          "hidden": false,
+          "description": "DOCX renderer: auto, word (macOS), libreoffice, or built-in."
+        },
+        {
+          "name": "--docx-ofd-mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
+        },
+        {
+          "name": "--libreoffice",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the LibreOffice soffice executable for DOCX conversion.",
+          "arguments": [
+            {
+              "name": "LIBREOFFICE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--font-directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additional font directory for DOCX rendering; may be repeated.",
+          "arguments": [
+            {
+              "name": "FONT_DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help.",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "INPUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUTOFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUTPNG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUTOFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUT1OFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUT2OFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
+          "name": "convert",
+          "hidden": false,
+          "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
+        },
+        {
+          "name": "merge",
+          "hidden": false,
+          "description": "Merge OFD pages into a self-contained output document."
+        },
+        {
+          "name": "mix",
+          "hidden": false,
+          "description": "Overlay source/page pairs in input order, first page dimensions.\nclean-signatures Remove all declarations and unreferenced owned signature payloads."
+        },
+        {
+          "name": "ofd-to-pdf",
+          "hidden": false,
+          "description": "Convert OFD to PDF."
+        },
+        {
+          "name": "ofd-to-svg",
+          "hidden": false,
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
+        },
+        {
+          "name": "pdf-to-ofd",
+          "hidden": false,
+          "description": "Convert PDF to OFD."
+        },
+        {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
+          "name": "reorder",
+          "hidden": false,
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
+        },
+        {
+          "name": "split",
+          "hidden": false,
+          "description": "Select distinct pages in 1-based list order into a new OFD."
+        },
+        {
+          "name": "watermark",
+          "hidden": false,
+          "description": "Add ordinary text/image objects to selected layers (millimeters)."
+        }
+      ]
+    },
+    {
+      "name": "locate",
+      "hidden": false,
+      "description": "Read-only keyword search with page and glyph bounds; preview for replace-text.",
+      "options": [
+        {
+          "name": "--input",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input file path.",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "INPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pages",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based page list or ranges, for example 1,3-5.",
+          "aliases": [
+            "-p"
+          ]
+        },
+        {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
+          "name": "--ppm",
+          "recursive": false,
+          "hidden": false,
+          "description": "Image commands: finite positive pixels per millimeter; default 144/25.4."
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--skip-unsupported",
+          "recursive": false,
+          "hidden": false,
+          "description": "Drop unsupported raw objects during merge."
+        },
+        {
+          "name": "--docx-engine",
+          "recursive": false,
+          "hidden": false,
+          "description": "DOCX renderer: auto, word (macOS), libreoffice, or built-in."
+        },
+        {
+          "name": "--docx-ofd-mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
+        },
+        {
+          "name": "--libreoffice",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the LibreOffice soffice executable for DOCX conversion.",
+          "arguments": [
+            {
+              "name": "LIBREOFFICE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--font-directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additional font directory for DOCX rendering; may be repeated.",
+          "arguments": [
+            {
+              "name": "FONT_DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help.",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "INPUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUTOFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUTPNG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUTOFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUT1OFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUT2OFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
+          "name": "convert",
+          "hidden": false,
+          "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "merge",
+          "hidden": false,
+          "description": "Merge OFD pages into a self-contained output document."
+        },
+        {
+          "name": "mix",
+          "hidden": false,
+          "description": "Overlay source/page pairs in input order, first page dimensions.\nclean-signatures Remove all declarations and unreferenced owned signature payloads."
+        },
+        {
+          "name": "ofd-to-pdf",
+          "hidden": false,
+          "description": "Convert OFD to PDF."
+        },
+        {
+          "name": "ofd-to-svg",
+          "hidden": false,
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
+        },
+        {
+          "name": "pdf-to-ofd",
+          "hidden": false,
+          "description": "Convert PDF to OFD."
+        },
+        {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
+          "name": "reorder",
+          "hidden": false,
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
         },
         {
           "name": "split",
@@ -306,6 +1136,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -315,7 +1151,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -343,7 +1179,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -454,9 +1290,24 @@
       ],
       "commands": [
         {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
           "name": "convert",
           "hidden": false,
           "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
         },
         {
           "name": "mix",
@@ -471,7 +1322,7 @@
         {
           "name": "ofd-to-svg",
           "hidden": false,
-          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
         },
         {
           "name": "pdf-to-ofd",
@@ -479,9 +1330,14 @@
           "description": "Convert PDF to OFD."
         },
         {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
           "name": "reorder",
           "hidden": false,
-          "description": "Reorder every page using a complete 1-based page list."
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
         },
         {
           "name": "split",
@@ -548,6 +1404,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -557,7 +1419,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -585,7 +1447,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -696,9 +1558,24 @@
       ],
       "commands": [
         {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
           "name": "convert",
           "hidden": false,
           "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
         },
         {
           "name": "merge",
@@ -713,7 +1590,7 @@
         {
           "name": "ofd-to-svg",
           "hidden": false,
-          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
         },
         {
           "name": "pdf-to-ofd",
@@ -721,9 +1598,14 @@
           "description": "Convert PDF to OFD."
         },
         {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
           "name": "reorder",
           "hidden": false,
-          "description": "Reorder every page using a complete 1-based page list."
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
         },
         {
           "name": "split",
@@ -790,6 +1672,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -799,7 +1687,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -827,7 +1715,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -938,9 +1826,24 @@
       ],
       "commands": [
         {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
           "name": "convert",
           "hidden": false,
           "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
         },
         {
           "name": "merge",
@@ -955,7 +1858,7 @@
         {
           "name": "ofd-to-svg",
           "hidden": false,
-          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
         },
         {
           "name": "pdf-to-ofd",
@@ -963,9 +1866,14 @@
           "description": "Convert PDF to OFD."
         },
         {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
           "name": "reorder",
           "hidden": false,
-          "description": "Reorder every page using a complete 1-based page list."
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
         },
         {
           "name": "split",
@@ -982,7 +1890,7 @@
     {
       "name": "ofd-to-svg",
       "hidden": false,
-      "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry.",
+      "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.",
       "options": [
         {
           "name": "--input",
@@ -1032,6 +1940,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -1041,7 +1955,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -1069,7 +1983,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -1180,9 +2094,24 @@
       ],
       "commands": [
         {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
           "name": "convert",
           "hidden": false,
           "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
         },
         {
           "name": "merge",
@@ -1205,9 +2134,14 @@
           "description": "Convert PDF to OFD."
         },
         {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
           "name": "reorder",
           "hidden": false,
-          "description": "Reorder every page using a complete 1-based page list."
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
         },
         {
           "name": "split",
@@ -1274,6 +2208,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -1283,7 +2223,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -1311,7 +2251,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -1422,9 +2362,24 @@
       ],
       "commands": [
         {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
           "name": "convert",
           "hidden": false,
           "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
         },
         {
           "name": "merge",
@@ -1444,12 +2399,17 @@
         {
           "name": "ofd-to-svg",
           "hidden": false,
-          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
+        },
+        {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
         },
         {
           "name": "reorder",
           "hidden": false,
-          "description": "Reorder every page using a complete 1-based page list."
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
         },
         {
           "name": "split",
@@ -1464,9 +2424,9 @@
       ]
     },
     {
-      "name": "reorder",
+      "name": "preflight",
       "hidden": false,
-      "description": "Reorder every page using a complete 1-based page list.",
+      "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry.",
       "options": [
         {
           "name": "--input",
@@ -1516,6 +2476,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -1525,7 +2491,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -1553,7 +2519,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -1664,9 +2630,24 @@
       ],
       "commands": [
         {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
           "name": "convert",
           "hidden": false,
           "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
         },
         {
           "name": "merge",
@@ -1686,12 +2667,285 @@
         {
           "name": "ofd-to-svg",
           "hidden": false,
-          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
         },
         {
           "name": "pdf-to-ofd",
           "hidden": false,
           "description": "Convert PDF to OFD."
+        },
+        {
+          "name": "reorder",
+          "hidden": false,
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
+        },
+        {
+          "name": "split",
+          "hidden": false,
+          "description": "Select distinct pages in 1-based list order into a new OFD."
+        },
+        {
+          "name": "watermark",
+          "hidden": false,
+          "description": "Add ordinary text/image objects to selected layers (millimeters)."
+        }
+      ]
+    },
+    {
+      "name": "reorder",
+      "hidden": false,
+      "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain.",
+      "options": [
+        {
+          "name": "--input",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input file path.",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "INPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pages",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based page list or ranges, for example 1,3-5.",
+          "aliases": [
+            "-p"
+          ]
+        },
+        {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
+          "name": "--ppm",
+          "recursive": false,
+          "hidden": false,
+          "description": "Image commands: finite positive pixels per millimeter; default 144/25.4."
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--skip-unsupported",
+          "recursive": false,
+          "hidden": false,
+          "description": "Drop unsupported raw objects during merge."
+        },
+        {
+          "name": "--docx-engine",
+          "recursive": false,
+          "hidden": false,
+          "description": "DOCX renderer: auto, word (macOS), libreoffice, or built-in."
+        },
+        {
+          "name": "--docx-ofd-mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
+        },
+        {
+          "name": "--libreoffice",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the LibreOffice soffice executable for DOCX conversion.",
+          "arguments": [
+            {
+              "name": "LIBREOFFICE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--font-directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Additional font directory for DOCX rendering; may be repeated.",
+          "arguments": [
+            {
+              "name": "FONT_DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help.",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "INPUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUTOFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "OUTPUTPNG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUTOFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUT1OFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "INPUT2OFD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
+          "name": "convert",
+          "hidden": false,
+          "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
+        },
+        {
+          "name": "merge",
+          "hidden": false,
+          "description": "Merge OFD pages into a self-contained output document."
+        },
+        {
+          "name": "mix",
+          "hidden": false,
+          "description": "Overlay source/page pairs in input order, first page dimensions.\nclean-signatures Remove all declarations and unreferenced owned signature payloads."
+        },
+        {
+          "name": "ofd-to-pdf",
+          "hidden": false,
+          "description": "Convert OFD to PDF."
+        },
+        {
+          "name": "ofd-to-svg",
+          "hidden": false,
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
+        },
+        {
+          "name": "pdf-to-ofd",
+          "hidden": false,
+          "description": "Convert PDF to OFD."
+        },
+        {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
         },
         {
           "name": "split",
@@ -1758,6 +3012,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -1767,7 +3027,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -1795,7 +3055,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -1906,9 +3166,24 @@
       ],
       "commands": [
         {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
           "name": "convert",
           "hidden": false,
           "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
         },
         {
           "name": "merge",
@@ -1928,7 +3203,7 @@
         {
           "name": "ofd-to-svg",
           "hidden": false,
-          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
         },
         {
           "name": "pdf-to-ofd",
@@ -1936,9 +3211,14 @@
           "description": "Convert PDF to OFD."
         },
         {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
           "name": "reorder",
           "hidden": false,
-          "description": "Reorder every page using a complete 1-based page list."
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
         },
         {
           "name": "watermark",
@@ -2000,6 +3280,12 @@
           ]
         },
         {
+          "name": "--document",
+          "recursive": false,
+          "hidden": false,
+          "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+        },
+        {
           "name": "--ppm",
           "recursive": false,
           "hidden": false,
@@ -2009,7 +3295,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+          "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
           "arguments": [
             {
               "name": "FORMAT",
@@ -2037,7 +3323,7 @@
           "name": "--docx-ofd-mode",
           "recursive": false,
           "hidden": false,
-          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+          "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
         },
         {
           "name": "--libreoffice",
@@ -2148,9 +3434,24 @@
       ],
       "commands": [
         {
+          "name": "attachments",
+          "hidden": false,
+          "description": "List, extract (by ID, to an explicit path) or remove (logical or --physical) attachments."
+        },
+        {
           "name": "convert",
           "hidden": false,
           "description": "Infer conversion direction from .docx/.pdf/.ofd extensions.\ndocx-to-pdf Convert DOCX to PDF using Word on macOS when available, or LibreOffice.\ndocx-to-ofd Convert DOCX directly to native OFD text, or use a dual visual/text layer.\ntext-to-ofd Convert strict UTF-8 plain text to native OFD with Flow pagination."
+        },
+        {
+          "name": "crop",
+          "hidden": false,
+          "description": "Set the page box (millimeters) of the listed pages, default all; content is not moved."
+        },
+        {
+          "name": "locate",
+          "hidden": false,
+          "description": "Read-only keyword search with page and glyph bounds; preview for replace-text."
         },
         {
           "name": "merge",
@@ -2170,7 +3471,7 @@
         {
           "name": "ofd-to-svg",
           "hidden": false,
-          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms.\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+          "description": "Convert one OFD page to self-contained SVG.\nofd-to-html Convert selected OFD pages to a static HTML preview.\nofd-to-image Export one OFD page to white-background PNG (default) or JPEG.\nimage-to-ofd Import PNG/JPEG, one image per page; centered, shrink to fit, no enlargement.\nverify-signatures Verify protected-entry digests and registered signed-value algorithms."
         },
         {
           "name": "pdf-to-ofd",
@@ -2178,9 +3479,14 @@
           "description": "Convert PDF to OFD."
         },
         {
+          "name": "preflight",
+          "hidden": false,
+          "description": "Run local archival preflight rules APF-001..006 (not certification).\nextract-text Extract page text, optionally including template text.\nreplace-text Replace literal simple text using vetted original Regular fonts and translation-only geometry."
+        },
+        {
           "name": "reorder",
           "hidden": false,
-          "description": "Reorder every page using a complete 1-based page list."
+          "description": "Reorder every page using a complete 1-based page list.\ndelete-pages Remove the listed 1-based pages; at least one page must remain."
         },
         {
           "name": "split",
@@ -2239,6 +3545,12 @@
       ]
     },
     {
+      "name": "--document",
+      "recursive": false,
+      "hidden": false,
+      "description": "1-based DocBody position for OFD read/export and supported edits; default 1."
+    },
+    {
       "name": "--ppm",
       "recursive": false,
       "hidden": false,
@@ -2248,7 +3560,7 @@
       "name": "--format",
       "recursive": false,
       "hidden": false,
-      "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.",
+      "description": "ofd-to-image: png (default) or jpeg, independent of filename.\n--jpeg-quality ofd-to-image: quality 1-100 (default 90).\nimage-to-ofd: use --output, or a final positional .ofd destination; inputs retain argument order.\n--page-width, --page-height image-to-ofd: paired dimensions in millimeters; default natural image size.\n--max-pixels, --max-working-bytes, --max-input-bytes, --max-output-bytes Image command budgets.\n--max-pdf-bytes, --max-signature-appearances ofd-to-image: PDF bytes / selected stamp count budgets.\n--max-total-input-bytes, --max-pages, --max-entries image-to-ofd: cumulative input/page/entry budgets.\n--include-templates Include template text during extraction.\n--require-signatures verify-signatures: treat a document without signature declarations as a failure (exit 4).",
       "arguments": [
         {
           "name": "FORMAT",
@@ -2276,7 +3588,7 @@
       "name": "--docx-ofd-mode",
       "recursive": false,
       "hidden": false,
-      "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer."
+      "description": "DOCX to OFD mode: native (default, no PDF) or dual-layer.\n--native-embedded-bold-behavior Native embedded bold: text-stroke (default) or throw.\nthrow requires a physical bold face for selected embedded text, not name-only text."
     },
     {
       "name": "--libreoffice",
