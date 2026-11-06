@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "modulus",
-    "version": "1.8.2",
+    "version": "2.0.0",
     "description": "Command-line interface for the Modulus framework.\n      Scaffold modular-monolith applications, add modules, and generate CRUD code."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 44,
+    "helpDocumentCount": 46,
     "cliFramework": "Spectre.Console.Cli"
   },
   "commands": [
@@ -67,6 +67,64 @@
           "recursive": false,
           "hidden": false,
           "description": "Also scaffold the migration that adds the ai_changes\njournal table to every module (modulus migrate add\nAddAiChanges). Needs the dotnet-ef tool"
+        }
+      ]
+    },
+    {
+      "name": "add-analytics",
+      "hidden": false,
+      "description": "Add the analytics layer: ClickHouse sink and OpenLineage emitter wiring,\nsettings, and a local ClickHouse and RabbitMQ compose file",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information\nwithout executing them",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Preview what would happen: report file writes / commands\nwithout executing them"
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Overwrite existing files without prompting / skip\nconfirmations"
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed output (child-process stdout, every\nwritten file, etc.)",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Machine-readable output: no prompts, no console text,\none JSON document on stdout (outcome, files written, any\nresult such as describe's inventory)"
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress everything but errors and the final summary",
+          "aliases": [
+            "-q"
+          ]
+        },
+        {
+          "name": "--no-compose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not write docker-compose.analytics.yml (the local\nClickHouse and RabbitMQ)"
         }
       ]
     },
@@ -478,6 +536,58 @@
       ]
     },
     {
+      "name": "add-tenant-lifecycle",
+      "hidden": false,
+      "description": "Add the tenant data lifecycle: exports of a company's data, offboarding, legal\nholds, retention (store module, host wiring, export endpoints). Needs\nmulti-tenancy",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Preview what would happen: report file writes / commands\nwithout executing them"
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Overwrite existing files without prompting / skip\nconfirmations"
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed output (child-process stdout, every written\nfile, etc.)",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Machine-readable output: no prompts, no console text, one\nJSON document on stdout (outcome, files written, any result\nsuch as describe's inventory)"
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress everything but errors and the final summary",
+          "aliases": [
+            "-q"
+          ]
+        }
+      ]
+    },
+    {
       "name": "add-webhooks",
       "hidden": false,
       "description": "Add outgoing webhooks: integration events delivered, signed, to tenant\nsubscriptions (store module, host wiring, management API)",
@@ -643,13 +753,29 @@
           "name": "--auth",
           "recursive": false,
           "hidden": false,
-          "description": "Auth provider: none,\nopeniddict, auth0,\nauthentik, azuread,\nduende, keycloak, okta.\nOmit to be prompted\nmodule. Omit to be\nprompted (CI default:\ninclude)"
+          "description": "Auth provider: none,\nopeniddict, auth0,\nauthentik, azuread,\nduende, keycloak, okta.\nOmit to be prompted"
+        },
+        {
+          "name": "--with-example",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include the example\nCatalog module. Off by\ndefault: a new app\nstarts with no sample\ncode\ninclude it",
+          "arguments": [
+            {
+              "name": "WITH_EXAMPLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
         },
         {
           "name": "--no-example",
           "recursive": false,
           "hidden": false,
-          "description": "Skip the example Catalog\nmodule. Omit to be\nprompted (CI default:\ninclude)"
+          "description": "Deprecated: the example\nmodule is off by\ndefault; use"
         },
         {
           "name": "--message-broker",
@@ -661,7 +787,23 @@
           "name": "--caching",
           "recursive": false,
           "hidden": false,
-          "description": "Caching provider:\ns3, azureblobs. Omit to\nprompted"
+          "description": "Caching provider:\ninmemory, redis. Omit to"
+        },
+        {
+          "name": "--s3-provider",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --storage s3: the\nS3-compatible service\n(aws, wasabi, b2, r2,\nminio). Default aws. The\ngenerated settings start\nwith its endpoint and\nregion\ns3, azureblobs. Omit to\nprompted",
+          "arguments": [
+            {
+              "name": "S3_PROVIDER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
         },
         {
           "name": "--storage",
@@ -2503,7 +2645,7 @@
               "name": "--quiet",
               "recursive": false,
               "hidden": false,
-              "description": "Suppress everything but errors and the final\nsummary",
+              "description": "Suppress everything but errors and the final\nsummary\ncandlestick, sankey or org",
               "aliases": [
                 "-q"
               ]
@@ -2512,7 +2654,7 @@
               "name": "--type",
               "recursive": false,
               "hidden": false,
-              "description": "line       Chart type: line, column, donut or heatmap",
+              "description": "line       Chart type: line, column, donut, heatmap, radar,\ncandlestick, sankey or org",
               "arguments": [
                 {
                   "name": "TYPE",
