@@ -1,8 +1,8 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "CqrsLens 0.8.0 - see your MediatR codebase.",
-    "version": "0.8.0",
+    "title": "NOCTUA 1.0.0 - see your MediatR codebase.",
+    "version": "1.0.0",
     "description": "See your MediatR codebase: CqrsLens statically scans a .NET solution (no build required) and generates an ARCHITECTURE.md report with Mermaid diagrams of your project graph, CQRS map, layers, and DbContexts."
   },
   "x-inspectra": {
@@ -16,22 +16,16 @@
       "name": "--output",
       "recursive": false,
       "hidden": false,
-      "description": "Report path. Default: ARCHITECTURE.md (.html or .json) in the current directory.",
+      "description": "Report path. Default: ARCHITECTURE.md (.html or .json) in the current\ndirectory.",
       "aliases": [
         "-o"
-      ]
-    },
-    {
-      "name": "--config",
-      "recursive": false,
-      "hidden": false,
-      "description": "Config file. Default: <path>/.cqrslens.json when present.\nSettings: analysis, render, watermark, markers, handlerMarkers, include/exclude globs, layers, rules.",
+      ],
       "arguments": [
         {
-          "name": "CONFIG",
-          "required": false,
+          "name": "FILE",
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
           }
         }
@@ -41,55 +35,141 @@
       "name": "--format",
       "recursive": false,
       "hidden": false,
-      "description": "Report format: md (default), html, json, or agent. A .html, .json, or .agent.md -o path implies that format."
-    },
-    {
-      "name": "--slice",
-      "recursive": false,
-      "hidden": false,
-      "description": "Filter and trace vertical slices matching FILTER (endpoint, request, handler, entity, or event).\nStreams directly to stdout when -o is omitted."
-    },
-    {
-      "name": "--mcp",
-      "recursive": false,
-      "hidden": false,
-      "description": "Start the built-in Model Context Protocol (MCP) server over JSON-RPC 2.0 stdio."
-    },
-    {
-      "name": "--profile",
-      "recursive": false,
-      "hidden": false,
-      "description": "Print per-stage timing and allocation totals to stderr."
+      "description": "md (default), html, json, or agent. A matching -o extension implies the\nformat.",
+      "arguments": [
+        {
+          "name": "FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
       "name": "--render",
       "recursive": false,
       "hidden": false,
-      "description": "HTML diagram rendering: mermaid (default) or svg (zero-JS inline SVG)."
+      "description": "HTML diagrams: mermaid (default) or svg (zero-JS inline SVG).",
+      "arguments": [
+        {
+          "name": "MODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
-      "name": "--analysis",
+      "name": "--export-svg",
       "recursive": false,
       "hidden": false,
-      "description": "Analysis backend: text (default) or roslyn (opt-in)."
+      "description": "Also write every diagram as a standalone .svg file into DIR (created\nwhen missing).",
+      "arguments": [
+        {
+          "name": "DIR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--export-mermaid",
+      "recursive": false,
+      "hidden": false,
+      "description": "Also write every diagram as a standalone .mmd file into DIR (created",
+      "arguments": [
+        {
+          "name": "DIR",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--summary",
+      "recursive": false,
+      "hidden": false,
+      "description": "Also write a compact Markdown job summary.",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
       "name": "--generated-at",
       "recursive": false,
       "hidden": false,
-      "description": "Fixed ISO-8601 timestamp for reproducible reports (tests/CI);\ntiming is reported as 0 ms in this mode."
+      "description": "Fixed timestamp for reproducible reports; timing is reported as 0 ms.",
+      "arguments": [
+        {
+          "name": "ISO8601",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--analysis",
+      "recursive": false,
+      "hidden": false,
+      "description": "text (default) or roslyn (opt-in).",
+      "arguments": [
+        {
+          "name": "MODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--slice",
+      "recursive": false,
+      "hidden": false,
+      "description": "Trace vertical slices matching FILTER (endpoint, request, handler,",
+      "arguments": [
+        {
+          "name": "FILTER",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
       "name": "--markers",
       "recursive": false,
       "hidden": false,
-      "description": "Comma-separated custom marker interface names that also count\nas request roots (e.g. ICommand,IQuery,IMessage). Requests hidden\nbehind interfaces deriving from IRequest are always followed.",
+      "description": "Extra request roots, e.g. ICommand,IQuery,IMessage. Requests behind",
       "arguments": [
         {
-          "name": "MARKERS",
-          "required": false,
+          "name": "LIST",
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
           }
         }
@@ -99,59 +179,67 @@
       "name": "--handler-markers",
       "recursive": false,
       "hidden": false,
-      "description": "Comma-separated custom handler roots for external wrappers\n(e.g. ICommandHandler,IQueryHandler). Source-declared wrappers\nare followed automatically.",
+      "description": "Extra handler roots for external wrappers, e.g.",
       "arguments": [
         {
-          "name": "HANDLER_MARKERS",
-          "required": false,
+          "name": "LIST",
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
           }
         }
       ]
     },
     {
-      "name": "--watermark",
+      "name": "--cqrs-map-split",
       "recursive": false,
       "hidden": false,
-      "description": "Custom watermark text rendered as block ASCII art in the console\nand embedded as a watermark stamp in Markdown, HTML, and JSON reports."
+      "description": "count (default), feature, or unsplit. Overrides the cqrsMapSplit config",
+      "arguments": [
+        {
+          "name": "MODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
-      "name": "--banner",
+      "name": "--config",
       "recursive": false,
       "hidden": false,
-      "description": "Force rendering the ASCII art logo banner and summary card."
+      "description": "Config file. Default: <path>/.cqrslens.json when present. Holds",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
-      "name": "--no-banner",
+      "name": "--strict",
       "recursive": false,
       "hidden": false,
-      "description": "Suppress the ASCII art logo banner and summary card."
-    },
-    {
-      "name": "--color",
-      "recursive": false,
-      "hidden": false,
-      "description": "Force ANSI 24-bit TrueColor gradients in console output."
-    },
-    {
-      "name": "--no-color",
-      "recursive": false,
-      "hidden": false,
-      "description": "Disable ANSI colors in console output (also respects NO_COLOR)."
+      "description": "Exit 4 when architecture checks report an error and the scan is"
     },
     {
       "name": "--baseline",
       "recursive": false,
       "hidden": false,
-      "description": "Compare checks with a baseline file; --strict then fails only\non errors not present in the baseline.",
+      "description": "Compare checks with a baseline; --strict then fails only on new errors.",
       "arguments": [
         {
-          "name": "BASELINE",
-          "required": false,
+          "name": "FILE",
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
           }
         }
@@ -164,10 +252,26 @@
       "description": "Record current checks as the baseline, then continue.",
       "arguments": [
         {
-          "name": "WRITE_BASELINE",
-          "required": false,
+          "name": "FILE",
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--sarif",
+      "recursive": false,
+      "hidden": false,
+      "description": "Also write SARIF 2.1.0 for code scanning.",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
             "maximum": 1
           }
         }
@@ -177,19 +281,33 @@
       "name": "--diff",
       "recursive": false,
       "hidden": false,
-      "description": "Compare the current scan against a base ARCHITECTURE.json file or\nbase solution folder to see what changed in the CQRS surface.\n--diff-output Write the architecture diff report (.md for PR comments, or .json)."
+      "description": "Compare against a base ARCHITECTURE.json or solution folder.",
+      "arguments": [
+        {
+          "name": "PATH_OR_JSON",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
-      "name": "--sarif",
+      "name": "--diff-output",
       "recursive": false,
       "hidden": false,
-      "description": "Also write SARIF 2.1.0 for code scanning."
-    },
-    {
-      "name": "--summary",
-      "recursive": false,
-      "hidden": false,
-      "description": "Also write a compact Markdown job summary."
+      "description": "Write the architecture diff report (.md for PR comments, or .json).",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
       "name": "--github-annotations",
@@ -201,23 +319,45 @@
       "name": "--ci-root",
       "recursive": false,
       "hidden": false,
-      "description": "Repository root used to rebase annotation/SARIF paths.",
+      "description": "Repository root used to rebase annotation and SARIF paths.\n--banner / --no-banner    Force or suppress the logo banner and summary card.\n--color / --no-color      Force or disable ANSI TrueColor output (also respects NO_COLOR).\n--ascii / --unicode       Use single-width ASCII chrome. For CJK terminals, which draw box-drawing",
       "arguments": [
         {
-          "name": "CI_ROOT",
-          "required": false,
+          "name": "DIR",
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
           }
         }
       ]
     },
     {
-      "name": "--strict",
+      "name": "--watermark",
       "recursive": false,
       "hidden": false,
-      "description": "Exit with code 4 when architecture checks report an error\nand the scan is complete; incomplete scans report diagnostics."
+      "description": "Custom watermark rendered as block art in the console and as a stamp in",
+      "arguments": [
+        {
+          "name": "TEXT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--profile",
+      "recursive": false,
+      "hidden": false,
+      "description": "Print per-stage timing and allocation totals to stderr."
+    },
+    {
+      "name": "--mcp",
+      "recursive": false,
+      "hidden": false,
+      "description": "Start the built-in Model Context Protocol server over JSON-RPC 2.0"
     },
     {
       "name": "--help",
@@ -238,6 +378,96 @@
   "arguments": [
     {
       "name": "PATH",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "REPORT",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "DIRECTORY",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "FORMAT",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "ANALYSIS",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "KEY",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "COMPLETE",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "CONSOLE",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "REPORTS",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "OTHER",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "STDIO",
       "required": true,
       "hidden": false,
       "arity": {
