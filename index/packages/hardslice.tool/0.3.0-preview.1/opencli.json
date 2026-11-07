@@ -1,0 +1,299 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "dotnet-hardslice",
+    "version": "0.3.0-preview.1",
+    "description": "The dotnet hardslice command: verifies a HardSlice solution, explains its rules and runs the hooks of its coding agents."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 9
+  },
+  "commands": [
+    {
+      "name": "check",
+      "hidden": false,
+      "description": "Builds the solution, then runs its unit, architecture and integration tests,\nand fails while a TODO(hardslice): marker is left in src/ or tests/.\nStops at the first step that fails, its output left as is. The only verdict on the work.",
+      "commands": [
+        {
+          "name": "and",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "check",
+              "hidden": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "explain",
+      "hidden": false,
+      "description": "Prints the sheet of a HardSlice rule, such as HS016.",
+      "arguments": [
+        {
+          "name": "RULE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "hook",
+      "hidden": false,
+      "description": "The hooks of an agent: reads the payload of the CLI on the standard input, refuses the edit\nof a protected file, runs check --build after the edit of a .cs file and check before the\nagent hands back, and answers the way the CLI hands it to its agent.\nhook claude PreToolUse|PostToolUse|Stop     Claude Code, .claude/settings.json: code 2,\nand code 0 at once under Copilot CLI.\nhook codex PreToolUse|PostToolUse|Stop      Codex, .codex/hooks.json: code 2.\nhook copilot preToolUse|postToolUse|agentStop\nCopilot CLI, .github/hooks/hardslice.json:\nJSON on the standard output, code 0.",
+      "arguments": [
+        {
+          "name": "CLI",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "EVENT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "claude",
+          "hidden": false,
+          "description": "Claude Code, .claude/settings.json: code 2,",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Prints this help, or after a command the help of that command alone, such as upgrade --help.",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Prints the version of the tool.\nExit codes of check and check --build: 0 the check passed, 1 a step failed, 2 a wrong command line only.\nExit codes of upgrade: 0 nothing left to merge (merged files listed, to review), 1 the upgrade failed (with a change in the\ngit tree, nothing is written), 2 a wrong command line, 3 conflicts to resolve or files left to merge or to review, listed.\nExit codes of explain: 0 the sheet printed, 2 a rule without a sheet or a wrong command line.\nExit codes of hook: those of its CLI above, 1 an unknown CLI or event, or a payload that is not JSON.",
+              "arguments": [
+                {
+                  "name": "VERSION",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "check",
+              "hidden": false,
+              "description": "Builds the solution, then runs its unit, architecture and integration tests,\nand fails while a TODO(hardslice): marker is left in src/ or tests/.\nStops at the first step that fails, its output left as is. The only verdict on the work."
+            },
+            {
+              "name": "explain",
+              "hidden": false,
+              "description": "Prints the sheet of a HardSlice rule, such as HS016."
+            },
+            {
+              "name": "hook",
+              "hidden": false,
+              "description": "The hooks of an agent: reads the payload of the CLI on the standard input, refuses the edit\nof a protected file, runs check --build after the edit of a .cs file and check before the\nagent hands back, and answers the way the CLI hands it to its agent.\nhook claude PreToolUse|PostToolUse|Stop     Claude Code, .claude/settings.json: code 2,\nand code 0 at once under Copilot CLI.\nhook codex PreToolUse|PostToolUse|Stop      Codex, .codex/hooks.json: code 2.\nhook copilot preToolUse|postToolUse|agentStop\nCopilot CLI, .github/hooks/hardslice.json:\nJSON on the standard output, code 0."
+            },
+            {
+              "name": "protected",
+              "hidden": false,
+              "description": "Reads paths relative to the root of the solution on the standard input, separated by NUL\ncharacters (git diff --name-only -z, recommended) or one per line, and lists those that agents\nnever edit. Exits 1 when one is protected, 0 when none is, 2 on a line that git quoted, which\nonly -z avoids: the CI of the solution runs it on the files of a pull request, which a\nmaintainer approves with the label hardslice-approved."
+            },
+            {
+              "name": "upgrade",
+              "hidden": false,
+              "description": "Brings the solution to the template of the version of the tool, from a git tree without changes\nbut the tool manifest: generates hardslice-api anew under its name in a temporary folder, rewrites\nthe files the template owns (protected files and rule sheets), adds the files the solution lacks,\nand merges the files of the application in three ways from the generation recorded in\n.hardslice/generation/: updates those the application did not change, merges with git merge-file\nthose both changed, writing a conflict between git markers, and lists with their diff those\nwithout a recorded generation, to merge, and the files the template may have moved with their\ndiff against the new file. Each diff has the headers of git and applies with git apply. Then\nrecords the new generation there. Leaves out the sample when the solution has no\nsrc/<name>/Features/Bookings/ nor src/<name>.Domain/Bookings/, unless --sample or --no-sample\nsays. Writes protected files: a maintainer runs it, never an agent."
+            }
+          ]
+        },
+        {
+          "name": "codex",
+          "hidden": false,
+          "description": "Codex, .codex/hooks.json: code 2.",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Prints this help, or after a command the help of that command alone, such as upgrade --help.",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Prints the version of the tool.\nExit codes of check and check --build: 0 the check passed, 1 a step failed, 2 a wrong command line only.\nExit codes of upgrade: 0 nothing left to merge (merged files listed, to review), 1 the upgrade failed (with a change in the\ngit tree, nothing is written), 2 a wrong command line, 3 conflicts to resolve or files left to merge or to review, listed.\nExit codes of explain: 0 the sheet printed, 2 a rule without a sheet or a wrong command line.\nExit codes of hook: those of its CLI above, 1 an unknown CLI or event, or a payload that is not JSON.",
+              "arguments": [
+                {
+                  "name": "VERSION",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "check",
+              "hidden": false,
+              "description": "Builds the solution, then runs its unit, architecture and integration tests,\nand fails while a TODO(hardslice): marker is left in src/ or tests/.\nStops at the first step that fails, its output left as is. The only verdict on the work."
+            },
+            {
+              "name": "explain",
+              "hidden": false,
+              "description": "Prints the sheet of a HardSlice rule, such as HS016."
+            },
+            {
+              "name": "hook",
+              "hidden": false,
+              "description": "The hooks of an agent: reads the payload of the CLI on the standard input, refuses the edit\nof a protected file, runs check --build after the edit of a .cs file and check before the\nagent hands back, and answers the way the CLI hands it to its agent.\nhook claude PreToolUse|PostToolUse|Stop     Claude Code, .claude/settings.json: code 2,\nand code 0 at once under Copilot CLI.\nhook codex PreToolUse|PostToolUse|Stop      Codex, .codex/hooks.json: code 2.\nhook copilot preToolUse|postToolUse|agentStop\nCopilot CLI, .github/hooks/hardslice.json:\nJSON on the standard output, code 0."
+            },
+            {
+              "name": "protected",
+              "hidden": false,
+              "description": "Reads paths relative to the root of the solution on the standard input, separated by NUL\ncharacters (git diff --name-only -z, recommended) or one per line, and lists those that agents\nnever edit. Exits 1 when one is protected, 0 when none is, 2 on a line that git quoted, which\nonly -z avoids: the CI of the solution runs it on the files of a pull request, which a\nmaintainer approves with the label hardslice-approved."
+            },
+            {
+              "name": "upgrade",
+              "hidden": false,
+              "description": "Brings the solution to the template of the version of the tool, from a git tree without changes\nbut the tool manifest: generates hardslice-api anew under its name in a temporary folder, rewrites\nthe files the template owns (protected files and rule sheets), adds the files the solution lacks,\nand merges the files of the application in three ways from the generation recorded in\n.hardslice/generation/: updates those the application did not change, merges with git merge-file\nthose both changed, writing a conflict between git markers, and lists with their diff those\nwithout a recorded generation, to merge, and the files the template may have moved with their\ndiff against the new file. Each diff has the headers of git and applies with git apply. Then\nrecords the new generation there. Leaves out the sample when the solution has no\nsrc/<name>/Features/Bookings/ nor src/<name>.Domain/Bookings/, unless --sample or --no-sample\nsays. Writes protected files: a maintainer runs it, never an agent."
+            }
+          ]
+        },
+        {
+          "name": "copilot",
+          "hidden": false,
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Prints this help, or after a command the help of that command alone, such as upgrade --help.",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Prints the version of the tool.\nExit codes of check and check --build: 0 the check passed, 1 a step failed, 2 a wrong command line only.\nExit codes of upgrade: 0 nothing left to merge (merged files listed, to review), 1 the upgrade failed (with a change in the\ngit tree, nothing is written), 2 a wrong command line, 3 conflicts to resolve or files left to merge or to review, listed.\nExit codes of explain: 0 the sheet printed, 2 a rule without a sheet or a wrong command line.\nExit codes of hook: those of its CLI above, 1 an unknown CLI or event, or a payload that is not JSON.",
+              "arguments": [
+                {
+                  "name": "VERSION",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "check",
+              "hidden": false,
+              "description": "Builds the solution, then runs its unit, architecture and integration tests,\nand fails while a TODO(hardslice): marker is left in src/ or tests/.\nStops at the first step that fails, its output left as is. The only verdict on the work."
+            },
+            {
+              "name": "explain",
+              "hidden": false,
+              "description": "Prints the sheet of a HardSlice rule, such as HS016."
+            },
+            {
+              "name": "hook",
+              "hidden": false,
+              "description": "The hooks of an agent: reads the payload of the CLI on the standard input, refuses the edit\nof a protected file, runs check --build after the edit of a .cs file and check before the\nagent hands back, and answers the way the CLI hands it to its agent.\nhook claude PreToolUse|PostToolUse|Stop     Claude Code, .claude/settings.json: code 2,\nand code 0 at once under Copilot CLI.\nhook codex PreToolUse|PostToolUse|Stop      Codex, .codex/hooks.json: code 2.\nhook copilot preToolUse|postToolUse|agentStop\nCopilot CLI, .github/hooks/hardslice.json:\nJSON on the standard output, code 0."
+            },
+            {
+              "name": "protected",
+              "hidden": false,
+              "description": "Reads paths relative to the root of the solution on the standard input, separated by NUL\ncharacters (git diff --name-only -z, recommended) or one per line, and lists those that agents\nnever edit. Exits 1 when one is protected, 0 when none is, 2 on a line that git quoted, which\nonly -z avoids: the CI of the solution runs it on the files of a pull request, which a\nmaintainer approves with the label hardslice-approved."
+            },
+            {
+              "name": "upgrade",
+              "hidden": false,
+              "description": "Brings the solution to the template of the version of the tool, from a git tree without changes\nbut the tool manifest: generates hardslice-api anew under its name in a temporary folder, rewrites\nthe files the template owns (protected files and rule sheets), adds the files the solution lacks,\nand merges the files of the application in three ways from the generation recorded in\n.hardslice/generation/: updates those the application did not change, merges with git merge-file\nthose both changed, writing a conflict between git markers, and lists with their diff those\nwithout a recorded generation, to merge, and the files the template may have moved with their\ndiff against the new file. Each diff has the headers of git and applies with git apply. Then\nrecords the new generation there. Leaves out the sample when the solution has no\nsrc/<name>/Features/Bookings/ nor src/<name>.Domain/Bookings/, unless --sample or --no-sample\nsays. Writes protected files: a maintainer runs it, never an agent."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "protected",
+      "hidden": false,
+      "description": "Reads paths relative to the root of the solution on the standard input, separated by NUL\ncharacters (git diff --name-only -z, recommended) or one per line, and lists those that agents\nnever edit. Exits 1 when one is protected, 0 when none is, 2 on a line that git quoted, which\nonly -z avoids: the CI of the solution runs it on the files of a pull request, which a\nmaintainer approves with the label hardslice-approved."
+    },
+    {
+      "name": "upgrade",
+      "hidden": false,
+      "description": "Brings the solution to the template of the version of the tool, from a git tree without changes\nbut the tool manifest: generates hardslice-api anew under its name in a temporary folder, rewrites\nthe files the template owns (protected files and rule sheets), adds the files the solution lacks,\nand merges the files of the application in three ways from the generation recorded in\n.hardslice/generation/: updates those the application did not change, merges with git merge-file\nthose both changed, writing a conflict between git markers, and lists with their diff those\nwithout a recorded generation, to merge, and the files the template may have moved with their\ndiff against the new file. Each diff has the headers of git and applies with git apply. Then\nrecords the new generation there. Leaves out the sample when the solution has no\nsrc/<name>/Features/Bookings/ nor src/<name>.Domain/Bookings/, unless --sample or --no-sample\nsays. Writes protected files: a maintainer runs it, never an agent.",
+      "arguments": [
+        {
+          "name": "NAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false,
+      "description": "Prints this help, or after a command the help of that command alone, such as upgrade --help.",
+      "aliases": [
+        "-h"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Prints the version of the tool.\nExit codes of check and check --build: 0 the check passed, 1 a step failed, 2 a wrong command line only.\nExit codes of upgrade: 0 nothing left to merge (merged files listed, to review), 1 the upgrade failed (with a change in the\ngit tree, nothing is written), 2 a wrong command line, 3 conflicts to resolve or files left to merge or to review, listed.\nExit codes of explain: 0 the sheet printed, 2 a rule without a sheet or a wrong command line.\nExit codes of hook: those of its CLI above, 1 an unknown CLI or event, or a payload that is not JSON.",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}

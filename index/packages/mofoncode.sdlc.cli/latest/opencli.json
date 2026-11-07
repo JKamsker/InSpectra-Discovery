@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "ai-sdlc gate",
-    "version": "0.36.6",
+    "version": "0.36.9-preview",
     "description": "The gate for an ai-sdlc governed solution. A change moves through intent, spec, plan, build, verify and land; each artifact is challenged against a fixed set of rules before it advances, a person approves the three planning documents against a hash of each, and nothing merges unless the chain is complete, approved and hash-matched. This is the deterministic half: the `sdlc` command that every host hook, git hook and pipeline step calls. The stages need language and ship separately as the plugin."
   },
   "x-inspectra": {
@@ -16,6 +16,11 @@
       "name": "branch",
       "hidden": false,
       "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+    },
+    {
+      "name": "branch-policy",
+      "hidden": false,
+      "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
     },
     {
       "name": "claude",
@@ -52,6 +57,37 @@
           "description": "Print the record that stops a cycle, for a person to place.\ndraft convergence <file> Write drafts of constraints.md, decisions.md and techstack.md\nfrom the proposals marked [x] in a convergence proposal file:\neach a copy of the file as it stands with only those lines\napplied, refused if any entry or row would go missing.",
           "options": [
             {
+              "name": "--approvals",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+              "arguments": [
+                {
+                  "name": "WHO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--from",
               "recursive": false,
               "hidden": false,
@@ -73,6 +109,11 @@
               "name": "branch",
               "hidden": false,
               "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+            },
+            {
+              "name": "branch-policy",
+              "hidden": false,
+              "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
             },
             {
               "name": "claude",
@@ -119,6 +160,11 @@
                   "description": "Write the declared stack beside itself, for an edit a person\nrenames into place: a copy of it, or the framework's default\nwhere there is none yet, with every stack rule listed and on.\nThe default also lists the five .NET build settings files, one\nrow each: on where the repository held no code, off where it\ndid. A row not true here says 'none' rather than being\ndeleted. On a copy, names what this release ships that the\nstack never mentions, and adds none of it. Also reports the\noptions menu: every concern the shipped profiles know about,\nwhat each declares, every stack rule, and what each build\nsettings file does and costs. The menu is never renamed into\nplace."
                 }
               ]
+            },
+            {
+              "name": "Environment",
+              "hidden": false,
+              "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
             },
             {
               "name": "evidence",
@@ -195,7 +241,7 @@
             {
               "name": "pr-ready",
               "hidden": false,
-              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
             },
             {
               "name": "propose",
@@ -287,12 +333,12 @@
             {
               "name": "verify-chain",
               "hidden": false,
-              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
             },
             {
               "name": "version",
               "hidden": false,
-              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
             }
           ]
         },
@@ -302,6 +348,37 @@
           "description": "Write the gate decision beside the ledger, for a person to\nrename onto it. Writes no approval.",
           "options": [
             {
+              "name": "--approvals",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+              "arguments": [
+                {
+                  "name": "WHO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--from",
               "recursive": false,
               "hidden": false,
@@ -323,6 +400,11 @@
               "name": "branch",
               "hidden": false,
               "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+            },
+            {
+              "name": "branch-policy",
+              "hidden": false,
+              "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
             },
             {
               "name": "claude",
@@ -369,6 +451,11 @@
                   "description": "Write the declared stack beside itself, for an edit a person\nrenames into place: a copy of it, or the framework's default\nwhere there is none yet, with every stack rule listed and on.\nThe default also lists the five .NET build settings files, one\nrow each: on where the repository held no code, off where it\ndid. A row not true here says 'none' rather than being\ndeleted. On a copy, names what this release ships that the\nstack never mentions, and adds none of it. Also reports the\noptions menu: every concern the shipped profiles know about,\nwhat each declares, every stack rule, and what each build\nsettings file does and costs. The menu is never renamed into\nplace."
                 }
               ]
+            },
+            {
+              "name": "Environment",
+              "hidden": false,
+              "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
             },
             {
               "name": "evidence",
@@ -445,7 +532,7 @@
             {
               "name": "pr-ready",
               "hidden": false,
-              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
             },
             {
               "name": "propose",
@@ -537,12 +624,12 @@
             {
               "name": "verify-chain",
               "hidden": false,
-              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
             },
             {
               "name": "version",
               "hidden": false,
-              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
             }
           ]
         },
@@ -552,6 +639,37 @@
           "description": "Write the whole solution.md beside itself, for a person\nto rename onto it. Carries the four keys through as\nrecorded and the prose through unchanged, so the rename\ncannot reclassify the solution or cost anybody what they\nwrote. --standard changes that one key, and says so.",
           "options": [
             {
+              "name": "--approvals",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+              "arguments": [
+                {
+                  "name": "WHO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--from",
               "recursive": false,
               "hidden": false,
@@ -573,6 +691,11 @@
               "name": "branch",
               "hidden": false,
               "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+            },
+            {
+              "name": "branch-policy",
+              "hidden": false,
+              "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
             },
             {
               "name": "claude",
@@ -621,6 +744,11 @@
               ]
             },
             {
+              "name": "Environment",
+              "hidden": false,
+              "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
+            },
+            {
               "name": "evidence",
               "hidden": false,
               "description": "Record what a build produced: its base commit, the commit it is\nat, the diff between them, a normalised test summary and the\ncoverage. Verify reads only this. The summary records the\nplatform the tests ran on. Refuses code outside .sdlc/ that is\nnot committed; the diff is rebuilt from the two commits and\nnever committed (D-124).",
@@ -695,7 +823,7 @@
             {
               "name": "pr-ready",
               "hidden": false,
-              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
             },
             {
               "name": "propose",
@@ -787,12 +915,12 @@
             {
               "name": "verify-chain",
               "hidden": false,
-              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
             },
             {
               "name": "version",
               "hidden": false,
-              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
             }
           ]
         },
@@ -801,6 +929,37 @@
           "hidden": false,
           "description": "Write the declared stack beside itself, for an edit a person\nrenames into place: a copy of it, or the framework's default\nwhere there is none yet, with every stack rule listed and on.\nThe default also lists the five .NET build settings files, one\nrow each: on where the repository held no code, off where it\ndid. A row not true here says 'none' rather than being\ndeleted. On a copy, names what this release ships that the\nstack never mentions, and adds none of it. Also reports the\noptions menu: every concern the shipped profiles know about,\nwhat each declares, every stack rule, and what each build\nsettings file does and costs. The menu is never renamed into\nplace.",
           "options": [
+            {
+              "name": "--approvals",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+              "arguments": [
+                {
+                  "name": "WHO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
             {
               "name": "--from",
               "recursive": false,
@@ -823,6 +982,11 @@
               "name": "branch",
               "hidden": false,
               "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+            },
+            {
+              "name": "branch-policy",
+              "hidden": false,
+              "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
             },
             {
               "name": "claude",
@@ -871,6 +1035,11 @@
               ]
             },
             {
+              "name": "Environment",
+              "hidden": false,
+              "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
+            },
+            {
               "name": "evidence",
               "hidden": false,
               "description": "Record what a build produced: its base commit, the commit it is\nat, the diff between them, a normalised test summary and the\ncoverage. Verify reads only this. The summary records the\nplatform the tests ran on. Refuses code outside .sdlc/ that is\nnot committed; the diff is rebuilt from the two commits and\nnever committed (D-124).",
@@ -945,7 +1114,7 @@
             {
               "name": "pr-ready",
               "hidden": false,
-              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
             },
             {
               "name": "propose",
@@ -1037,16 +1206,21 @@
             {
               "name": "verify-chain",
               "hidden": false,
-              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
             },
             {
               "name": "version",
               "hidden": false,
-              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
             }
           ]
         }
       ]
+    },
+    {
+      "name": "Environment",
+      "hidden": false,
+      "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
     },
     {
       "name": "evidence",
@@ -1059,6 +1233,37 @@
           "description": "List what verify.md cites in backticks that none of the\nrecorded evidence holds, and tests it says passed that did not.\nReports only; always exits 0.",
           "options": [
             {
+              "name": "--approvals",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+              "arguments": [
+                {
+                  "name": "WHO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--from",
               "recursive": false,
               "hidden": false,
@@ -1080,6 +1285,11 @@
               "name": "branch",
               "hidden": false,
               "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+            },
+            {
+              "name": "branch-policy",
+              "hidden": false,
+              "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
             },
             {
               "name": "claude",
@@ -1131,6 +1341,11 @@
                   "description": "Write the declared stack beside itself, for an edit a person\nrenames into place: a copy of it, or the framework's default\nwhere there is none yet, with every stack rule listed and on.\nThe default also lists the five .NET build settings files, one\nrow each: on where the repository held no code, off where it\ndid. A row not true here says 'none' rather than being\ndeleted. On a copy, names what this release ships that the\nstack never mentions, and adds none of it. Also reports the\noptions menu: every concern the shipped profiles know about,\nwhat each declares, every stack rule, and what each build\nsettings file does and costs. The menu is never renamed into\nplace."
                 }
               ]
+            },
+            {
+              "name": "Environment",
+              "hidden": false,
+              "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
             },
             {
               "name": "evidence",
@@ -1200,7 +1415,7 @@
             {
               "name": "pr-ready",
               "hidden": false,
-              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
             },
             {
               "name": "propose",
@@ -1292,12 +1507,12 @@
             {
               "name": "verify-chain",
               "hidden": false,
-              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
             },
             {
               "name": "version",
               "hidden": false,
-              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
             }
           ]
         }
@@ -1318,6 +1533,37 @@
       "hidden": false,
       "description": "Say whether a cycle's build may run. Exits 1 if not.",
       "options": [
+        {
+          "name": "--approvals",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--owner",
+          "recursive": false,
+          "hidden": false,
+          "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+          "arguments": [
+            {
+              "name": "WHO",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
         {
           "name": "--from",
           "recursive": false,
@@ -1340,6 +1586,11 @@
           "name": "branch",
           "hidden": false,
           "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+        },
+        {
+          "name": "branch-policy",
+          "hidden": false,
+          "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
         },
         {
           "name": "claude",
@@ -1391,6 +1642,11 @@
               "description": "Write the declared stack beside itself, for an edit a person\nrenames into place: a copy of it, or the framework's default\nwhere there is none yet, with every stack rule listed and on.\nThe default also lists the five .NET build settings files, one\nrow each: on where the repository held no code, off where it\ndid. A row not true here says 'none' rather than being\ndeleted. On a copy, names what this release ships that the\nstack never mentions, and adds none of it. Also reports the\noptions menu: every concern the shipped profiles know about,\nwhat each declares, every stack rule, and what each build\nsettings file does and costs. The menu is never renamed into\nplace."
             }
           ]
+        },
+        {
+          "name": "Environment",
+          "hidden": false,
+          "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
         },
         {
           "name": "evidence",
@@ -1462,7 +1718,7 @@
         {
           "name": "pr-ready",
           "hidden": false,
-          "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+          "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
         },
         {
           "name": "propose",
@@ -1554,12 +1810,12 @@
         {
           "name": "verify-chain",
           "hidden": false,
-          "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+          "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
         },
         {
           "name": "version",
           "hidden": false,
-          "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+          "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
         }
       ]
     },
@@ -1592,6 +1848,37 @@
           "description": "Fetch a lead and print it in one shape for 'intent --from':\nazuredevops:1234 or github:56 through az or gh, a\nsuggestion:<cycle>/<finding>, a ready successor:<slug>, or a\nfile path. What came from outside is fenced as untrusted text.\nRefuses a successor that is not ready. Jira is not read yet.",
           "options": [
             {
+              "name": "--approvals",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+              "arguments": [
+                {
+                  "name": "WHO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--from",
               "recursive": false,
               "hidden": false,
@@ -1613,6 +1900,11 @@
               "name": "branch",
               "hidden": false,
               "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+            },
+            {
+              "name": "branch-policy",
+              "hidden": false,
+              "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
             },
             {
               "name": "claude",
@@ -1664,6 +1956,11 @@
                   "description": "Write the declared stack beside itself, for an edit a person\nrenames into place: a copy of it, or the framework's default\nwhere there is none yet, with every stack rule listed and on.\nThe default also lists the five .NET build settings files, one\nrow each: on where the repository held no code, off where it\ndid. A row not true here says 'none' rather than being\ndeleted. On a copy, names what this release ships that the\nstack never mentions, and adds none of it. Also reports the\noptions menu: every concern the shipped profiles know about,\nwhat each declares, every stack rule, and what each build\nsettings file does and costs. The menu is never renamed into\nplace."
                 }
               ]
+            },
+            {
+              "name": "Environment",
+              "hidden": false,
+              "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
             },
             {
               "name": "evidence",
@@ -1729,7 +2026,7 @@
             {
               "name": "pr-ready",
               "hidden": false,
-              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
             },
             {
               "name": "propose",
@@ -1821,12 +2118,12 @@
             {
               "name": "verify-chain",
               "hidden": false,
-              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
             },
             {
               "name": "version",
               "hidden": false,
-              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
             }
           ]
         }
@@ -1850,7 +2147,7 @@
     {
       "name": "pr-ready",
       "hidden": false,
-      "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+      "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
     },
     {
       "name": "propose",
@@ -1866,6 +2163,37 @@
           "hidden": false,
           "description": "Everything the record says the rules, decisions and stack are\nmissing, in one ranked report: rules cited across cycles,\nfindings that rested on no rule grouped by who raised them,\neach cycle's rounds, reopens and every verdict its verify\nreached, what approved cycles stated, and what the stack\nnever mentions.\nEnds with the proposal file a person marks for 'draft\nconvergence'. Proposes; writes nothing that binds.",
           "options": [
+            {
+              "name": "--approvals",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+              "arguments": [
+                {
+                  "name": "WHO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
             {
               "name": "--from",
               "recursive": false,
@@ -1888,6 +2216,11 @@
               "name": "branch",
               "hidden": false,
               "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+            },
+            {
+              "name": "branch-policy",
+              "hidden": false,
+              "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
             },
             {
               "name": "claude",
@@ -1939,6 +2272,11 @@
                   "description": "Write the declared stack beside itself, for an edit a person\nrenames into place: a copy of it, or the framework's default\nwhere there is none yet, with every stack rule listed and on.\nThe default also lists the five .NET build settings files, one\nrow each: on where the repository held no code, off where it\ndid. A row not true here says 'none' rather than being\ndeleted. On a copy, names what this release ships that the\nstack never mentions, and adds none of it. Also reports the\noptions menu: every concern the shipped profiles know about,\nwhat each declares, every stack rule, and what each build\nsettings file does and costs. The menu is never renamed into\nplace."
                 }
               ]
+            },
+            {
+              "name": "Environment",
+              "hidden": false,
+              "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
             },
             {
               "name": "evidence",
@@ -2015,7 +2353,7 @@
             {
               "name": "pr-ready",
               "hidden": false,
-              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
             },
             {
               "name": "propose",
@@ -2102,12 +2440,12 @@
             {
               "name": "verify-chain",
               "hidden": false,
-              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
             },
             {
               "name": "version",
               "hidden": false,
-              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
             }
           ]
         },
@@ -2168,6 +2506,37 @@
           "description": "Refuse a successor file that cannot be read, one naming a\ncycle or slug that does not exist, and a loop through\nsucceeds:. Exits 0 when the set is sound.\nsuccessor start <slug> <id>\nIn a cycle opened for a ready successor, on its plan branch:\nrefuse unless it is ready, then delete its file there. The\nintent then records lead: successor:<slug>. /sdlc:intent\n--from successor:<slug> runs it.",
           "options": [
             {
+              "name": "--approvals",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--owner",
+              "recursive": false,
+              "hidden": false,
+              "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+              "arguments": [
+                {
+                  "name": "WHO",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--from",
               "recursive": false,
               "hidden": false,
@@ -2189,6 +2558,11 @@
               "name": "branch",
               "hidden": false,
               "description": "Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123)."
+            },
+            {
+              "name": "branch-policy",
+              "hidden": false,
+              "description": "Print the commands that set the default branch policy on\nthis solution's platform: pull requests only, nobody\nbypassing, the pipeline required, squash into the\nintegration branch and merge commits into the default\nbranch. Applies nothing; run them as an administrator.\n--approvals <n> asks every pull request for n approvals;\n--owner <who>[,<who>] names who must give one, as a\nCODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request."
             },
             {
               "name": "claude",
@@ -2240,6 +2614,11 @@
                   "description": "Write the declared stack beside itself, for an edit a person\nrenames into place: a copy of it, or the framework's default\nwhere there is none yet, with every stack rule listed and on.\nThe default also lists the five .NET build settings files, one\nrow each: on where the repository held no code, off where it\ndid. A row not true here says 'none' rather than being\ndeleted. On a copy, names what this release ships that the\nstack never mentions, and adds none of it. Also reports the\noptions menu: every concern the shipped profiles know about,\nwhat each declares, every stack rule, and what each build\nsettings file does and costs. The menu is never renamed into\nplace."
                 }
               ]
+            },
+            {
+              "name": "Environment",
+              "hidden": false,
+              "description": "SDLC_DEV_BUILD           A directory holding a build of sdlc nobody published. Every\ncommand is handed to it instead of the pinned release, it\ncalls itself <release>-local, and no cycle it judged opens a\npull request. For testing a change to the framework."
             },
             {
               "name": "evidence",
@@ -2316,7 +2695,7 @@
             {
               "name": "pr-ready",
               "hidden": false,
-              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not. For every cycle, 'cycles --pr-ready'."
+              "description": "Say whether a cycle may open a pull request, without opening\none. Exits 1 if not -- and always for a test run, a cycle\na local build judged. For every cycle, 'cycles --pr-ready'."
             },
             {
               "name": "propose",
@@ -2397,12 +2776,12 @@
             {
               "name": "verify-chain",
               "hidden": false,
-              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+              "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
             },
             {
               "name": "version",
               "hidden": false,
-              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+              "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
             }
           ]
         }
@@ -2426,15 +2805,46 @@
     {
       "name": "verify-chain",
       "hidden": false,
-      "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0."
+      "description": "Re-establish the whole chain from the repository. Exits 1 if\nit does not hold. This is the pull-request check. --base is the\ntarget branch: a pull request changing only the cycle's\nplanning documents then gets the admission check -- plan,\napproval, hashes, no verify.\nverify-chain slices/<slug>/plan --base <branch>\nThe same check for a slicing's pull request: every cycle it\ncarries gets the admission check, its successors must be\nsound, and a plan that needs a file only a sibling's plan\ncreates is refused (D-125).\nverify-chain <branch> --base <branch>\nOn a branch that is no cycle's: no cycle needed when everything\nit changes is the pin, what 'sdlc init' and 'sdlc factory'\nwrite, answers in the declared stack to what the release asks,\nand dependency versions. Each file must be what this release\nwrites from the base's copy, a pipeline step by step (D-133);\na dependency file may move only versions, of any size (D-134).\nAnything else is refused: there is no chain.\nadmission <id> --base <branch>\nPrint true when a pull request carries only the cycle's\nplanning documents, and any successors, so a pipeline may\nskip the build and tests; false for anything else. On\nslices/<slug>/plan, true when it carries only cycles'\nplanning and successors. Always exits 0.\npromotion <source> --base <target>\nPrint true when a pull request promotes the integration\nbranch or a release/* branch into another branch, so a\npipeline skips the chain; false when it targets the\nintegration branch or a release branch. Exits 1 when any\nother branch targets another branch."
     },
     {
       "name": "version",
       "hidden": false,
-      "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release."
+      "description": "Which version of the gate this is, and which versions it\nexpects beside it. Inside a solution that pins another\nrelease, every command -- this one too -- is answered by\nthe pinned release. With SDLC_DEV_BUILD set, by that build,\nwhich calls itself <release>-local."
     }
   ],
   "options": [
+    {
+      "name": "--approvals",
+      "recursive": false,
+      "hidden": false,
+      "arguments": [
+        {
+          "name": "N",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--owner",
+      "recursive": false,
+      "hidden": false,
+      "description": "CODEOWNERS line on GitHub and a required reviewer on\nAzure DevOps; --self-approve lets an author's own vote\ncount on Azure DevOps, and on GitHub, which never counts\nit, needs a team: --self-approve <team> lets that team\nbypass the rules on a pull request.\nbranch <id> <kind>      Print the one git command that puts the working copy on the\nbranch a kind of work happens on -- plan, build,\nbuild-unattended or forward -- creating it from the right\nbase: the integration branch once the plan is admitted to\nit, the plan's own branch before that. 'plan --worktree'\nopens the cycle in a folder of its own beside the\nrepository instead, so several cycles are planned at once.\n'plan' refuses a local plan branch whose ledger lacks the\napproval the integration branch holds (D-123).",
+      "arguments": [
+        {
+          "name": "WHO",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
     {
       "name": "--from",
       "recursive": false,
