@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "FishAudio.CLI",
-    "version": "1.0.4-dev.63",
+    "version": "1.0.4-dev.64",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -156,6 +156,69 @@
         {
           "name": "clear",
           "description": "Clear the API key stored in dotnet user-secrets."
+        }
+      ]
+    },
+    {
+      "name": "agent-background-sounds",
+      "description": "Agent Background Sounds endpoint commands.",
+      "commands": [
+        {
+          "name": "create-agent-background-sounds",
+          "description": "Create Background Sound\nUpload an mp3/wav/ogg/m4a clip, up to 10 MB and 300 seconds. Send\n`multipart/form-data` with the file in `file`. The server loudness-\nnormalizes and transcodes it to Ogg/Opus; the returned id is what\n`voice.background_sound.custom_asset_id` names.",
+          "options": [
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "Byte[]"
+                }
+              ]
+            },
+            {
+              "name": "--filename",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "FILENAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "delete-agent-background-sounds-by-asset-id",
+          "description": "Delete Background Sound\nSoft-deletes the clip. An agent still naming it in\n`voice.background_sound.custom_asset_id` falls back to silence for that\nambience at its next session rather than failing the call.",
+          "arguments": [
+            {
+              "name": "ASSET_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "get-agent-background-sounds",
+          "description": "List Background Sounds\nList your team's uploaded background-ambience clips, newest first.\nSelect one with `voice.background_sound.custom_asset_id` (preset\n`custom`) on an agent's config."
         }
       ]
     },
@@ -2410,7 +2473,7 @@
         },
         {
           "name": "edit-agent-tools-by-tool-id",
-          "description": "Update Tool\nPatch tool fields; omitted fields keep their value (null is rejected —\nsend an empty string to clear a text field). `headers` replaces the header\nlist wholesale — include credential values again whenever you send it,\nsince reads never return them. Attached agents' drafts pick up the change\nimmediately; published versions stay frozen until re-published.",
+          "description": "Update Tool\nPatch tool fields; omitted fields keep their value (null is rejected —\nsend an empty string to clear a text field). `headers` replaces the header\nlist wholesale — include credential values again whenever you send it,\nsince reads never return them. Attached agents' drafts pick up the change\nimmediately; published versions stay frozen until re-published, except\nfor credential values: a new authorization_bearer / authorization_basic\nvalue reaches published versions at their next session, as long as the\nheader keeps its name and kind. Calls already in progress keep the value\nthey started with.",
           "options": [
             {
               "name": "--name",
@@ -3307,7 +3370,7 @@
         },
         {
           "name": "edit-agent-agents-by-agent-id-config",
-          "description": "Update Draft Config\nPatch the draft configuration section by section; omitted sections keep\ntheir value. Changes only affect live sessions after the next publish.\n`prompt.system_prompt` is limited to 32000 tokens (422 beyond); keeping it\nunder 2000 tokens is recommended for latency and cost.\n`voice.voice_id` accepts any public voice model id.\n`voice.speaking_language` accepts any of the 52 supported ISO 639-1 codes\n(the same set the console offers, see the Voice &amp; language docs); anything else is 422. `voice.expressive` (default `true`) enables richer\nexpressive delivery (emotion steering, laughter and sounds, pauses); off\nkeeps the standard delivery. The `asr` section configures speech\nrecognition. `asr.model` picks the model: `deepgram:nova-3` (default),\n`elevenlabs:scribe_v2_realtime`, `elevenlabs:scribe_v2_medical`, or\n`fish_audio:transcribe-stream-1` (Fish realtime recognition, which\nalso decides end of turn and whether the caller is interrupting).\nIts former id `fish_audio:transcribe-1-pro-realtime` is still accepted\nand reads back as the current id.\n`asr.multilingual` (default `false`) lets recognition follow callers who\nswitch language mid-call, off tells the recognizer to expect\n`voice.speaking_language` (models other than `deepgram:nova-3` may still\ntranscribe clear speech in another language). `asr.strict_language`\n(default `false`) enforces `voice.speaking_language` whatever\n`asr.multilingual` says: speech recognized as another language reaches the\nagent as `[unintelligible speech]`. Language is detected per utterance, so\na short or heavily accented phrase in the speaking language can\noccasionally be detected as another language and replaced too. Only\nenable it when you explicitly need to stop the agent from understanding\nother languages.\n`asr.keyterms` is a recognition\nvocabulary of up to 50 plain terms (brand names, product terms, personal\nnames), each at most 100 characters with no commas or semicolons. `[]`\nclears it and 20-50 focused terms work best. `tool_ids` and\n`knowledge_source_ids` replace their attachment lists wholesale and every\nid must resolve, else 422. `llm.custom` points the agent at your own\nOpenAI-compatible endpoint; mutually exclusive with `llm.model`, cleared\nwith an explicit null. `llm.fallback` sets what the agent tries after its\nmodel fails: `platform` (default), `manual` (`models` in order, 1 to 3)\nor `off`. In `manual`, each model and `primary` (the agent's own model)\ntake optional `ttft_timeout_ms` (500-30000, default 5000 ms, i.e. 5\nseconds, when not set) and `total_timeout_ms` (1000-120000, at least\n`ttft_timeout_ms` when both are set, no limit when not set), and the\nfirst model can set\n`parallel.kick_in_ms` (300-10000, default 1500) to run alongside the\nagent's own model.\n\nThe response is the draft as stored, which can differ from the request:\n- Every field comes back. Omitted fields keep their value or default.\n- `asr.keyterms` and `voice.pronunciation_dictionary_ids` are trimmed\n  and de-duplicated in order. `tool_ids` is de-duplicated in order.\n- A tool that was archived drops out of `tool_ids` at the next tools\n  write.\n- `conversation.interruption_ignore_phrases` collapses inner spaces and\n  drops case-insensitive duplicates.\n- `conversation.timezone`, transfer phone numbers and transfer text\n  fields are trimmed.\n- `conversation.eagerness` and `conversation.response_wait_ms` move\n  together. The wait wins when both are sent, and the tier is derived\n  from it.\n- `conversation.response_max_wait_ms: 0` reads back as `null`\n  (automatic).\n- `knowledge_base.enabled` becomes `true` when you attach sources and\n  omit it.\n- `llm.custom.base_url` drops a trailing `/` and `/chat/completions`.\n  `llm.custom.model` is trimmed. Setting `llm.custom` resets `llm.model`\n  to the platform default.\n- Secrets read back as `has_secret`, and `llm.custom.api_key` as `null`.\n- `voice` also returns `keyterms`, `multilingual_asr` and `asr_model`\n  copied from `asr`. They are deprecated.\n- `config_hash` and `updated_at` are set by the server.\n\nCompare against this response, or against `config_hash`, rather than the\nrequest body. Publishing never rewrites these values.",
+          "description": "Update Draft Config\nPatch the draft configuration section by section; omitted sections keep\ntheir value. Changes only affect live sessions after the next publish.\n`prompt.system_prompt` is limited to 32000 tokens (422 beyond); keeping it\nunder 2000 tokens is recommended for latency and cost.\n`voice.voice_id` accepts any public voice model id.\n`voice.speaking_language` accepts any of the 52 supported ISO 639-1 codes\n(the same set the console offers, see the Voice &amp; language docs); anything else is 422. `voice.expressive` (default `true`) enables richer\nexpressive delivery (emotion steering, laughter and sounds, pauses); off\nkeeps the standard delivery. The `asr` section configures speech\nrecognition. `asr.model` picks the model: `deepgram:nova-3` (default),\n`elevenlabs:scribe_v2_realtime`, `elevenlabs:scribe_v2_medical`, or\n`fish_audio:transcribe-stream-1` (Fish realtime recognition, which\nalso decides end of turn and whether the caller is interrupting).\nIts former id `fish_audio:transcribe-1-pro-realtime` is still accepted\nand reads back as the current id.\n`asr.multilingual` (default `false`) lets recognition follow callers who\nswitch language mid-call, off tells the recognizer to expect\n`voice.speaking_language` (models other than `deepgram:nova-3` may still\ntranscribe clear speech in another language). `asr.strict_language`\n(default `false`) enforces `voice.speaking_language` whatever\n`asr.multilingual` says: speech recognized as another language reaches the\nagent as `[unintelligible speech]`. Language is detected per utterance, so\na short or heavily accented phrase in the speaking language can\noccasionally be detected as another language and replaced too. Only\nenable it when you explicitly need to stop the agent from understanding\nother languages.\n`asr.keyterms` is a recognition\nvocabulary of up to 50 plain terms (brand names, product terms, personal\nnames), each at most 100 characters with no commas or semicolons. `[]`\nclears it and 20-50 focused terms work best.\n`voice.background_sound` sets a looping ambience the worker mixes under\nthe agent's voice: `preset` is `off` (default) or one of `office`,\n`call_center`, `restaurant`, `cafe`, `city_street`, `phone_line`, `phone_line_digital`,\n`custom`. `volume` (0-1, default 0.15) is the\nambience's gain relative to the voice. `custom_asset_id` names a clip\nuploaded through `POST /v1/agent/background-sounds`; required with\n`preset: \"custom\"`, refused otherwise (422). Replaces the whole object;\nan explicit null resets it to off. `tool_ids` and\n`knowledge_source_ids` replace their attachment lists wholesale and every\nid must resolve, else 422. `llm.custom` points the agent at your own\nOpenAI-compatible endpoint; mutually exclusive with `llm.model`, cleared\nwith an explicit null. `llm.fallback` sets what the agent tries after its\nmodel fails: `platform` (default), `manual` (`models` in order, 1 to 3)\nor `off`. In `manual`, each model and `primary` (the agent's own model)\ntake optional `ttft_timeout_ms` (500-30000, default 5000 ms, i.e. 5\nseconds, when not set) and `total_timeout_ms` (1000-120000, at least\n`ttft_timeout_ms` when both are set, no limit when not set), and the\nfirst model can set\n`parallel.kick_in_ms` (300-10000, default 1500) to run alongside the\nagent's own model.\n\nThe response is the draft as stored, which can differ from the request:\n- Every field comes back. Omitted fields keep their value or default.\n- `asr.keyterms` and `voice.pronunciation_dictionary_ids` are trimmed\n  and de-duplicated in order. `tool_ids` is de-duplicated in order.\n- A tool that was archived drops out of `tool_ids` at the next tools\n  write.\n- `conversation.interruption_ignore_phrases` collapses inner spaces and\n  drops case-insensitive duplicates.\n- `conversation.timezone`, transfer phone numbers and transfer text\n  fields are trimmed.\n- `conversation.eagerness` and `conversation.response_wait_ms` move\n  together. The wait wins when both are sent, and the tier is derived\n  from it.\n- `conversation.response_max_wait_ms: 0` reads back as `null`\n  (automatic).\n- `knowledge_base.enabled` becomes `true` when you attach sources and\n  omit it.\n- `llm.custom.base_url` drops a trailing `/` and `/chat/completions`.\n  `llm.custom.model` is trimmed. Setting `llm.custom` resets `llm.model`\n  to the platform default.\n- Secrets read back as `has_secret`, and `llm.custom.api_key` as `null`.\n- `voice` also returns `keyterms`, `multilingual_asr` and `asr_model`\n  copied from `asr`. They are deprecated.\n- `config_hash` and `updated_at` are set by the server.\n\nCompare against this response, or against `config_hash`, rather than the\nrequest body. Publishing never rewrites these values.",
           "options": [
             {
               "name": "--prompt",
@@ -8553,6 +8616,599 @@
           "arguments": [
             {
               "name": "PHONE_NUMBER_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pronunciation-dictionaries",
+      "description": "Pronunciation Dictionaries endpoint commands.",
+      "commands": [
+        {
+          "name": "create-pronunciation-dictionaries",
+          "description": "Create a pronunciation dictionary\nCreate an empty dictionary for the team the credential belongs to (the API key's team, or the personal team for a session without x-team-id). Publish rules with POST /versions.",
+          "options": [
+            {
+              "name": "--description",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional free-form description (up to 1024 characters).",
+              "arguments": [
+                {
+                  "name": "DESCRIPTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--input",
+              "recursive": false,
+              "hidden": false,
+              "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+              "arguments": [
+                {
+                  "name": "INPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--request-json",
+              "recursive": false,
+              "hidden": true,
+              "description": "Request body as JSON.",
+              "arguments": [
+                {
+                  "name": "REQUEST_JSON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--request-file",
+              "recursive": false,
+              "hidden": true,
+              "description": "Path to a JSON request file, or '-' for stdin.",
+              "arguments": [
+                {
+                  "name": "REQUEST_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "Display name for the dictionary (1-128 characters).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "create-pronunciation-dictionaries-by-dictionary-id-versions",
+          "description": "Publish a version\nPublish an immutable snapshot of rules. Send the version you believe is current as `expected_latest_version_id`; a stale value returns 409. Keys are unique within a version (duplicates return 422). Alias rules never shorten billing.",
+          "options": [
+            {
+              "name": "--expected-latest-version-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optimistic-concurrency guard: the latest version ID the caller believes is current, or null for the first publish. A mismatch returns 409.",
+              "arguments": [
+                {
+                  "name": "EXPECTED_LATEST_VERSION_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--description",
+              "recursive": false,
+              "hidden": false,
+              "description": "Optional version note (up to 1024 characters).",
+              "arguments": [
+                {
+                  "name": "DESCRIPTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--items",
+              "recursive": false,
+              "hidden": false,
+              "description": "Complete ordered rule list for the new version (up to 5000 rules). Keys must be unique within the version; order is the engine's application order.",
+              "arguments": [
+                {
+                  "name": "ITEMS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "IList`1"
+                }
+              ]
+            },
+            {
+              "name": "--input",
+              "recursive": false,
+              "hidden": false,
+              "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+              "arguments": [
+                {
+                  "name": "INPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--request-json",
+              "recursive": false,
+              "hidden": true,
+              "description": "Request body as JSON.",
+              "arguments": [
+                {
+                  "name": "REQUEST_JSON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--request-file",
+              "recursive": false,
+              "hidden": true,
+              "description": "Path to a JSON request file, or '-' for stdin.",
+              "arguments": [
+                {
+                  "name": "REQUEST_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DICTIONARY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "delete-pronunciation-dictionaries-by-dictionary-id",
+          "description": "Delete (archive) a pronunciation dictionary\nSoft-archive the dictionary: it disappears from list/get and can no longer be modified, while its versions remain stored. Idempotent.",
+          "arguments": [
+            {
+              "name": "DICTIONARY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "delete-pronunciation-dictionaries-by-dictionary-id-versions-by-version-id",
+          "description": "Delete (archive) a version\nSoft-archive a historical version. The latest version cannot be deleted (409), and deleting an already archived version also returns 409.",
+          "arguments": [
+            {
+              "name": "DICTIONARY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VERSION_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "edit-pronunciation-dictionaries-by-dictionary-id",
+          "description": "Update a pronunciation dictionary\nChange the dictionary's name or description. Rules live in published versions and are not editable in place.",
+          "options": [
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "New display name; omitted or null leaves it unchanged.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--description",
+              "recursive": false,
+              "hidden": false,
+              "description": "New description; omitted or null leaves it unchanged.",
+              "arguments": [
+                {
+                  "name": "DESCRIPTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--input",
+              "recursive": false,
+              "hidden": false,
+              "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+              "arguments": [
+                {
+                  "name": "INPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--request-json",
+              "recursive": false,
+              "hidden": true,
+              "description": "Request body as JSON.",
+              "arguments": [
+                {
+                  "name": "REQUEST_JSON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--request-file",
+              "recursive": false,
+              "hidden": true,
+              "description": "Path to a JSON request file, or '-' for stdin.",
+              "arguments": [
+                {
+                  "name": "REQUEST_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DICTIONARY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "get-pronunciation-dictionaries",
+          "description": "List pronunciation dictionaries\nList the caller team's dictionaries, newest updated first. Archived dictionaries are excluded. Paginate with `cursor` (follow `next_cursor` while `has_more` is true) or with `page` for offset pagination with a `total` count — the two are mutually exclusive.",
+          "options": [
+            {
+              "name": "--cursor",
+              "recursive": false,
+              "hidden": false,
+              "description": "Opaque cursor from a previous `next_cursor`.",
+              "arguments": [
+                {
+                  "name": "CURSOR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--page",
+              "recursive": false,
+              "hidden": false,
+              "description": "1-based page number; mutually exclusive with cursor.",
+              "arguments": [
+                {
+                  "name": "PAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--include-total",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also count the filtered set on the cursor path. Specify true/false; presence alone implies true; omit to inherit.",
+              "arguments": [
+                {
+                  "name": "INCLUDE_TOTAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--page-size",
+              "recursive": false,
+              "hidden": false,
+              "description": "Rows per page (1-100, default 30).",
+              "arguments": [
+                {
+                  "name": "PAGE_SIZE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "get-pronunciation-dictionaries-by-dictionary-id",
+          "description": "Get a pronunciation dictionary\nGet one dictionary owned by the caller's team.",
+          "arguments": [
+            {
+              "name": "DICTIONARY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "get-pronunciation-dictionaries-by-dictionary-id-versions",
+          "description": "List versions\nList the dictionary's published versions, newest first. Archived versions are excluded. Paginate with `cursor` (follow `next_cursor` while `has_more` is true) or with `page` for offset pagination with a `total` count — the two are mutually exclusive.",
+          "options": [
+            {
+              "name": "--cursor",
+              "recursive": false,
+              "hidden": false,
+              "description": "Opaque cursor from a previous `next_cursor`.",
+              "arguments": [
+                {
+                  "name": "CURSOR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--page",
+              "recursive": false,
+              "hidden": false,
+              "description": "1-based page number; mutually exclusive with cursor.",
+              "arguments": [
+                {
+                  "name": "PAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--include-total",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also count the filtered set on the cursor path. Specify true/false; presence alone implies true; omit to inherit.",
+              "arguments": [
+                {
+                  "name": "INCLUDE_TOTAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--page-size",
+              "recursive": false,
+              "hidden": false,
+              "description": "Rows per page (1-100, default 30).",
+              "arguments": [
+                {
+                  "name": "PAGE_SIZE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DICTIONARY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "get-pronunciation-dictionaries-by-dictionary-id-versions-by-version-id",
+          "description": "Get a version\nGet a published version with its ordered rules. Requires auth and is scoped to the caller's team.",
+          "arguments": [
+            {
+              "name": "DICTIONARY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VERSION_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "get-pronunciation-dictionaries-by-dictionary-id-versions-by-version-id-compare",
+          "description": "Compare two versions\nReturn a row-level diff between the target version and `base_version_id`: added, removed, changed, moved and unchanged rules.",
+          "options": [
+            {
+              "name": "--base-version-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "Version to compare the target version against.",
+              "arguments": [
+                {
+                  "name": "BASE_VERSION_ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DICTIONARY_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            },
+            {
+              "name": "VERSION_ID",
               "required": true,
               "arity": {
                 "minimum": 1,

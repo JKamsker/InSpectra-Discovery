@@ -2,16 +2,640 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "ai-raccoon",
-    "version": "2.3.0",
+    "version": "2.5.1",
     "description": "An MCP server that gives AI agents persistent, project-scoped memory: a memory bank over sqlite-memory with hybrid vector+BM25 search, workspace sandboxes, a shared promotion tier, and optional S3/Azure sync."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 115,
+    "helpDocumentCount": 123,
     "cliParsedDescription": "MCP server exposing agent memory over sqlite-memory"
   },
   "commands": [
+    {
+      "name": "decisions",
+      "hidden": false,
+      "description": "The project decision graph through the server (the CLI never opens the bank): register tasks, record, get and query decisions, export complete snapshots, preview compact summaries.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "export",
+          "hidden": false,
+          "description": "Writes the complete selected snapshot — every decision version, edge history, boundary stubs, referenced tasks and import records — as JSON (default, lossless) or Markdown (for reading). Selects the latest task by default. The output is plaintext even for an encrypted bank. Without --output the answer is read in full before printing, but a failure while printing (a closed pipe, Ctrl-C) can leave partial output on stdout, so check the exit status. With --output the file is written beside the destination and published only once complete, so a nonzero exit leaves the destination untouched; an existing file is refused without --force.",
+          "options": [
+            {
+              "name": "--project-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The project the decisions belong to",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: json|markdown (default json) [default: json]",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Publish to this file atomically instead of stdout (owner-only on POSIX)",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Replace an existing --output file"
+            },
+            {
+              "name": "--tasks",
+              "recursive": false,
+              "hidden": false,
+              "description": "The latest N registered tasks, not N decisions (1-1000)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--all",
+              "recursive": false,
+              "hidden": false,
+              "description": "Every task in the project"
+            },
+            {
+              "name": "--task-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "A named task; repeat for several (up to 100)",
+              "arguments": [
+                {
+                  "name": "TASK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "get",
+          "hidden": false,
+          "description": "One decision (same as get_decision): its current version, or every version with --history, as JSON (default) or Markdown.",
+          "options": [
+            {
+              "name": "--project-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The project the decisions belong to",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--history",
+              "recursive": false,
+              "hidden": false,
+              "description": "Include every version, not only the current one"
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: json|markdown (default json) [default: json]",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DECISION",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "description": "The decision's id"
+            }
+          ]
+        },
+        {
+          "name": "preview",
+          "hidden": false,
+          "description": "A compact, budgeted summary of the selected tasks' decisions and direct links, as plain text (default) or JSON. Selects the latest task by default; --all still applies the display limits — only export is complete. Terminal controls in decision text are replaced before printing.",
+          "options": [
+            {
+              "name": "--project-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The project the decisions belong to",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output format: text|json (default text) [default: text]",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--max-decisions",
+              "recursive": false,
+              "hidden": false,
+              "description": "Decisions shown (1-100; server default 20)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--max-edges",
+              "recursive": false,
+              "hidden": false,
+              "description": "Edges shown (0-200; server default 30)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--max-chars",
+              "recursive": false,
+              "hidden": false,
+              "description": "Text budget in Unicode scalar values (1000-50000; server default 12000)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--tasks",
+              "recursive": false,
+              "hidden": false,
+              "description": "The latest N registered tasks, not N decisions (1-1000)",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--all",
+              "recursive": false,
+              "hidden": false,
+              "description": "Every task in the project"
+            },
+            {
+              "name": "--task-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "A named task; repeat for several (up to 100)",
+              "arguments": [
+                {
+                  "name": "TASK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "query",
+          "hidden": false,
+          "description": "Current decision summaries (same as query_decisions) as JSON: literal --query text matched by full-text search, optionally narrowed to one --category. With neither, lists the project's decisions by id.",
+          "options": [
+            {
+              "name": "--project-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The project the decisions belong to",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--query",
+              "recursive": false,
+              "hidden": false,
+              "description": "Literal search text (1-2000 characters)",
+              "arguments": [
+                {
+                  "name": "TEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--category",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only decisions in this category",
+              "arguments": [
+                {
+                  "name": "CATEGORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "record",
+          "hidden": false,
+          "description": "Records one decision (same as record_decision) under a registered task; an unregistered task is refused. --input names a JSON file holding the record fields (title, category, scenario, outcome, reasoning, and optionally status, confidence, maker, alternatives, consequences, sources, validFrom, validUntil). Without --session-id/--request-id the CLI generates them and prints them to stderr before sending; pass them back to retry safely.",
+          "options": [
+            {
+              "name": "--project-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The project the decisions belong to",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--task-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The registered task the decision belongs to",
+              "arguments": [
+                {
+                  "name": "TASK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--input",
+              "recursive": false,
+              "hidden": false,
+              "description": "A JSON file holding the decision's fields",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--session-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The writing session, for an exact retry",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--request-id",
+              "recursive": false,
+              "hidden": false,
+              "description": "The request identity, for an exact retry",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "task",
+          "hidden": false,
+          "description": "Decision tasks: the unit export and preview select by",
+          "options": [
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help and usage information",
+              "aliases": [
+                "-?",
+                "-h"
+              ]
+            }
+          ],
+          "commands": [
+            {
+              "name": "register",
+              "hidden": false,
+              "description": "Registers a task in the project's server order (same as register_decision_task); register it at work start, before its first decision. Without --session-id/--request-id the CLI generates them and prints them to stderr before sending; pass them back to retry safely.",
+              "options": [
+                {
+                  "name": "--project-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The project the decisions belong to",
+                  "arguments": [
+                    {
+                      "name": "ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "--task-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The task's identity",
+                  "arguments": [
+                    {
+                      "name": "TASK",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "--title",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The task's title",
+                  "arguments": [
+                    {
+                      "name": "TEXT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "--source-ref",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Where the task is tracked (a URI); never fetched",
+                  "arguments": [
+                    {
+                      "name": "URI",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "--session-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The writing session, for an exact retry",
+                  "arguments": [
+                    {
+                      "name": "ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The request identity, for an exact retry",
+                  "arguments": [
+                    {
+                      "name": "ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "--help",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Show help and usage information",
+                  "aliases": [
+                    "-?",
+                    "-h"
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
     {
       "name": "doctor",
       "hidden": false,
