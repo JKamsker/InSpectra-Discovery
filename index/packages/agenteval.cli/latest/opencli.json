@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "AgentEval.Cli",
-    "version": "1.0.0-rc.1",
+    "version": "1.0.0-rc.2",
     "description": "AgentEval CLI — terminal + CI/CD entry point for the .NET evaluation toolkit. The agenteval init command bootstraps a .agenteval/ workspace; agenteval bench {gdpr|eu-ai-act|agentic|owasp|mitre|perf|longmemeval|memory} runs benchmark families; agenteval mc serve launches the local Mission Control portal (requires .NET 10); agenteval doctor verifies workspace integrity via canonical-JSON audit-chain hashing."
   },
   "x-inspectra": {
@@ -140,7 +140,7 @@
           "name": "--sut",
           "recursive": false,
           "hidden": false,
-          "description": "Built-in system-under-test for this verb. Valid: copilot-studio.",
+          "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365.",
           "arguments": [
             {
               "name": "SUT",
@@ -150,6 +150,23 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--i-understand-live-side-effects",
+          "recursive": false,
+          "hidden": false,
+          "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+          "arguments": [
+            {
+              "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -171,23 +188,6 @@
           ]
         },
         {
-          "name": "--i-understand-live-side-effects",
-          "recursive": false,
-          "hidden": false,
-          "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-          "arguments": [
-            {
-              "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
           "name": "--max-credits",
           "recursive": false,
           "hidden": false,
@@ -201,6 +201,108 @@
                 "maximum": 1
               },
               "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--m365-config",
+          "recursive": false,
+          "hidden": false,
+          "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+          "arguments": [
+            {
+              "name": "M365_CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--m365-max-turns",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+          "arguments": [
+            {
+              "name": "M365_MAX_TURNS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--m365-profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+          "arguments": [
+            {
+              "name": "M365_PROFILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--m365-capture-raw",
+          "recursive": false,
+          "hidden": false,
+          "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+          "arguments": [
+            {
+              "name": "M365_CAPTURE_RAW",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        },
+        {
+          "name": "--m365-verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+          "arguments": [
+            {
+              "name": "M365_VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--m365-trace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+          "arguments": [
+            {
+              "name": "M365_TRACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
             }
           ]
         },
@@ -2182,7 +2284,7 @@
               "name": "--sut",
               "recursive": false,
               "hidden": false,
-              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
+              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
               "arguments": [
                 {
                   "name": "SUT",
@@ -2192,6 +2294,23 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--i-understand-live-side-effects",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+              "arguments": [
+                {
+                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             },
@@ -2213,23 +2332,6 @@
               ]
             },
             {
-              "name": "--i-understand-live-side-effects",
-              "recursive": false,
-              "hidden": false,
-              "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-              "arguments": [
-                {
-                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
               "name": "--max-credits",
               "recursive": false,
               "hidden": false,
@@ -2243,6 +2345,108 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-config",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+              "arguments": [
+                {
+                  "name": "M365_CONFIG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-max-turns",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+              "arguments": [
+                {
+                  "name": "M365_MAX_TURNS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+              "arguments": [
+                {
+                  "name": "M365_PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--m365-capture-raw",
+              "recursive": false,
+              "hidden": false,
+              "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+              "arguments": [
+                {
+                  "name": "M365_CAPTURE_RAW",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+              "arguments": [
+                {
+                  "name": "M365_VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--m365-trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+              "arguments": [
+                {
+                  "name": "M365_TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
                 }
               ]
             },
@@ -2589,7 +2793,7 @@
               "name": "--sut",
               "recursive": false,
               "hidden": false,
-              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
+              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
               "arguments": [
                 {
                   "name": "SUT",
@@ -2599,6 +2803,23 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--i-understand-live-side-effects",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+              "arguments": [
+                {
+                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             },
@@ -2620,23 +2841,6 @@
               ]
             },
             {
-              "name": "--i-understand-live-side-effects",
-              "recursive": false,
-              "hidden": false,
-              "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-              "arguments": [
-                {
-                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
               "name": "--max-credits",
               "recursive": false,
               "hidden": false,
@@ -2650,6 +2854,108 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-config",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+              "arguments": [
+                {
+                  "name": "M365_CONFIG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-max-turns",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+              "arguments": [
+                {
+                  "name": "M365_MAX_TURNS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+              "arguments": [
+                {
+                  "name": "M365_PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--m365-capture-raw",
+              "recursive": false,
+              "hidden": false,
+              "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+              "arguments": [
+                {
+                  "name": "M365_CAPTURE_RAW",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+              "arguments": [
+                {
+                  "name": "M365_VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--m365-trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+              "arguments": [
+                {
+                  "name": "M365_TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
                 }
               ]
             },
@@ -3417,7 +3723,7 @@
               "name": "--sut",
               "recursive": false,
               "hidden": false,
-              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
+              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
               "arguments": [
                 {
                   "name": "SUT",
@@ -3427,6 +3733,23 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--i-understand-live-side-effects",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+              "arguments": [
+                {
+                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             },
@@ -3448,23 +3771,6 @@
               ]
             },
             {
-              "name": "--i-understand-live-side-effects",
-              "recursive": false,
-              "hidden": false,
-              "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-              "arguments": [
-                {
-                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
               "name": "--max-credits",
               "recursive": false,
               "hidden": false,
@@ -3478,6 +3784,108 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-config",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+              "arguments": [
+                {
+                  "name": "M365_CONFIG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-max-turns",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+              "arguments": [
+                {
+                  "name": "M365_MAX_TURNS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+              "arguments": [
+                {
+                  "name": "M365_PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--m365-capture-raw",
+              "recursive": false,
+              "hidden": false,
+              "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+              "arguments": [
+                {
+                  "name": "M365_CAPTURE_RAW",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+              "arguments": [
+                {
+                  "name": "M365_VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--m365-trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+              "arguments": [
+                {
+                  "name": "M365_TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
                 }
               ]
             },
@@ -3748,7 +4156,7 @@
               "name": "--sut",
               "recursive": false,
               "hidden": false,
-              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
+              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
               "arguments": [
                 {
                   "name": "SUT",
@@ -3758,6 +4166,23 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--i-understand-live-side-effects",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+              "arguments": [
+                {
+                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             },
@@ -3779,23 +4204,6 @@
               ]
             },
             {
-              "name": "--i-understand-live-side-effects",
-              "recursive": false,
-              "hidden": false,
-              "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-              "arguments": [
-                {
-                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
               "name": "--max-credits",
               "recursive": false,
               "hidden": false,
@@ -3809,6 +4217,108 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-config",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+              "arguments": [
+                {
+                  "name": "M365_CONFIG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-max-turns",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+              "arguments": [
+                {
+                  "name": "M365_MAX_TURNS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+              "arguments": [
+                {
+                  "name": "M365_PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--m365-capture-raw",
+              "recursive": false,
+              "hidden": false,
+              "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+              "arguments": [
+                {
+                  "name": "M365_CAPTURE_RAW",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+              "arguments": [
+                {
+                  "name": "M365_VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--m365-trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+              "arguments": [
+                {
+                  "name": "M365_TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
                 }
               ]
             },
@@ -4079,7 +4589,7 @@
               "name": "--sut",
               "recursive": false,
               "hidden": false,
-              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
+              "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
               "arguments": [
                 {
                   "name": "SUT",
@@ -4089,6 +4599,23 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--i-understand-live-side-effects",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+              "arguments": [
+                {
+                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             },
@@ -4110,23 +4637,6 @@
               ]
             },
             {
-              "name": "--i-understand-live-side-effects",
-              "recursive": false,
-              "hidden": false,
-              "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-              "arguments": [
-                {
-                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
               "name": "--max-credits",
               "recursive": false,
               "hidden": false,
@@ -4140,6 +4650,108 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-config",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+              "arguments": [
+                {
+                  "name": "M365_CONFIG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-max-turns",
+              "recursive": false,
+              "hidden": false,
+              "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+              "arguments": [
+                {
+                  "name": "M365_MAX_TURNS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--m365-profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+              "arguments": [
+                {
+                  "name": "M365_PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--m365-capture-raw",
+              "recursive": false,
+              "hidden": false,
+              "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+              "arguments": [
+                {
+                  "name": "M365_CAPTURE_RAW",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+              "arguments": [
+                {
+                  "name": "M365_VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--m365-trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+              "arguments": [
+                {
+                  "name": "M365_TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
                 }
               ]
             },
@@ -5532,7 +6144,7 @@
                   "name": "--sut",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Built-in system-under-test for this verb. Valid: copilot-studio, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
+                  "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
                   "arguments": [
                     {
                       "name": "SUT",
@@ -5542,6 +6154,23 @@
                         "maximum": 1
                       },
                       "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--i-understand-live-side-effects",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
                     }
                   ]
                 },
@@ -5563,23 +6192,6 @@
                   ]
                 },
                 {
-                  "name": "--i-understand-live-side-effects",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-                  "arguments": [
-                    {
-                      "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-                      "required": false,
-                      "arity": {
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "type": "Boolean"
-                    }
-                  ]
-                },
-                {
                   "name": "--max-credits",
                   "recursive": false,
                   "hidden": false,
@@ -5593,6 +6205,108 @@
                         "maximum": 1
                       },
                       "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-config",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+                  "arguments": [
+                    {
+                      "name": "M365_CONFIG",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-max-turns",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+                  "arguments": [
+                    {
+                      "name": "M365_MAX_TURNS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-profile",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+                  "arguments": [
+                    {
+                      "name": "M365_PROFILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-capture-raw",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+                  "arguments": [
+                    {
+                      "name": "M365_CAPTURE_RAW",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "DirectoryInfo"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "M365_VERBOSE",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-trace",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+                  "arguments": [
+                    {
+                      "name": "M365_TRACE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
                     }
                   ]
                 },
@@ -5846,7 +6560,7 @@
                   "name": "--sut",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Built-in system-under-test for this verb. Valid: copilot-studio, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
+                  "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
                   "arguments": [
                     {
                       "name": "SUT",
@@ -5856,6 +6570,23 @@
                         "maximum": 1
                       },
                       "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--i-understand-live-side-effects",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
                     }
                   ]
                 },
@@ -5877,23 +6608,6 @@
                   ]
                 },
                 {
-                  "name": "--i-understand-live-side-effects",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-                  "arguments": [
-                    {
-                      "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-                      "required": false,
-                      "arity": {
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "type": "Boolean"
-                    }
-                  ]
-                },
-                {
                   "name": "--max-credits",
                   "recursive": false,
                   "hidden": false,
@@ -5907,6 +6621,108 @@
                         "maximum": 1
                       },
                       "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-config",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+                  "arguments": [
+                    {
+                      "name": "M365_CONFIG",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-max-turns",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+                  "arguments": [
+                    {
+                      "name": "M365_MAX_TURNS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-profile",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+                  "arguments": [
+                    {
+                      "name": "M365_PROFILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-capture-raw",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+                  "arguments": [
+                    {
+                      "name": "M365_CAPTURE_RAW",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "DirectoryInfo"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "M365_VERBOSE",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-trace",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+                  "arguments": [
+                    {
+                      "name": "M365_TRACE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
                     }
                   ]
                 },
@@ -6160,7 +6976,7 @@
                   "name": "--sut",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Built-in system-under-test for this verb. Valid: copilot-studio, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
+                  "description": "Built-in system-under-test for this verb. Valid: copilot-studio, microsoft365, mock. (mock = a built-in stand-in that measures nothing; the run is labelled MOCK and is not stored.)",
                   "arguments": [
                     {
                       "name": "SUT",
@@ -6170,6 +6986,23 @@
                         "maximum": 1
                       },
                       "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--i-understand-live-side-effects",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
                     }
                   ]
                 },
@@ -6191,23 +7024,6 @@
                   ]
                 },
                 {
-                  "name": "--i-understand-live-side-effects",
-                  "recursive": false,
-                  "hidden": false,
-                  "description": "Required consent for --sut copilot-studio: acknowledge that scanning a LIVE agent can fire real connector/flow actions. Use a NON-PROD agent. Without this the command refuses before any network call. [default: False]",
-                  "arguments": [
-                    {
-                      "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
-                      "required": false,
-                      "arity": {
-                        "minimum": 0,
-                        "maximum": 1
-                      },
-                      "type": "Boolean"
-                    }
-                  ]
-                },
-                {
                   "name": "--max-credits",
                   "recursive": false,
                   "hidden": false,
@@ -6221,6 +7037,108 @@
                         "maximum": 1
                       },
                       "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-config",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required by --sut microsoft365.",
+                  "arguments": [
+                    {
+                      "name": "M365_CONFIG",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-max-turns",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Cap the number of agent turns a live --sut microsoft365 run may make (0 = no cap). Turns are COUNTED, consumption is not metered: Work IQ exposes no usage; a turn that would exceed the cap never fires and the run stops. [default: 0]",
+                  "arguments": [
+                    {
+                      "name": "M365_MAX_TURNS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-profile",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+                  "arguments": [
+                    {
+                      "name": "M365_PROFILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-capture-raw",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+                  "arguments": [
+                    {
+                      "name": "M365_CAPTURE_RAW",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "DirectoryInfo"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-verbose",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at start. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "M365_VERBOSE",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--m365-trace",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Write the JSONL trace to this file instead of the default under .agenteval/m365/.",
+                  "arguments": [
+                    {
+                      "name": "M365_TRACE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
                     }
                   ]
                 },
@@ -6498,6 +7416,205 @@
         {
           "name": "doctor",
           "description": "Verify Mission Control's runtime artefacts are co-located with the CLI and the SPA bundle is intact. Requires .NET 10."
+        }
+      ]
+    },
+    {
+      "name": "m365",
+      "description": "Microsoft 365 (Work IQ A2A 1.0) connector commands",
+      "commands": [
+        {
+          "name": "doctor",
+          "description": "Readiness check of a Microsoft 365 agent over Work IQ A2A 1.0, stage by stage: config, sign-in, agent card, protocol handshake (GetTask on a random id); with --probe and consent, one real prompt and the capability census. Stops at the first FAIL (--continue runs on) and writes readiness.md, readiness.json, the trace and the issues file into the report folder. Exit 0 all passed, 1 a stage failed, 11 a stage was skipped for consent, 2 usage, 3 the report or the diagnostics files could not be written.",
+          "options": [
+            {
+              "name": "--m365-config",
+              "recursive": false,
+              "hidden": false,
+              "description": "JSON file with the Work IQ connection: tenantId, appClientId; optional endpoint, agentId (opaque; null = the default Work IQ agent), scope, agentName, diagnosticProfile (PublicAnswerOnly|Native118Diagnostics), timeZone (IANA), trustedHosts. No secret is stored; the token is acquired at run time via MSAL device-code auth + an OS-encrypted cache. Required.",
+              "arguments": [
+                {
+                  "name": "M365_CONFIG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--stage",
+              "recursive": false,
+              "hidden": false,
+              "description": "Which stage to run: config, auth, discovery, protocol, probe, census, or all (default: config, auth, discovery and protocol; --probe adds probe and census). The config stage always runs; a single network stage acquires its own token and card as needed. [default: all]",
+              "arguments": [
+                {
+                  "name": "STAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--probe",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also run the probe and the capability census. The probe sends one real prompt (\"Reply with the single word READY.\"). Under the default public profile the census sends the same prompt a SECOND time under the experimental native118 profile; it then calls CancelTask on the finished task (the expected answer is TaskNotCancelable). Needs --i-understand-live-side-effects; without it both are SKIPPED, no prompt is sent and the command exits 11. [default: False]",
+              "arguments": [
+                {
+                  "name": "PROBE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--i-understand-live-side-effects",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required consent for a live built-in --sut target (copilot-studio, microsoft365): acknowledge that the run drives a LIVE agent that can perform real actions and cannot be sandboxed. Use a NON-PROD agent. For m365 doctor it gates the probe and the census: without it they are SKIPPED and no prompt reaches the agent (the config, sign-in, discovery and protocol stages run without it). [default: False]",
+              "arguments": [
+                {
+                  "name": "I_UNDERSTAND_LIVE_SIDE_EFFECTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--continue",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run the remaining stages after a FAIL instead of stopping (a stage still needs a config that loaded). [default: False]",
+              "arguments": [
+                {
+                  "name": "CONTINUE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--report",
+              "recursive": false,
+              "hidden": false,
+              "description": "Folder for readiness.md, readiness.json and the trace and issues files (default: .agenteval/m365/doctor-<yyyyMMdd-HHmmss>Z when an .agenteval/ folder is found walking up from the current directory, else <temp>/agenteval-m365/doctor-<stamp>).",
+              "arguments": [
+                {
+                  "name": "REPORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "public = answer only (text/plain); native118 = EXPERIMENTAL, also requests the two diagnostic output modes observed in Microsoft's native evaluator 1.18.0 (tool and retrieval info); not a documented contract [default: public]",
+              "arguments": [
+                {
+                  "name": "M365_PROFILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--m365-capture-raw",
+              "recursive": false,
+              "hidden": false,
+              "description": "Retain the raw A2A request/response bytes and stream frames under this directory (opt-in; may contain tenant data; keep it out of source control).",
+              "arguments": [
+                {
+                  "name": "M365_CAPTURE_RAW",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            },
+            {
+              "name": "--m365-verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print every provider trace event to stderr (stage, code, ids, HTTP status, JSON-RPC code, A2A state, elapsed). The JSONL trace and issue files are always written; their paths are printed at the end. On by default for m365 doctor (--m365-verbose false turns it off). [default: True]",
+              "arguments": [
+                {
+                  "name": "M365_VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--m365-trace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the JSONL trace to this file instead of the default in the report folder.",
+              "arguments": [
+                {
+                  "name": "M365_TRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--timeout-seconds",
+              "recursive": false,
+              "hidden": false,
+              "description": "The most one stage may take for its network calls, in seconds (also the HTTP timeout and the probe's turn deadline). A device-code sign-in is not cut short by it: once the sign-in prompt is shown, the stage waits until the sign-in code expires (about 15 minutes). Default 120. [default: 120]",
+              "arguments": [
+                {
+                  "name": "TIMEOUT_SECONDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
         }
       ]
     },

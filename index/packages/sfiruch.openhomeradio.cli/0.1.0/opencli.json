@@ -1,0 +1,883 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "openhomeradio",
+    "version": "0.1.0",
+    "description": "Command-line tool for OpenHomeRadio: send, receive, capture and decode 868 MHz home-automation radio protocols (the Domino and IoHome protocol families) with an ADALM-PLUTO software-defined radio."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.14.0",
+      "systemCommandLineVersion": "2.0.14.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Send, receive, capture and decode 868 MHz home-automation radio protocols with an ADALM-PLUTO SDR."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "selftest",
+      "description": "Check the protocol implementations without hardware: the published IoHome test vectors, and modulate/demodulate round trips of both protocols."
+    },
+    {
+      "name": "receive",
+      "description": "Print every decoded frame of all protocols from one shared receive stream.",
+      "options": [
+        {
+          "name": "--host",
+          "recursive": false,
+          "hidden": false,
+          "description": "Network address of the ADALM-PLUTO. [default: 192.168.2.1]",
+          "arguments": [
+            {
+              "name": "HOST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--port",
+          "recursive": false,
+          "hidden": false,
+          "description": "TCP port of the radio's IIO daemon. [default: 30431]",
+          "arguments": [
+            {
+              "name": "PORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "capture",
+      "description": "Record raw I/Q at the shared receive tuning, flagging and decoding buffers that contain a signal. Example: openhomeradio capture 10 remote.cs16",
+      "options": [
+        {
+          "name": "--host",
+          "recursive": false,
+          "hidden": false,
+          "description": "Network address of the ADALM-PLUTO. [default: 192.168.2.1]",
+          "arguments": [
+            {
+              "name": "HOST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--port",
+          "recursive": false,
+          "hidden": false,
+          "description": "TCP port of the radio's IIO daemon. [default: 30431]",
+          "arguments": [
+            {
+              "name": "PORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SECONDS",
+          "description": "How long to record.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Double"
+        },
+        {
+          "name": "FILE.CS16",
+          "description": "Output file (raw interleaved little-endian int16 I/Q).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "decode",
+      "description": "Decode all protocols from a capture file.",
+      "options": [
+        {
+          "name": "--center",
+          "recursive": false,
+          "hidden": false,
+          "description": "The tuning the file was recorded at, in Hz. [default: 868750000]",
+          "arguments": [
+            {
+              "name": "CENTER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        },
+        {
+          "name": "--rate",
+          "recursive": false,
+          "hidden": false,
+          "description": "The file's sample rate, in Hz. [default: 2500000]",
+          "arguments": [
+            {
+              "name": "RATE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int64"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FILE.CS16",
+          "description": "Capture file: raw interleaved little-endian int16 I/Q, as written by 'capture'.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    },
+    {
+      "name": "domino",
+      "description": "Domino protocol (869.0 MHz): blinds, lights and switches.",
+      "commands": [
+        {
+          "name": "send",
+          "description": "Send a command as a remote button. Example: openhomeradio domino send 123456 20 ContinuousDown",
+          "options": [
+            {
+              "name": "--value",
+              "recursive": false,
+              "hidden": false,
+              "description": "The command's argument, decimal (for example a lock level).",
+              "arguments": [
+                {
+                  "name": "VALUE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Byte"
+                }
+              ]
+            },
+            {
+              "name": "--counter",
+              "recursive": false,
+              "hidden": false,
+              "description": "Counter byte to send, hex. An actuator ignores a counter equal to the last one it saw. Default random.",
+              "arguments": [
+                {
+                  "name": "COUNTER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "UInt32"
+                }
+              ]
+            },
+            {
+              "name": "--attenuation",
+              "recursive": false,
+              "hidden": false,
+              "description": "Transmit power back-off in dB (0 = maximum power). [default: 10]",
+              "arguments": [
+                {
+                  "name": "ATTENUATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "Network address of the ADALM-PLUTO. [default: 192.168.2.1]",
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--port",
+              "recursive": false,
+              "hidden": false,
+              "description": "TCP port of the radio's IIO daemon. [default: 30431]",
+              "arguments": [
+                {
+                  "name": "PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ADDRESS",
+              "description": "24-bit button address, hex (e.g. 123456).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "UInt32"
+            },
+            {
+              "name": "GROUP",
+              "description": "Group byte of the remote, hex (e.g. 20).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "UInt32"
+            },
+            {
+              "name": "COMMAND",
+              "description": "One of Up, Down, ContinuousUp, ContinuousDown, Stop, Toggle, Save, LockLevelSet, LockLevelClear, RestorePosition, LongPress.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DominoCommand",
+              "allowedValues": [
+                "Up",
+                "Down",
+                "ContinuousUp",
+                "ContinuousDown",
+                "Stop",
+                "Toggle",
+                "Save",
+                "LockLevelSet",
+                "LockLevelClear",
+                "RestorePosition",
+                "LongPress"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "receive",
+          "description": "Print received Domino button presses, one line per press.",
+          "options": [
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "Network address of the ADALM-PLUTO. [default: 192.168.2.1]",
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--port",
+              "recursive": false,
+              "hidden": false,
+              "description": "TCP port of the radio's IIO daemon. [default: 30431]",
+              "arguments": [
+                {
+                  "name": "PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "decode",
+          "description": "Decode Domino frames from a capture file.",
+          "options": [
+            {
+              "name": "--center",
+              "recursive": false,
+              "hidden": false,
+              "description": "The tuning the file was recorded at, in Hz. [default: 868750000]",
+              "arguments": [
+                {
+                  "name": "CENTER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--rate",
+              "recursive": false,
+              "hidden": false,
+              "description": "The file's sample rate, in Hz. [default: 2500000]",
+              "arguments": [
+                {
+                  "name": "RATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE.CS16",
+              "description": "Capture file: raw interleaved little-endian int16 I/Q, as written by 'capture'.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "iohome",
+      "description": "IoHome protocol (868.95 MHz, single-way): windows and blinds.",
+      "commands": [
+        {
+          "name": "send",
+          "description": "Move the actuators paired with a remote. Example: openhomeradio iohome send 000102030405060708090A0B0C0D0E0F ABCDEF down --sequence 1",
+          "options": [
+            {
+              "name": "--sequence",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sequence number (rolling code) to send, hex. Must be above the last one the actuator accepted from this address. Default 0.",
+              "arguments": [
+                {
+                  "name": "SEQUENCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "UInt32"
+                }
+              ]
+            },
+            {
+              "name": "--offsets",
+              "recursive": false,
+              "hidden": false,
+              "description": "Transmit frequency corrections in Hz: min:max:step for a sweep, or one value for no sweep. Default -20000:20000:2500.",
+              "arguments": [
+                {
+                  "name": "OFFSETS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "IReadOnlyList`1"
+                }
+              ]
+            },
+            {
+              "name": "--attenuation",
+              "recursive": false,
+              "hidden": false,
+              "description": "Transmit power back-off in dB (0 = maximum power). [default: 0]",
+              "arguments": [
+                {
+                  "name": "ATTENUATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--destination",
+              "recursive": false,
+              "hidden": false,
+              "description": "Destination node, hex. Default: broadcast to every actuator paired with this remote.",
+              "arguments": [
+                {
+                  "name": "DESTINATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "UInt32"
+                }
+              ]
+            },
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "Network address of the ADALM-PLUTO. [default: 192.168.2.1]",
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--port",
+              "recursive": false,
+              "hidden": false,
+              "description": "TCP port of the radio's IIO daemon. [default: 30431]",
+              "arguments": [
+                {
+                  "name": "PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "16-byte system key, hex (e.g. 000102030405060708090A0B0C0D0E0F).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Byte[]"
+            },
+            {
+              "name": "ADDRESS",
+              "description": "24-bit address of the remote to transmit as, hex (e.g. ABCDEF).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "UInt32"
+            },
+            {
+              "name": "ACTION",
+              "description": "up, down, stop, or a position 0..100 % (positions follow the protocol documentation; not verified on hardware).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "pair",
+          "description": "Pair a remote with every actuator in learn mode (1W key transfer). Put the actuator into learn mode first. Example: openhomeradio iohome pair 000102030405060708090A0B0C0D0E0F ABCDEF",
+          "options": [
+            {
+              "name": "--sequence",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sequence number (rolling code) to send, hex. Must be above the last one the actuator accepted from this address. Default 0.",
+              "arguments": [
+                {
+                  "name": "SEQUENCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "UInt32"
+                }
+              ]
+            },
+            {
+              "name": "--offsets",
+              "recursive": false,
+              "hidden": false,
+              "description": "Transmit frequency corrections in Hz: min:max:step for a sweep, or one value for no sweep. Default -20000:20000:2500.",
+              "arguments": [
+                {
+                  "name": "OFFSETS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "IReadOnlyList`1"
+                }
+              ]
+            },
+            {
+              "name": "--attenuation",
+              "recursive": false,
+              "hidden": false,
+              "description": "Transmit power back-off in dB (0 = maximum power). [default: 0]",
+              "arguments": [
+                {
+                  "name": "ATTENUATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "Network address of the ADALM-PLUTO. [default: 192.168.2.1]",
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--port",
+              "recursive": false,
+              "hidden": false,
+              "description": "TCP port of the radio's IIO daemon. [default: 30431]",
+              "arguments": [
+                {
+                  "name": "PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "16-byte system key, hex (e.g. 000102030405060708090A0B0C0D0E0F).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Byte[]"
+            },
+            {
+              "name": "ADDRESS",
+              "description": "24-bit address of the remote to transmit as, hex (e.g. ABCDEF).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "UInt32"
+            }
+          ]
+        },
+        {
+          "name": "receive",
+          "description": "Print received IoHome frames (CRC-checked, MAC not verified) with their raw bytes.",
+          "options": [
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "Network address of the ADALM-PLUTO. [default: 192.168.2.1]",
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--port",
+              "recursive": false,
+              "hidden": false,
+              "description": "TCP port of the radio's IIO daemon. [default: 30431]",
+              "arguments": [
+                {
+                  "name": "PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "decode",
+          "description": "Decode IoHome frames from a capture file.",
+          "options": [
+            {
+              "name": "--center",
+              "recursive": false,
+              "hidden": false,
+              "description": "The tuning the file was recorded at, in Hz. [default: 868750000]",
+              "arguments": [
+                {
+                  "name": "CENTER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--rate",
+              "recursive": false,
+              "hidden": false,
+              "description": "The file's sample rate, in Hz. [default: 2500000]",
+              "arguments": [
+                {
+                  "name": "RATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE.CS16",
+              "description": "Capture file: raw interleaved little-endian int16 I/Q, as written by 'capture'.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "diagnose",
+          "description": "Report bursts, tones, frequency offsets and sync words in a capture file, to tell 'no signal' from 'signal but not decodable'.",
+          "options": [
+            {
+              "name": "--center",
+              "recursive": false,
+              "hidden": false,
+              "description": "The tuning the file was recorded at, in Hz. [default: 868750000]",
+              "arguments": [
+                {
+                  "name": "CENTER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--rate",
+              "recursive": false,
+              "hidden": false,
+              "description": "The file's sample rate, in Hz. [default: 2500000]",
+              "arguments": [
+                {
+                  "name": "RATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE.CS16",
+              "description": "Capture file: raw interleaved little-endian int16 I/Q, as written by 'capture'.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "genkey",
+          "description": "Print a new random 16-byte system key for a new remote."
+        },
+        {
+          "name": "recoverkey",
+          "description": "Print the system key contained in a captured 1W key transfer. Only use this on installations you own or are authorised to control.",
+          "arguments": [
+            {
+              "name": "KEYTRANSFERFRAMEHEX",
+              "description": "A captured 1W key transfer (command 30), hex, as printed by 'receive'.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Byte[]"
+            }
+          ]
+        },
+        {
+          "name": "verify",
+          "description": "Check a system key against a captured frame's MAC, without transmitting anything.",
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "16-byte system key, hex (e.g. 000102030405060708090A0B0C0D0E0F).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Byte[]"
+            },
+            {
+              "name": "FRAMEHEX",
+              "description": "A captured frame, hex, as printed by 'receive'.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Byte[]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

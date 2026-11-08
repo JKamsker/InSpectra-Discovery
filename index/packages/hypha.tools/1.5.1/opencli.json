@@ -1,0 +1,827 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "hypha",
+    "version": "1.5.1",
+    "description": "Fetches the upstream OMG SysML v2 / KerML sources and the Systems Modeling API, generates a local\n      knowledge base from them – metamodel, textual notation, model library, specification text and\n      cross-references – and looks names up in it, with JSON output for editors and language-model\n      tools."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.10.0",
+      "systemCommandLineVersion": "2.0.10.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "hypha - fetch the upstream OMG SysML v2 / KerML sources and generate the knowledge base"
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--repository-root",
+      "recursive": true,
+      "hidden": false,
+      "description": "The folder holding sources/ and knowledge/. Discovered by walking up from the working directory when omitted.",
+      "aliases": [
+        "-r"
+      ],
+      "arguments": [
+        {
+          "name": "REPOSITORY_ROOT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "--toolchain-cache-root",
+      "recursive": true,
+      "hidden": false,
+      "description": "Keep the managed toolchain - the uv executable, uv's package cache and the Python it installs - under this folder. Without it, uv is cached in the per-user application data folder and uv uses its own default locations.",
+      "arguments": [
+        {
+          "name": "TOOLCHAIN_CACHE_ROOT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "DirectoryInfo"
+        }
+      ]
+    },
+    {
+      "name": "--token",
+      "recursive": true,
+      "hidden": false,
+      "description": "A GitHub token. Falls back to GITHUB_TOKEN / GH_TOKEN. Optional - every read is public - but the anonymous API allows only 60 requests an hour.",
+      "arguments": [
+        {
+          "name": "TOKEN",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--log-level",
+      "recursive": true,
+      "hidden": false,
+      "description": "Verbose, Debug, Information, Warning, Error or Fatal. [default: Information]",
+      "arguments": [
+        {
+          "name": "LOG_LEVEL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "LogEventLevel",
+          "allowedValues": [
+            "Verbose",
+            "Debug",
+            "Information",
+            "Warning",
+            "Error",
+            "Fatal"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--no-logo",
+      "recursive": true,
+      "hidden": false,
+      "description": "Suppress the banner. [default: False]",
+      "arguments": [
+        {
+          "name": "NO_LOGO",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "discover",
+      "description": "List the upstream releases hypha can be generated for",
+      "options": [
+        {
+          "name": "--limit",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many releases to list, newest first. 0 lists them all. [default: 10]",
+          "arguments": [
+            {
+              "name": "LIMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fetch",
+      "description": "Download a release's inputs into sources/ and record it",
+      "options": [
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "The release tag to fetch, e.g. 2026-05.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-specs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the OMG specification PDFs. Downloaded by default, since a fully local install needs everything - they are copyright OMG, land in a git-ignored folder and must never be committed. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_SPECS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Download every file again, rather than resuming and keeping what is there. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-default",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave the existing default release alone rather than switching to this one. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DEFAULT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "generate",
+      "description": "Generate the knowledge base from the fetched sources",
+      "options": [
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "The release to generate for; repeatable. Every installed release when omitted.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the generated artifacts here instead of into the repository. Inputs are still read from the repository.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DirectoryInfo"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ARTIFACT",
+          "description": "The artifact to generate, e.g. metamodel or cross-references. Every artifact, in dependency order, when omitted.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "list",
+      "description": "List the installed releases, the default, and what has been generated",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print one line of JSON instead of a table - for editors and scripts. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "lookup",
+      "description": "Print the generated page of a metamodel element or model-library declaration",
+      "options": [
+        {
+          "name": "--kind",
+          "recursive": false,
+          "hidden": false,
+          "description": "metamodel or model-library.",
+          "aliases": [
+            "-k"
+          ],
+          "arguments": [
+            {
+              "name": "KIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "A short or qualified name, e.g. PartUsage, Real or ScalarValues::Real.",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "The installed release to answer from. The default release when omitted.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--start-line",
+          "recursive": false,
+          "hidden": false,
+          "description": "The first line to print, 1-based. Defaults to the declaration for a model-library name and to the top of the page for a metamodel name.",
+          "arguments": [
+            {
+              "name": "START_LINE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--max-lines",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many lines to print, at most 2000. [default: 160]",
+          "arguments": [
+            {
+              "name": "MAX_LINES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print one line of JSON - for editors, language-model tools and scripts. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "move-window",
+      "description": "Fetch, regenerate and verify a release, then evict the releases that fall outside the window",
+      "options": [
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "The release to move the window to, e.g. 2026-06.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--keep",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many releases the window holds; older ones are evicted. [default: 2]",
+          "arguments": [
+            {
+              "name": "KEEP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "use",
+      "description": "Switch which installed release the plugin answers from by default",
+      "options": [
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "The installed release to answer from by default.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "remove",
+      "description": "Remove one installed release's sources and knowledge",
+      "options": [
+        {
+          "name": "--tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "The installed release to remove.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Remove the release even if it is the only one installed. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "description": "Compare installed releases against what is offerable upstream",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print one line of JSON instead of a table - for scripts and the hook. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "api",
+      "description": "Fetch and generate the Systems Modeling API & Services knowledge",
+      "commands": [
+        {
+          "name": "discover",
+          "description": "List the upstream API versions hypha can be generated for",
+          "options": [
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many API versions to list, newest first. 0 lists them all. [default: 10]",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "fetch",
+          "description": "Download an API version's inputs into sources/api/ and record it",
+          "options": [
+            {
+              "name": "--tag",
+              "recursive": false,
+              "hidden": false,
+              "description": "The API version to fetch, e.g. 2026-04.",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--no-specs",
+              "recursive": false,
+              "hidden": false,
+              "description": "Skip the OMG specification PDF. Downloaded by default - it is copyright OMG, lands in a git-ignored folder and must never be committed. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_SPECS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Download every file again, rather than resuming and keeping what is there. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-default",
+              "recursive": false,
+              "hidden": false,
+              "description": "Leave the existing default API version alone rather than switching to this one. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_DEFAULT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "generate",
+          "description": "Generate the API knowledge base from the fetched API inputs",
+          "options": [
+            {
+              "name": "--tag",
+              "recursive": false,
+              "hidden": false,
+              "description": "The API version to generate for; repeatable. Every installed API version when omitted.",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the generated artifacts here instead of into the repository. Inputs are still read from the repository.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ARTIFACT",
+              "description": "The artifact to generate, e.g. pim or openapi. Every artifact, in dependency order, when omitted.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List the installed API versions, the default, and what has been generated",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print one line of JSON instead of a table - for editors and scripts. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "use",
+          "description": "Switch which installed API version the plugin answers from by default",
+          "options": [
+            {
+              "name": "--tag",
+              "recursive": false,
+              "hidden": false,
+              "description": "The installed API version to answer from by default.",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "description": "Remove one installed API version's sources and knowledge",
+          "options": [
+            {
+              "name": "--tag",
+              "recursive": false,
+              "hidden": false,
+              "description": "The installed API version to remove.",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Remove the API version even if it is the only one installed. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
