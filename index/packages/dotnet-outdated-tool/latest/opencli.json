@@ -1,63 +1,46 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "dotnet outdated",
-    "version": "4.8.1",
+    "title": "dotnet-outdated",
+    "version": "4.9.0",
     "description": "A .NET Core global tool to update project dependencies."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
     "generator": "InSpectra.Gen",
     "hookCapture": {
-      "cliFramework": "McMaster.Extensions.CommandLineUtils",
-      "frameworkVersion": "5.1.0.0",
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.14.0",
+      "systemCommandLineVersion": "2.0.14.0",
       "patchTarget": "Parse-postfix ()"
     },
-    "cliFramework": "McMaster.Extensions.CommandLineUtils"
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "A .NET Core global tool to list outdated Nuget packages."
   },
   "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
     {
       "name": "--version",
       "recursive": false,
       "hidden": false,
-      "description": "Show version information.",
-      "arguments": [
-        {
-          "name": "VERSION",
-          "required": false,
-          "arity": {
-            "minimum": 0,
-            "maximum": 0
-          },
-          "type": "Boolean"
-        }
-      ]
-    },
-    {
-      "name": "--help",
-      "recursive": false,
-      "hidden": false,
-      "description": "Show help information.",
-      "aliases": [
-        "-h"
-      ],
-      "arguments": [
-        {
-          "name": "HELP",
-          "required": false,
-          "arity": {
-            "minimum": 0,
-            "maximum": 0
-          },
-          "type": "Boolean"
-        }
-      ]
+      "description": "Show version information"
     },
     {
       "name": "--include-auto-references",
       "recursive": false,
       "hidden": false,
-      "description": "Specifies whether to include auto-referenced packages.",
+      "description": "Specifies whether to include auto-referenced packages. [default: False]",
       "aliases": [
         "-i"
       ],
@@ -83,13 +66,18 @@
       ],
       "arguments": [
         {
-          "name": "PRERELEASE",
+          "name": "PRE_RELEASE",
           "required": true,
           "arity": {
             "minimum": 1,
             "maximum": 1
           },
-          "type": "String"
+          "type": "PrereleaseReporting",
+          "allowedValues": [
+            "Auto",
+            "Always",
+            "Never"
+          ]
         }
       ]
     },
@@ -109,7 +97,12 @@
             "minimum": 1,
             "maximum": 1
           },
-          "type": "String"
+          "type": "VersionLock",
+          "allowedValues": [
+            "None",
+            "Major",
+            "Minor"
+          ]
         }
       ]
     },
@@ -117,7 +110,7 @@
       "name": "--transitive",
       "recursive": false,
       "hidden": false,
-      "description": "Specifies whether it should detect transitive dependencies.",
+      "description": "Specifies whether it should detect transitive dependencies. [default: False]",
       "aliases": [
         "-t"
       ],
@@ -149,7 +142,7 @@
             "minimum": 1,
             "maximum": 1
           },
-          "type": "String"
+          "type": "Int32"
         }
       ]
     },
@@ -157,19 +150,23 @@
       "name": "--upgrade",
       "recursive": false,
       "hidden": false,
-      "description": "Specifies whether outdated packages should be upgraded. Possible values for <TYPE> is Auto (default) or Prompt.",
+      "description": "Specifies whether outdated packages should be upgraded. Possible values for <TYPE> is Auto (default) or Prompt, given as -u:<TYPE>.",
       "aliases": [
         "-u"
       ],
       "arguments": [
         {
           "name": "TYPE",
-          "required": false,
+          "required": true,
           "arity": {
-            "minimum": 0,
+            "minimum": 1,
             "maximum": 1
           },
-          "type": "String"
+          "type": "UpgradeType",
+          "allowedValues": [
+            "Auto",
+            "Prompt"
+          ]
         }
       ]
     },
@@ -177,7 +174,7 @@
       "name": "--fail-on-updates",
       "recursive": false,
       "hidden": false,
-      "description": "Specifies whether it should return a non-zero exit code when updates are found.",
+      "description": "Specifies whether it should return a non-zero exit code when updates are found. [default: False]",
       "aliases": [
         "-f"
       ],
@@ -197,19 +194,19 @@
       "name": "--include",
       "recursive": false,
       "hidden": false,
-      "description": "Specifies to only look at packages where the name contains the provided string. Culture and case insensitive. If provided multiple times, a single match is enough to include a package.",
+      "description": "Specifies to only look at packages where the name contains the provided string. Culture and case insensitive. If provided multiple times, a single match is enough to include a package. [default: System.Collections.Generic.List`1[System.String]]",
       "aliases": [
         "-inc"
       ],
       "arguments": [
         {
-          "name": "FILTER_INCLUDE",
+          "name": "INCLUDE",
           "required": true,
           "arity": {
             "minimum": 1,
-            "maximum": 2147483647
+            "maximum": 100000
           },
-          "type": "String[]"
+          "type": "List`1"
         }
       ]
     },
@@ -217,19 +214,19 @@
       "name": "--exclude",
       "recursive": false,
       "hidden": false,
-      "description": "Specifies to only look at packages where the name does not contain the provided string. Culture and case insensitive. If provided multiple times, a single match is enough to exclude a package.",
+      "description": "Specifies to only look at packages where the name does not contain the provided string. Culture and case insensitive. If provided multiple times, a single match is enough to exclude a package. [default: System.Collections.Generic.List`1[System.String]]",
       "aliases": [
         "-exc"
       ],
       "arguments": [
         {
-          "name": "FILTER_EXCLUDE",
+          "name": "EXCLUDE",
           "required": true,
           "arity": {
             "minimum": 1,
-            "maximum": 2147483647
+            "maximum": 100000
           },
-          "type": "String[]"
+          "type": "List`1"
         }
       ]
     },
@@ -243,7 +240,7 @@
       ],
       "arguments": [
         {
-          "name": "OUTPUT_FILENAME",
+          "name": "OUTPUT",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -263,13 +260,18 @@
       ],
       "arguments": [
         {
-          "name": "OUTPUT_FILE_FORMAT",
+          "name": "OUTPUT_FORMAT",
           "required": true,
           "arity": {
             "minimum": 1,
             "maximum": 1
           },
-          "type": "String"
+          "type": "OutputFormat",
+          "allowedValues": [
+            "Json",
+            "Csv",
+            "Markdown"
+          ]
         }
       ]
     },
@@ -283,13 +285,13 @@
       ],
       "arguments": [
         {
-          "name": "OLDER_THAN_DAYS",
+          "name": "OLDER_THAN",
           "required": true,
           "arity": {
             "minimum": 1,
             "maximum": 1
           },
-          "type": "String"
+          "type": "Int32"
         }
       ]
     },
@@ -297,7 +299,7 @@
       "name": "--no-restore",
       "recursive": false,
       "hidden": false,
-      "description": "Add the reference without performing restore preview and compatibility check.",
+      "description": "Add the reference without performing restore preview and compatibility check. [default: False]",
       "aliases": [
         "-n"
       ],
@@ -317,7 +319,7 @@
       "name": "--recursive",
       "recursive": false,
       "hidden": false,
-      "description": "Recursively search for all projects within the provided directory.",
+      "description": "Recursively search for all projects within the provided directory. [default: False]",
       "aliases": [
         "-r"
       ],
@@ -337,7 +339,7 @@
       "name": "--include-file-based-apps",
       "recursive": false,
       "hidden": false,
-      "description": "Include loose file-based apps when recursively searching a directory.",
+      "description": "Include loose file-based apps when recursively searching a directory. [default: False]",
       "aliases": [
         "-fba"
       ],
@@ -357,7 +359,7 @@
       "name": "--ignore-failed-sources",
       "recursive": false,
       "hidden": false,
-      "description": "Treat package source failures as warnings.",
+      "description": "Treat package source failures as warnings. [default: False]",
       "aliases": [
         "-ifs"
       ],
@@ -377,7 +379,7 @@
       "name": "--include-up-to-date",
       "recursive": false,
       "hidden": false,
-      "description": "Include all dependencies in the report even the ones not outdated.",
+      "description": "Include all dependencies in the report even the ones not outdated. [default: False]",
       "aliases": [
         "-utd"
       ],
@@ -397,13 +399,13 @@
       "name": "--pre-release-label",
       "recursive": false,
       "hidden": false,
-      "description": "Specifies an optional label to restrict matches to when looking for pre-release versions of packages. For example, a label of 'rc.1' would only match pre-release packages with a pre-release label that starts with that prefix.",
+      "description": "Specifies an optional label to restrict matches to when looking for pre-release versions of packages. For example, a label of 'rc.1' would only match pre-release packages with a pre-release label that starts with that prefix. [default: ]",
       "aliases": [
         "-prl"
       ],
       "arguments": [
         {
-          "name": "PRERELEASE_LABEL",
+          "name": "PRE_RELEASE_LABEL",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -423,13 +425,21 @@
       ],
       "arguments": [
         {
-          "name": "NU_GET_CRED_LOG_LEVEL",
+          "name": "NUGET_CRED_LOG_LEVEL",
           "required": true,
           "arity": {
             "minimum": 1,
             "maximum": 1
           },
-          "type": "String"
+          "type": "LogLevel",
+          "allowedValues": [
+            "Debug",
+            "Verbose",
+            "Information",
+            "Minimal",
+            "Warning",
+            "Error"
+          ]
         }
       ]
     },
@@ -437,7 +447,7 @@
       "name": "--runtime",
       "recursive": false,
       "hidden": false,
-      "description": "Specifies an optional runtime identifier to be used during the restore target when projects are analyzed. More information available on https://learn.microsoft.com/dotnet/core/rid-catalog",
+      "description": "Specifies an optional runtime identifier to be used during the restore target when projects are analyzed. More information available on https://learn.microsoft.com/dotnet/core/rid-catalog [default: ]",
       "aliases": [
         "-rt"
       ],
@@ -457,13 +467,13 @@
       "name": "--maximum-version",
       "recursive": false,
       "hidden": false,
-      "description": "The inclusive maximum package version to upgrade to.For example, a value of '8.0' would upgrade System.Text.Json 6.0.0 to the latest patch version of 8.0.x",
+      "description": "The inclusive maximum package version to upgrade to. For example, a value of '8.0' would upgrade System.Text.Json 6.0.0 to the latest patch version of 8.0.x [default: ]",
       "aliases": [
         "-mv"
       ],
       "arguments": [
         {
-          "name": "MAX_VERSION",
+          "name": "MAXIMUM_VERSION",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -489,7 +499,7 @@
             "minimum": 1,
             "maximum": 1
           },
-          "type": "String"
+          "type": "Int32"
         }
       ]
     }
@@ -498,9 +508,9 @@
     {
       "name": "PATH",
       "description": "The path to a .sln, .slnx, .slnf, .csproj, .fsproj or .cs file-based app, or to a directory containing a .NET Core solution/project. If none is specified, the current directory will be used.",
-      "required": true,
+      "required": false,
       "arity": {
-        "minimum": 1,
+        "minimum": 0,
         "maximum": 1
       },
       "type": "String"
@@ -509,29 +519,7 @@
   "commands": [
     {
       "name": "mcp",
-      "description": "Runs the Model Context Protocol (MCP) server.",
-      "options": [
-        {
-          "name": "--help",
-          "recursive": false,
-          "hidden": false,
-          "description": "Show help information.",
-          "aliases": [
-            "-h"
-          ],
-          "arguments": [
-            {
-              "name": "HELP",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 0
-              },
-              "type": "Boolean"
-            }
-          ]
-        }
-      ]
+      "description": "Runs the Model Context Protocol (MCP) server."
     }
   ]
 }

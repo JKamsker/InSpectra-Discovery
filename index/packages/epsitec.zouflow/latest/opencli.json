@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "zou",
-    "version": "21.6.0.2644",
-    "description": "zou-flow - 21.6.0.2644"
+    "version": "22.0.1.2646",
+    "description": "zou-flow - 22.0.1.2646"
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
@@ -281,7 +281,7 @@
           "name": "--vtag",
           "recursive": false,
           "hidden": false,
-          "description": "Checkout most recent version tags. [default: False]",
+          "description": "Attach to version tag. [default: False]",
           "arguments": [
             {
               "name": "VTAG",
@@ -298,7 +298,7 @@
           "name": "--prod",
           "recursive": false,
           "hidden": false,
-          "description": "Checkout production branches. [default: False]",
+          "description": "Attach to production branch. [default: False]",
           "arguments": [
             {
               "name": "PROD",
@@ -315,7 +315,7 @@
           "name": "--dev",
           "recursive": false,
           "hidden": false,
-          "description": "Checkout development branches. [default: False]",
+          "description": "Attach to development branch. [default: False]",
           "arguments": [
             {
               "name": "DEV",
@@ -3098,14 +3098,17 @@
       ]
     },
     {
-      "name": "oclone",
-      "description": "Mirror the default remote locally and redirect its URL to the local mirror.",
+      "name": "mirror",
+      "description": "Create or refresh local mirrors of the remotes, or clone the mirror into a new isolated folder (--into).",
+      "aliases": [
+        "oclone"
+      ],
       "options": [
         {
           "name": "-f",
           "recursive": false,
           "hidden": false,
-          "description": "Force mirroring even if the target already exists. [default: False]",
+          "description": "Refresh an existing mirror from its source, and replace the --into folder if it already exists. [default: False]",
           "aliases": [
             "--force"
           ],
@@ -3118,6 +3121,23 @@
                 "maximum": 0
               },
               "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--into",
+          "recursive": false,
+          "hidden": false,
+          "description": "Clone the mirror into this new folder; the existing work-dirs and their remotes are left untouched.",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         },
@@ -4642,6 +4662,40 @@
               ]
             },
             {
+              "name": "--into",
+              "recursive": false,
+              "hidden": false,
+              "description": "Folder of the repository that receives the submodule. Defaults to the repository containing the folder.",
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--at",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path of the submodule in the receiving repository. Defaults to the folder path, or to the folder name with --into.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "--replace",
               "recursive": false,
               "hidden": false,
@@ -4649,6 +4703,26 @@
               "arguments": [
                 {
                   "name": "REPLACE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "-n",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display operations but do not execute. [default: False]",
+              "aliases": [
+                "--dry-run"
+              ],
+              "arguments": [
+                {
+                  "name": "N",
                   "required": false,
                   "arity": {
                     "minimum": 0,
@@ -5441,6 +5515,54 @@
       ]
     },
     {
+      "name": "vlog",
+      "description": "Display commits between two versions, regardless of their order. Recursive comparisons use bundle vtables; HEAD uses each module's current HEAD.",
+      "options": [
+        {
+          "name": "-r",
+          "recursive": false,
+          "hidden": false,
+          "description": "Visit specified modules recursively. [default: False]",
+          "aliases": [
+            "--recursive"
+          ],
+          "arguments": [
+            {
+              "name": "R",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 0
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "VERSION",
+          "description": "First version specification. [default: vlast]",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "OTHER_VERSION",
+          "description": "Second version specification. [default: vlast if the first version is older, otherwise HEAD]",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
       "name": "vtable",
       "description": "Manage version tables.",
       "commands": [
@@ -5653,6 +5775,40 @@
           "name": "enter",
           "description": "Checkout wip branches in specified modules recursively and in their ancestors.",
           "options": [
+            {
+              "name": "--vnext",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fallback to \u001B[33mVNEXT\u001B[0m (production branches).",
+              "arguments": [
+                {
+                  "name": "VNEXT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dev",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fallback to \u001B[33mDEV\u001B[0m  (development branches).",
+              "arguments": [
+                {
+                  "name": "DEV",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 0
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
             {
               "name": "-n",
               "recursive": false,

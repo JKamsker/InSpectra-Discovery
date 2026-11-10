@@ -2,16 +2,16 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "serena",
-    "version": "0.4.0",
-    "description": "A .NET-first MCP coding agent inspired by oraios/serena. Ships as a .NET global tool with 38 tools for navigating, understanding, and editing code. Features an indexed SQLite symbol cache, solution-scoped indexing for large repositories, lazy language-server startup, explicit Roslyn readiness/completeness telemetry, outline-first responses, and 13 language-server backends."
+    "version": "0.7.2",
+    "description": "A .NET-first MCP coding agent inspired by oraios/serena. Ships as a .NET global tool with 41 tools for navigating, understanding, checking and editing code, plus a read-only symbols CLI with references and configuration inventory built at index time. Features an indexed SQLite symbol cache, solution-scoped indexing for large repositories, lazy language-server startup, explicit Roslyn readiness/completeness telemetry, outline-first responses, and 13 language-server backends."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
     "generator": "InSpectra.Gen",
     "hookCapture": {
       "cliFramework": "System.CommandLine",
-      "frameworkVersion": "2.0.12.0",
-      "systemCommandLineVersion": "2.0.12.0",
+      "frameworkVersion": "2.0.14.0",
+      "systemCommandLineVersion": "2.0.14.0",
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
@@ -149,7 +149,7 @@
       "commands": [
         {
           "name": "index",
-          "description": "Index a project by requesting symbols for all source files",
+          "description": "Index a project: outline every source file (C# by the parser, no language server), capture identifier occurrences, build the inventory and write the project overview memory",
           "options": [
             {
               "name": "--log-level",
@@ -235,6 +235,23 @@
                   "type": "Int32"
                 }
               ]
+            },
+            {
+              "name": "--server",
+              "recursive": false,
+              "hidden": false,
+              "description": "Outline C# through the Roslyn language server instead of the parser (the pre-0.7 behaviour: loads the workspace, minutes instead of seconds). Other languages always use their server. [default: False]",
+              "arguments": [
+                {
+                  "name": "SERVER",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ],
           "arguments": [
@@ -299,6 +316,73 @@
               "required": true,
               "arity": {
                 "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "inventory",
+          "description": "Rebuild only the inventory of package and project references and configuration keys (seconds, no language server). `project index` builds it as well.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "description": "Path to the project directory (default: current directory)",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "overview",
+          "description": "Rewrite the generated project overview memory (generated/project-overview) from the existing index and inventory, without a language server. `project index` writes it as well.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "description": "Path to the project directory (default: current directory)",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "parser-check",
+          "description": "Compare the parser's C# outlines with the outlines stored in the index and report the differences",
+          "options": [
+            {
+              "name": "--max",
+              "recursive": false,
+              "hidden": false,
+              "description": "Files with differences to list [default: 20]",
+              "arguments": [
+                {
+                  "name": "MAX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "description": "Path to the project directory (default: current directory)",
+              "required": false,
+              "arity": {
+                "minimum": 0,
                 "maximum": 1
               },
               "type": "String"
@@ -586,6 +670,315 @@
               "required": false,
               "arity": {
                 "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "references",
+          "description": "Where an identifier occurs, from the index built at index time: file, line, enclosing symbol and the source line. Textual, so same-named members of unrelated types are all listed; declarations are marked. Needs no language server.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project root holding .serena/cache (default: current directory)",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--lang",
+              "recursive": false,
+              "hidden": false,
+              "description": "Restrict to one indexed language (csharp, typescript)",
+              "arguments": [
+                {
+                  "name": "LANG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Restrict results to files under this path",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--max",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum occurrences to print (-1 for all) [default: 100]",
+              "arguments": [
+                {
+                  "name": "MAX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit JSON instead of text [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "Identifier to look for (exact, case-insensitive)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "config",
+          "description": "Configuration keys (appsettings, Octodeploy, web.config) and MSBuild properties whose key matches a term. From the inventory built by 'project index' or 'project inventory'; no language server.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project root holding .serena/cache (default: current directory)",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Restrict results to files under this path",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--exact",
+              "recursive": false,
+              "hidden": false,
+              "description": "Match the whole key, not a substring [default: False]",
+              "arguments": [
+                {
+                  "name": "EXACT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--max",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum rows to print (-1 for all) [default: 100]",
+              "arguments": [
+                {
+                  "name": "MAX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit JSON instead of text [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TERM",
+              "description": "Key or name to look for (substring unless --exact)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "packages",
+          "description": "Package and project references whose name matches a term. From the inventory built by 'project index' or 'project inventory'; no language server.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Project root holding .serena/cache (default: current directory)",
+              "arguments": [
+                {
+                  "name": "PROJECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Restrict results to files under this path",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--exact",
+              "recursive": false,
+              "hidden": false,
+              "description": "Match the whole key, not a substring [default: False]",
+              "arguments": [
+                {
+                  "name": "EXACT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--max",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum rows to print (-1 for all) [default: 100]",
+              "arguments": [
+                {
+                  "name": "MAX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emit JSON instead of text [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TERM",
+              "description": "Key or name to look for (substring unless --exact)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
                 "maximum": 1
               },
               "type": "String"

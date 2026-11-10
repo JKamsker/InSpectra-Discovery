@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "codecharter",
-    "version": "1.6.7",
+    "version": "1.7.0",
     "description": "Deterministic code quality analysis for .NET, built on Roslyn. Write rules in a LINQ-like DSL, store them as .ccr files, and analyze a solution or project from the command line with CI-friendly exit codes. Restores versioned rule profiles from the CodeCharter portal, runs rule specs, gates line coverage, and ships an MCP server so AI coding tools can analyze on demand. Documentation: https://codecharter.tools. Requires a valid CodeCharter license or API key at runtime."
   },
   "x-inspectra": {
@@ -52,6 +52,23 @@
           "type": "String"
         }
       ]
+    },
+    {
+      "name": "--no-host",
+      "recursive": true,
+      "hidden": false,
+      "description": "Run in this process instead of the shared CodeCharter host. The CODECHARTER_NO_HOST environment variable does the same for every run; CI servers never use the host. [default: False]",
+      "arguments": [
+        {
+          "name": "NO_HOST",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 0
+          },
+          "type": "Boolean"
+        }
+      ]
     }
   ],
   "commands": [
@@ -59,6 +76,26 @@
       "name": "analyze",
       "description": "Analyze a solution or project",
       "options": [
+        {
+          "name": "--configuration",
+          "recursive": false,
+          "hidden": false,
+          "description": "The build configuration to evaluate projects in, such as Release, for code generated or referenced from a build in it. Overrides 'configuration' in config.yml.",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONFIGURATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
         {
           "name": "--rules",
           "recursive": false,
@@ -250,7 +287,7 @@
           "name": "--git-ref",
           "recursive": false,
           "hidden": false,
-          "description": "Report only findings on lines changed in this git ref range (e.g. main..HEAD); runs 'git diff <range> --unified=0'. A two-dot range is diffed from the merge base (git's three-dot form) so commits that landed on the base branch since the branch point are not counted as your changes; an explicit three-dot range is used as typed, and a bare ref or SHA keeps git's meaning of 'working tree against that commit'. Findings in the touched files that fall outside the changed lines are counted on stderr; add --diff-context to report them. Mutually exclusive with --diff.",
+          "description": "Report only findings on lines changed in this git ref range (e.g. main..HEAD); runs 'git diff <range> --unified=0'. A two-dot range is diffed from the merge base (git's three-dot form) so commits that landed on the base branch since the branch point are not counted as your changes; an explicit three-dot range is used as typed, and a bare ref or SHA keeps git's meaning of 'working tree against that commit', with untracked files that are not ignored counted as new files. Findings in the touched files that fall outside the changed lines are counted on stderr; add --diff-context to report them. Mutually exclusive with --diff.",
           "arguments": [
             {
               "name": "GIT_REF",
@@ -318,7 +355,7 @@
           "name": "--telemetry",
           "recursive": false,
           "hidden": false,
-          "description": "Enable opt-in telemetry: after the run, send one anonymous usage event (tool name, latency bucket, per-rule finding counts, hashed workspace id) to the CodeCharter endpoint. Off by default; no source, paths, or code are ever sent. [default: False]",
+          "description": "Enable opt-in telemetry: after the run, send one pseudonymous usage event (tool name, latency bucket, per-rule finding counts, hashed workspace id) to the CodeCharter endpoint. Off by default; no source, paths, or code are ever sent. [default: False]",
           "arguments": [
             {
               "name": "TELEMETRY",
@@ -1009,7 +1046,7 @@
               "name": "--target",
               "recursive": false,
               "hidden": false,
-              "description": "Restrict the result to the single component containing this type: an exact or case-insensitive full type name, a name suffix, or a source file path. When given, --max-components is ignored.",
+              "description": "Restrict the result to the component containing this type: an exact or case-insensitive full type name, a name suffix, or a source file path. A type compiled by several projects can yield one component per project copy at the namespace and project level. When given, --max-components is ignored (so more than one component can be returned).",
               "arguments": [
                 {
                   "name": "TARGET",
@@ -1905,7 +1942,7 @@
     },
     {
       "name": "coverage",
-      "description": "Run tests with coverage collection and gate on a minimum line-coverage percentage. Exit codes: 0 = coverage met, 1 = below threshold, 2 = tests failed or coverage incomplete, 3 = no coverage data, 64 = usage, config or environment error.",
+      "description": "Run tests with coverage collection and gate on a minimum line-coverage percentage. Exit codes: 0 = coverage met, 1 = below threshold, 2 = tests failed or coverage incomplete, 3 = no coverage data, 64 = usage, config or environment error, 70 = internal error.",
       "options": [
         {
           "name": "--results-root",
@@ -1928,7 +1965,7 @@
           "name": "--skip-tests",
           "recursive": false,
           "hidden": false,
-          "description": "Do not run 'dotnet test'; analyze existing coverage.cobertura.xml files under the results root instead. Completeness is checked per test project against the <results-root>/<project>-<hash> directories written by this command (plain <project> directories from older runs also count); a flat layout, e.g. from 'dotnet test --results-directory', degrades the check to comparing file and project counts. [default: False]",
+          "description": "Do not run 'dotnet test'; analyze the coverage.cobertura.xml files already under the results root instead, as they are: they are not tied to a commit, so rerun the tests after changing code. Completeness is checked per test project against the <results-root>/<project>-<hash> directories written by this command (plain <project> directories from older runs also count); with --affected-by only the selected test projects need one, and only their files are read. A flat layout, e.g. from 'dotnet test --results-directory', degrades the check to comparing file and project counts; with --affected-by such files cannot be attributed to the selected test projects, so the run fails as incomplete. [default: False]",
           "arguments": [
             {
               "name": "SKIP_TESTS",
@@ -1979,7 +2016,7 @@
           "name": "--git-ref",
           "recursive": false,
           "hidden": false,
-          "description": "Gate the lines changed in this git ref range (e.g. main..HEAD or origin/main..HEAD) instead of the whole repository; runs 'git diff <range> --unified=0'. A two-dot range is diffed from the merge base (git's three-dot form) so commits that landed on the base branch since the branch point are not counted as your changes; an explicit three-dot range is used as typed, and a bare ref or SHA keeps git's meaning of 'working tree against that commit'. The report gains a 'diffCoverage' section and the exit code follows the diff gate. A diff without a single measurable changed line passes.",
+          "description": "Gate the lines changed in this git ref range (e.g. main..HEAD or origin/main..HEAD) instead of the whole repository; runs 'git diff <range> --unified=0'. A two-dot range is diffed from the merge base (git's three-dot form) so commits that landed on the base branch since the branch point are not counted as your changes; an explicit three-dot range is used as typed, and a bare ref or SHA keeps git's meaning of 'working tree against that commit', with untracked files that are not ignored counted as new files. The report gains a 'diffCoverage' section and the exit code follows the diff gate. A diff without a single measurable changed line passes.",
           "arguments": [
             {
               "name": "GIT_REF",
@@ -1996,7 +2033,7 @@
           "name": "--affected-by",
           "recursive": false,
           "hidden": false,
-          "description": "Run only the test projects reachable, by reverse ProjectReference closure, from the git range's changed files, instead of every discovered test project. Requires --git-ref naming the exact same range; incompatible with --skip-tests. A changed file that maps to no project, or to a central file (Directory.Build.props, a .sln, .codecharter/config.yml, build/**, .github/workflows/**, tools/**, ...), escalates the run back to every discovered test project. After the run, a changed source file with no coverage data at all fails the run and names the file: --affected-by never lets a narrower suite selection render as a passing gate over data it never measured.",
+          "description": "Run only the test projects reachable, by reverse ProjectReference closure, from the git range's changed files, instead of every discovered test project. Requires --git-ref naming the exact same range. With --skip-tests, only the selected test projects need existing coverage files. With a single ref such as HEAD, untracked files that are not ignored count as changed, whatever their type. A changed file that maps to no project escalates the run back to every discovered test project, unless it matches coverage.affected-by-inert-paths in .codecharter/config.yml (files you declare no build or test reads, e.g. changelog.d/**; empty by default). A central file (the root Directory.Build.props, a .sln, .codecharter/config.yml, ..., or a match of coverage.affected-by-central-paths) escalates too, unless a coverage.affected-by-targeted-paths row matches it: a row's match selects that row's test projects in addition to the projects that contain the file and the test projects that reference them. After the run, a changed source file with no coverage data at all fails the run and names the file: --affected-by never lets a narrower suite selection render as a passing gate over data it never measured.",
           "arguments": [
             {
               "name": "AFFECTED_BY",
@@ -2047,10 +2084,27 @@
           "name": "--test-timeout",
           "recursive": false,
           "hidden": false,
-          "description": "How long a single test project may run, in seconds (1 to 86400). Defaults to 1800 (30 minutes). On expiry the test process and everything it started are killed and the project is reported as timed out; the run continues with the remaining projects. Bounds one project, not the whole run.",
+          "description": "How long a single test project may run, in seconds (1 to 86400). Defaults to 1800 (30 minutes). On expiry the test process and everything it started are killed and the project is reported as timed out; the run continues with the remaining projects. Bounds one project, not the whole run. The shared solution restore and build that precede the tests are each limited to this value or 30 minutes, whichever is longer; on expiry a warning is logged and each project builds itself.",
           "arguments": [
             {
               "name": "TEST_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--build-inactivity-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "How long the shared solution restore or build may write no output and use next to no processor time (on Windows and Linux counted over every process it started) before it counts as hung, in seconds (0 to 86400; 0 turns the watch off). Defaults to 600 (10 minutes). A hung restore or build is stopped with a warning and each test project builds itself.",
+          "arguments": [
+            {
+              "name": "BUILD_INACTIVITY_TIMEOUT",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -2457,7 +2511,7 @@
           "name": "--telemetry",
           "recursive": false,
           "hidden": false,
-          "description": "Enable opt-in telemetry (sends anonymous usage data to the CodeCharter telemetry endpoint) [default: False]",
+          "description": "Enable opt-in telemetry (sends pseudonymous usage data to the CodeCharter telemetry endpoint) [default: False]",
           "arguments": [
             {
               "name": "TELEMETRY",
@@ -2569,6 +2623,57 @@
               "arguments": [
                 {
                   "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--if-registered",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only update a config that already has a CodeCharter entry; leave every other config untouched [default: False]",
+              "arguments": [
+                {
+                  "name": "IF_REGISTERED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--hooks",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also write the Claude Code hook pack (SessionStart, Stop, SessionEnd) into the project's .claude/settings.json, so the host records each Claude Code session. Only with --client claude-code and --scope project; hooks of other tools stay. [default: False]",
+              "arguments": [
+                {
+                  "name": "HOOKS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--remove-hooks",
+              "recursive": false,
+              "hidden": false,
+              "description": "Remove the CodeCharter hook pack from the project's .claude/settings.json and leave everything else; installs nothing. [default: False]",
+              "arguments": [
+                {
+                  "name": "REMOVE_HOOKS",
                   "required": false,
                   "arity": {
                     "minimum": 0,
@@ -2710,7 +2815,7 @@
           "name": "--cache-dir",
           "recursive": false,
           "hidden": false,
-          "description": "Local bundle cache directory. Defaults to ~/.codecharter/cache.",
+          "description": "Local bundle cache directory. Defaults to the cache directory next to the lockfile (.codecharter/cache), where analyze reads.",
           "arguments": [
             {
               "name": "CACHE_DIR",
@@ -2737,6 +2842,23 @@
                 "maximum": 1
               },
               "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--portal-url",
+          "recursive": false,
+          "hidden": false,
+          "description": "Base URL of the portal the license credential may be sent to. Defaults to CODECHARTER_PORTAL_URL, else Portal:BaseUrl in the CLI's appsettings.json, else the hosted portal; pass this only for a self-hosted portal. A lockfile locked against any other origin fails the restore.",
+          "arguments": [
+            {
+              "name": "PORTAL_URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         },
@@ -2852,7 +2974,7 @@
           "name": "--portal-url",
           "recursive": false,
           "hidden": false,
-          "description": "Base URL of the portal. Defaults to the hosted portal; pass this only for a self-hosted portal. [default: https://codecharter.tools]",
+          "description": "Base URL of the portal. Defaults to CODECHARTER_PORTAL_URL, else Portal:BaseUrl in the CLI's appsettings.json, else the hosted portal; pass this only for a self-hosted portal. An untrusted portal URL from any of these (not https, or carrying user info) is refused, never replaced by the hosted portal.",
           "arguments": [
             {
               "name": "PORTAL_URL",
@@ -2972,7 +3094,7 @@
           "name": "--cache-dir",
           "recursive": false,
           "hidden": false,
-          "description": "Local bundle cache directory. Defaults to ~/.codecharter/cache.",
+          "description": "Local bundle cache directory. Defaults to the cache directory next to the lockfile (.codecharter/cache), where restore writes.",
           "arguments": [
             {
               "name": "CACHE_DIR",
@@ -3006,7 +3128,7 @@
           "name": "--portal-url",
           "recursive": false,
           "hidden": false,
-          "description": "Base URL of the portal used with --against-portal. Defaults to the hosted portal; pass this only for a self-hosted portal. [default: https://codecharter.tools]",
+          "description": "Base URL of the portal used with --against-portal. Defaults to CODECHARTER_PORTAL_URL, else Portal:BaseUrl in the CLI's appsettings.json, else the hosted portal; pass this only for a self-hosted portal. An untrusted portal URL from any of these (not https, or carrying user info) is refused, never replaced by the hosted portal.",
           "arguments": [
             {
               "name": "PORTAL_URL",
@@ -3091,7 +3213,7 @@
     },
     {
       "name": "push",
-      "description": "Upload .ccr rule files as drafts and create a profile draft on the portal",
+      "description": "Upload .ccr rule files as drafts and save a profile draft pinning their published versions on the portal",
       "options": [
         {
           "name": "--profile",
@@ -3114,7 +3236,7 @@
           "name": "--version",
           "recursive": false,
           "hidden": false,
-          "description": "SemVer version for the profile draft.",
+          "description": "SemVer version you intend to publish the profile draft as (the draft itself carries no version; you publish it in the portal).",
           "arguments": [
             {
               "name": "VERSION",
@@ -3131,7 +3253,7 @@
           "name": "--portal-url",
           "recursive": false,
           "hidden": false,
-          "description": "Base URL of the portal. Defaults to the hosted portal; pass this only for a self-hosted portal. [default: https://codecharter.tools]",
+          "description": "Base URL of the portal. Defaults to CODECHARTER_PORTAL_URL, else Portal:BaseUrl in the CLI's appsettings.json, else the hosted portal; pass this only for a self-hosted portal. An untrusted portal URL from any of these (not https, or carrying user info) is refused, never replaced by the hosted portal.",
           "arguments": [
             {
               "name": "PORTAL_URL",
@@ -3148,7 +3270,7 @@
           "name": "--api-key",
           "recursive": false,
           "hidden": false,
-          "description": "Bearer API key for portal authentication (needs the write:rules scope). Optional: defaults to the installed license when omitted.",
+          "description": "Bearer API key for portal authentication (needs the write:rules and read:rules scopes). Optional: defaults to the installed license when omitted.",
           "arguments": [
             {
               "name": "API_KEY",
@@ -3357,7 +3479,7 @@
               "name": "--portal-url",
               "recursive": false,
               "hidden": false,
-              "description": "Base URL of the portal. Defaults to the hosted portal; pass this only for a self-hosted portal. [default: https://codecharter.tools]",
+              "description": "Base URL of the portal. Defaults to CODECHARTER_PORTAL_URL, else Portal:BaseUrl in the CLI's appsettings.json, else the hosted portal; pass this only for a self-hosted portal. An untrusted portal URL from any of these (not https, or carrying user info) is refused, never replaced by the hosted portal.",
               "arguments": [
                 {
                   "name": "PORTAL_URL",
@@ -4411,7 +4533,7 @@
       "commands": [
         {
           "name": "migrate",
-          "description": "Proposes and applies baseline identity-mapping migrations for symbols renamed since the baseline was written, using git's own rename detection as evidence. Exit codes: 0 = clean migration (or nothing to migrate), 1 = unresolved/ambiguous identities remain (or the run was cancelled), 64 = usage error.",
+          "description": "Proposes and applies baseline identity-mapping migrations for symbols renamed since the baseline was written, using git's own rename detection as evidence. Exit codes: 0 = clean migration (or nothing to migrate), 1 = unresolved/ambiguous identities remain (or the run was cancelled), 64 = usage error, 70 = internal error.",
           "options": [
             {
               "name": "--baseline",
@@ -4931,7 +5053,7 @@
           "name": "--portal-url",
           "recursive": false,
           "hidden": false,
-          "description": "Base URL of the portal. [default: https://codecharter.tools]",
+          "description": "Base URL of the portal.",
           "arguments": [
             {
               "name": "PORTAL_URL",
@@ -5016,6 +5138,294 @@
                 "maximum": 1
               },
               "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "host",
+      "description": "Manages the shared per-user CodeCharter host that analyze, graph, coverage, req and mcp run in.",
+      "options": [
+        {
+          "name": "--state-dir",
+          "recursive": true,
+          "hidden": false,
+          "description": "Use the host isolated in this directory, which keeps all of its files there, instead of the shared per-user host. The directory must be private to your user account; CodeCharter creates it so when it does not exist. The CODECHARTER_HOST_STATE_DIR environment variable does the same for every command.",
+          "arguments": [
+            {
+              "name": "STATE_DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "status",
+          "description": "Shows whether the CodeCharter host runs, its memory, sessions and cached workspaces. Exits 1 when no host runs.",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the status as JSON. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "stop",
+          "description": "Stops the CodeCharter host after the work it is doing has finished."
+        },
+        {
+          "name": "restart",
+          "description": "Stops the CodeCharter host if it runs and starts a fresh one."
+        },
+        {
+          "name": "logs",
+          "description": "Prints the most recent entries of the CodeCharter host's log.",
+          "options": [
+            {
+              "name": "--follow",
+              "recursive": false,
+              "hidden": false,
+              "description": "Keep printing new entries as the host writes them, until Ctrl+C. [default: False]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FOLLOW",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--lines",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many recent entries to print, from 1 through 1000. [default: 50]",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "LINES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--level",
+              "recursive": false,
+              "hidden": false,
+              "description": "Leave out entries below this level: Trace, Debug, Information, Warning, Error or Critical.",
+              "arguments": [
+                {
+                  "name": "LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "LogLevel",
+                  "allowedValues": [
+                    "Trace",
+                    "Debug",
+                    "Information",
+                    "Warning",
+                    "Error",
+                    "Critical",
+                    "None"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "runs",
+          "description": "Lists the CodeCharter host's runs in progress and the ones it finished most recently. Exits 1 when no host runs.",
+          "options": [
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many finished runs to list, from 1 through 500. [default: 20]",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the runs as JSON. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "cancel",
+          "description": "Cancels a run of the CodeCharter host that is in progress or queued, and stops the processes it started. Exits 1 when no run matches or no host runs.",
+          "arguments": [
+            {
+              "name": "RUN",
+              "description": "The id of the run in progress, or its first characters as `host runs` shows them.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "warm",
+          "description": "Loads a workspace into the CodeCharter host, starting the host if none runs, so agent (MCP) sessions and the host UI find it warm.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "description": "The solution, project or directory; defaults to the current directory.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "evict",
+          "description": "Unloads a workspace from the CodeCharter host and frees its memory. Exits 1 when no host runs.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "description": "The solution, project or directory; defaults to the current directory.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "session-hook",
+          "description": "Reports a Claude Code session event (start, stop, end) read from standard input to the CodeCharter host; called by the hooks that codecharter mcp install --hooks writes.",
+          "hidden": true,
+          "arguments": [
+            {
+              "name": "EVENT",
+              "description": "start, stop or end.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "run",
+          "description": "Runs the per-user local host that forwarded analyze, graph, coverage and req commands and bridged MCP sessions run in.",
+          "hidden": true,
+          "options": [
+            {
+              "name": "--port",
+              "recursive": false,
+              "hidden": false,
+              "description": "The port the web UI listens on, from 0 through 65535. 0, the default, picks a free one; the host's discovery.json and the `codecharter ui` link name it.",
+              "arguments": [
+                {
+                  "name": "PORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "mcp-launch",
+          "description": "Prints the command line that starts this CLI from its private copy.",
+          "hidden": true
+        }
+      ]
+    },
+    {
+      "name": "ui",
+      "description": "Opens the CodeCharter host's web UI in your browser, starting the host if it is not running.",
+      "options": [
+        {
+          "name": "--no-browser",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the sign-in link instead of opening it. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BROWSER",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }

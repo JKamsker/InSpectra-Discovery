@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Coworkee.Cli",
-    "version": "0.0.1.68",
+    "version": "0.0.1.72",
     "description": "Coworkee command line: create a Coworkee application from switches or a JSON spec with modules, branding and entities, run it, add migrations, modules and entities, update the packages; MCP server for AI agents and launcher of Coworkee Studio."
   },
   "x-inspectra": {
@@ -321,7 +321,7 @@
           "name": "--auditing",
           "recursive": false,
           "hidden": false,
-          "description": "Pages for the audit trail, entity history and restore. The trail itself is always written. (default: true)",
+          "description": "Pages for the audit trail, entity history and restore, the security log and the request log of the API. The trail and the security log are always written. (default: true)",
           "arguments": [
             {
               "name": "AUDITING",
@@ -1100,6 +1100,91 @@
           ]
         },
         {
+          "name": "--deploy-workflow",
+          "recursive": false,
+          "hidden": false,
+          "description": "A GitHub Actions workflow (.github/workflows/deploy-azure.yml) that deploys every push to the listed branches to Azure Container Apps: one GitHub environment and one resource group per branch, signed in with OIDC. The one-time setup in Azure and GitHub is in the deployment docs. (default: none)",
+          "arguments": [
+            {
+              "name": "DEPLOY_WORKFLOW",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--deploy-resource-group-prefix",
+          "recursive": false,
+          "hidden": false,
+          "description": "The deploy workflow puts each branch into the resource group <prefix>-<branch>; empty takes the app's name. Only used with deployWorkflow = azure.",
+          "arguments": [
+            {
+              "name": "DEPLOY_RESOURCE_GROUP_PREFIX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--deploy-location",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Azure region of the deployed environments, e.g. germanywestcentral or westeurope. (default: germanywestcentral) Only used with deployWorkflow = azure.",
+          "arguments": [
+            {
+              "name": "DEPLOY_LOCATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--deploy-branches",
+          "recursive": false,
+          "hidden": false,
+          "description": "The branches whose pushes the deploy workflow deploys, separated by commas; * matches as in GitHub (release/*). (default: main) Only used with deployWorkflow = azure.",
+          "arguments": [
+            {
+              "name": "DEPLOY_BRANCHES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--deploy-teardown",
+          "recursive": false,
+          "hidden": false,
+          "description": "When a deployed branch is deleted, the workflow deletes its resource group with everything in it: database, files, secrets. Never for the default branch. (default: false) Only used with deployWorkflow = azure.",
+          "arguments": [
+            {
+              "name": "DEPLOY_TEARDOWN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--devcontainer",
           "recursive": false,
           "hidden": false,
@@ -1256,6 +1341,98 @@
       ]
     },
     {
+      "name": "seed",
+      "description": "Manage seed contributors (coworkee db seed runs them).",
+      "commands": [
+        {
+          "name": "add",
+          "description": "Add a seed contributor: data every database needs, checked and written on every migrations run.",
+          "options": [
+            {
+              "name": "--module",
+              "recursive": false,
+              "hidden": false,
+              "description": "Put it into this module (src/<App>.<Module>/Seeds): the api then also runs it for a tenant set up in the browser or created later. Default: the migrations project.",
+              "arguments": [
+                {
+                  "name": "MODULE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--host",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run once per run instead of once per tenant. [default: False]",
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--development",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run in local runs only (with the demo users). [default: False]",
+              "arguments": [
+                {
+                  "name": "DEVELOPMENT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--deployment",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run in deployments only. [default: False]",
+              "arguments": [
+                {
+                  "name": "DEPLOYMENT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "Name of the seed, for example StandardTags.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "db",
       "description": "The app's local development database: reset, seed, backup and restore.",
       "commands": [
@@ -1304,7 +1481,7 @@
         },
         {
           "name": "seed",
-          "description": "Migrate the database and seed the demo users and roles (runs the migrations project against the running database).",
+          "description": "Migrate the database and seed it: the demo users and roles and the seed contributors (runs the migrations project against the running database).",
           "options": [
             {
               "name": "--volume",
@@ -2195,7 +2372,7 @@
           "name": "--admin-email",
           "recursive": false,
           "hidden": false,
-          "description": "Email of the first administrator (compose; asked for, or admin@<app>.local).",
+          "description": "Email of the first administrator (compose: asked for, or admin@<app>.local; azure --apply: the signed-in Azure account).",
           "arguments": [
             {
               "name": "ADMIN_EMAIL",
@@ -2205,6 +2382,202 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--apply",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure: deploy into --resource-group as well (Azure CLI signed in; Aspire builds, pushes and deploys). [default: False]",
+          "arguments": [
+            {
+              "name": "APPLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--resource-group",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --apply: the resource group, made when missing; nothing is created outside it.",
+          "aliases": [
+            "-g"
+          ],
+          "arguments": [
+            {
+              "name": "RESOURCE_GROUP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--location",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --apply and --github: the Azure region, e.g. germanywestcentral.",
+          "aliases": [
+            "-l"
+          ],
+          "arguments": [
+            {
+              "name": "LOCATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--subscription",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --apply: the subscription (default: the Azure CLI's).",
+          "arguments": [
+            {
+              "name": "SUBSCRIPTION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --apply: the name of the deployment in .coworkee/deployments (default: the resource group).",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--yes",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --apply: do not ask before deploying. [default: False]",
+          "aliases": [
+            "-y"
+          ],
+          "arguments": [
+            {
+              "name": "YES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--github",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure: write .github/workflows/deploy-azure.yml, which deploys every push to --branches into a resource group of its own. [default: False]",
+          "arguments": [
+            {
+              "name": "GITHUB",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--resource-group-prefix",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --github: the resource groups are <prefix>-<branch> (empty: the app's name).",
+          "arguments": [
+            {
+              "name": "RESOURCE_GROUP_PREFIX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--branches",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --github: the branches to deploy (default main); * matches like in GitHub.",
+          "arguments": [
+            {
+              "name": "BRANCHES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--teardown-on-delete",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --github: delete a branch's resource group when the branch is deleted (true/false, default false).",
+          "arguments": [
+            {
+              "name": "TEARDOWN_ON_DELETE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "azure --github: overwrite a workflow that was changed by hand. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }

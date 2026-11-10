@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "AutoSDK.CLI",
-    "version": "0.35.0-preview.2.163",
+    "version": "0.35.0-preview.2.211",
     "description": "Allows you to partially (for example, only models) or completely generate a native (without dependencies) C# client sdk according to the OpenAPI specification. Inspired by NSwag."
   },
   "x-inspectra": {
@@ -348,6 +348,23 @@
           ]
         },
         {
+          "name": "--reject-unknown-enum-values",
+          "recursive": false,
+          "hidden": false,
+          "description": "Throw instead of silently falling back to the default member when JSON carries an enum value the spec does not declare. Applies to request-reachable enums only: an enum a response can carry stays lenient, so a service adding a value does not break clients. [default: False]",
+          "arguments": [
+            {
+              "name": "REJECT_UNKNOWN_ENUM_VALUES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--generate-raw-model-data",
           "recursive": false,
           "hidden": false,
@@ -378,6 +395,28 @@
                 "maximum": 1
               },
               "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--relax-response-required",
+          "recursive": false,
+          "hidden": false,
+          "description": "How much 'required' to drop from response fields so a field the service omits does not fail deserialization: None (default, reported as a warning), Defaulted (only where the property also declares a default), All (every response field except discriminators). [default: None]",
+          "arguments": [
+            {
+              "name": "RELAX_RESPONSE_REQUIRED",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "ResponseRequiredRelaxation",
+              "allowedValues": [
+                "None",
+                "Defaulted",
+                "All"
+              ]
             }
           ]
         },
@@ -1915,10 +1954,27 @@
           "name": "--preserve-project-file",
           "recursive": false,
           "hidden": false,
-          "description": "Keep an existing CLI .csproj byte-for-byte while regenerating sources. Create the project normally if it does not exist. [default: False]",
+          "description": "Keep an existing CLI .csproj byte-for-byte while regenerating sources. On by default; pass --overwrite-project-file to rewrite it from the template instead. [default: True]",
           "arguments": [
             {
               "name": "PRESERVE_PROJECT_FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--overwrite-project-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rewrite an existing CLI .csproj from the template. Off by default: the template pins its own package versions, so rewriting reverts dependency updates the repository has since taken. [default: False]",
+          "arguments": [
+            {
+              "name": "OVERWRITE_PROJECT_FILE",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -2741,6 +2797,46 @@
             "maximum": 1
           },
           "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "capabilities",
+      "description": "List what this build supports, as stable tokens a script can check. Use --require to gate on them.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Emit the capabilities as JSON instead of one token per line. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--require",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit non-zero unless every token given is supported. Names the missing ones on stderr. Lets a caller gate on behaviour without parsing help text or comparing versions. [default: System.String[]]",
+          "arguments": [
+            {
+              "name": "REQUIRE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
         }
       ]
     }

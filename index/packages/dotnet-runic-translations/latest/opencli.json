@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "runic-translations",
-    "version": "0.8.0",
+    "version": "0.9.1",
     "description": "Deterministic validation and generation tool for Runic Translations."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 12
+    "helpDocumentCount": 27
   },
   "commands": [
     {
@@ -69,7 +69,181 @@
           "name": "--emit-esm",
           "recursive": false,
           "hidden": false,
-          "description": "Render the ESM package and web-module-manifest-v3.json."
+          "description": "Render the ESM package and\nweb-module-manifest-v3.json."
+        },
+        {
+          "name": "--pseudo-locales",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also generate the development pseudo-locales that\nrunic.json declares in pseudoLocales (en-XA, ar-XB)."
+        },
+        {
+          "name": "--contract",
+          "recursive": false,
+          "hidden": false,
+          "description": "A locale artifact (<catalog>.<locale>.locale-v5.json)\nof a shipped release: the locale-v5 JSON then holds,\nfor each locale that release declares, only the\nmessages it accepts, stamped with its contract\nfingerprint.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--overrides",
+          "recursive": false,
+          "hidden": false,
+          "description": "Compile the project, a library catalog, with an\napplication's override sources (the <locale>.rmf2\nfiles of translations/overrides/<catalog>/),\nvalidated per key.",
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--locales",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep only the library locales that these application\nlocales resolve to, with their fallbacks and the base\nlocale (comma-separated).",
+          "arguments": [
+            {
+              "name": "LIST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--shared-runtime",
+          "recursive": false,
+          "hidden": false,
+          "description": "Generate ESM whose runtime.js takes its code from\nruntime-core.js beside the catalog directory, shared\nby every catalog generated into the output directory."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version"
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Select output format\n@<file>                  Read more arguments from a file",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "import",
+      "hidden": false,
+      "description": "Import a .resx or i18next catalog into the project's .rmf2\nsources.",
+      "options": [
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "The source format: resx or i18next. [required]\n[choices: resx, i18next]",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "Translations directory or its runic.json. Defaults to\n./runic.json, then ./translations/runic.json.",
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--locale",
+          "recursive": false,
+          "hidden": false,
+          "description": "Import only this declared locale; repeatable. Names the\nlocale of a file whose name does not.",
+          "arguments": [
+            {
+              "name": "LOCALE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--group",
+          "recursive": false,
+          "hidden": false,
+          "description": "RMF2 group for new messages, written to <group>/.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--overwrite",
+          "recursive": false,
+          "hidden": false,
+          "description": "Replace the text of messages that already exist;\nwithout it they are kept."
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report the outcome without writing files."
         },
         {
           "name": "--help",
@@ -101,6 +275,18 @@
               }
             }
           ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The .resx file, or the i18next JSON file or locales directory.\n[required]"
         }
       ]
     },
@@ -382,6 +568,593 @@
       ]
     },
     {
+      "name": "locale",
+      "hidden": false,
+      "description": "Add or remove a locale of a translation project.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version"
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Select output format\n@<file>                Read more arguments from a file",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "add",
+          "hidden": false,
+          "description": "Declare a locale in runic.json and create its empty source files.",
+          "options": [
+            {
+              "name": "--fallback",
+              "recursive": false,
+              "hidden": false,
+              "description": "The declared locale it falls back to; defaults to the\nbase locale.",
+              "arguments": [
+                {
+                  "name": "LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Translations directory or its runic.json. Defaults to\n./runic.json, then ./translations/runic.json.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report the changes without writing them."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version"
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Select output format\n@<file>                Read more arguments from a file",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "description": "The BCP 47 locale tag to add, such as fr or de-CH. [required]"
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "hidden": false,
+          "description": "Remove a locale from runic.json, delete its source files and its\nreview entries.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Translations directory or its runic.json. Defaults to\n./runic.json, then ./translations/runic.json.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report the changes without writing or deleting\nanything."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version"
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Select output format\n@<file>                Read more arguments from a file",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TAG",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The declared locale to remove. [required]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "overrides",
+      "hidden": false,
+      "description": "Override the text of library catalogs that installed\npackages pack.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version"
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Select output format\n@<file>                Read more arguments from a file",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "add",
+          "hidden": false,
+          "description": "Scaffold overrides of a library catalog in\ntranslations/overrides/<catalog>/<locale>.rmf2.",
+          "options": [
+            {
+              "name": "--locale",
+              "recursive": false,
+              "hidden": false,
+              "description": "The locale to override, a library locale or one the\napplication adds. [required]",
+              "arguments": [
+                {
+                  "name": "TAG",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--key",
+              "recursive": false,
+              "hidden": false,
+              "description": "A library message to override, as its logical key\n(grid.title) or canonical key (grid_title); repeatable.",
+              "arguments": [
+                {
+                  "name": "KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The application's translations directory or its\nrunic.json. Defaults to ./runic.json, then\n./translations/runic.json.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report the change without writing it."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version"
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Select output format\n@<file>                Read more arguments from a file",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "CATALOG",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "The library catalog ID, as runic.json \"overrides\" lists it, such as\nacme.grid. [required]"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "hidden": false,
+          "description": "List the library catalogs of installed packages and the application's\noverrides of them.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "The application's translations directory or its\nrunic.json. Defaults to ./runic.json, then\n./translations/runic.json.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version"
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Select output format\n@<file>                Read more arguments from a file",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "review",
+      "hidden": false,
+      "description": "Record the review state of translations in\n<catalog>.review.json.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version"
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Select output format\n@<file>                Read more arguments from a file",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "CATALOG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "mark",
+          "hidden": false,
+          "description": "Set the review state of translations against the current source.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Translations directory or its runic.json. Defaults to\n./runic.json, then ./translations/runic.json.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--key",
+              "recursive": false,
+              "hidden": false,
+              "description": "Message key; repeatable. [required]",
+              "arguments": [
+                {
+                  "name": "KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--locale",
+              "recursive": false,
+              "hidden": false,
+              "description": "A translated locale of the catalog. [required]",
+              "arguments": [
+                {
+                  "name": "LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--state",
+              "recursive": false,
+              "hidden": false,
+              "description": "draft, translated, needs-review or approved. [required]",
+              "arguments": [
+                {
+                  "name": "STATE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--note",
+              "recursive": false,
+              "hidden": false,
+              "description": "A review note to store with the entries.",
+              "arguments": [
+                {
+                  "name": "TEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version"
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Select output format\n@<file>                Read more arguments from a file",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "CATALOG",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            },
+            {
+              "name": "CANCELLED",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "schema",
       "hidden": false,
       "description": "Write the bundled JSON schemas to a directory.",
@@ -470,6 +1243,114 @@
               }
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "hidden": false,
+      "description": "Report translation coverage per locale.",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "Translations directory or its runic.json;\nrepeatable. Defaults to ./runic.json, then\n./translations/runic.json.",
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--min-coverage",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minimum coverage of a locale, such as de=100,fr=80\nor *=90; repeatable.",
+          "arguments": [
+            {
+              "name": "LOCALEPERCENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version"
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Select output format\n@<file>                   Read more arguments from a file",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "CATALOG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "LOCALE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "PERCENT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CANCELLED",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
         }
       ]
     },
@@ -700,7 +1581,7 @@
           "name": "--project",
           "recursive": false,
           "hidden": false,
-          "description": "Translations directory or its runic.json. Defaults to\n./runic.json, then ./translations/runic.json.",
+          "description": "Translations directory or its runic.json. Defaults\nto ./runic.json, then ./translations/runic.json.\nRepeatable: each project is validated and their\ndiagnostics are reported together.",
           "arguments": [
             {
               "name": "DIRECTORY",
@@ -711,6 +1592,28 @@
               }
             }
           ]
+        },
+        {
+          "name": "--sarif",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also write every diagnostic as a SARIF 2.1.0 report,\nfor code scanning; written even when validation\nfails.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pseudo-locales",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also generate the development pseudo-locales that\nrunic.json declares in pseudoLocales (en-XA, ar-XB)."
         },
         {
           "name": "--help",
@@ -731,7 +1634,7 @@
           "name": "--format",
           "recursive": false,
           "hidden": false,
-          "description": "Select output format\n@<file>                Read more arguments from a file",
+          "description": "Select output format\n@<file>                   Read more arguments from a file",
           "arguments": [
             {
               "name": "FORMAT",
@@ -801,6 +1704,28 @@
           "description": "Compare the ESM package and\nweb-module-manifest-v3.json."
         },
         {
+          "name": "--pseudo-locales",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also generate the development pseudo-locales that\nrunic.json declares in pseudoLocales (en-XA, ar-XB)."
+        },
+        {
+          "name": "--contract",
+          "recursive": false,
+          "hidden": false,
+          "description": "A locale artifact (<catalog>.<locale>.locale-v5.json)\nof a shipped release: the locale-v5 JSON then holds,\nfor each locale that release declares, only the\nmessages it accepts, stamped with its contract\nfingerprint.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--help",
           "recursive": false,
           "hidden": false,
@@ -824,6 +1749,683 @@
             {
               "name": "FORMAT",
               "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "xliff",
+      "hidden": false,
+      "description": "Exchange translations with translators and TMS tools as\nXLIFF 2.1.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version"
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Select output format\n@<file>                Read more arguments from a file",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "export",
+          "hidden": false,
+          "description": "Write one XLIFF 2.1 document per translated locale.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Translations directory or its runic.json. Defaults to\n./runic.json, then ./translations/runic.json.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory to write the XLIFF documents to. [required]",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--locale",
+              "recursive": false,
+              "hidden": false,
+              "description": "Export only this locale; repeatable.",
+              "arguments": [
+                {
+                  "name": "LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--review",
+              "recursive": false,
+              "hidden": false,
+              "description": "Review file to read instead of <catalog>.review.json\nbeside runic.json.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version"
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Select output format\n@<file>                Read more arguments from a file",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "CATALOG",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            },
+            {
+              "name": "LOCALE",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            },
+            {
+              "name": "PH",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            },
+            {
+              "name": "PC",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ],
+          "commands": [
+            {
+              "name": "base",
+              "hidden": false,
+              "commands": [
+                {
+                  "name": "locale",
+                  "hidden": false,
+                  "commands": [
+                    {
+                      "name": "or",
+                      "hidden": false,
+                      "commands": [
+                        {
+                          "name": "only",
+                          "hidden": false,
+                          "options": [
+                            {
+                              "name": "--project",
+                              "recursive": false,
+                              "hidden": false,
+                              "description": "Translations directory or its runic.json. Defaults to\n./runic.json, then ./translations/runic.json.",
+                              "arguments": [
+                                {
+                                  "name": "DIRECTORY",
+                                  "required": true,
+                                  "arity": {
+                                    "minimum": 1,
+                                    "maximum": 1
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "--output",
+                              "recursive": false,
+                              "hidden": false,
+                              "description": "Directory to write the XLIFF documents to. [required]",
+                              "arguments": [
+                                {
+                                  "name": "DIRECTORY",
+                                  "required": true,
+                                  "arity": {
+                                    "minimum": 1,
+                                    "maximum": 1
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "--locale",
+                              "recursive": false,
+                              "hidden": false,
+                              "description": "Export only this locale; repeatable.",
+                              "arguments": [
+                                {
+                                  "name": "LOCALE",
+                                  "required": true,
+                                  "arity": {
+                                    "minimum": 1,
+                                    "maximum": 1
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "--review",
+                              "recursive": false,
+                              "hidden": false,
+                              "description": "Review file to read instead of <catalog>.review.json\nbeside runic.json.",
+                              "arguments": [
+                                {
+                                  "name": "PATH",
+                                  "required": true,
+                                  "arity": {
+                                    "minimum": 1,
+                                    "maximum": 1
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "name": "--help",
+                              "recursive": false,
+                              "hidden": false,
+                              "description": "Show help",
+                              "aliases": [
+                                "-h"
+                              ]
+                            },
+                            {
+                              "name": "--version",
+                              "recursive": false,
+                              "hidden": false,
+                              "description": "Show version"
+                            },
+                            {
+                              "name": "--format",
+                              "recursive": false,
+                              "hidden": false,
+                              "description": "Select output format\n@<file>                Read more arguments from a file",
+                              "arguments": [
+                                {
+                                  "name": "FORMAT",
+                                  "required": true,
+                                  "arity": {
+                                    "minimum": 1,
+                                    "maximum": 1
+                                  }
+                                }
+                              ]
+                            }
+                          ],
+                          "arguments": [
+                            {
+                              "name": "CATALOG",
+                              "required": true,
+                              "hidden": false,
+                              "arity": {
+                                "minimum": 1,
+                                "maximum": 1
+                              }
+                            },
+                            {
+                              "name": "LOCALE",
+                              "required": true,
+                              "hidden": false,
+                              "arity": {
+                                "minimum": 1,
+                                "maximum": 1
+                              }
+                            },
+                            {
+                              "name": "PH",
+                              "required": true,
+                              "hidden": false,
+                              "arity": {
+                                "minimum": 1,
+                                "maximum": 1
+                              }
+                            },
+                            {
+                              "name": "PC",
+                              "required": true,
+                              "hidden": false,
+                              "arity": {
+                                "minimum": 1,
+                                "maximum": 1
+                              }
+                            }
+                          ],
+                          "commands": [
+                            {
+                              "name": "base",
+                              "hidden": false,
+                              "commands": [
+                                {
+                                  "name": "locale",
+                                  "hidden": false,
+                                  "commands": [
+                                    {
+                                      "name": "or",
+                                      "hidden": false,
+                                      "commands": [
+                                        {
+                                          "name": "only",
+                                          "hidden": false
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "declarations",
+                              "hidden": false,
+                              "commands": [
+                                {
+                                  "name": "and",
+                                  "hidden": false
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "declarations",
+              "hidden": false,
+              "commands": [
+                {
+                  "name": "and",
+                  "hidden": false,
+                  "options": [
+                    {
+                      "name": "--project",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Translations directory or its runic.json. Defaults to\n./runic.json, then ./translations/runic.json.",
+                      "arguments": [
+                        {
+                          "name": "DIRECTORY",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--output",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Directory to write the XLIFF documents to. [required]",
+                      "arguments": [
+                        {
+                          "name": "DIRECTORY",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--locale",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Export only this locale; repeatable.",
+                      "arguments": [
+                        {
+                          "name": "LOCALE",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--review",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Review file to read instead of <catalog>.review.json\nbeside runic.json.",
+                      "arguments": [
+                        {
+                          "name": "PATH",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "name": "--help",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Show help",
+                      "aliases": [
+                        "-h"
+                      ]
+                    },
+                    {
+                      "name": "--version",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Show version"
+                    },
+                    {
+                      "name": "--format",
+                      "recursive": false,
+                      "hidden": false,
+                      "description": "Select output format\n@<file>                Read more arguments from a file",
+                      "arguments": [
+                        {
+                          "name": "FORMAT",
+                          "required": true,
+                          "arity": {
+                            "minimum": 1,
+                            "maximum": 1
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "arguments": [
+                    {
+                      "name": "CATALOG",
+                      "required": true,
+                      "hidden": false,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    },
+                    {
+                      "name": "LOCALE",
+                      "required": true,
+                      "hidden": false,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    },
+                    {
+                      "name": "PH",
+                      "required": true,
+                      "hidden": false,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    },
+                    {
+                      "name": "PC",
+                      "required": true,
+                      "hidden": false,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      }
+                    }
+                  ],
+                  "commands": [
+                    {
+                      "name": "base",
+                      "hidden": false,
+                      "commands": [
+                        {
+                          "name": "locale",
+                          "hidden": false,
+                          "commands": [
+                            {
+                              "name": "or",
+                              "hidden": false,
+                              "commands": [
+                                {
+                                  "name": "only",
+                                  "hidden": false
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "declarations",
+                      "hidden": false,
+                      "commands": [
+                        {
+                          "name": "and",
+                          "hidden": false
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "import",
+          "hidden": false,
+          "description": "Import a translated XLIFF document into the .rmf2 or .mf2 sources.",
+          "options": [
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Translations directory or its runic.json. Defaults\nto ./runic.json, then ./translations/runic.json.",
+              "arguments": [
+                {
+                  "name": "DIRECTORY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--source",
+              "recursive": false,
+              "hidden": false,
+              "description": "The XLIFF document to import. [required]",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--source-changed",
+              "recursive": false,
+              "hidden": false,
+              "description": "needs-review (default) applies a unit whose source\nchanged since export as needs-review; refuse\nrefuses it.",
+              "arguments": [
+                {
+                  "name": "POLICY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--review",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write review state to <catalog>.review.json even\nwhen it does not exist yet."
+            },
+            {
+              "name": "--fail-on",
+              "recursive": false,
+              "hidden": false,
+              "description": "refused: fail (exit 2) and write nothing when any\nunit is refused. By default refused units are\nwarnings and the rest is applied.",
+              "arguments": [
+                {
+                  "name": "CONDITION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Report the outcome without writing files."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show help",
+              "aliases": [
+                "-h"
+              ]
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show version"
+            },
+            {
+              "name": "--format",
+              "recursive": false,
+              "hidden": false,
+              "description": "Select output format\n@<file>                    Read more arguments from a file",
+              "arguments": [
+                {
+                  "name": "FORMAT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "CATALOG",
+              "required": true,
+              "hidden": false,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
