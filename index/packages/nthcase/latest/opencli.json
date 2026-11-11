@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "NthCase CLI",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "description": "nth — trigger NthCase mobile and web test runs from CI or a script, wait for the verdict, and gate the pipeline on the exit code. Authenticates with an API key from the environment (NTH_API_KEY), never a flag."
   },
   "x-inspectra": {
@@ -829,7 +829,7 @@
               "name": "--max-tokens",
               "recursive": false,
               "hidden": false,
-              "description": "Token STOP CONDITION for the discovery pass (clamped 1,000-200,000). It does NOT cap what you are charged — the proposal call is uncapped.",
+              "description": "Token ceiling of the discovery (clamped 1,000-200,000). It bounds the discovery alone; scenario proposals, with --propose, are a separate call with their own cost.",
               "arguments": [
                 {
                   "name": "MAX_TOKENS",
@@ -941,6 +941,23 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--propose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also propose test scenarios from the map when the discovery finishes. OFF unless given: without it no proposal is made and no proposal token is spent. Given, the proposals are a separate call after the discovery with their own bound, quoted on a second line and charged on a second credit-ledger entry for the tokens they used. [default: False]",
+              "arguments": [
+                {
+                  "name": "PROPOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             }
@@ -2013,6 +2030,59 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "map",
+          "description": "The app's COMPOSED map: the version in force, the discoveries it was composed from, what it changed, the screen every walk starts on, and the screens kept aside: seen, and no tap of this version reaches them. A phone app's map is composed when a person turns Composed on: every discovery that completes is then added as a new version, whoever started it. READ ONLY.",
+          "options": [
+            {
+              "name": "--include-elements",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --json, every screen's full element list (withheld by default: it is large; each screen's elementsStored says how many). [default: False]",
+              "arguments": [
+                {
+                  "name": "INCLUDE_ELEMENTS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TARGETID",
+              "description": "The app's id.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ],
+          "commands": [
+            {
+              "name": "versions",
+              "description": "The app's map history, newest first: each version with what it changed, who made it and when (* is the one in force), and each entry that made none — a discovery not added and why, a move back or forward, Composed turned on or off. READ ONLY.",
+              "arguments": [
+                {
+                  "name": "TARGETID",
+                  "description": "The app's id.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
             }
           ]
         },

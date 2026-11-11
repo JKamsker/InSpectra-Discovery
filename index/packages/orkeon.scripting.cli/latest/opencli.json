@@ -1,22 +1,22 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "orkeon 1.0.0-rc.6 — build and run AI agent crews.",
-    "version": "1.0.0-rc.6",
+    "title": "orkeon 1.0.0-rc.7 — build and run AI agent crews.",
+    "version": "1.0.0-rc.7",
     "description": "Command-line entrypoint for Orkeon crews: `orkeon run <crew.ork.ts | crew.yaml>` — runs both the Scripting DSL (.ork.ts, Jint + esbuild) and YAML crew definitions from a single pre-compiled tool."
   },
   "x-inspectra": {
     "artifactSource": "static-analysis",
     "generator": "InSpectra.Gen",
     "metadataEnriched": true,
-    "helpDocumentCount": 26,
+    "helpDocumentCount": 34,
     "staticAnalysis": {
       "framework": "CommandLineParser",
       "inspectorType": "dnlib",
       "confidence": "high",
-      "verbCount": 14,
-      "optionCount": 70,
-      "valueCount": 19,
+      "verbCount": 17,
+      "optionCount": 108,
+      "valueCount": 24,
       "limitations": [
         "property-defaults-not-captured",
         "fluent-api-configuration-not-visible"
@@ -125,7 +125,7 @@
               "name": "--events",
               "recursive": false,
               "hidden": false,
-              "description": "jsonl: write the verdict as one event line on stdout — the\nfolder counts, or the error with its code (the way Orkeon\nStudio drives it)."
+              "description": "jsonl: write the verdict as one event line on stdout — the\nfolder counts, or the error with its code (the way a\nclient that drives the CLI uses it)."
             },
             {
               "name": "--settings",
@@ -171,7 +171,7 @@
               "name": "--events",
               "recursive": false,
               "hidden": false,
-              "description": "jsonl: write each step of the sign-in as one event line on\nstdout, read the pasted redirect address on stdin, and\nabort when stdin closes (the way Orkeon Studio drives it)."
+              "description": "jsonl: write each step of the sign-in as one event line on\nstdout, read the pasted redirect address on stdin, and\nabort when stdin closes (the way a client that drives the\nCLI uses it)."
             },
             {
               "name": "--settings",
@@ -245,6 +245,469 @@
                 "maximum": 1
               },
               "description": "The account name."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "eval",
+      "hidden": false,
+      "description": "Score a dataset (running a crew per case with --crew), benchmark, compare reports, evaluate a RAG collection.",
+      "commands": [
+        {
+          "name": "bench",
+          "hidden": false,
+          "description": "Score a dataset several times per case and report mean and standard\ndeviation; compare with a baseline report.",
+          "options": [
+            {
+              "name": "--runs",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 3) Runs of the suite per case (default\n3)."
+            },
+            {
+              "name": "--baseline",
+              "recursive": false,
+              "hidden": false,
+              "description": "A report written by eval bench or eval run: the run\nis compared with it, and exits 1 on a regression."
+            },
+            {
+              "name": "--threshold",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0.05) Absolute score drop that counts as\na regression (default 0.05)."
+            },
+            {
+              "name": "--dataset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Evaluation dataset: a JSON array of cases\nwith task_description, expected_output, output,\ncontext, expected_format, metadata. Without --crew\nevery case needs its output.",
+              "aliases": [
+                "-d"
+              ]
+            },
+            {
+              "name": "--evaluators",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated evaluators of the default suite:\nformat, schema, text-quality, similarity,\ntool-accuracy, and with --llm-judge coherence,\nfluency, groundedness. Default: all the registered\nones."
+            },
+            {
+              "name": "--llm-judge",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Add the LLM-as-Judge evaluators\n(coherence, fluency, groundedness): sets\nEvaluation:EnableLlmJudge for this run. Needs an\nLLM."
+            },
+            {
+              "name": "--offline",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Zero-network run: the LLM judges\nstay off (refused with --llm-judge), and a --crew\nmust run on the mock provider (--llm-mock <file>,\nor Llm:Provider: mock in the settings)."
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: /output/eval) Virtual directory receiving\nthe JSON report (default /output/eval ->\n./.orkeon/eval)."
+            },
+            {
+              "name": "--min-score",
+              "recursive": false,
+              "hidden": false,
+              "description": "Gate: exit 1 when the overall score (between 0 and\n1) is under this threshold."
+            },
+            {
+              "name": "--settings",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to appsettings.json (defaults to the current\ndirectory's resolution chain).",
+              "aliases": [
+                "-s"
+              ]
+            },
+            {
+              "name": "--mount",
+              "recursive": false,
+              "hidden": false,
+              "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>. Several mounts go\nspace-separated after ONE --mount (the flag cannot\nbe repeated). The current directory is auto-mounted\nat /workspace (ro) and ./.orkeon at /output (rw)\nunless overridden.",
+              "aliases": [
+                "-m"
+              ]
+            },
+            {
+              "name": "--allow-external-mounts",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Allow mounts from directories\noutside the workspace root."
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0) Verbosity level: 0=quiet, 1=info,\n2=full debug.",
+              "aliases": [
+                "-v"
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
+            }
+          ]
+        },
+        {
+          "name": "compare",
+          "hidden": false,
+          "description": "Compare two reports written by eval run or eval bench; exit 1 on a\nregression.",
+          "options": [
+            {
+              "name": "--threshold",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0.05) Absolute score drop that counts as\na regression (default 0.05)."
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Print the comparison as JSON\ninstead of markdown."
+            },
+            {
+              "name": "--settings",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to appsettings.json (defaults to the current\ndirectory's resolution chain).",
+              "aliases": [
+                "-s"
+              ]
+            },
+            {
+              "name": "--mount",
+              "recursive": false,
+              "hidden": false,
+              "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>. Several mounts go\nspace-separated after ONE --mount (the flag cannot\nbe repeated). The current directory is auto-mounted\nat /workspace (ro) and ./.orkeon at /output (rw)\nunless overridden.",
+              "aliases": [
+                "-m"
+              ]
+            },
+            {
+              "name": "--allow-external-mounts",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Allow mounts from directories\noutside the workspace root."
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0) Verbosity level: 0=quiet, 1=info,\n2=full debug.",
+              "aliases": [
+                "-v"
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
+            }
+          ],
+          "arguments": [
+            {
+              "name": "baseline",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "description": "The baseline report (JSON)."
+            },
+            {
+              "name": "current",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "description": "The current report (JSON)."
+            }
+          ]
+        },
+        {
+          "name": "rag",
+          "hidden": false,
+          "description": "Evaluate a RAG collection against a golden dataset (recall@k, MRR,\ngroundedness; judge mode labelled); writes markdown/JSON reports.",
+          "options": [
+            {
+              "name": "--dataset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Golden dataset YAML (e.g.\nexamples/rag/eval/golden.yaml). Its 'corpus'\ndirectory is ingested first (incremental).",
+              "aliases": [
+                "-d"
+              ]
+            },
+            {
+              "name": "--collection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Collection to evaluate (default: the dataset's\ncollection, else 'rag-eval-{dataset name}').",
+              "aliases": [
+                "-c"
+              ]
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Profile to evaluate: fast, balanced, quality,\nadaptive, corrective, or default (the configured\nOrkeon:Rag:Profile). Default: 'default'."
+            },
+            {
+              "name": "--compare",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated profiles to compare (e.g.\nfast,balanced,quality) — one report per profile\nplus a comparison table. Overrides --profile."
+            },
+            {
+              "name": "-k",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 5) Cutoff of recall@k / precision@k\n(default 5)."
+            },
+            {
+              "name": "--llm-judge",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Judge generation with the\nconfigured LLM; falls back to the deterministic\nheuristic (mode always labelled in the report)."
+            },
+            {
+              "name": "--offline",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Zero-network run: generation is\nreplaced by a deterministic extractive stub\n(retrieved passages verbatim), so no LLM key is\nneeded."
+            },
+            {
+              "name": "--no-ingest",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Skip the corpus ingestion pre-pass\n(the collection must already be ingested)."
+            },
+            {
+              "name": "--reindex",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Force a full corpus reindex.\nRequired with the default in-memory store when\n./.orkeon manifests survived a previous process,\nand after an embedding model change."
+            },
+            {
+              "name": "--min-recall",
+              "recursive": false,
+              "hidden": false,
+              "description": "Anti-regression gate: exit 1 when the aggregate\nrecall@k (cases tagged 'correctif' excluded) drops\nbelow this threshold."
+            },
+            {
+              "name": "--min-mrr",
+              "recursive": false,
+              "hidden": false,
+              "description": "Anti-regression gate: exit 1 when the aggregate MRR\n(cases tagged 'correctif' excluded) drops below\nthis threshold."
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: /output/rag/eval) Virtual directory\nreceiving the markdown/JSON reports (default\n/output/rag/eval → ./.orkeon/rag/eval)."
+            },
+            {
+              "name": "--settings",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to appsettings.json (defaults to the current\ndirectory's resolution chain).",
+              "aliases": [
+                "-s"
+              ]
+            },
+            {
+              "name": "--mount",
+              "recursive": false,
+              "hidden": false,
+              "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>. Several mounts go\nspace-separated after ONE --mount (the flag cannot\nbe repeated). The current directory is auto-mounted\nat /workspace (ro) and ./.orkeon at /output (rw)\nunless overridden.",
+              "aliases": [
+                "-m"
+              ]
+            },
+            {
+              "name": "--allow-external-mounts",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Allow mounts from directories\noutside the workspace root."
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0) Verbosity level: 0=quiet, 1=info,\n2=full debug.",
+              "aliases": [
+                "-v"
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
+            }
+          ]
+        },
+        {
+          "name": "run",
+          "hidden": false,
+          "description": "Score a dataset with the default evaluation suite; with --crew, run\na crew on every case first. Writes a JSON report.",
+          "options": [
+            {
+              "name": "--crew",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run this crew (.yaml, .ork.ts or a crew directory)\non every case before scoring: the case's\ntask_description is the crew's prompt (the input\nand the initial context), its final output replaces\noutput in the report. The dataset file is never\nmodified."
+            },
+            {
+              "name": "--llm-mock",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --crew: answer every LLM call of the crew from\nthis JSONL file, offline (as orkeon run",
+              "arguments": [
+                {
+                  "name": "LLM_MOCK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--llm-record",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --crew: record every LLM call of the crew in\nthis JSONL cassette (as orkeon run --llm-record).\nExclusive with --llm-replay and --llm-mock."
+            },
+            {
+              "name": "--llm-replay",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --crew: answer every LLM call of the crew from\nthis cassette, recorded by --llm-record, with no\nnetwork (as orkeon run --llm-replay). Exclusive\nwith --llm-record and --llm-mock."
+            },
+            {
+              "name": "--llm-profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --crew: run the crew on this host LLM profile\n(as orkeon run --llm-profile)."
+            },
+            {
+              "name": "--dataset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Required. Evaluation dataset: a JSON array of cases\nwith task_description, expected_output, output,\ncontext, expected_format, metadata. Without --crew\nevery case needs its output.",
+              "aliases": [
+                "-d"
+              ]
+            },
+            {
+              "name": "--evaluators",
+              "recursive": false,
+              "hidden": false,
+              "description": "Comma-separated evaluators of the default suite:\nformat, schema, text-quality, similarity,\ntool-accuracy, and with --llm-judge coherence,\nfluency, groundedness. Default: all the registered\nones."
+            },
+            {
+              "name": "--llm-judge",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Add the LLM-as-Judge evaluators\n(coherence, fluency, groundedness): sets\nEvaluation:EnableLlmJudge for this run. Needs an\nLLM."
+            },
+            {
+              "name": "--offline",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Zero-network run: the LLM judges\nstay off (refused with --llm-judge), and a --crew\nmust run on the mock provider (--llm-mock <file>,\nor Llm:Provider: mock in the settings)."
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: /output/eval) Virtual directory receiving\nthe JSON report (default /output/eval ->\n./.orkeon/eval)."
+            },
+            {
+              "name": "--min-score",
+              "recursive": false,
+              "hidden": false,
+              "description": "Gate: exit 1 when the overall score (between 0 and\n1) is under this threshold."
+            },
+            {
+              "name": "--settings",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to appsettings.json (defaults to the current\ndirectory's resolution chain).",
+              "aliases": [
+                "-s"
+              ]
+            },
+            {
+              "name": "--mount",
+              "recursive": false,
+              "hidden": false,
+              "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>. Several mounts go\nspace-separated after ONE --mount (the flag cannot\nbe repeated). The current directory is auto-mounted\nat /workspace (ro) and ./.orkeon at /output (rw)\nunless overridden.",
+              "aliases": [
+                "-m"
+              ]
+            },
+            {
+              "name": "--allow-external-mounts",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Allow mounts from directories\noutside the workspace root."
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: 0) Verbosity level: 0=quiet, 1=info,\n2=full debug.",
+              "aliases": [
+                "-v"
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display this help screen."
+            },
+            {
+              "name": "--version",
+              "recursive": false,
+              "hidden": false,
+              "description": "Display version information."
             }
           ]
         }
@@ -412,7 +875,7 @@
               "name": "--provider",
               "recursive": false,
               "hidden": false,
-              "description": "Required. Provider: openai | anthropic | ollama | azure |\ntogether | qwen | deepseek | kimi | mistral | huggingface\n| zai | gemini | grok | minimax | openrouter | mammouth.",
+              "description": "Required. Provider: openai | anthropic | ollama | azure |\ntogether | qwen | deepseek | kimi | mistral | huggingface\n| zai | gemini | grok | minimax | openrouter | mammouth;\ndecision providers: typesafe | liquid | kev.",
               "aliases": [
                 "-p"
               ]
@@ -472,7 +935,7 @@
               "name": "--modes",
               "recursive": false,
               "hidden": false,
-              "description": "Comma-separated protocol modes (e.g. M1,M2,M8). Defaults\nto every mode this harness supports."
+              "description": "Comma-separated protocol modes (e.g. M1,M2,M8; D1–D8 for\na decision provider). Defaults to every mode the\nprovider's family supports, except the paid D8."
             },
             {
               "name": "--archive",
@@ -543,7 +1006,31 @@
               "name": "--tools",
               "recursive": false,
               "hidden": false,
-              "description": "Comma-separated names of the tools to serve (default: every\ntool of the host). A name the host does not have refuses the\nstart."
+              "description": "Comma-separated names of the tools to serve\n(default: every tool of the host). A name the host\ndoes not have refuses the start."
+            },
+            {
+              "name": "--max-concurrency",
+              "recursive": false,
+              "hidden": false,
+              "description": "How many requests are served at once, at least 1\n(default 4, or MCP:Server:MaxConcurrency); the\nothers wait their turn."
+            },
+            {
+              "name": "--expose-output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Serve /output as read-only MCP resources\n(orkeon:///output/<path>), through the host's\nvirtual file system. /workspace is never served."
+            },
+            {
+              "name": "--crew",
+              "recursive": false,
+              "hidden": false,
+              "description": "Serve a crew as the tool run_crew_<name> (its name,\nlower case), its input the {placeholders} of its\ntasks, its result the crew's final output, with\nprogress when the client sends a progressToken; its\ntasks are also offered as prompts. Several crews go\nspace-separated after ONE --crew (the flag cannot\nbe repeated). Budget, guardian and permission gate\nare those of `orkeon run`."
+            },
+            {
+              "name": "--allow-external-mounts",
+              "recursive": false,
+              "hidden": false,
+              "description": "(Default: false) Allow a --crew whose folder is\noutside the working directory, as `orkeon run\n--allow-external-mounts` does. Can also be enabled\nvia ORKEON_ALLOW_EXTERNAL_MOUNTS=1."
             },
             {
               "name": "--help",
@@ -587,138 +1074,8 @@
     {
       "name": "rag",
       "hidden": false,
-      "description": "Ingest, search and evaluate a RAG collection.",
+      "description": "Evaluate a RAG collection against a golden dataset (recall@k, MRR, groundedness; judge mode labelled); writes markdown/JSON reports.",
       "commands": [
-        {
-          "name": "eval",
-          "hidden": false,
-          "description": "Evaluate a RAG collection against a golden dataset (recall@k, MRR,\ngroundedness; judge mode labelled); writes markdown/JSON reports.",
-          "options": [
-            {
-              "name": "--dataset",
-              "recursive": false,
-              "hidden": false,
-              "description": "Required. Golden dataset YAML (e.g.\nexamples/rag/eval/golden.yaml). Its 'corpus'\ndirectory is ingested first (incremental).",
-              "aliases": [
-                "-d"
-              ]
-            },
-            {
-              "name": "--collection",
-              "recursive": false,
-              "hidden": false,
-              "description": "Collection to evaluate (default: the dataset's\ncollection, else 'rag-eval-{dataset name}').",
-              "aliases": [
-                "-c"
-              ]
-            },
-            {
-              "name": "--profile",
-              "recursive": false,
-              "hidden": false,
-              "description": "Profile to evaluate: fast, balanced, quality,\nadaptive, corrective, or default (the configured\nOrkeon:Rag:Profile). Default: 'default'."
-            },
-            {
-              "name": "--compare",
-              "recursive": false,
-              "hidden": false,
-              "description": "Comma-separated profiles to compare (e.g.\nfast,balanced,quality) — one report per profile\nplus a comparison table. Overrides --profile."
-            },
-            {
-              "name": "-k",
-              "recursive": false,
-              "hidden": false,
-              "description": "(Default: 5) Cutoff of recall@k / precision@k\n(default 5)."
-            },
-            {
-              "name": "--llm-judge",
-              "recursive": false,
-              "hidden": false,
-              "description": "(Default: false) Judge generation with the\nconfigured LLM; falls back to the deterministic\nheuristic (mode always labelled in the report)."
-            },
-            {
-              "name": "--offline",
-              "recursive": false,
-              "hidden": false,
-              "description": "(Default: false) Zero-network run: generation is\nreplaced by a deterministic extractive stub\n(retrieved passages verbatim), so no LLM key is\nneeded."
-            },
-            {
-              "name": "--no-ingest",
-              "recursive": false,
-              "hidden": false,
-              "description": "(Default: false) Skip the corpus ingestion pre-pass\n(the collection must already be ingested)."
-            },
-            {
-              "name": "--reindex",
-              "recursive": false,
-              "hidden": false,
-              "description": "(Default: false) Force a full corpus reindex.\nRequired with the default in-memory store when\n./.orkeon manifests survived a previous process,\nand after an embedding model change."
-            },
-            {
-              "name": "--min-recall",
-              "recursive": false,
-              "hidden": false,
-              "description": "Anti-regression gate: exit 1 when the aggregate\nrecall@k (cases tagged 'correctif' excluded) drops\nbelow this threshold."
-            },
-            {
-              "name": "--min-mrr",
-              "recursive": false,
-              "hidden": false,
-              "description": "Anti-regression gate: exit 1 when the aggregate MRR\n(cases tagged 'correctif' excluded) drops below\nthis threshold."
-            },
-            {
-              "name": "--output",
-              "recursive": false,
-              "hidden": false,
-              "description": "(Default: /output/rag/eval) Virtual directory\nreceiving the markdown/JSON reports (default\n/output/rag/eval → ./.orkeon/rag/eval)."
-            },
-            {
-              "name": "--settings",
-              "recursive": false,
-              "hidden": false,
-              "description": "Path to appsettings.json (defaults to the current\ndirectory's resolution chain).",
-              "aliases": [
-                "-s"
-              ]
-            },
-            {
-              "name": "--mount",
-              "recursive": false,
-              "hidden": false,
-              "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>. Several mounts go\nspace-separated after ONE --mount (the flag cannot\nbe repeated). The current directory is auto-mounted\nat /workspace (ro) and ./.orkeon at /output (rw)\nunless overridden.",
-              "aliases": [
-                "-m"
-              ]
-            },
-            {
-              "name": "--allow-external-mounts",
-              "recursive": false,
-              "hidden": false,
-              "description": "(Default: false) Allow mounts from directories\noutside the workspace root."
-            },
-            {
-              "name": "--verbose",
-              "recursive": false,
-              "hidden": false,
-              "description": "(Default: 0) Verbosity level: 0=quiet, 1=info,\n2=full debug.",
-              "aliases": [
-                "-v"
-              ]
-            },
-            {
-              "name": "--help",
-              "recursive": false,
-              "hidden": false,
-              "description": "Display this help screen."
-            },
-            {
-              "name": "--version",
-              "recursive": false,
-              "hidden": false,
-              "description": "Display version information."
-            }
-          ]
-        },
         {
           "name": "ingest",
           "hidden": false,
@@ -882,7 +1239,7 @@
     {
       "name": "run",
       "hidden": false,
-      "description": "Run a crew: a YAML crew, a .ork.ts script, or a crew directory.",
+      "description": "Score a dataset with the default evaluation suite; with --crew, run a crew on every case first. Writes a JSON report.",
       "options": [
         {
           "name": "--settings",
@@ -891,6 +1248,22 @@
           "description": "Path to appsettings.json (defaults to same dir as\nscript).",
           "aliases": [
             "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SETTINGSPATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
           ]
         },
         {
@@ -900,6 +1273,21 @@
           "description": "File system mount(s) in Docker-style format:\n<physical>:<virtual>:<rights>[;sub:rights]. Several\nmounts go space-separated after ONE --mount (the\nflag cannot be repeated).",
           "aliases": [
             "-m"
+          ],
+          "arguments": [
+            {
+              "name": "MOUNTS",
+              "required": true,
+              "arity": {
+                "minimum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Collections.Generic.IEnumerable<System.String>"
+                }
+              ]
+            }
           ]
         },
         {
@@ -918,7 +1306,101 @@
           "name": "--llm-profile",
           "recursive": false,
           "hidden": false,
-          "description": "Run on the host LLM profile <id> (Llm:Profiles:<id>\nin the settings) as this run's default: the Llm\nsection becomes that profile, whole, for every call\nthat names no profile of its own. An id the\nsettings do not define is refused, listing the ones\nthey do."
+          "description": "Run on the host LLM profile <id> (Llm:Profiles:<id>\nin the settings) as this run's default: the Llm\nsection becomes that profile, whole, for every call\nthat names no profile of its own. An id the\nsettings do not define is refused, listing the ones\nthey do.",
+          "arguments": [
+            {
+              "name": "LLMPROFILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--llm-mock",
+          "recursive": false,
+          "hidden": false,
+          "description": "Answer every LLM call from this JSONL file instead\nof a model, offline and deterministic: one\n{\"match\", \"regex\"?, \"content\", \"toolCalls\"?} object\nper line, the first line that matches the prompt\nwins. Every LLM profile of the run becomes\nProvider: mock reading this file. The file's folder\nis mounted read-only at /llm-mock.",
+          "arguments": [
+            {
+              "name": "LLMMOCK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--llm-record",
+          "recursive": false,
+          "hidden": false,
+          "description": "Record every LLM call of the run, with its answer,\nin this JSONL cassette (API keys and authorization\nheaders are redacted). The file's folder is mounted\nread-write at /llm-cassette. Exclusive with\n--llm-replay and --llm-mock.",
+          "arguments": [
+            {
+              "name": "LLMRECORD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--llm-replay",
+          "recursive": false,
+          "hidden": false,
+          "description": "Answer every LLM call of the run from this\ncassette, recorded by --llm-record, with no\nnetwork: a call the cassette does not hold fails\nwith a replay miss. The file's folder is mounted\nread-only at /llm-cassette. Exclusive with\n--llm-record and --llm-mock.",
+          "arguments": [
+            {
+              "name": "LLMREPLAY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--test",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Bind the global `test`\n(test.mockLlm, test.mockTool,\ntest.assertLlmCalled...) in a script. An\nexpectation of test.mockLlm answers before the\nconfigured LLM; without --test there is no `test`."
+        },
+        {
+          "name": "--no-decision",
+          "recursive": false,
+          "hidden": false,
+          "description": "(Default: false) Switch the decision circuit off\nfor this run, even when Orkeon:Decision:Enabled is\ntrue: decision tasks answer from their fallback."
         },
         {
           "name": "--verbose",
@@ -927,6 +1409,22 @@
           "description": "(Default: 0) Verbosity level: 0=quiet, 1=LLM & tool\nexchanges, 2=full debug.",
           "aliases": [
             "-v"
+          ],
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "metadata": [
+                {
+                  "name": "ClrType",
+                  "value": "System.Int32"
+                }
+              ]
+            }
           ]
         },
         {
@@ -978,7 +1476,7 @@
           "name": "--events",
           "recursive": false,
           "hidden": false,
-          "description": "Emit the versioned JSONL event protocol on stdout\n(task progress, cost, run outcome) instead of plain\ntext. This is how Orkeon Studio drives a run."
+          "description": "Emit the versioned JSONL event protocol on stdout\n(task progress, cost, run outcome) instead of plain\ntext. This is how a client drives a run."
         },
         {
           "name": "--stream",
@@ -990,13 +1488,25 @@
           "name": "--client",
           "recursive": false,
           "hidden": false,
-          "description": "(Default: studio) With --events, the name of the\nobserving peer on the hub (client://<name>). Agents\ncan post and send to that address; a crew's links:\nblock authorizes it."
+          "description": "(Default: client) With --events, the name of the\nobserving peer on the hub (client://<name>). Agents\ncan post and send to that address; a crew's links:\nblock authorizes it."
         },
         {
           "name": "--validate",
           "recursive": false,
           "hidden": false,
           "description": "(Default: false) Dry-run: resolve settings, build\nthe host and load the crew (strict tool resolution)\nWITHOUT probing the LLM endpoint or running a\nkickoff. Prints 'VALIDATION OK/FAILED: <config>\n...' and exits 0 (ok) or non-zero (failed)."
+        },
+        {
+          "name": "--resume",
+          "recursive": false,
+          "hidden": false,
+          "description": "Resume the checkpointed run <id> of this crew, or\n'latest' for its most recent unfinished run: the\ntasks it had completed are not run again. Needs\nOrkeon:Checkpointing:Enabled; refused with\n--validate. With --events, name the run id (latest\nis refused)."
+        },
+        {
+          "name": "--input",
+          "recursive": false,
+          "hidden": false,
+          "description": "The answer to the question the resumed run stopped\non (the run exited 75): only with --resume. The\ntask that asked is replayed and finds the answer;\nthe tasks already done are not run again."
         },
         {
           "name": "--list-tools",
@@ -1023,10 +1533,268 @@
           "required": false,
           "hidden": false,
           "arity": {
-            "minimum": 0,
-            "maximum": 1
+            "minimum": 0
           },
-          "description": "Path to the crew definition: .ork.ts/.js (Scripting\nDSL), .yaml/.yml (YAML crew), or a directory\nholding a multi-file YAML crew (config.yaml +\nagents/ + tasks/). Required unless --list-tools."
+          "description": "Path to the crew definition: .ork.ts/.js (Scripting\nDSL), .yaml/.yml (YAML crew), or a directory\nholding a multi-file YAML crew (config.yaml +\nagents/ + tasks/). Required unless --list-tools.",
+          "metadata": [
+            {
+              "name": "ClrType",
+              "value": "System.Collections.Generic.IEnumerable<System.String>"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "runs",
+      "hidden": false,
+      "description": "List the recorded runs, show or tail the events of one (Orkeon:RunHistory).",
+      "commands": [
+        {
+          "name": "list",
+          "hidden": false,
+          "description": "the version of this build\norkeon --version --verbose      … and the channel it was installed through",
+          "commands": [
+            {
+              "name": "doctor",
+              "hidden": false,
+              "description": "Diagnose the installation: runtime, settings, esbuild, embeddings, tree-sitter."
+            },
+            {
+              "name": "drive",
+              "hidden": false,
+              "description": "List the drive accounts (Google Drive, OneDrive), sign one in or out, check a connection."
+            },
+            {
+              "name": "email",
+              "hidden": false,
+              "description": "List the e-mail accounts, sign an OAuth account in or out, check a connection."
+            },
+            {
+              "name": "eval",
+              "hidden": false,
+              "description": "Score a dataset (running a crew per case with --crew), benchmark, compare reports, evaluate a RAG collection."
+            },
+            {
+              "name": "forge",
+              "hidden": false,
+              "description": "The Atelier: turn a need in plain words into a validated crew."
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Configure this machine: pick an LLM provider, write the settings file."
+            },
+            {
+              "name": "llm",
+              "hidden": false,
+              "description": "Probe an LLM provider against the test protocol."
+            },
+            {
+              "name": "mcp",
+              "hidden": false,
+              "description": "Serve the host's tools to an MCP client (Claude Desktop, an editor) over stdio."
+            },
+            {
+              "name": "quickstart",
+              "hidden": false,
+              "description": "Write the README's two-minute crew into ./orkeon-quickstart/, ready to run on a local model."
+            },
+            {
+              "name": "rag",
+              "hidden": false,
+              "description": "Ingest documents into a RAG collection and search it."
+            },
+            {
+              "name": "run",
+              "hidden": false,
+              "description": "Run a crew: a YAML crew, a .ork.ts script, or a crew directory."
+            },
+            {
+              "name": "runs",
+              "hidden": false,
+              "description": "List the recorded runs, show or tail the events of one (Orkeon:RunHistory)."
+            },
+            {
+              "name": "settings",
+              "hidden": false,
+              "description": "List every setting a host reads, by category: type, default, meaning — offline."
+            },
+            {
+              "name": "typings",
+              "hidden": false,
+              "description": "Write the TypeScript typings for .ork.ts and .cmd.ts scripts into ./.orkeon/."
+            },
+            {
+              "name": "usecases",
+              "hidden": false,
+              "description": "Search, list, show and export the example use cases — offline, in five languages."
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "hidden": false,
+          "description": "the version of this build\norkeon --version --verbose      … and the channel it was installed through",
+          "commands": [
+            {
+              "name": "doctor",
+              "hidden": false,
+              "description": "Diagnose the installation: runtime, settings, esbuild, embeddings, tree-sitter."
+            },
+            {
+              "name": "drive",
+              "hidden": false,
+              "description": "List the drive accounts (Google Drive, OneDrive), sign one in or out, check a connection."
+            },
+            {
+              "name": "email",
+              "hidden": false,
+              "description": "List the e-mail accounts, sign an OAuth account in or out, check a connection."
+            },
+            {
+              "name": "eval",
+              "hidden": false,
+              "description": "Score a dataset (running a crew per case with --crew), benchmark, compare reports, evaluate a RAG collection."
+            },
+            {
+              "name": "forge",
+              "hidden": false,
+              "description": "The Atelier: turn a need in plain words into a validated crew."
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Configure this machine: pick an LLM provider, write the settings file."
+            },
+            {
+              "name": "llm",
+              "hidden": false,
+              "description": "Probe an LLM provider against the test protocol."
+            },
+            {
+              "name": "mcp",
+              "hidden": false,
+              "description": "Serve the host's tools to an MCP client (Claude Desktop, an editor) over stdio."
+            },
+            {
+              "name": "quickstart",
+              "hidden": false,
+              "description": "Write the README's two-minute crew into ./orkeon-quickstart/, ready to run on a local model."
+            },
+            {
+              "name": "rag",
+              "hidden": false,
+              "description": "Ingest documents into a RAG collection and search it."
+            },
+            {
+              "name": "run",
+              "hidden": false,
+              "description": "Run a crew: a YAML crew, a .ork.ts script, or a crew directory."
+            },
+            {
+              "name": "runs",
+              "hidden": false,
+              "description": "List the recorded runs, show or tail the events of one (Orkeon:RunHistory)."
+            },
+            {
+              "name": "settings",
+              "hidden": false,
+              "description": "List every setting a host reads, by category: type, default, meaning — offline."
+            },
+            {
+              "name": "typings",
+              "hidden": false,
+              "description": "Write the TypeScript typings for .ork.ts and .cmd.ts scripts into ./.orkeon/."
+            },
+            {
+              "name": "usecases",
+              "hidden": false,
+              "description": "Search, list, show and export the example use cases — offline, in five languages."
+            }
+          ]
+        },
+        {
+          "name": "tail",
+          "hidden": false,
+          "description": "the version of this build\norkeon --version --verbose      … and the channel it was installed through",
+          "commands": [
+            {
+              "name": "doctor",
+              "hidden": false,
+              "description": "Diagnose the installation: runtime, settings, esbuild, embeddings, tree-sitter."
+            },
+            {
+              "name": "drive",
+              "hidden": false,
+              "description": "List the drive accounts (Google Drive, OneDrive), sign one in or out, check a connection."
+            },
+            {
+              "name": "email",
+              "hidden": false,
+              "description": "List the e-mail accounts, sign an OAuth account in or out, check a connection."
+            },
+            {
+              "name": "eval",
+              "hidden": false,
+              "description": "Score a dataset (running a crew per case with --crew), benchmark, compare reports, evaluate a RAG collection."
+            },
+            {
+              "name": "forge",
+              "hidden": false,
+              "description": "The Atelier: turn a need in plain words into a validated crew."
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Configure this machine: pick an LLM provider, write the settings file."
+            },
+            {
+              "name": "llm",
+              "hidden": false,
+              "description": "Probe an LLM provider against the test protocol."
+            },
+            {
+              "name": "mcp",
+              "hidden": false,
+              "description": "Serve the host's tools to an MCP client (Claude Desktop, an editor) over stdio."
+            },
+            {
+              "name": "quickstart",
+              "hidden": false,
+              "description": "Write the README's two-minute crew into ./orkeon-quickstart/, ready to run on a local model."
+            },
+            {
+              "name": "rag",
+              "hidden": false,
+              "description": "Ingest documents into a RAG collection and search it."
+            },
+            {
+              "name": "run",
+              "hidden": false,
+              "description": "Run a crew: a YAML crew, a .ork.ts script, or a crew directory."
+            },
+            {
+              "name": "runs",
+              "hidden": false,
+              "description": "List the recorded runs, show or tail the events of one (Orkeon:RunHistory)."
+            },
+            {
+              "name": "settings",
+              "hidden": false,
+              "description": "List every setting a host reads, by category: type, default, meaning — offline."
+            },
+            {
+              "name": "typings",
+              "hidden": false,
+              "description": "Write the TypeScript typings for .ork.ts and .cmd.ts scripts into ./.orkeon/."
+            },
+            {
+              "name": "usecases",
+              "hidden": false,
+              "description": "Search, list, show and export the example use cases — offline, in five languages."
+            }
+          ]
         }
       ]
     },
@@ -1069,7 +1837,7 @@
         {
           "name": "export",
           "hidden": false,
-          "description": "Write one use case as a team folder — crew/, its data/, its output\nfolders and studio-team.json — that Orkeon Studio imports as it is.",
+          "description": "Write one use case as a team folder — crew/, its data/, its output\nfolders and team.json — a team folder a client can import as it is.",
           "options": [
             {
               "name": "--to",
@@ -1087,7 +1855,7 @@
               "name": "--events",
               "recursive": false,
               "hidden": false,
-              "description": "jsonl: answer with the versioned event protocol on stdout (the\nway Orkeon Studio reads it)."
+              "description": "jsonl: answer with the versioned event protocol on stdout (the\nway a client reads it)."
             },
             {
               "name": "--help",
@@ -1148,7 +1916,7 @@
               "name": "--events",
               "recursive": false,
               "hidden": false,
-              "description": "jsonl: answer with the versioned event protocol on stdout (the\nway Orkeon Studio reads it)."
+              "description": "jsonl: answer with the versioned event protocol on stdout (the\nway a client reads it)."
             },
             {
               "name": "--help",
@@ -1185,7 +1953,7 @@
               "name": "--events",
               "recursive": false,
               "hidden": false,
-              "description": "jsonl: answer with the versioned event protocol on stdout\n(the way Orkeon Studio reads it)."
+              "description": "jsonl: answer with the versioned event protocol on stdout\n(the way a client reads it)."
             },
             {
               "name": "--help",
@@ -1234,7 +2002,7 @@
               "name": "--events",
               "recursive": false,
               "hidden": false,
-              "description": "jsonl: answer with the versioned event protocol on stdout (the\nway Orkeon Studio reads it)."
+              "description": "jsonl: answer with the versioned event protocol on stdout (the\nway a client reads it)."
             },
             {
               "name": "--help",
