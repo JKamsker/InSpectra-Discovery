@@ -1,0 +1,281 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "dbudoctor",
+    "version": "0.3.0",
+    "description": "Estimates what a Databricks bundle change will cost, per resource, from the pull request diff. Prices classic compute in full on Azure (DBUs and VMs), flags costly patterns, and posts one sticky pull request comment."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.14.0",
+      "systemCommandLineVersion": "2.0.14.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "DBUDoctor 0.3.0: estimates what a Databricks bundle change will cost."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "diff",
+      "description": "Report the cost change between two git refs of a bundle.",
+      "options": [
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Bundle target to estimate. Default: the first target with mode: production.",
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--base",
+          "recursive": false,
+          "hidden": false,
+          "description": "Base git ref. Default: the pull request base, or the merge-base with the remote default branch.",
+          "arguments": [
+            {
+              "name": "BASE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--head",
+          "recursive": false,
+          "hidden": false,
+          "description": "Head git ref. Default: the pull request head, or the working tree.",
+          "arguments": [
+            {
+              "name": "HEAD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--base-json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Pre-resolved `bundle validate --output json` for the base (with --head-json; runs no git or databricks).",
+          "arguments": [
+            {
+              "name": "BASE_JSON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--head-json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Pre-resolved `bundle validate --output json` for the head.",
+          "arguments": [
+            {
+              "name": "HEAD_JSON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "console (default), markdown or json.",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the report to this file instead of standard output.",
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--github-comment",
+          "recursive": false,
+          "hidden": false,
+          "description": "Create or update the sticky pull request comment (GitHub Actions). [default: False]",
+          "arguments": [
+            {
+              "name": "GITHUB_COMMENT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--report-existing",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also report findings that already exist in the base. [default: False]",
+          "arguments": [
+            {
+              "name": "REPORT_EXISTING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Configuration file. Default: .dbudoctor.yml in the repository root.",
+          "arguments": [
+            {
+              "name": "CONFIG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--refresh-prices",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fetch current Azure prices for the bundle's region (cached for the UTC day). [default: False]",
+          "arguments": [
+            {
+              "name": "REFRESH_PRICES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "skill",
+      "description": "Agent skill commands.",
+      "commands": [
+        {
+          "name": "export",
+          "description": "Write the agent skill (SKILL.md and references) for this version.",
+          "options": [
+            {
+              "name": "--dir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory to write the skill to, such as .claude/skills/dbudoctor.",
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite an existing directory. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

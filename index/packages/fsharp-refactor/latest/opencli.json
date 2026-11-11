@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "fsharp-refactor - applies F# refactoring quick fixes to your code.",
-    "version": "0.8.50",
+    "version": "0.8.51",
     "description": "Applies the FSharp.Refactor analyzers' quick fixes to F# code from the command line. Point it at a project, a script, a solution, a directory or a glob; --dry-run reports without editing. The tool clarifies the (agent-generated or old) code's intent, reduces non-alphanumeric noise, and uses built-in .NET libraries more efficiently."
   },
   "x-inspectra": {
@@ -86,7 +86,7 @@
       "name": "--api-changes",
       "recursive": false,
       "hidden": false,
-      "description": "also apply cross-file fixes that change internal\nsignatures, rewriting call sites project-wide. Held\nback and merely counted without this. Public\nsignatures are never rewritten: their callers can\nlive outside the checked project",
+      "description": "also apply cross-file fixes that change internal and\npublic signatures, rewriting call sites project-wide\nand in the projects of the run that reference it.\nHeld back and merely counted without this. Callers\noutside the run are not seen and not rewritten, so\nleave it off for a library others consume. A test\nproject gets it without the flag: nothing calls it",
       "arguments": [
         {
           "name": "API_CHANGES",
@@ -130,7 +130,7 @@
       "name": "--parse-only",
       "recursive": false,
       "hidden": false,
-      "description": "no MSBuild, no reference resolution: sources come\nstraight from the fsproj and only the 56 of 116\nanalyzers that never consult the typechecker run.\nNOT a substitute for a real run: what survives is\nskewed the wrong way — roughly a quarter of the\ncorrectness rules and a quarter of the performance\nones, against three quarters of the cosmetic. A\nclean --parse-only says little about a codebase.\nFor projects that cannot compile here at all (a\ntype provider whose database is down, references\nthat will not restore); #if branches are also out\nof reach",
+      "description": "no MSBuild, no reference resolution: sources come\nstraight from the fsproj and only the analyzers that\nnever consult the typechecker run, about a third.\nNOT a substitute for a real run: what survives is\nskewed the wrong way — roughly a quarter of the\ncorrectness rules and a quarter of the performance\nones, against three quarters of the cosmetic. A\nclean --parse-only says little about a codebase.\nFor projects that cannot compile here at all (a\ntype provider whose database is down, references\nthat will not restore); #if branches are also out\nof reach",
       "arguments": [
         {
           "name": "PARSE_ONLY",
@@ -218,7 +218,17 @@
       "name": "--mcp",
       "recursive": false,
       "hidden": false,
-      "description": "serve analyze/list_rules as an MCP server over\nstdio, keeping the typechecker warm between calls"
+      "description": "serve analyze/list_rules as an MCP server over\nstdio, keeping the typechecker warm between calls.\nThe server works in <what>, a directory, or in the\ncurrent one: a call's target lies inside it and\nnothing outside it is written. With --dry-run no\ncall applies anything. --define and --jobs hold\nfor every call; the other options belong to a run\nand are refused",
+      "arguments": [
+        {
+          "name": "MCP",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
     },
     {
       "name": "--max-passes",

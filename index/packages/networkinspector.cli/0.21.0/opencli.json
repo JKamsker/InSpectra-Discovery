@@ -1,0 +1,769 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Network Inspector CLI",
+    "version": "0.21.0",
+    "description": "Command-line interface for the Network Inspector stack. Provides ni convert and ni export for network and automotive captures, ni plugins to load extensions, and ni settings and ni profile for settings profiles."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 7
+  },
+  "commands": [
+    {
+      "name": "convert",
+      "hidden": false,
+      "description": "Convert capture files between formats (frame-level)",
+      "options": [
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path (required)",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output-format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format spec (see below; overrides extension)",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT_FORMAT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--overwrite",
+          "recursive": false,
+          "hidden": false,
+          "description": "Replace an existing output (otherwise an existing output is an error)"
+        },
+        {
+          "name": "--max-frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of frames to convert",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "MAX_FRAMES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--split-size",
+          "recursive": false,
+          "hidden": false,
+          "description": "Split when exporter EstimatedOutputBytes reaches this size (MiB; live, no FS probe)",
+          "arguments": [
+            {
+              "name": "MB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--split-count",
+          "recursive": false,
+          "hidden": false,
+          "description": "Split output every N frames",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--filter",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only keep packets matching this filter expression\n(frames are parsed only when a filter is set)",
+          "arguments": [
+            {
+              "name": "EXPR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Settings profile (must exist; 'default' is created on first use)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--settings-path",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--set",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override one setting for this run only, e.g. --set settings.maxFileSize=1GiB (repeatable;\na limit takes a number with a unit, or off; see ni settings describe --limits)",
+          "arguments": [
+            {
+              "name": "KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--blf-cache-size",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "MB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--progress",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report progress every N frames",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--tolerant",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip malformed frames instead of aborting"
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the parse work chosen for the run (parse: none | fields only, no tree (…) | field tree (…))",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show this help message\nOutput format is auto-detected from the output extension (plugins add more; see 'ni plugins list'):\n.pcapng / other       PCAPNG (default)\n.blf                  BLF with default compression\n.asc                  CANalyzer ASCII log (CAN, CAN FD, CAN XL, LIN, FlexRay, Ethernet)\nAFDX data frames are read. AFDX status, AFDX bus statistics, ETH STAT, and ETH RxEr are not read.\nOutput format specifications (--output-format):\npcapng                PCAPNG format\nblf                   BLF, default compression\nblf:compression=off   BLF, no compression\nblf:compression=fast  BLF, fast compression\nblf:compression=best  BLF, best compression ratio\nasc                   CANalyzer ASCII log (CAN, CAN FD, CAN XL, LIN, FlexRay, Ethernet)\nSource specifications (plugins add more kinds; see 'ni plugins list'):\ncapture.pcap[ng]      Auto-detected PCAP/PCAPNG\ndata.blf              Auto-detected BLF\nlog.asc               Auto-detected CANalyzer ASC\npcap:path=<file>      Explicit PCAP spec; pcapng:path=<file>, blf:path=<file>, asc:path=<file>\nrandom:count=N,seed=S,mode=udp4|udp6|random  Synthetic frames",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCES",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1
+          },
+          "description": "One or more source files or specs"
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "hidden": false,
+      "description": "Parse and export packets to analysis formats",
+      "options": [
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file path (required)",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Export format spec (see below; overrides extension)",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--overwrite",
+          "recursive": false,
+          "hidden": false,
+          "description": "Replace an existing output (otherwise an existing output is an error)"
+        },
+        {
+          "name": "--max-packets",
+          "recursive": false,
+          "hidden": false,
+          "description": "Maximum number of packets to export",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "MAX_PACKETS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--split-size",
+          "recursive": false,
+          "hidden": false,
+          "description": "Split when exporter EstimatedOutputBytes reaches this size (MiB; live, no FS probe)",
+          "arguments": [
+            {
+              "name": "MB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--split-count",
+          "recursive": false,
+          "hidden": false,
+          "description": "Split output every N packets (files, or sibling Parquet directories)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--filter",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only keep packets matching this filter expression",
+          "arguments": [
+            {
+              "name": "EXPR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Settings profile (must exist; 'default' is created on first use)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--settings-path",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--set",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override one setting for this run only, e.g. --set settings.maxFileSize=1GiB (repeatable;\na limit takes a number with a unit, or off; see ni settings describe --limits)",
+          "arguments": [
+            {
+              "name": "KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--blf-cache-size",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "MB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--progress",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report progress every N packets",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--tolerant",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip malformed frames instead of aborting"
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the parse work chosen for the run (parse: none | fields only, no tree (…) | field tree (…))",
+          "arguments": [
+            {
+              "name": "VERBOSE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show this help message\nSource specifications (plugins add more kinds; see 'ni plugins list'):\ncapture.pcap[ng]      Auto-detected PCAP/PCAPNG file\ndata.blf              Auto-detected BLF file\nlog.asc               Auto-detected CANalyzer ASC file\npcap:path=<file>      Explicit PCAP spec; pcapng:path=<file>, blf:path=<file>, asc:path=<file>\nrandom:count=N,seed=S,mode=udp4|udp6|tcp4|tcp6|tcpstream4|tcpstream6|ethernet|ipv4|ipv6|can|canfd|fullrandom\nSynthetic frames\n<kind>:key=value,...  Any source kind; options are Core settings (see the documentation of the kind)\nFormat specifications (plugins add more formats; see 'ni plugins list'):\ncsv                   Comma-separated values (default for .csv); No., Time, Info, Length\ncsv:fields=ip.src;udp.dstport,delimiter=;,header=false,bom=false\nOne column per field (ip.src:last picks an occurrence), delimiter, header row, byte order mark\ncsv:neutralizeFormulas=false\nWrite text cells unchanged (default: a text cell that starts with = + - @ tab or CR gets a\nleading ' so that a spreadsheet does not run it as a formula)\njson                  Compact JSON (default for .json)\njson:style=compact    Compact JSON\njson:style=pretty     Pretty-printed JSON\njson:style=array      JSON array format\npbf                   Standard PBF\npbf:format=standard   Standard (row-oriented) PBF\npbf:format=columnar   Columnar PBF\npbf:format=columnar,compressed  Columnar PBF with LZ4\ntext                  Human-readable protocol tree (default for .txt)\ntext:level=summary    Protocol containers only (no field values)\ntext:level=standard   All fields except raw bytes (default)\ntext:level=full       All fields including raw bytes\ntext:truncate=N       Truncate values at N characters (0 = unlimited, default: 256)\ntext:level=full,truncate=0  Full detail without any truncation\nparquet               Columnar Parquet directory (requires -o <dir>)\nduckdb                DuckDB database file (requires -o <file>.duckdb)",
+          "aliases": [
+            "-h"
+          ],
+          "arguments": [
+            {
+              "name": "HELP",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SOURCES",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1
+          },
+          "description": "One or more source files or specs"
+        }
+      ]
+    },
+    {
+      "name": "plugins",
+      "hidden": false,
+      "description": "List the plugins of this run",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write one JSON document instead of text lines"
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Settings profile (must exist; 'default' is created on first use)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--settings-path",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--set",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override one setting for this run only, e.g. --set settings.maxFileSize=1GiB (repeatable;\na limit takes a number with a unit, or off; see ni settings describe --limits)",
+          "arguments": [
+            {
+              "name": "KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show this help message\nEach line: name, version, tier, state, reason, path, license, load time, and what the plugin contributes.\nPlugin folders are set with: ni settings set plugins.paths <folder> --scope application",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "list",
+          "hidden": false,
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write one JSON document instead of text lines"
+            },
+            {
+              "name": "--profile",
+              "recursive": false,
+              "hidden": false,
+              "description": "Settings profile (must exist; 'default' is created on first use)",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--settings-path",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--set",
+              "recursive": false,
+              "hidden": false,
+              "description": "Override one setting for this run only, e.g. --set settings.maxFileSize=1GiB (repeatable;\na limit takes a number with a unit, or off; see ni settings describe --limits)",
+              "arguments": [
+                {
+                  "name": "KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help message\nEach line: name, version, tier, state, reason, path, license, load time, and what the plugin contributes.\nPlugin folders are set with: ni settings set plugins.paths <folder> --scope application",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "profile",
+      "hidden": false,
+      "description": "List, create, rename, and delete settings profiles",
+      "options": [
+        {
+          "name": "--settings-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Base directory for settings storage",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show this help message\nNames: 1 to 256 letters, digits, spaces, dots, dashes, and underscores; not application, logs, plugins,\nplugins-data, plugin-scan-cache, host, app, or presets.",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "create",
+          "hidden": false,
+          "description": "Create an empty profile or a copy of another one"
+        },
+        {
+          "name": "delete",
+          "hidden": false,
+          "description": "Delete a profile (the last profile cannot be deleted)"
+        },
+        {
+          "name": "list",
+          "hidden": false,
+          "description": "Print the profile names, one per line"
+        },
+        {
+          "name": "rename",
+          "hidden": false,
+          "description": "Rename a profile"
+        }
+      ]
+    },
+    {
+      "name": "settings",
+      "hidden": false,
+      "description": "List, read, change, and reset application and profile settings",
+      "options": [
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Settings profile (must exist; 'default' is created on first use)",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--settings-path",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--set",
+          "recursive": false,
+          "hidden": false,
+          "description": "Override one setting for this run only, e.g. --set settings.maxFileSize=1GiB (repeatable;\nnot allowed with set and reset; a limit takes a number with a unit, or off)",
+          "arguments": [
+            {
+              "name": "KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show this help message\nValues: true/false, numbers, hex bytes (0A1B), enumeration names, text, and arrays as JSON ([1,2]) or comma lists.\nRelative paths in plugins.paths are stored as full paths. A stored value of a plugin that is not loaded is JSON.",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "describe",
+          "hidden": false,
+          "description": "What a setting is; for a limit what it bounds and why"
+        },
+        {
+          "name": "reset",
+          "hidden": false,
+          "description": "Remove the stored value; the default applies"
+        }
+      ]
+    }
+  ]
+}
