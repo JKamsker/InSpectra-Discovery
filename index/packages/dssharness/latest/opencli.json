@@ -2,17 +2,112 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "dssharness",
-    "version": "0.6.18",
+    "version": "0.6.19",
     "description": "Cross-platform repository harness CLI: git worktree management with Windows path-budget checks, driven entirely by .harness-config/config.json."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 46,
+    "helpDocumentCount": 52,
     "cliFramework": "System.CommandLine",
     "cliParsedDescription": "DssHarness - cross-platform repository harness. Run 'dssharness help' for reference material."
   },
   "commands": [
+    {
+      "name": "amend-orchestrator-request",
+      "hidden": false,
+      "description": "Amend the request a run was started with: handed to the engine where one is running the run, else recorded as a plan update that the next session takes first. Starts nothing.",
+      "options": [
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "A file holding the amendment, read relative to --directory, in the place of the text argument.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output.",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ORCHESTRATOR",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The run whose request is amended."
+        },
+        {
+          "name": "TEXT",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The amendment, in the person's words: it adds to the request, corrects it or narrows it. The request as it was given is never rewritten - the amendment is read with it."
+        }
+      ]
+    },
     {
       "name": "answer-orchestrator",
       "hidden": false,
@@ -38,7 +133,7 @@
           "name": "--again",
           "recursive": false,
           "hidden": false,
-          "description": "Change an answer already given. This build takes no plan update yet, so it is refused."
+          "description": "Change the last answer a person gave the run - the one set the command shows - within the minutes its workflow names and once; where the run has begun the scope its plan updates are planned in, the change raises the workflow's planning step and the run is held while it plans, or waits behind an update under way."
         },
         {
           "name": "--text",
@@ -147,6 +242,154 @@
       ]
     },
     {
+      "name": "ask-orchestrator",
+      "hidden": false,
+      "description": "A person's question about a run, answered from its records by the workflow's reporter over the engine's facts. Reads only, as ask-orchestrator-status does; where no model can answer - no reporter named, no key, no Claude Code, a limit, a failure - the command is refused, naming why.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output.",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ORCHESTRATOR",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The run to ask about."
+        },
+        {
+          "name": "QUESTION",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The question, in the person's words, answered from the run's records by its reporter."
+        }
+      ]
+    },
+    {
+      "name": "ask-orchestrator-status",
+      "hidden": false,
+      "description": "The tool's own question of a run - what is happening now, what is done, what is left, what it waits for, and when it may finish - answered with the engine's facts and, where the workflow names a reporter, its words. Reads only: nothing of the run is written or locked but the command's own record under the run's asks/, and what the answer costs is the person's, never the run's. Where no model words the facts, they are still the answer, and the command says why no model did.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output.",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ORCHESTRATOR",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The run to ask about."
+        }
+      ]
+    },
+    {
       "name": "build",
       "hidden": false,
       "description": "Build every selected leg, each in its own variant-keyed build directory, and check that it produced what the project declares.",
@@ -202,6 +445,79 @@
           "recursive": false,
           "hidden": false,
           "description": "Every leg this machine runs itself works in its tree itself, for this run: over the leg's own localCopy and defaults.localCopy."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output.",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "check-anchor-arms",
+      "hidden": false,
+      "description": "Check what anchor rows say about mutation arms against the mutation record: an arm a done row names must be unmoved with a recorded passed, a pass citation must be spelled as history, and a retired arm id is reported.",
+      "options": [
+        {
+          "name": "--legs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only these legs or leg sets, judged as check-mutations --list judges them: --legs a,b or --legs a b. Without it, every declared leg.",
+          "arguments": [
+            {
+              "name": "LEGS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the findings as JSON."
         },
         {
           "name": "--verbose",
@@ -770,7 +1086,7 @@
     {
       "name": "create-agent",
       "hidden": false,
-      "description": "Create an agent of an orchestrator: its record, its worktree, and its seed - the main tree's uncommitted state handed to it, each changed file copied and each deletion made, every path recorded; refused past the orchestrator's limit. With --no-worktree, the engine's agent: a record, with no worktree or seed, counted against no limit.",
+      "description": "Create an agent of an orchestrator: its record, its worktree - a git repository of its own that borrows the main checkout's objects, which git worktree list does not show - and its seed - the main tree's uncommitted state handed to it, each changed file copied and each deletion made, every path recorded; refused past the orchestrator's limit. With --no-worktree, the engine's agent: a record, with no worktree or seed, counted against no limit.",
       "options": [
         {
           "name": "--model",
@@ -1824,7 +2140,7 @@
     {
       "name": "help",
       "hidden": false,
-      "description": "Explain what the answers mean, one topic at a time: exit-codes, config, legs, space, admission, worktrees, orchestrators, workflows, codebase-graph, web-search, agent-clients, anchors, layout, secrets, tools, runners, setups, verdicts, mutations, ci."
+      "description": "Explain what the answers mean, one topic at a time: exit-codes, config, legs, space, admission, worktrees, orchestrators, workflows, codebase-graph, web-search, agent-clients, side-tasks, agent-definitions, skills, anchors, layout, secrets, tools, runners, setups, verdicts, mutations, ci."
     },
     {
       "name": "host-exec",
@@ -2291,6 +2607,63 @@
             "maximum": 1
           },
           "description": "The orchestrator to list; every one where none is given."
+        }
+      ]
+    },
+    {
+      "name": "list-side-tasks",
+      "hidden": false,
+      "description": "The repository's side-tasks, newest first: each by its name, when it began and last spoke, its model, its turns and cost, and whether it is open now. Their records are kept until a person removes them.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output.",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
         }
       ]
     },
@@ -3443,6 +3816,197 @@
       ]
     },
     {
+      "name": "run-side-task",
+      "hidden": false,
+      "description": "An agent outside every workflow: a conversation with a person over the repository's main tree, with no step and no limit of a run's - every action still decided by the engine before it runs and recorded, the built-in refusals kept. A chat in the terminal by default - the agent's text streamed, each action one line as it is decided, Ctrl+C interrupting a turn and a second ending the chat as /exit does - a turn under way cut at its result, so what it used and cost is kept - or one message with --prompt, answered once, Ctrl+C there cutting its turn. Where no turn runs, while it is set up or a model made ready, an interrupt stops it: a one shot's first, a chat's second. Where it cannot be set up it exits 12, 13, 14 or 21 - 14 where its client cannot start or, under agentPolicy.isolation \"required\", this machine cannot isolate the agent's commands, 21 where the install of Claude Code timed out or could not reach the registry; 'help side-tasks' gives every code. Its model is resolved as a step's; its records live under .side-tasks/<task>/, named on every exit and kept until a person removes them.",
+      "options": [
+        {
+          "name": "--prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "One message, answered once: the agent works until its turn ends, its final text is printed, and the command exits. Without it the command holds a chat in the terminal.",
+          "arguments": [
+            {
+              "name": "PROMPT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--prompt-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "A file holding the one message of a one-shot side-task, read relative to --directory, in the place of --prompt.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--resume",
+          "recursive": false,
+          "hidden": false,
+          "description": "The side-task to open again, given its conversation as its records hold it: as a chat, or with --prompt for one more message.",
+          "arguments": [
+            {
+              "name": "TASK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "The side-task's own name, which names its directory under .side-tasks; where none is given, the date and time it began - with the first words of the message, in one shot.",
+          "arguments": [
+            {
+              "name": "TASK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "The model to run on, by its code, as a step's model is named outright.",
+          "arguments": [
+            {
+              "name": "CODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--tier",
+          "recursive": false,
+          "hidden": false,
+          "description": "The tier whose first model runs, whose later models the side-task goes on by as a step does.",
+          "arguments": [
+            {
+              "name": "TIER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--client",
+          "recursive": false,
+          "hidden": false,
+          "description": "The client to reach the model through, among the clients that reach it.",
+          "arguments": [
+            {
+              "name": "CLIENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--effort",
+          "recursive": false,
+          "hidden": false,
+          "description": "The effort to run at: one level for every model (--effort high), or one entry per model with all=<level> for the rest. Once for each entry. Checked against what each model takes.",
+          "arguments": [
+            {
+              "name": "EFFORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-graph",
+          "recursive": false,
+          "hidden": false,
+          "description": "Give the side-task no codebase graph: no graph tool, no repository map, no context pack, nothing synced."
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the outcome as one JSON document, the whole of standard output: its exit code, its summary and its lines, what is wanted of you before --apply would go through, and who holds what it needs."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed progress and child process output.",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Directory to operate in (default: current directory).",
+          "aliases": [
+            "-C"
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-prompt",
+          "recursive": false,
+          "hidden": false,
+          "description": "Never ask for a superuser password; refuse a privileged install that needs one."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
       "name": "seed-agent",
       "hidden": false,
       "description": "Seed a live agent again with the main tree's uncommitted state, and every path the main tree holds otherwise than the agent shares it, committed or not; refused where its worktree holds changes of its own - a copy it was handed and left alone is not one - unless --force.",
@@ -4373,7 +4937,7 @@
     {
       "name": "validate-workflow",
       "hidden": false,
-      "description": "Check the workflows config.json declares: that each definition file reads, holds, and names files that are there. Nothing is run.",
+      "description": "Check the workflows config.json declares: that each definition file reads, holds, and names files that are there, each step's schema one the engine reads. Nothing is run.",
       "options": [
         {
           "name": "--json",

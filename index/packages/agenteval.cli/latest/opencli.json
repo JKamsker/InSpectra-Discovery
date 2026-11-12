@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "AgentEval.Cli",
-    "version": "1.0.0-rc.2",
+    "version": "1.0.0-rc.3",
     "description": "AgentEval CLI — terminal + CI/CD entry point for the .NET evaluation toolkit. The agenteval init command bootstraps a .agenteval/ workspace; agenteval bench {gdpr|eu-ai-act|agentic|owasp|mitre|perf|longmemeval|memory} runs benchmark families; agenteval mc serve launches the local Mission Control portal (requires .NET 10); agenteval doctor verifies workspace integrity via canonical-JSON audit-chain hashing."
   },
   "x-inspectra": {
@@ -630,6 +630,57 @@
           ]
         },
         {
+          "name": "--judge-prompt-pack",
+          "recursive": false,
+          "hidden": false,
+          "description": "Versioned judge prompt manifest (.json/.yaml); controls supported judges, independently of the target system prompt.",
+          "arguments": [
+            {
+              "name": "JUDGE_PROMPT_PACK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--judge-locale",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit judge locale for the pack (default: en).",
+          "arguments": [
+            {
+              "name": "JUDGE_LOCALE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--judge-fallback-locale",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit fallback locale if the requested instrument is unavailable; otherwise fail.",
+          "arguments": [
+            {
+              "name": "JUDGE_FALLBACK_LOCALE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--format",
           "recursive": false,
           "hidden": false,
@@ -864,6 +915,57 @@
       "name": "redteam",
       "description": "Run red team security scans against an AI agent",
       "options": [
+        {
+          "name": "--judge-prompt-pack",
+          "recursive": false,
+          "hidden": false,
+          "description": "Versioned judge prompt manifest (.json/.yaml), independent of the target's instructions.",
+          "arguments": [
+            {
+              "name": "JUDGE_PROMPT_PACK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "--judge-locale",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit judge locale for the pack (default: en).",
+          "arguments": [
+            {
+              "name": "JUDGE_LOCALE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--judge-fallback-locale",
+          "recursive": false,
+          "hidden": false,
+          "description": "Explicit fallback locale; missing definitions otherwise fail before evaluation.",
+          "arguments": [
+            {
+              "name": "JUDGE_FALLBACK_LOCALE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
         {
           "name": "--endpoint",
           "recursive": false,
@@ -1531,7 +1633,7 @@
           "name": "--judge-mode",
           "recursive": false,
           "hidden": false,
-          "description": "How the judge grades: 'primary' (default — ADR-023 B.3 flip; the Composite Judges grade semantic/text-only probes first, keyword oracle advisory) or 'fallback' (legacy — judge only adjudicates Inconclusive verdicts). 'primary' requires --judge; without it, a run is byte-identical to the keyword oracle. [default: primary]",
+          "description": "'primary' (default): judge semantic probes first. 'fallback': judge Inconclusive results, adopting only attack success. Needs --judge; otherwise uses code/keyword oracles. Both modes support judge prompt packs. [default: primary]",
           "arguments": [
             {
               "name": "JUDGE_MODE",
@@ -1548,7 +1650,7 @@
           "name": "--judge-rubric",
           "recursive": false,
           "hidden": false,
-          "description": "Judge rubric for --judge-mode primary: 'evidence-anchored' (default — a conclusive verdict must be grounded in a verbatim quote from the response, which targets BOTH false alarms and missed hits, carries the per-oracle discriminators, and is the rubric the published κ/fabrication numbers were measured under), 'strict' (precision-oriented — only clear compromise ⇒ Succeeded; fewer false alarms but more missed hits; no discriminators), or 'lenient' (recall-oriented — any sign of compromise ⇒ Succeeded; catches more real compromises at the cost of more false alarms). For a scan where a missed vulnerability matters more than a false alarm, prefer 'lenient'. [default: evidence-anchored]",
+          "description": "Judge rubric: 'evidence-anchored' (default; requires quoted evidence), 'strict' (fewer false alarms) or 'lenient' (fewer missed attacks). Explicit prompt-pack instructions replace the selected rubric text. [default: evidence-anchored]",
           "arguments": [
             {
               "name": "JUDGE_RUBRIC",
@@ -1565,7 +1667,7 @@
           "name": "--judge-timeout",
           "recursive": false,
           "hidden": false,
-          "description": "Grading timeout (seconds): bounds the single-judge/fallback path per judge call (keeps the advisory keyword verdict on timeout) AND the default judge-primary composite path as a total grading bound (abstains → Inconclusive on timeout). 0 = no separate bound; grading shares the per-probe budget (--timeout-per-probe). [default: 0]",
+          "description": "Grading timeout in seconds: per judge call for fallback, total grading for primary. 0 shares the probe budget. Configured timeouts are failed measurements; legacy fallback retains the advisory verdict. [default: 0]",
           "arguments": [
             {
               "name": "JUDGE_TIMEOUT",
@@ -1806,7 +1908,7 @@
           "name": "--explain",
           "recursive": false,
           "hidden": false,
-          "description": "Attach an LLM rationale to each Succeeded/Inconclusive finding, narrating the verdict + evidence fidelity. Requires --judge (no-op + warning otherwise); adds one judge call per explained finding. [default: False]",
+          "description": "Attach an LLM rationale to each Succeeded/Inconclusive finding, narrating the verdict + evidence fidelity. Requires --judge (no-op + warning otherwise); configured narration records actual calls and permits bounded retries. [default: False]",
           "arguments": [
             {
               "name": "EXPLAIN",
@@ -2451,6 +2553,57 @@
               ]
             },
             {
+              "name": "--judge-prompt-pack",
+              "recursive": true,
+              "hidden": false,
+              "description": "Versioned judge prompt manifest (.json/.yaml), independent of the target's instructions.",
+              "arguments": [
+                {
+                  "name": "JUDGE_PROMPT_PACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--judge-locale",
+              "recursive": true,
+              "hidden": false,
+              "description": "Explicit judge locale for the pack (default: en).",
+              "arguments": [
+                {
+                  "name": "JUDGE_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--judge-fallback-locale",
+              "recursive": true,
+              "hidden": false,
+              "description": "Explicit fallback locale; missing definitions otherwise fail before evaluation.",
+              "arguments": [
+                {
+                  "name": "JUDGE_FALLBACK_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "--aef-key",
               "recursive": false,
               "hidden": false,
@@ -2521,7 +2674,7 @@
           "commands": [
             {
               "name": "calibrate",
-              "description": "Run GDPR judge calibration against hand-labeled golden datasets",
+              "description": "Run GDPR judge calibration against labelled fixture datasets (label review is not verified by the command)",
               "options": [
                 {
                   "name": "--root",
@@ -2588,6 +2741,40 @@
                         "maximum": 1
                       },
                       "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--dataset",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "One family calibration JSONL dataset (at most 16 MiB); requires --out. Omit for embedded fixtures.",
+                  "arguments": [
+                    {
+                      "name": "DATASET",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
+                    }
+                  ]
+                },
+                {
+                  "name": "--allow-surrogate-rubrics",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "With a prompt pack, explicitly allow synthetic compliance rubrics; their agreement does not calibrate production scenarios. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "ALLOW_SURROGATE_RUBRICS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
                     }
                   ]
                 }
@@ -2960,6 +3147,57 @@
               ]
             },
             {
+              "name": "--judge-prompt-pack",
+              "recursive": true,
+              "hidden": false,
+              "description": "Versioned judge prompt manifest (.json/.yaml), independent of the target's instructions.",
+              "arguments": [
+                {
+                  "name": "JUDGE_PROMPT_PACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--judge-locale",
+              "recursive": true,
+              "hidden": false,
+              "description": "Explicit judge locale for the pack (default: en).",
+              "arguments": [
+                {
+                  "name": "JUDGE_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--judge-fallback-locale",
+              "recursive": true,
+              "hidden": false,
+              "description": "Explicit fallback locale; missing definitions otherwise fail before evaluation.",
+              "arguments": [
+                {
+                  "name": "JUDGE_FALLBACK_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "--aef-key",
               "recursive": false,
               "hidden": false,
@@ -3030,7 +3268,7 @@
           "commands": [
             {
               "name": "calibrate",
-              "description": "Run EU AI Act judge calibration against hand-labeled golden datasets",
+              "description": "Run EU AI Act judge calibration against labelled fixture datasets (label review is not verified by the command)",
               "options": [
                 {
                   "name": "--root",
@@ -3097,6 +3335,40 @@
                         "maximum": 1
                       },
                       "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--dataset",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "One family calibration JSONL dataset (at most 16 MiB); requires --out. Omit for embedded fixtures.",
+                  "arguments": [
+                    {
+                      "name": "DATASET",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
+                    }
+                  ]
+                },
+                {
+                  "name": "--allow-surrogate-rubrics",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "With a prompt pack, explicitly allow synthetic compliance rubrics; their agreement does not calibrate production scenarios. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "ALLOW_SURROGATE_RUBRICS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
                     }
                   ]
                 }
@@ -3381,6 +3653,57 @@
               ]
             },
             {
+              "name": "--judge-prompt-pack",
+              "recursive": true,
+              "hidden": false,
+              "description": "Versioned judge prompt manifest (.json/.yaml), independent of the target's instructions.",
+              "arguments": [
+                {
+                  "name": "JUDGE_PROMPT_PACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--judge-locale",
+              "recursive": true,
+              "hidden": false,
+              "description": "Explicit judge locale for the pack (default: en).",
+              "arguments": [
+                {
+                  "name": "JUDGE_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--judge-fallback-locale",
+              "recursive": true,
+              "hidden": false,
+              "description": "Explicit fallback locale; missing definitions otherwise fail before evaluation.",
+              "arguments": [
+                {
+                  "name": "JUDGE_FALLBACK_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "--aef-key",
               "recursive": false,
               "hidden": false,
@@ -3451,7 +3774,7 @@
           "commands": [
             {
               "name": "calibrate",
-              "description": "Run agentic judge calibration against hand-labeled golden datasets",
+              "description": "Run agentic judge calibration against labelled fixture datasets (label review is not verified by the command)",
               "options": [
                 {
                   "name": "--root",
@@ -3518,6 +3841,23 @@
                         "maximum": 1
                       },
                       "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--dataset",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "One family calibration JSONL dataset (at most 16 MiB); requires --out. Omit for embedded fixtures.",
+                  "arguments": [
+                    {
+                      "name": "DATASET",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "FileInfo"
                     }
                   ]
                 }
@@ -7221,7 +7561,7 @@
       "commands": [
         {
           "name": "render",
-          "description": "Render a PDF report from existing compliance evidence (no LLM cost)",
+          "description": "Render a Markdown report from existing compliance evidence (no LLM cost)",
           "options": [
             {
               "name": "--regulation",
@@ -7752,6 +8092,142 @@
               ]
             },
             {
+              "name": "--judge-prompt-pack",
+              "recursive": false,
+              "hidden": false,
+              "description": "Versioned judge prompt manifest (.json/.yaml), independent of the target's instructions.",
+              "arguments": [
+                {
+                  "name": "JUDGE_PROMPT_PACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--judge-locale",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit judge locale for the pack (default: en).",
+              "arguments": [
+                {
+                  "name": "JUDGE_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--judge-fallback-locale",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit fallback locale; missing definitions otherwise fail before evaluation.",
+              "arguments": [
+                {
+                  "name": "JUDGE_FALLBACK_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--judge-timeout-seconds",
+              "recursive": false,
+              "hidden": false,
+              "description": "Total judge deadline, including corrective retry (default 5 seconds).",
+              "arguments": [
+                {
+                  "name": "JUDGE_TIMEOUT_SECONDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--judge-max-output-tokens",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output token limit per attempt (default 1024).",
+              "arguments": [
+                {
+                  "name": "JUDGE_MAX_OUTPUT_TOKENS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--judge-temperature",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit judge temperature; omitted uses provider default.",
+              "arguments": [
+                {
+                  "name": "JUDGE_TEMPERATURE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Float"
+                }
+              ]
+            },
+            {
+              "name": "--judge-max-input-chars",
+              "recursive": false,
+              "hidden": false,
+              "description": "Head/tail input limit (default 16000; 0 means unbounded).",
+              "arguments": [
+                {
+                  "name": "JUDGE_MAX_INPUT_CHARS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--gold-set",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exact labelled JSON datasets used for configured certificates; repeat for panel axes.",
+              "arguments": [
+                {
+                  "name": "GOLD_SET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
               "name": "--gate",
               "recursive": false,
               "hidden": false,
@@ -8063,6 +8539,142 @@
           "name": "calibrate",
           "description": "Calibrate a judge axis against its gold set + baseline; optionally certify it.",
           "options": [
+            {
+              "name": "--judge-prompt-pack",
+              "recursive": false,
+              "hidden": false,
+              "description": "Versioned judge prompt manifest (.json/.yaml), independent of the target's instructions.",
+              "arguments": [
+                {
+                  "name": "JUDGE_PROMPT_PACK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--judge-locale",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit judge locale for the pack (default: en).",
+              "arguments": [
+                {
+                  "name": "JUDGE_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--judge-fallback-locale",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit fallback locale; missing definitions otherwise fail before evaluation.",
+              "arguments": [
+                {
+                  "name": "JUDGE_FALLBACK_LOCALE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--judge-timeout-seconds",
+              "recursive": false,
+              "hidden": false,
+              "description": "Total judge deadline, including corrective retry (default 5 seconds).",
+              "arguments": [
+                {
+                  "name": "JUDGE_TIMEOUT_SECONDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--judge-max-output-tokens",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output token limit per attempt (default 1024).",
+              "arguments": [
+                {
+                  "name": "JUDGE_MAX_OUTPUT_TOKENS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--judge-temperature",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit judge temperature; omitted uses provider default.",
+              "arguments": [
+                {
+                  "name": "JUDGE_TEMPERATURE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Float"
+                }
+              ]
+            },
+            {
+              "name": "--judge-max-input-chars",
+              "recursive": false,
+              "hidden": false,
+              "description": "Head/tail input limit (default 16000; 0 means unbounded).",
+              "arguments": [
+                {
+                  "name": "JUDGE_MAX_INPUT_CHARS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--gold-set",
+              "recursive": false,
+              "hidden": false,
+              "description": "Labelled JSON calibration dataset with locale, split and review metadata.",
+              "arguments": [
+                {
+                  "name": "GOLD_SET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
             {
               "name": "--gate",
               "recursive": false,
@@ -11710,6 +12322,219 @@
             {
               "name": "CATALOGUE",
               "description": "External JSON/YAML catalogue.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "prompts",
+      "description": "Export, validate and inspect versioned judge prompt packs.",
+      "commands": [
+        {
+          "name": "export",
+          "description": "Export supported English judge definitions and Markdown messages to a new directory.",
+          "options": [
+            {
+              "name": "--family",
+              "recursive": false,
+              "hidden": false,
+              "description": "Judge family: agentic | gdpr | eu-ai-act | redteam | gatekeeper. Omit for RAG and generic judges.",
+              "arguments": [
+                {
+                  "name": "FAMILY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--preset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Family preset; redteam uses an attack name, supported, fallback, fallback:<attack>, explanation, or benign-controls. Requires --family.",
+              "arguments": [
+                {
+                  "name": "PRESET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--evaluator",
+              "recursive": false,
+              "hidden": false,
+              "description": "One evaluator key; omit to export the selected family/preset, or the default RAG and generic judges.",
+              "arguments": [
+                {
+                  "name": "EVALUATOR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "DIRECTORY",
+              "description": "New output directory; existing directories are never overwritten.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "validate",
+          "description": "Validate metadata, Markdown files and evaluator contracts without model calls.",
+          "options": [
+            {
+              "name": "--family",
+              "recursive": false,
+              "hidden": false,
+              "description": "Judge family: agentic | gdpr | eu-ai-act | redteam | gatekeeper. Omit for RAG and generic judges.",
+              "arguments": [
+                {
+                  "name": "FAMILY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--preset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Family preset; redteam uses an attack name, supported, fallback, fallback:<attack>, explanation, or benign-controls. Requires --family.",
+              "arguments": [
+                {
+                  "name": "PRESET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print machine-readable metadata. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "MANIFEST",
+              "description": "Prompt-pack .json, .yaml or .yml manifest.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "inspect",
+          "description": "Show resolved instrument identities, locales and translation status without message content.",
+          "options": [
+            {
+              "name": "--family",
+              "recursive": false,
+              "hidden": false,
+              "description": "Judge family: agentic | gdpr | eu-ai-act | redteam | gatekeeper. Omit for RAG and generic judges.",
+              "arguments": [
+                {
+                  "name": "FAMILY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--preset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Family preset; redteam uses an attack name, supported, fallback, fallback:<attack>, explanation, or benign-controls. Requires --family.",
+              "arguments": [
+                {
+                  "name": "PRESET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print machine-readable metadata. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "MANIFEST",
+              "description": "Prompt-pack .json, .yaml or .yml manifest.",
               "required": true,
               "arity": {
                 "minimum": 1,
