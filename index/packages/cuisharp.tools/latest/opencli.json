@@ -1,101 +1,3811 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "CuiSharp.Tools - drive a CuiSharp app from the command line",
-    "version": "0.3.1",
-    "description": "Screenshot a CuiSharp app, print the controls of its last frame, and click or type into it - without a window, an agent or a test project."
+    "title": "CuiSharp.Tools - drive a CuiSharp app and read its docs from the command line",
+    "version": "0.4.0",
+    "description": "Bundle of the CuiSharp guide and API reference for offline reading, plus a driver that prints a CuiSharp app's controls, clicks and types into it, and saves its frame as a PNG - without a window, an agent SDK or a test project."
   },
   "x-inspectra": {
-    "artifactSource": "crawled-from-help",
+    "artifactSource": "startup-hook",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 1,
-    "cliParsedTitle": "dotnet",
-    "cliParsedDescription": "Commands (what the app understands):"
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "3.0.0.0",
+      "systemCommandLineVersion": "3.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedTitle": "CuiSharp.Tools",
+    "cliParsedDescription": "inspect and drive a CuiSharp app, and read its rules offline."
   },
-  "commands": [],
   "options": [
     {
-      "name": "--project",
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
       "recursive": false,
       "hidden": false,
-      "description": "the app to run (a project file or its directory). Default: here",
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "tree",
+      "description": "the controls the last frame drew, nested",
       "aliases": [
-        "-p"
+        "print"
+      ],
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "layout",
+      "description": "layout rectangles, observed union bounds and overflow diagnostics",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "focus",
+      "description": "report that the window has focus (needed before typing)",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "faults",
+      "description": "what the app threw while drawing, if anything",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit",
+      "description": "close the app, or a live attached window",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "find",
+      "description": "one control: kind, label and rectangle",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "TEXT",
+          "description": "the label, text or id to find",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "click",
+      "description": "click a control, then print the frame it produced",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "TEXT",
+          "description": "the label, text or id to click",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "type",
+      "description": "type into the focused control, then print the frame",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "TEXT",
+          "description": "the text to type",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "key",
+      "description": "press a key by the name a person would use",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "NAME",
+          "description": "the key: Tab, Enter, Escape, F1, PageDown",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "move",
+      "description": "put the pointer somewhere without clicking (hover, tooltips)",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "X",
+          "description": "the column to point at, from the window's left edge",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Float"
+        },
+        {
+          "name": "Y",
+          "description": "the row to point at, from the window's top edge",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Float"
+        }
+      ]
+    },
+    {
+      "name": "wheel",
+      "description": "scroll at a point, in wheel notches (negative dy scrolls down)",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "X",
+          "description": "the column to scroll at",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Float"
+        },
+        {
+          "name": "Y",
+          "description": "the row to scroll at",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Float"
+        },
+        {
+          "name": "DY",
+          "description": "notches up (negative) or down (positive)",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Float"
+        },
+        {
+          "name": "DX",
+          "description": "notches left (negative) or right (positive)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Float"
+        }
+      ]
+    },
+    {
+      "name": "frame",
+      "description": "draw more frames, then print the tree",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "COUNT",
+          "description": "how many frames (default 1)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "pulse",
+      "description": "draw frames without printing the tree (answers: count, heap bytes)",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "COUNT",
+          "description": "how many frames (default 1)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Int32"
+        }
+      ]
+    },
+    {
+      "name": "wait",
+      "description": "keep drawing until a frame marks itself ready (ui.MarkReady)",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SECONDS",
+          "description": "how long to keep waiting (default: the app's own budget)",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Double"
+        }
+      ]
+    },
+    {
+      "name": "waittext",
+      "description": "keep drawing until a frame draws this text or query",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SECONDS",
+          "description": "how long to keep waiting",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "Double"
+        },
+        {
+          "name": "QUERY",
+          "description": "the text or query to wait for",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "png",
+      "description": "save the last frame as a PNG",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
       ],
       "arguments": [
         {
           "name": "PATH",
-          "required": true,
+          "description": "where to write it (default: a temporary file)",
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
-      "name": "--app",
-      "recursive": false,
-      "hidden": false,
-      "description": "run a published build instead of building",
+      "name": "dwell",
+      "description": "keep the app drawing, then answer with one STATS line",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
       "arguments": [
         {
-          "name": "EXE",
+          "name": "SECONDS",
+          "description": "how long to draw for",
           "required": true,
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "Double"
         }
       ]
     },
     {
-      "name": "--framework",
-      "recursive": false,
-      "hidden": false,
+      "name": "session",
+      "description": "read one protocol command per line from stdin, against one build and one app: `dotnet cui session < commands.txt`",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "the app to drive: a directory, a .csproj, or a file-based .cs app (default: here)",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a published build instead of building one",
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "the target framework, when the project has more than one",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "TFM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "reuse the last build of the project instead of rebuilding it [default: False]",
+          "arguments": [
+            {
+              "name": "NO_BUILD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--attach",
+          "recursive": false,
+          "hidden": false,
+          "description": "drive a running live window (started with --live) over its named pipe; the value is its pid or title, or leave it out when only one window is open",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "PID|TITLE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--frames",
+          "recursive": false,
+          "hidden": false,
+          "description": "draw this many frames before the command runs",
+          "arguments": [
+            {
+              "name": "COUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--wait",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame marks itself ready (ui.MarkReady)",
+          "arguments": [
+            {
+              "name": "READY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-text",
+          "recursive": false,
+          "hidden": false,
+          "description": "precondition: draw until a frame draws this text or query",
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--wait-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "the window for --wait and --wait-text, in seconds (default 10, max 3600)",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "print only the payload, never the tool's own progress [default: False]",
+          "aliases": [
+            "-q"
+          ],
+          "arguments": [
+            {
+              "name": "QUIET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ps",
+      "description": "list running live CuiSharp windows (started with --live)",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "answer as JSON instead of text [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "api",
+      "description": "one declaration from the API catalog inside this tool, offline",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "answer as JSON instead of text [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
       "arguments": [
         {
-          "name": "TFM",
+          "name": "NAME",
+          "description": "a type or member: ChartOpts, Ui.LineChart, Button",
           "required": true,
           "arity": {
             "minimum": 1,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
-      "name": "--frames",
-      "recursive": false,
-      "hidden": false,
-      "description": "draw this many frames before the command",
+      "name": "icons",
+      "description": "every icon constant: name, code point, and the literal to paste",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "answer as JSON instead of text [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
       "arguments": [
         {
-          "name": "COUNT",
-          "required": true,
+          "name": "FILTER",
+          "description": "only the icons whose name contains this",
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 1
-          }
+          },
+          "type": "String"
         }
       ]
     },
     {
-      "name": "--stdin",
-      "recursive": false,
-      "hidden": false,
-      "description": "read commands from stdin and print each answer, one process",
-      "aliases": [
-        "-s"
-      ]
-    },
-    {
-      "name": "--quiet",
-      "recursive": false,
-      "hidden": false,
-      "description": "only print the payload\nAnything after `--` goes to the app.",
-      "aliases": [
-        "-q"
+      "name": "docs",
+      "description": "the guide and the reference bundled with this tool, read offline",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "answer as JSON instead of text [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "read",
+          "description": "print one topic, one document, or one #section of one",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "answer as JSON instead of text [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "WHAT",
+              "description": "a topic, a document, or a document#section",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "search",
+          "description": "the sections that answer a question, ranked",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "answer as JSON instead of text [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "WORDS",
+              "description": "the words to look for",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
       ]
     }
   ]
