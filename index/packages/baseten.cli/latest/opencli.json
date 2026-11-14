@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Baseten.CLI",
-    "version": "1.0.1-dev.207",
+    "version": "1.0.1-dev.208",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -276,6 +276,29 @@
               ]
             },
             {
+              "name": "create-access-identity-providers-verify",
+              "description": "Checks an identity provider before adding it\nRuns the checks that adding the identity provider runs, without adding it: the issuer's format, that the organization doesn't have it yet, and, for a provider with a per-customer issuer, that its signing keys can be fetched. A failed check returns 200 with `valid` false and the reason. Only organization admins can call this endpoint.",
+              "options": [
+                {
+                  "name": "--predefined",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The predefined provider to check, as you'd pass it when adding it",
+                  "arguments": [
+                    {
+                      "name": "PREDEFINED",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "VerifyPredefinedIdentityProviderConfigV1"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
               "name": "create-access-trust-rules",
               "description": "Creates a trust rule\nCreates a rule that lets tokens from an identity provider act as a service account. Organization admins can create rules for any service account, team admins for their own team's. An organization API key manager key can't target organization accounts.",
               "options": [
@@ -443,6 +466,63 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "create-access-trust-rules-verify",
+              "description": "Checks a trust rule's condition and audience\nRuns the checks that creating or updating a trust rule runs on its condition and audience, without saving anything: that the condition compiles and pins the claims the identity provider requires. A failed check returns 200 with `valid` false and the reason.",
+              "options": [
+                {
+                  "name": "--identity-provider-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The identity provider the rule is for, which decides the claims it must pin",
+                  "arguments": [
+                    {
+                      "name": "IDENTITY_PROVIDER_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--condition",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "A CEL expression over the token's `claims` that must evaluate to true. It must pin a specific `claims.sub` in a top-level `&&` clause, plus any provider-required checks. Up to 4,096 characters.",
+                  "arguments": [
+                    {
+                      "name": "CONDITION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--audience",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The token's `aud` must equal this, or contain it when `aud` is a list. Up to 1,024 characters.",
+                  "arguments": [
+                    {
+                      "name": "AUDIENCE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
                 }
               ]
             },
@@ -13130,7 +13210,7 @@
             },
             {
               "name": "edit-training-capacity",
-              "description": "Sets a team's training GPU capacity\nSets the max concurrent GPUs of a given type a team may use. Creates the limit if one doesn't exist for this (team, gpu_type) pair, otherwise updates it in place. Org-admin only: this is a ceiling the org imposes on the team, not something the team manages for itself.",
+              "description": "Sets a team's training GPU quota\nSets a team's GPU quota for a given type. It counts the team's on-demand jobs, plus its spot jobs when the organization has no separate on-demand quota, and on-demand jobs can borrow past it from the organization's shared pool when one exists. Creates the quota if one doesn't exist for this (team, gpu_type) pair, otherwise updates it in place. Org-admin only: this is a quota the org imposes on the team, not something the team manages for itself.",
               "options": [
                 {
                   "name": "--team-id",
@@ -13170,7 +13250,7 @@
                   "name": "--max-gpus",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Max concurrent GPUs of this type the team may use",
+                  "description": "The team's GPU quota for this type. It counts the team's on-demand jobs, plus its spot jobs when the organization has no separate on-demand quota. On-demand jobs can run past it by borrowing from the organization's shared pool, when one exists.",
                   "arguments": [
                     {
                       "name": "MAX_GPUS",
@@ -18954,7 +19034,7 @@
             },
             {
               "name": "get-training-capacity",
-              "description": "Gets training GPU capacity\nReturns on-demand and spot GPU capacity caps and current usage for the organization and its teams."
+              "description": "Gets training GPU capacity\nReturns on-demand and spot GPU quotas and current usage for the organization and its teams."
             },
             {
               "name": "get-training-jobs-by-training-job-id-queue-context",

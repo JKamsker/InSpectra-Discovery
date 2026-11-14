@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "avrosharp",
-    "version": "1.0.1",
-    "description": "The avrosharp command-line tool: C# types and serializers from Apache Avro™ schema files (.avsc), and schema canonical forms and fingerprints."
+    "version": "1.1.0",
+    "description": "The avrosharp command-line tool: C# types and serializers from Apache Avro™ schema files (.avsc), schema canonical forms and fingerprints, and container file commands (tojson, fromjson, concat, recodec, random, repair and more)."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
@@ -15,7 +15,7 @@
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "AvroSharp's command-line tool for Apache Avro: generate C# from schema files, and print the canonical form\nand fingerprint of a schema, and check schema compatibility.\n\nExamples:\n  avrosharp gen schemas/ --output Generated/ --namespace Acme.Events\n  avrosharp schema canonical user.avsc\n  avrosharp schema fingerprint user.avsc --algorithm sha256\n  avrosharp schema compat v1.avsc v2.avsc"
+    "cliParsedDescription": "AvroSharp's command-line tool for Apache Avro: generate C# from schema files, print the canonical form\nand fingerprint of a schema, check schema compatibility, and work with container files.\n\nExamples:\n  avrosharp gen schemas/ --output Generated/ --namespace Acme.Events\n  avrosharp schema canonical user.avsc\n  avrosharp schema fingerprint user.avsc --algorithm sha256\n  avrosharp schema compat v1.avsc v2.avsc\n  avrosharp file tojson events.avro\n  avrosharp file recodec events.avro --codec zstandard -o events.zstd.avro"
   },
   "options": [
     {
@@ -218,6 +218,91 @@
                 "maximum": 1
               },
               "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--required-members",
+          "recursive": false,
+          "hidden": false,
+          "description": "Make record fields without a schema default 'required' members, on .NET 7 and later with C# 11 or later, so the compiler checks that new sets them. [default: False]",
+          "arguments": [
+            {
+              "name": "REQUIRED_MEMBERS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--type-kind",
+          "recursive": false,
+          "hidden": false,
+          "description": "What records become: class (default), or record, a C# record class with value equality (C# 9 or later). [default: class]",
+          "arguments": [
+            {
+              "name": "TYPE_KIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--accessibility",
+          "recursive": false,
+          "hidden": false,
+          "description": "The accessibility of the generated types: public (default) or internal. [default: public]",
+          "arguments": [
+            {
+              "name": "ACCESSIBILITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--unsealed",
+          "recursive": false,
+          "hidden": false,
+          "description": "Don't seal the generated records and fixed types, so they can be derived from. [default: False]",
+          "arguments": [
+            {
+              "name": "UNSEALED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--collection-type",
+          "recursive": false,
+          "hidden": false,
+          "description": "The C# type of Avro arrays: list (List<T>, default), array (T[]) or readonlylist (IReadOnlyList<T>). Not array or readonlylist with --apache-compatible. [default: list]",
+          "arguments": [
+            {
+              "name": "COLLECTION_TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         }
@@ -464,6 +549,624 @@
                 "maximum": 100000
               },
               "type": "String[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "file",
+      "description": "Read, write, convert and repair Avro object container files (.avro), as Apache Avro Java's avro-tools does.",
+      "commands": [
+        {
+          "name": "tojson",
+          "description": "Print a file's values in the Avro JSON encoding, one per line, as avro-tools tojson does.",
+          "options": [
+            {
+              "name": "--pretty",
+              "recursive": false,
+              "hidden": false,
+              "description": "Indent each value, instead of one value per line. [default: False]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PRETTY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--reader-schema",
+              "recursive": false,
+              "hidden": false,
+              "description": "A schema file to read the values with, resolving them from the file's schema, as schema evolution does.",
+              "arguments": [
+                {
+                  "name": "READER_SCHEMA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "A container file, or - for standard input.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "fromjson",
+          "description": "Write JSON values in the Avro JSON encoding to a container file, as avro-tools fromjson does.",
+          "options": [
+            {
+              "name": "--schema",
+              "recursive": false,
+              "hidden": false,
+              "description": "The schema file (.avsc).",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SCHEMA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "The container file to write, or - for standard output.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--codec",
+              "recursive": false,
+              "hidden": false,
+              "description": "The codec that compresses the blocks: null, deflate, snappy, zstandard (or zstd), bzip2 or xz. The default is null. [default: null]",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CODEC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--level",
+              "recursive": false,
+              "hidden": false,
+              "description": "The compression level: deflate 0 to 9 (0 stores, 1 to 3 fastest, 4 to 6 optimal, 7 to 9 smallest), zstandard its levels (3 by default), bzip2 1 to 9 (the block size in 100 kB), xz 0 to 9. Without it, each codec's default: unlike Java's avro-tools, xz works without a level.",
+              "aliases": [
+                "-l"
+              ],
+              "arguments": [
+                {
+                  "name": "LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "JSON",
+              "description": "A file of JSON values in the Avro JSON encoding, one after another (as tojson prints them), or - for standard input.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "getschema",
+          "description": "Print a file's schema, as avro-tools getschema does.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "A container file, or - for standard input.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "getmeta",
+          "description": "Print a file's header metadata, one 'key<TAB>value' line per entry (values as UTF-8), as avro-tools getmeta does.",
+          "options": [
+            {
+              "name": "--key",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print only this entry's value.",
+              "aliases": [
+                "-k"
+              ],
+              "arguments": [
+                {
+                  "name": "KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "A container file, or - for standard input.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "count",
+          "description": "Print the number of objects in files, from their blocks' counts, without decoding the objects.",
+          "arguments": [
+            {
+              "name": "FILES",
+              "description": "Container files, or - for standard input. With one file the count is printed alone; with several, as 'path: count' lines.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "cat",
+          "description": "Write files' objects to one file, as avro-tools cat does. Without --offset, --limit and --codec, blocks are copied without decoding the objects.",
+          "options": [
+            {
+              "name": "--offset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Objects to skip first.",
+              "arguments": [
+                {
+                  "name": "OFFSET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "The most objects to write.",
+              "arguments": [
+                {
+                  "name": "LIMIT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int64"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "The container file to write, or - for standard output.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--codec",
+              "recursive": false,
+              "hidden": false,
+              "description": "The codec that compresses the blocks: null, deflate, snappy, zstandard (or zstd), bzip2 or xz. Without it, the first input's.",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CODEC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--level",
+              "recursive": false,
+              "hidden": false,
+              "description": "The compression level: deflate 0 to 9 (0 stores, 1 to 3 fastest, 4 to 6 optimal, 7 to 9 smallest), zstandard its levels (3 by default), bzip2 1 to 9 (the block size in 100 kB), xz 0 to 9. Without it, each codec's default: unlike Java's avro-tools, xz works without a level.",
+              "aliases": [
+                "-l"
+              ],
+              "arguments": [
+                {
+                  "name": "LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILES",
+              "description": "Container files of one schema, or - for standard input.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "concat",
+          "description": "Concatenate files of one schema block by block, without decoding their objects, as avro-tools concat does. The output has the first file's codec and metadata; blocks of other codecs are recompressed.",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "The container file to write, or - for standard output.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILES",
+              "description": "Container files of one schema, or - for standard input.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "recodec",
+          "description": "Write a file's blocks with another codec, without decoding their objects, as avro-tools recodec does. The metadata is kept.",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "The container file to write, or - for standard output.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--codec",
+              "recursive": false,
+              "hidden": false,
+              "description": "The codec that compresses the blocks: null, deflate, snappy, zstandard (or zstd), bzip2 or xz. The default is null. [default: null]",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CODEC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--level",
+              "recursive": false,
+              "hidden": false,
+              "description": "The compression level: deflate 0 to 9 (0 stores, 1 to 3 fastest, 4 to 6 optimal, 7 to 9 smallest), zstandard its levels (3 by default), bzip2 1 to 9 (the block size in 100 kB), xz 0 to 9. Without it, each codec's default: unlike Java's avro-tools, xz works without a level.",
+              "aliases": [
+                "-l"
+              ],
+              "arguments": [
+                {
+                  "name": "LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "A container file, or - for standard input.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "random",
+          "description": "Write random objects of a schema to a container file, as avro-tools random does: valid for every logical type, with recursive schemas kept small.",
+          "options": [
+            {
+              "name": "--schema",
+              "recursive": false,
+              "hidden": false,
+              "description": "The schema file (.avsc).",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SCHEMA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--count",
+              "recursive": false,
+              "hidden": false,
+              "description": "The number of objects.",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "COUNT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--seed",
+              "recursive": false,
+              "hidden": false,
+              "description": "The seed: the same seed and schema give the same objects. Without it, a random one.",
+              "arguments": [
+                {
+                  "name": "SEED",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "The container file to write, or - for standard output.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--codec",
+              "recursive": false,
+              "hidden": false,
+              "description": "The codec that compresses the blocks: null, deflate, snappy, zstandard (or zstd), bzip2 or xz. The default is null. [default: null]",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CODEC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--level",
+              "recursive": false,
+              "hidden": false,
+              "description": "The compression level: deflate 0 to 9 (0 stores, 1 to 3 fastest, 4 to 6 optimal, 7 to 9 smallest), zstandard its levels (3 by default), bzip2 1 to 9 (the block size in 100 kB), xz 0 to 9. Without it, each codec's default: unlike Java's avro-tools, xz works without a level.",
+              "aliases": [
+                "-l"
+              ],
+              "arguments": [
+                {
+                  "name": "LEVEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "repair",
+          "description": "Copy the readable blocks of a damaged file: a block that is cut short, fails to decompress or decode, or isn't followed by the sync marker is skipped, up to the next sync marker. Prints what was kept and skipped.",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "The container file to write, or - for standard output.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "A container file, or - for standard input.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         }

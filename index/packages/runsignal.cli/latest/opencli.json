@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "RunSignal CLI: provision alerts for background jobs from a workload manifest",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "description": "The runsignal command: plan, diff and provision New Relic alerts, or export Prometheus alerting rules (missed, overrun, stalled, low-output and failure-rate), for the background jobs listed in RunSignal workload manifests. Also runs scripts and Kubernetes CronJobs as monitored workloads (runsignal exec) and writes manifests from CronJobs (runsignal discover kubernetes). Idempotent and safe to run in CI."
   },
   "x-inspectra": {
@@ -43,6 +43,212 @@
       "name": "plan",
       "description": "Show the alerts the manifests produce, without contacting New Relic.",
       "options": [
+        {
+          "name": "--missed-grace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minutes a scheduled workload may run late before it counts as missed, when it has no max duration. [default: 15]",
+          "arguments": [
+            {
+              "name": "MISSED_GRACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--not-reporting-after",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minutes without any signal before an incident opens because the service stopped reporting. [default: 15]",
+          "arguments": [
+            {
+              "name": "NOT_REPORTING_AFTER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--time-zone",
+          "recursive": false,
+          "hidden": false,
+          "description": "Time zone the cron schedules run in, such as Europe/Istanbul. [default: UTC]",
+          "arguments": [
+            {
+              "name": "TIME_ZONE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "MANIFESTS",
+          "description": "One or more workload manifests written by the RunSignal SDK (RUNSIGNAL_MANIFEST_PATH).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "FileInfo[]"
+        }
+      ]
+    },
+    {
+      "name": "validate",
+      "description": "Check manifests offline: invalid names, duplicate workloads, unreadable schedules and time zones (errors), and expectations a backend cannot alert on (warnings). Exits with 1 on errors.",
+      "options": [
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail on warnings too, not only on errors. [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--markdown",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write Markdown, for a pull request comment. [default: False]",
+          "arguments": [
+            {
+              "name": "MARKDOWN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--missed-grace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minutes a scheduled workload may run late before it counts as missed, when it has no max duration. [default: 15]",
+          "arguments": [
+            {
+              "name": "MISSED_GRACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--not-reporting-after",
+          "recursive": false,
+          "hidden": false,
+          "description": "Minutes without any signal before an incident opens because the service stopped reporting. [default: 15]",
+          "arguments": [
+            {
+              "name": "NOT_REPORTING_AFTER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--time-zone",
+          "recursive": false,
+          "hidden": false,
+          "description": "Time zone the cron schedules run in, such as Europe/Istanbul. [default: UTC]",
+          "arguments": [
+            {
+              "name": "TIME_ZONE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "MANIFESTS",
+          "description": "One or more workload manifests written by the RunSignal SDK (RUNSIGNAL_MANIFEST_PATH).",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "FileInfo[]"
+        }
+      ]
+    },
+    {
+      "name": "compare",
+      "description": "Show the alerts that change between --base manifests and these manifests, offline: added, removed and changed alerts per workload. With --markdown, also the validation findings, for a pull request comment.",
+      "options": [
+        {
+          "name": "--base",
+          "recursive": false,
+          "hidden": false,
+          "description": "A manifest as it was before, such as from the pull request's base branch. Repeatable; a service with no base manifest is new.",
+          "arguments": [
+            {
+              "name": "BASE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "FileInfo[]"
+            }
+          ]
+        },
+        {
+          "name": "--markdown",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write Markdown, for a pull request comment. [default: False]",
+          "arguments": [
+            {
+              "name": "MARKDOWN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
         {
           "name": "--missed-grace",
           "recursive": false,
@@ -647,6 +853,129 @@
               "required": false,
               "arity": {
                 "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "FileInfo[]"
+            }
+          ]
+        },
+        {
+          "name": "grafana-alerts",
+          "description": "Write Grafana-managed alert rules (a Grafana alerting provisioning file) for the manifests, with the same PromQL and thresholds as export prometheus. For Grafana Cloud, or Grafana without a Prometheus ruler.",
+          "options": [
+            {
+              "name": "--datasource-uid",
+              "recursive": false,
+              "hidden": false,
+              "description": "The uid of the Grafana Prometheus data source that receives RunSignal's metrics.",
+              "arguments": [
+                {
+                  "name": "DATASOURCE_UID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--folder",
+              "recursive": false,
+              "hidden": false,
+              "description": "The Grafana folder for the alert rules. [default: RunSignal]",
+              "arguments": [
+                {
+                  "name": "FOLDER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Write the rules to this file instead of standard output.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "OUTPUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--missed-grace",
+              "recursive": false,
+              "hidden": false,
+              "description": "Minutes a scheduled workload may run late before it counts as missed, when it has no max duration. [default: 15]",
+              "arguments": [
+                {
+                  "name": "MISSED_GRACE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--not-reporting-after",
+              "recursive": false,
+              "hidden": false,
+              "description": "Minutes without any signal before an incident opens because the service stopped reporting. [default: 15]",
+              "arguments": [
+                {
+                  "name": "NOT_REPORTING_AFTER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--time-zone",
+              "recursive": false,
+              "hidden": false,
+              "description": "Time zone the cron schedules run in, such as Europe/Istanbul. [default: UTC]",
+              "arguments": [
+                {
+                  "name": "TIME_ZONE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "MANIFESTS",
+              "description": "One or more workload manifests written by the RunSignal SDK (RUNSIGNAL_MANIFEST_PATH).",
+              "required": true,
+              "arity": {
+                "minimum": 1,
                 "maximum": 100000
               },
               "type": "FileInfo[]"
