@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "schemorph — declarative, SQL-first schema management",
-    "version": "0.22.0",
+    "version": "0.23.0",
     "description": "Declarative, SQL-first schema management for SQL Server: diff for structure, idempotent re-definition for programmable objects, versioned migrations for data — one plan, one history ledger, agent-friendly output."
   },
   "x-inspectra": {
@@ -103,6 +103,28 @@
           ]
         },
         {
+          "name": "--online",
+          "recursive": false,
+          "hidden": false,
+          "description": "run the online stage: concurrent index builds and\nconstraint validation run after the commit, each\non its own (not atomic; a failure there leaves the\nrest committed and the same apply finishes it).\nPostgreSQL only; off by default. Gate it with the\nplanHash of a diff given --online"
+        },
+        {
+          "name": "--lock-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "fail the apply if a statement waits longer than this\nfor a lock another session holds (500ms, 30s, 2m).\nPostgreSQL only; off by default (the server's own\nsetting applies). A timeout rolls the apply back",
+          "arguments": [
+            {
+              "name": "DURATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--format",
           "recursive": false,
           "hidden": false,
@@ -194,6 +216,12 @@
               }
             }
           ]
+        },
+        {
+          "name": "--online",
+          "recursive": false,
+          "hidden": false,
+          "description": "plan the online stage: concurrent index builds\nand constraint validation move out of the\ntransactional script and run after the commit,\neach on its own (not atomic). PostgreSQL only.\nThe planHash covers them — pass --online to apply"
         },
         {
           "name": "--format",
@@ -365,13 +393,35 @@
           "description": "include destructive changes in the plan"
         },
         {
+          "name": "--online",
+          "recursive": false,
+          "hidden": false,
+          "description": "plan the online stage: concurrent index builds\nand constraint validation move out of the\ntransactional script and run after the commit,\neach on its own (not atomic). PostgreSQL only.\nThe planHash covers them — pass --online to apply"
+        },
+        {
           "name": "--expect-plan",
           "recursive": false,
           "hidden": false,
-          "description": "apply only if the computed plan matches this\nfingerprint (printed by diff); mismatch = abort\nif an apply fails:\nre-run it — every stage converges on re-run, and there is no repair\ncommand to remember. What the database looks like after a partial\napply, and how to read the ledger without misreading it:\nhttps://github.com/iyulab/Schemorph/blob/main/docs/failure-semantics.md\nconnection:\n--url can be omitted when the SCHEMORPH_URL environment variable is set\n(preferred: keeps credentials out of shell history). Passwords are\nredacted from every output channel.\nExit codes: 0 = success / no changes, 1 = error, 2 = diff found pending changes.\nErrors are a typed envelope on stderr (docs/errors.md).",
+          "description": "apply only if the computed plan matches this\nfingerprint (printed by diff); mismatch = abort",
           "arguments": [
             {
               "name": "HASH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--lock-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "fail the apply if a statement waits longer than this\nfor a lock another session holds (500ms, 30s, 2m).\nPostgreSQL only; off by default (the server's own\nsetting applies). A timeout rolls the apply back\nif an apply fails:\nre-run it — every stage converges on re-run, and there is no repair\ncommand to remember. What the database looks like after a partial\napply, and how to read the ledger without misreading it:\nhttps://github.com/iyulab/Schemorph/blob/main/docs/failure-semantics.md\nconnection:\n--url can be omitted when the SCHEMORPH_URL environment variable is set\n(preferred: keeps credentials out of shell history). Passwords are\nredacted from every output channel.\nExit codes: 0 = success / no changes, 1 = error, 2 = diff found pending changes.\nErrors are a typed envelope on stderr (docs/errors.md).",
+          "arguments": [
+            {
+              "name": "DURATION",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -485,6 +535,28 @@
               ]
             },
             {
+              "name": "--online",
+              "recursive": false,
+              "hidden": false,
+              "description": "run the online stage: concurrent index builds and\nconstraint validation run after the commit, each\non its own (not atomic; a failure there leaves the\nrest committed and the same apply finishes it).\nPostgreSQL only; off by default. Gate it with the\nplanHash of a diff given --online"
+            },
+            {
+              "name": "--lock-timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "fail the apply if a statement waits longer than this\nfor a lock another session holds (500ms, 30s, 2m).\nPostgreSQL only; off by default (the server's own\nsetting applies). A timeout rolls the apply back",
+              "arguments": [
+                {
+                  "name": "DURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--format",
               "recursive": false,
               "hidden": false,
@@ -576,6 +648,12 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "--online",
+              "recursive": false,
+              "hidden": false,
+              "description": "plan the online stage: concurrent index builds\nand constraint validation move out of the\ntransactional script and run after the commit,\neach on its own (not atomic). PostgreSQL only.\nThe planHash covers them — pass --online to apply"
             },
             {
               "name": "--format",
@@ -930,13 +1008,35 @@
       "description": "include destructive changes in the plan"
     },
     {
+      "name": "--online",
+      "recursive": false,
+      "hidden": false,
+      "description": "plan the online stage: concurrent index builds\nand constraint validation move out of the\ntransactional script and run after the commit,\neach on its own (not atomic). PostgreSQL only.\nThe planHash covers them — pass --online to apply"
+    },
+    {
       "name": "--expect-plan",
       "recursive": false,
       "hidden": false,
-      "description": "apply only if the computed plan matches this\nfingerprint (printed by diff); mismatch = abort\nif an apply fails:\nre-run it — every stage converges on re-run, and there is no repair\ncommand to remember. What the database looks like after a partial\napply, and how to read the ledger without misreading it:\nhttps://github.com/iyulab/Schemorph/blob/main/docs/failure-semantics.md\nconnection:\n--url can be omitted when the SCHEMORPH_URL environment variable is set\n(preferred: keeps credentials out of shell history). Passwords are\nredacted from every output channel.\nExit codes: 0 = success / no changes, 1 = error, 2 = diff found pending changes.\nErrors are a typed envelope on stderr (docs/errors.md).",
+      "description": "apply only if the computed plan matches this\nfingerprint (printed by diff); mismatch = abort",
       "arguments": [
         {
           "name": "HASH",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--lock-timeout",
+      "recursive": false,
+      "hidden": false,
+      "description": "fail the apply if a statement waits longer than this\nfor a lock another session holds (500ms, 30s, 2m).\nPostgreSQL only; off by default (the server's own\nsetting applies). A timeout rolls the apply back\nif an apply fails:\nre-run it — every stage converges on re-run, and there is no repair\ncommand to remember. What the database looks like after a partial\napply, and how to read the ledger without misreading it:\nhttps://github.com/iyulab/Schemorph/blob/main/docs/failure-semantics.md\nconnection:\n--url can be omitted when the SCHEMORPH_URL environment variable is set\n(preferred: keeps credentials out of shell history). Passwords are\nredacted from every output channel.\nExit codes: 0 = success / no changes, 1 = error, 2 = diff found pending changes.\nErrors are a typed envelope on stderr (docs/errors.md).",
+      "arguments": [
+        {
+          "name": "DURATION",
           "required": true,
           "arity": {
             "minimum": 1,
