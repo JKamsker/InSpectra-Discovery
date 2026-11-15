@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "codecharter",
-    "version": "1.7.1",
+    "version": "1.8.1",
     "description": "Deterministic code quality analysis for .NET, built on Roslyn. Write rules in a LINQ-like DSL, store them as .ccr files, and analyze a solution or project from the command line with CI-friendly exit codes. Restores versioned rule profiles from the CodeCharter portal, runs rule specs, gates line coverage, and ships an MCP server so AI coding tools can analyze on demand. Documentation: https://codecharter.tools. Requires a valid CodeCharter license or API key at runtime."
   },
   "x-inspectra": {
@@ -287,7 +287,7 @@
           "name": "--diff",
           "recursive": false,
           "hidden": false,
-          "description": "Report only findings on lines added/modified by this unified diff. Pass a path to a diff file, or '-' to read the diff from stdin. Findings in the touched files that fall outside the changed lines are counted on stderr; add --diff-context to report them. Mutually exclusive with --git-ref.",
+          "description": "Report only findings on lines added/modified by this unified diff. Pass a path to a diff file, or '-' to read the diff from stdin. Findings in the touched files that fall outside the changed lines are gated when they reach --fail-on and counted on stderr otherwise; add --diff-context to report them all. Mutually exclusive with --git-ref.",
           "arguments": [
             {
               "name": "DIFF",
@@ -304,7 +304,7 @@
           "name": "--git-ref",
           "recursive": false,
           "hidden": false,
-          "description": "Report only findings on lines changed in this git ref range (e.g. main..HEAD); runs 'git diff <range> --unified=0'. A two-dot range is diffed from the merge base (git's three-dot form) so commits that landed on the base branch since the branch point are not counted as your changes; an explicit three-dot range is used as typed, and a bare ref or SHA keeps git's meaning of 'working tree against that commit', with untracked files that are not ignored counted as new files. Findings in the touched files that fall outside the changed lines are counted on stderr; add --diff-context to report them. Mutually exclusive with --diff.",
+          "description": "Report only findings on lines changed in this git ref range (e.g. main..HEAD); runs 'git diff <range> --unified=0'. A two-dot range is diffed from the merge base (git's three-dot form) so commits that landed on the base branch since the branch point are not counted as your changes; an explicit three-dot range is used as typed, and a bare ref or SHA keeps git's meaning of 'working tree against that commit', with untracked files that are not ignored counted as new files. Findings in the touched files that fall outside the changed lines are gated when they reach --fail-on and counted on stderr otherwise; add --diff-context to report them all. Mutually exclusive with --diff.",
           "arguments": [
             {
               "name": "GIT_REF",
@@ -321,10 +321,27 @@
           "name": "--diff-context",
           "recursive": false,
           "hidden": false,
-          "description": "With --diff/--git-ref, also report findings in the touched files whose reported line is not among the changed lines — a class-level finding such as a newly introduced God-class, for example. They join the reported findings and the --fail-on gate. Without this flag they are only counted on stderr. [default: False]",
+          "description": "With --diff/--git-ref, also report findings in the touched files whose reported line is not among the changed lines — a class-level finding such as a newly introduced God-class, for example. They join the reported findings and the --fail-on gate. Without this flag those at or above --fail-on (any finding when --fail-on is not given) are gated all the same and named on stderr, and the rest are only counted there. [default: False]",
           "arguments": [
             {
               "name": "DIFF_CONTEXT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-diff-context-gate",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --diff/--git-ref and without --diff-context, only count the findings in the touched files whose reported line is not among the changed lines on stderr, even those at or above --fail-on, instead of gating them. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_DIFF_CONTEXT_GATE",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -1211,6 +1228,23 @@
                   "type": "String"
                 }
               ]
+            },
+            {
+              "name": "--skip-update",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not check for or fetch a newer CLI release on this run. The CODECHARTER_SKIP_UPDATE environment variable (set to any value) is the CI-wide equivalent. [default: False]",
+              "arguments": [
+                {
+                  "name": "SKIP_UPDATE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ],
           "arguments": [
@@ -1399,6 +1433,23 @@
                   "type": "String"
                 }
               ]
+            },
+            {
+              "name": "--skip-update",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not check for or fetch a newer CLI release on this run. The CODECHARTER_SKIP_UPDATE environment variable (set to any value) is the CI-wide equivalent. [default: False]",
+              "arguments": [
+                {
+                  "name": "SKIP_UPDATE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ],
           "arguments": [
@@ -1551,6 +1602,23 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--skip-update",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not check for or fetch a newer CLI release on this run. The CODECHARTER_SKIP_UPDATE environment variable (set to any value) is the CI-wide equivalent. [default: False]",
+              "arguments": [
+                {
+                  "name": "SKIP_UPDATE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             }
@@ -1783,6 +1851,23 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--skip-update",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not check for or fetch a newer CLI release on this run. The CODECHARTER_SKIP_UPDATE environment variable (set to any value) is the CI-wide equivalent. [default: False]",
+              "arguments": [
+                {
+                  "name": "SKIP_UPDATE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             }
@@ -2033,7 +2118,7 @@
           "name": "--git-ref",
           "recursive": false,
           "hidden": false,
-          "description": "Gate the lines changed in this git ref range (e.g. main..HEAD or origin/main..HEAD) instead of the whole repository; runs 'git diff <range> --unified=0'. A two-dot range is diffed from the merge base (git's three-dot form) so commits that landed on the base branch since the branch point are not counted as your changes; an explicit three-dot range is used as typed, and a bare ref or SHA keeps git's meaning of 'working tree against that commit', with untracked files that are not ignored counted as new files. The report gains a 'diffCoverage' section and the exit code follows the diff gate. A diff without a single measurable changed line passes.",
+          "description": "Gate the lines changed in this git ref range (e.g. main..HEAD or origin/main..HEAD) instead of the whole repository; runs 'git diff <range> --unified=0'. A two-dot range is diffed from the merge base (git's three-dot form) so commits that landed on the base branch since the branch point are not counted as your changes; an explicit three-dot range is used as typed, and a bare ref or SHA keeps git's meaning of 'working tree against that commit', with untracked files that are not ignored counted as new files. The report gains a 'diffCoverage' section and the exit code follows the diff gate. A diff without a single measurable changed line passes, unless it changed production source files outside <root> that no coverage file measures but a test project of the repository would: those fail the gate. A changed file outside <root> in a project no test project references counts as an unmeasured project file and fails the gate only with --fail-on-unmeasured-projects; one that discovery, coverage.exclude or the collector settings leave out does not fail it.",
           "arguments": [
             {
               "name": "GIT_REF",
@@ -2077,6 +2162,23 @@
                 "maximum": 1
               },
               "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--fail-on-unmeasured-projects",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail the diff gate (exit code 1) when the git range changed source files in projects that no test project references. No run can measure such files, so without this switch the gate only warns on stderr and lists them under 'diffCoverage.unmeasuredProjectFiles' in the report. Requires --git-ref. [default: False]",
+          "arguments": [
+            {
+              "name": "FAIL_ON_UNMEASURED_PROJECTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -2797,7 +2899,7 @@
       "arguments": [
         {
           "name": "TOPIC",
-          "description": "Doc topic: getting-started, dsl-grammar, predicates, rule-examples, parameters. Omit to list all topics.",
+          "description": "Doc topic: getting-started, dsl-grammar, predicates, rule-examples, spec-format, parameters. Omit to list all topics.",
           "required": false,
           "arity": {
             "minimum": 0,
@@ -4650,6 +4752,197 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "prune",
+          "description": "Analyzes the code and removes the baseline entries no current finding matches any more, so a fixed finding no longer hides a later one with the same fingerprint. Never adds an entry. Pass the same --rules, --configuration and --target-frameworks as the gate run; every severity is analyzed. Exit codes: 0 = nothing to prune (or pruned), 1 = --dry-run found entries to remove, 2 = no target resolved, an invalid option combination or an inconclusive analysis (nothing written), 64 = command line not parsed, or baseline missing, unreadable or written before 1.7.0 (regenerate that once with 'analyze --write-baseline'; checked before the analysis), 70 = internal error. Other codes are those of analyze.",
+          "options": [
+            {
+              "name": "--configuration",
+              "recursive": false,
+              "hidden": false,
+              "description": "The build configuration to evaluate projects in, such as Release, for code generated or referenced from a build in it. Overrides 'configuration' in config.yml.",
+              "aliases": [
+                "-c"
+              ],
+              "arguments": [
+                {
+                  "name": "CONFIGURATION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--target-frameworks",
+              "recursive": false,
+              "hidden": false,
+              "description": "Which target-framework copies of a multi-targeted project to analyse: 'all' for every copy, 'primary' for the preferred one only, or a comma separated list of target framework monikers such as net48,net9.0-windows. A listed framework a project lacks is ignored for it, and a project with none of them is analysed as its primary copy. Defaults to 'all'. Overrides 'targetFrameworks' in config.yml.",
+              "arguments": [
+                {
+                  "name": "TARGET_FRAMEWORKS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "TargetFrameworkSelection"
+                }
+              ]
+            },
+            {
+              "name": "--baseline",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the baseline file to prune.",
+              "arguments": [
+                {
+                  "name": "BASELINE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "List the entries that would be removed without changing the baseline file. Exits 1 when there are any. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--rules",
+              "recursive": false,
+              "hidden": false,
+              "description": "Directory containing .ccr or .cgr rule files. Repeatable. Runs alongside the profiles and rules: directories declared in .codecharter/config.yml; a later source wins on a duplicate rule id.",
+              "arguments": [
+                {
+                  "name": "RULES",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--rules-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run only the --rules directories and ignore the profiles and rules: directories declared in .codecharter/config.yml. [default: False]",
+              "arguments": [
+                {
+                  "name": "RULES_ONLY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--verbose",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show detailed progress [default: False]",
+              "arguments": [
+                {
+                  "name": "VERBOSE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--progress",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show live progress (per-project and per-rule) on stderr while analyzing. Can be combined with --verbose. [default: False]",
+              "arguments": [
+                {
+                  "name": "PROGRESS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--license",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to a codecharter.license file. Overrides search-path discovery.",
+              "arguments": [
+                {
+                  "name": "LICENSE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--skip-update",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not check for or fetch a newer CLI release on this run. The CODECHARTER_SKIP_UPDATE environment variable (set to any value) is the CI-wide equivalent. [default: False]",
+              "arguments": [
+                {
+                  "name": "SKIP_UPDATE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "description": "Path to .sln, .slnx, or .csproj file, or a directory to search. When omitted, or when a directory is given, that directory (the working directory when omitted) is searched and the shallowest .sln/.slnx (or .csproj as a fallback) is analyzed.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         }
       ]
     },
@@ -4703,6 +4996,23 @@
               "arguments": [
                 {
                   "name": "WITH_CODE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--fail-on-unknown",
+              "recursive": false,
+              "hidden": false,
+              "description": "Exit 1 when any acceptance criterion reports an unknown verdict (UNK), the same exit code a stale criterion produces. Without --with-code every accepted 'test:'/'manual:' and every 'rule:' criterion is unknown, so combine the two for a CI gate. [default: False]",
+              "arguments": [
+                {
+                  "name": "FAIL_ON_UNKNOWN",
                   "required": false,
                   "arity": {
                     "minimum": 0,
@@ -5413,6 +5723,23 @@
                     "maximum": 1
                   },
                   "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--restored-variable",
+              "recursive": false,
+              "hidden": false,
+              "description": "A variable the starting process took from the user and machine environment, which the host takes in fresh; once per variable.",
+              "arguments": [
+                {
+                  "name": "RESTORED_VARIABLE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
                 }
               ]
             }
