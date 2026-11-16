@@ -1,9 +1,9 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "SharpDrill — source-backed analysis of ASP.NET Core Web APIs (.NET SDK; restores missing packages",
-    "version": "0.7.0",
-    "description": "Source-backed analysis of ASP.NET Core Web APIs for people and agents: the MSBuild project reference map with build settings, where exceptions are thrown, caught, miscaught or may escape an action, and Mermaid call diagrams of controller actions. Uses Roslyn and your installed .NET SDK; never builds or edits the analysed code."
+    "title": "SharpDrill — source-backed analysis of .NET code: exception flow, call diagrams and the project map.",
+    "version": "0.9.0",
+    "description": "Source-backed analysis of .NET code (Web APIs, console apps, libraries) for people and agents: which exceptions may escape an entry point, where they are caught or miscaught, Mermaid call diagrams and the MSBuild project map. Uses Roslyn and your installed .NET SDK; never builds or edits the analysed code."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
@@ -15,33 +15,33 @@
     {
       "name": "diagram",
       "hidden": false,
-      "description": "Mermaid call graph of one controller action, saved as Markdown (prompts for an action without --root).\n[--root R] [--declared-only] [--max-depth N] [--max-nodes N] [--max-edges N] [--budget N] [--output F]"
+      "description": "Mermaid call graph of one entry point, saved as Markdown (asks which one without --from).\n[--from E] [--declared-only] [--max-depth N] [--max-nodes N] [--max-edges N] [--output F]"
     },
     {
       "name": "exceptions",
       "hidden": false,
-      "description": "Every explicit throw with its type, method and location. Or, along call chains from each action:\n--uncaught   may escape the action: no catch on the way (one example path per origin)\n--caught     reaches a matching catch: where it is thrown and where it is caught\n--miscaught  passes through a try whose catch clauses do not match its type\nFindings covered by exception middleware or a global exception filter are listed last.\n[--uncaught [--strict [--verbose]] | --caught | --miscaught] [--root R] [--budget N] [--declared-only] [--locations]\n[--format msbuild]"
+      "description": "Exceptions along the call chains from each entry point: controller actions, Main or top-level\nstatements, and the public methods of a library project that nothing loaded references.\nuncaught   (default) may leave an entry point: no catch on the way\ncaught     reaches a matching catch: where, and what the handler does\nmiscaught  passes through a try whose catch clauses do not match it\nthrown     every explicit throw in source\n[--from E] [--third-party] [--declared-only] [--locations] [--format msbuild] [--budget N]"
     },
     {
       "name": "projects",
       "hidden": false,
-      "description": "Project reference tree with each project's framework, nullable settings and compiler warning count.\n[--mermaid [--output F]]"
+      "description": "Project reference tree with each project's framework, nullable settings and warning count.\n[--mermaid [--output F]]"
     },
     {
       "name": "skill",
       "hidden": false,
-      "description": "Install the agent skill for GitHub Copilot and Claude Code: .github/skills and .claude/skills (sharpdrill/SKILL.md)\nat the repository root, or with --user in ~/.copilot/skills and ~/.claude/skills. No project load.\n[--user]"
+      "description": "Install the agent skill in .github/skills and .claude/skills at the repository root, or with\n--user in ~/.copilot/skills and ~/.claude/skills. No project load."
     }
   ],
   "options": [
     {
-      "name": "--root",
+      "name": "--from",
       "recursive": false,
       "hidden": false,
-      "description": "One controller action, by its full signature (namespace, type, method, parameter types, e.g.\nApi.OrdersController.Get(int); diagram without --root lists them). Defaults to every action.",
+      "description": "One entry point: its ID, signature or a unique part of it, e.g. OrdersController.Get. Default: all.",
       "arguments": [
         {
-          "name": "R",
+          "name": "E",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -51,25 +51,31 @@
       ]
     },
     {
+      "name": "--third-party",
+      "recursive": false,
+      "hidden": false,
+      "description": "exceptions uncaught: also list calls into NuGet packages and DLLs that no catch meets on the way\n(not .NET itself, logging or Microsoft.Extensions)."
+    },
+    {
       "name": "--declared-only",
       "recursive": false,
       "hidden": false,
-      "description": "exceptions/diagram: stop at interface/virtual calls instead of following them into their\nsource implementations (followed by default; such steps are possibilities, never runtime facts)."
+      "description": "Stop at interface/virtual calls instead of following them into their source implementations\n(followed steps are possibilities, never runtime facts)."
     },
     {
-      "name": "--strict",
+      "name": "--locations",
       "recursive": false,
       "hidden": false,
-      "description": "exceptions --uncaught: also list calls into third-party libraries (NuGet packages, referenced\nDLLs; not .NET itself) that no catch meets on the way from the action, in a section of their own."
+      "description": "exceptions: file:line for every step of each path."
     },
     {
-      "name": "--max-depth",
+      "name": "--format",
       "recursive": false,
       "hidden": false,
-      "description": "diagram: call transitions (default 20), never runtime stack depth.",
+      "description": "exceptions: one build warning per finding, uncaught and miscaught unless a view is given.\nSD0001 may escape an entry point, SD0002 may escape to a global exception handler, SD0003 miscaught,\nSD0004 third-party call with no catch on the way, SD0005 leaves an async void method.",
       "arguments": [
         {
-          "name": "N",
+          "name": "MSBUILD",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -82,7 +88,7 @@
       "name": "--budget",
       "recursive": false,
       "hidden": false,
-      "description": "Examined call sites (default 100000). Raise it when the output says a limit was reached.",
+      "description": "Analysis work limit (default 100000); raise it when the output says the run stopped early.",
       "arguments": [
         {
           "name": "N",
@@ -95,41 +101,13 @@
       ]
     },
     {
-      "name": "--max-nodes",
+      "name": "--max-depth",
       "recursive": false,
       "hidden": false,
-      "description": "diagram nodes, including boundaries (default 200).   --max-edges N  diagram edges (default 1000).",
+      "description": "diagram: call steps (default 20).  --max-nodes N (default 200).  --max-edges N (default 1000).",
       "arguments": [
         {
           "name": "N",
-          "required": true,
-          "arity": {
-            "minimum": 1,
-            "maximum": 1
-          }
-        }
-      ]
-    },
-    {
-      "name": "--locations",
-      "recursive": false,
-      "hidden": false,
-      "description": "exceptions: print call-site evidence for witnesses."
-    },
-    {
-      "name": "--verbose",
-      "recursive": false,
-      "hidden": false,
-      "description": "exceptions --strict: also list logging (Serilog, NLog, log4net) and Microsoft.Extensions calls;\nMicrosoft.Extensions.Caching is always listed."
-    },
-    {
-      "name": "--format",
-      "recursive": false,
-      "hidden": false,
-      "description": "exceptions: one build warning per finding, \"file(line,col): warning SD000N: ...\", for MSBuild,\nVisual Studio and VS Code (what the SharpDrill.MSBuild package runs after each build). Without a view:\nuncaught and miscaught. SD0001 may escape an action, SD0002 may escape to a global exception\nhandler, SD0003 miscaught, SD0004 third-party call with no catch on the way (--strict),\nSD0005 leaves an async void method (no caller can catch it; the process ends).",
-      "arguments": [
-        {
-          "name": "MSBUILD",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -158,7 +136,7 @@
       "name": "--output",
       "recursive": false,
       "hidden": false,
-      "description": "New file for diagram or projects --mermaid; existing files are never overwritten.\nDiagrams default to ./diagrams_exports in the current directory.",
+      "description": "New file for diagram or projects --mermaid; never overwrites. Default: ./diagrams_exports.\nLoading:\n--configuration NAME (default Debug), --framework TFM (for multi-target inputs), --exclude-generated,\n--include-tests (test projects are skipped by default), --restore (always restore first; by default only when\npackages are missing), --no-restore, --no-cache (analyse again even if nothing changed).",
       "arguments": [
         {
           "name": "F",
@@ -171,93 +149,16 @@
       ]
     },
     {
-      "name": "--configuration",
-      "recursive": false,
-      "hidden": false,
-      "description": "Default Debug.   --framework TFM  Required for ambiguous multi-target inputs.",
-      "arguments": [
-        {
-          "name": "NAME",
-          "required": true,
-          "arity": {
-            "minimum": 1,
-            "maximum": 1
-          }
-        }
-      ]
-    },
-    {
-      "name": "--exclude-generated",
-      "recursive": false,
-      "hidden": false,
-      "description": "Skip generated sources (included by default)."
-    },
-    {
-      "name": "--restore",
-      "recursive": false,
-      "hidden": false,
-      "description": "Run dotnet restore on the input first, even if it looks restored. Without it, restore runs only\nwhen packages are missing; its output goes to stderr only if it fails."
-    },
-    {
-      "name": "--no-restore",
-      "recursive": false,
-      "hidden": false,
-      "description": "Never restore: stop with an error when packages are missing."
-    },
-    {
-      "name": "--no-cache",
-      "recursive": false,
-      "hidden": false,
-      "description": "Analyse again even if nothing changed since the last run (the result still replaces the cached one)."
-    },
-    {
-      "name": "--include-tests",
-      "recursive": false,
-      "hidden": false,
-      "description": "Also load test projects (xUnit, NUnit, TUnit, MSTest, SpecFlow/Reqnroll, Pact...); skipped by default.",
-      "arguments": [
-        {
-          "name": "INCLUDE_TESTS",
-          "required": false,
-          "arity": {
-            "minimum": 0,
-            "maximum": 1
-          }
-        }
-      ]
-    },
-    {
       "name": "--version",
       "recursive": false,
       "hidden": false,
-      "description": "Print the version; no project load."
-    },
-    {
-      "name": "--help",
-      "recursive": false,
-      "hidden": false,
-      "description": "This text; no project load.\nExit: 0 complete, 1 usable but with gaps/Unknown/limits, 2 invalid request or fatal, 130 cancelled."
-    },
-    {
-      "name": "--uncaught",
-      "recursive": false,
-      "hidden": false,
-      "description": "may escape the action: no catch on the way (one example path per origin)"
-    },
-    {
-      "name": "--caught",
-      "recursive": false,
-      "hidden": false,
-      "description": "reaches a matching catch: where it is thrown and where it is caught"
-    },
-    {
-      "name": "--miscaught",
-      "recursive": false,
-      "hidden": false,
-      "description": "passes through a try whose catch clauses do not match its type\nFindings covered by exception middleware or a global exception filter are listed last.\n[--uncaught [--strict [--verbose]] | --caught | --miscaught] [--root R] [--budget N] [--declared-only] [--locations]\n[--format msbuild]",
+      "description": "Exit: 0 complete, 1 usable but with gaps/Unknown/limits, 2 invalid request or fatal, 130 cancelled.",
+      "aliases": [
+        "--help"
+      ],
       "arguments": [
         {
-          "name": "MISCAUGHT",
+          "name": "VERSION",
           "required": false,
           "arity": {
             "minimum": 0,

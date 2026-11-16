@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Vela CLI — Build Dataverse with confidence",
-    "version": "0.28.0",
+    "version": "0.30.0",
     "description": "Vela command-line tool (command: vela). Plan/apply, scaffolding and package signing for Microsoft Dataverse plugins and Custom APIs."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 14,
+    "helpDocumentCount": 15,
     "cliParsedTitle": "Vela CLI",
     "cliParsedDescription": "Register Dataverse plugins and Custom APIs from your build packages."
   },
@@ -108,7 +108,7 @@
           "name": "--handler",
           "recursive": false,
           "hidden": false,
-          "description": "Handler method name (step).",
+          "description": "Handler method name (plugin/step; default: Handle<Message>).",
           "arguments": [
             {
               "name": "METHOD",
@@ -164,7 +164,7 @@
           "name": "--prefix",
           "recursive": false,
           "hidden": false,
-          "description": "Custom API publisher prefix (customapi/test; default: the project's VelaPublisherPrefix).",
+          "description": "Custom API publisher prefix: required for customapi (prompted for by the wizard); test --kind customapi needs it when the unique name cannot be read.",
           "arguments": [
             {
               "name": "PREFIX",
@@ -220,9 +220,241 @@
           "name": "--help",
           "recursive": false,
           "hidden": false,
-          "description": "Show this help.\nNotes:\nplugin <Name> --entity <ModelType> [--message] [--stage] [--mode] [--filtering-attributes] (required for Create/Update(+Multiple)).\nservice <Name> [--entity <ModelType>]: without --entity, a service shared by several tables, under Services/.\ncustomapi <Name> [--entity <ModelType>] [--bound|--global] [--function|--action] [--prefix <publisherprefix>].\ntest <Name> [--kind plugin|customapi] [--entity] [--message] [--prefix]: run inside the test project (RootNamespace ending in .Tests). An existing test class is completed with the tests of the steps it lacks.\nstep <PluginName> --entity <ModelType> [--message] [--handler] [--stage] [--mode] [--filtering-attributes]: edits an existing multi-step plugin.\nform-script|ribbon-script <entity> [--project <web-resources dir>] [--force]: (preview).\nEach kind accepts only its own options. A Custom API is named <publisherprefix>_<Name>: --prefix, else the project's VelaPublisherPrefix, else the project prefix.",
+          "description": "Show this help.\nNotes:\nplugin [<Name>] --entity <ModelType> [--message] [--handler] [--stage] [--mode] [--filtering-attributes] (required for Create/Update(+Multiple)): <Name> defaults to <ModelType>Plugin. An existing file is never edited: the error names the 'vela add step' command that adds the step to it.\nservice <Name> [--entity <ModelType>]: without --entity, a service shared by several tables, under Services/.\ncustomapi <Name> --prefix <publisherprefix> [--entity <ModelType>] [--bound|--global] [--function|--action]: check a solution's prefix with 'vela solution show <solution> --json'.\ntest <Name> [--kind plugin|customapi] [--entity] [--message] [--prefix]: run inside the test project (RootNamespace ending in .Tests). An existing test class is completed with the tests of the steps it lacks.\nstep <PluginName> --entity <ModelType> [--message] [--handler] [--stage] [--mode] [--filtering-attributes]: edits an existing multi-step plugin.\nform-script|ribbon-script <entity> [--project <web-resources dir>] [--force]: (preview).\nEach kind accepts only its own options. A Custom API is named <publisherprefix>_<Name>, with the --prefix you pass (never read from the project).",
           "aliases": [
             "-h"
+          ]
+        }
+      ],
+      "commands": [
+        {
+          "name": "plugin",
+          "hidden": false,
+          "options": [
+            {
+              "name": "--entity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Table model type (plugin/step; optional for service and customapi).",
+              "aliases": [
+                "-e"
+              ],
+              "arguments": [
+                {
+                  "name": "MODELTYPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--message",
+              "recursive": false,
+              "hidden": false,
+              "description": "SDK message (plugin/step/test).",
+              "arguments": [
+                {
+                  "name": "MESSAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--stage",
+              "recursive": false,
+              "hidden": false,
+              "description": "PreValidation | PreOperation | PostOperation.",
+              "arguments": [
+                {
+                  "name": "STAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--mode",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sync | Async.",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--filtering-attributes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Columns the step filters on (required for Create/Update).",
+              "aliases": [
+                "--filter"
+              ],
+              "arguments": [
+                {
+                  "name": "COL1COL2",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--handler",
+              "recursive": false,
+              "hidden": false,
+              "description": "Handler method name (plugin/step; default: Handle<Message>).",
+              "arguments": [
+                {
+                  "name": "METHOD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--kind",
+              "recursive": false,
+              "hidden": false,
+              "description": "plugin | customapi (test).",
+              "arguments": [
+                {
+                  "name": "KIND",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--bound",
+              "recursive": false,
+              "hidden": false,
+              "description": "Entity-bound Custom API."
+            },
+            {
+              "name": "--global",
+              "recursive": false,
+              "hidden": false,
+              "description": "Global (unbound) Custom API."
+            },
+            {
+              "name": "--function",
+              "recursive": false,
+              "hidden": false,
+              "description": "Custom API is a function."
+            },
+            {
+              "name": "--action",
+              "recursive": false,
+              "hidden": false,
+              "description": "Custom API is an action."
+            },
+            {
+              "name": "--prefix",
+              "recursive": false,
+              "hidden": false,
+              "description": "Custom API publisher prefix: required for customapi (prompted for by the wizard); test --kind customapi needs it when the unique name cannot be read.",
+              "arguments": [
+                {
+                  "name": "PREFIX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--project",
+              "recursive": false,
+              "hidden": false,
+              "description": "Target project (default: the single .csproj in the current folder).",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "CSPROJ",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite an existing file (not step; test completes an existing class without it)."
+            },
+            {
+              "name": "--interactive",
+              "recursive": false,
+              "hidden": false,
+              "description": "Guided wizard.",
+              "aliases": [
+                "-i"
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Machine-readable output on stdout (see docs/reference/machine-readable-output.md)."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help.\nNotes:\nplugin [<Name>] --entity <ModelType> [--message] [--handler] [--stage] [--mode] [--filtering-attributes] (required for Create/Update(+Multiple)): <Name> defaults to <ModelType>Plugin. An existing file is never edited: the error names the 'vela add step' command that adds the step to it.\nservice <Name> [--entity <ModelType>]: without --entity, a service shared by several tables, under Services/.\ncustomapi <Name> --prefix <publisherprefix> [--entity <ModelType>] [--bound|--global] [--function|--action]: check a solution's prefix with 'vela solution show <solution> --json'.\ntest <Name> [--kind plugin|customapi] [--entity] [--message] [--prefix]: run inside the test project (RootNamespace ending in .Tests). An existing test class is completed with the tests of the steps it lacks.\nstep <PluginName> --entity <ModelType> [--message] [--handler] [--stage] [--mode] [--filtering-attributes]: edits an existing multi-step plugin.\nform-script|ribbon-script <entity> [--project <web-resources dir>] [--force]: (preview).\nEach kind accepts only its own options. A Custom API is named <publisherprefix>_<Name>, with the --prefix you pass (never read from the project).",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ],
+          "commands": [
+            {
+              "name": "plugin",
+              "hidden": false
+            }
           ]
         }
       ]
@@ -287,7 +519,7 @@
           "name": "--solution-unique-name",
           "recursive": false,
           "hidden": false,
-          "description": "Target solution: writes and components not yet in it are added to it; also resolves the publisher prefix.",
+          "description": "(prompted for with --interactive). Target solution: writes and components not yet in it are added to it; also resolves the publisher prefix.",
           "aliases": [
             "--solution"
           ],
@@ -306,7 +538,7 @@
           "name": "--webresources",
           "recursive": false,
           "hidden": false,
-          "description": "(preview) Mirror a web resources folder; requires --solution.",
+          "description": "(preview) Mirror a web resources folder.",
           "arguments": [
             {
               "name": "FOLDER",
@@ -634,10 +866,26 @@
           "name": "--publisher-prefix",
           "recursive": false,
           "hidden": false,
-          "description": "Dataverse publisher prefix (2-8 chars) naming the Custom APIs; recorded for 'vela add customapi'.",
+          "description": "Dataverse publisher prefix (2-8 chars): names the packages and the sample Custom APIs; written to PROJECT.md.",
           "arguments": [
             {
               "name": "PREFIX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--solution",
+          "recursive": false,
+          "hidden": false,
+          "description": "Unique name of the Dataverse solution every generated package deploys into; written to PROJECT.md (never read by the CLI).",
+          "arguments": [
+            {
+              "name": "UNIQUENAME",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -804,7 +1052,7 @@
           "name": "--help",
           "recursive": false,
           "hidden": false,
-          "description": "Show this help.",
+          "description": "Show this help.\nNotes:\nPROJECT.md (written once, at init) records the publisher prefix and the solution of each package for people and agents. The CLI never reads it: pass the values as flags (--solution on plan/apply, --prefix on add customapi).",
           "aliases": [
             "-h"
           ]
@@ -871,7 +1119,7 @@
           "name": "--solution-unique-name",
           "recursive": false,
           "hidden": false,
-          "description": "Target solution: writes and components not yet in it are added to it; also resolves the publisher prefix.",
+          "description": "Target solution: scopes the read and resolves the publisher prefix; required with --webresources.",
           "aliases": [
             "--solution"
           ],
@@ -890,7 +1138,7 @@
           "name": "--webresources",
           "recursive": false,
           "hidden": false,
-          "description": "(preview) Mirror a web resources folder; requires --solution.",
+          "description": "(preview) Mirror a web resources folder.",
           "arguments": [
             {
               "name": "FOLDER",
@@ -1712,7 +1960,7 @@
           "name": "--verify",
           "recursive": false,
           "hidden": false,
-          "description": "Do not write: report drift of the model on disk (exit 5 on drift)."
+          "description": "Do not write: report drift of the model on disk, and of the Roles class with --roles/--solution-roles (exit 5 on drift)."
         },
         {
           "name": "--json",
@@ -1965,7 +2213,7 @@
           "name": "--solution-unique-name",
           "recursive": false,
           "hidden": false,
-          "description": "Target solution: writes and components not yet in it are added to it; also resolves the publisher prefix.",
+          "description": "(prompted for with --interactive). Target solution: writes and components not yet in it are added to it; also resolves the publisher prefix.",
           "aliases": [
             "--solution"
           ],
@@ -1984,7 +2232,7 @@
           "name": "--webresources",
           "recursive": false,
           "hidden": false,
-          "description": "(preview) Mirror a web resources folder; requires --solution.",
+          "description": "(preview) Mirror a web resources folder.",
           "arguments": [
             {
               "name": "FOLDER",
@@ -2368,7 +2616,7 @@
           "name": "--pfx-credential",
           "recursive": false,
           "hidden": false,
-          "description": "Read the PFX password from the OS credential store.",
+          "description": "Read the PFX password from the Windows Credential Manager.",
           "arguments": [
             {
               "name": "TARGET",

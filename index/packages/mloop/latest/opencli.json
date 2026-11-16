@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "mloop",
-    "version": "0.50.0",
+    "version": "0.51.0",
     "description": "MLoop - A modern CLI tool for ML.NET with filesystem-based MLOps"
   },
   "x-inspectra": {
@@ -465,6 +465,40 @@
           "arguments": [
             {
               "name": "GROUP_COLUMN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--user-column",
+          "recursive": false,
+          "hidden": false,
+          "description": "User column for the recommendation task (who rated)",
+          "arguments": [
+            {
+              "name": "USER_COLUMN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--item-column",
+          "recursive": false,
+          "hidden": false,
+          "description": "Item column for the recommendation task (what was rated)",
+          "arguments": [
+            {
+              "name": "ITEM_COLUMN",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -1169,13 +1203,13 @@
       "commands": [
         {
           "name": "add",
-          "description": "Record feedback for a prediction",
+          "description": "Record feedback for a prediction, or for many from a file",
           "options": [
             {
               "name": "--prediction-id",
               "recursive": false,
               "hidden": false,
-              "description": "ID of the prediction to provide feedback for",
+              "description": "ID of the prediction to provide feedback for (with --actual-value; or give --from-file for many)",
               "arguments": [
                 {
                   "name": "PREDICTION_ID",
@@ -1209,7 +1243,7 @@
               "name": "--source",
               "recursive": false,
               "hidden": false,
-              "description": "Where the value came from (e.g., 'user', 'reviewer-llm', 'system')",
+              "description": "Where the value came from (e.g., 'user', 'reviewer-llm', 'system'). With --from-file: for the rows whose source cell is empty",
               "arguments": [
                 {
                   "name": "SOURCE",
@@ -1226,7 +1260,7 @@
               "name": "--weight",
               "recursive": false,
               "hidden": false,
-              "description": "How much this row counts in training and evaluation built from feedback (for a row reviewed with probability p, 1/p). Default 1",
+              "description": "How much this row counts in training and evaluation built from feedback (for a row reviewed with probability p, 1/p). Default 1. With --from-file: for the rows whose weight cell is empty",
               "aliases": [
                 "-w"
               ],
@@ -1239,6 +1273,91 @@
                     "maximum": 1
                   },
                   "type": "Double"
+                }
+              ]
+            },
+            {
+              "name": "--from-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Record feedback for many predictions from a table (csv, xlsx, tsv, ...): one row per prediction, its prediction id and the actual value in columns. Rows that cannot be recorded are listed by row number; the others are recorded",
+              "arguments": [
+                {
+                  "name": "FROM_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--id-column",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --from-file: the column holding the prediction id (default prediction_id)",
+              "arguments": [
+                {
+                  "name": "ID_COLUMN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--actual-column",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --from-file: the column holding the actual value (default actual)",
+              "arguments": [
+                {
+                  "name": "ACTUAL_COLUMN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--source-column",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --from-file: the column holding where each value came from (default source, read when the file has it)",
+              "arguments": [
+                {
+                  "name": "SOURCE_COLUMN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--weight-column",
+              "recursive": false,
+              "hidden": false,
+              "description": "With --from-file: the column holding each row's weight (default weight, read when the file has it)",
+              "arguments": [
+                {
+                  "name": "WEIGHT_COLUMN",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
                 }
               ]
             },
@@ -4528,7 +4647,7 @@
           "arguments": [
             {
               "name": "ENCODER",
-              "description": "The catalog encoder to install (dinov2-small, multilingual-minilm)",
+              "description": "The catalog encoder to install (dinov2-small, dinov2-base, siglip-base-224, multilingual-minilm)",
               "required": true,
               "arity": {
                 "minimum": 1,

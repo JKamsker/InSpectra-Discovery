@@ -1,0 +1,171 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "SharpDrill — source-backed analysis of .NET code: exception flow, call diagrams and the project map.",
+    "version": "0.9.0",
+    "description": "Source-backed analysis of .NET code (Web APIs, console apps, libraries) for people and agents: which exceptions may escape an entry point, where they are caught or miscaught, Mermaid call diagrams and the MSBuild project map. Uses Roslyn and your installed .NET SDK; never builds or edits the analysed code."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 1,
+    "cliFramework": "System.CommandLine"
+  },
+  "commands": [
+    {
+      "name": "diagram",
+      "hidden": false,
+      "description": "Mermaid call graph of one entry point, saved as Markdown (asks which one without --from).\n[--from E] [--declared-only] [--max-depth N] [--max-nodes N] [--max-edges N] [--output F]"
+    },
+    {
+      "name": "exceptions",
+      "hidden": false,
+      "description": "Exceptions along the call chains from each entry point: controller actions, Main or top-level\nstatements, and the public methods of a library project that nothing loaded references.\nuncaught   (default) may leave an entry point: no catch on the way\ncaught     reaches a matching catch: where, and what the handler does\nmiscaught  passes through a try whose catch clauses do not match it\nthrown     every explicit throw in source\n[--from E] [--third-party] [--declared-only] [--locations] [--format msbuild] [--budget N]"
+    },
+    {
+      "name": "projects",
+      "hidden": false,
+      "description": "Project reference tree with each project's framework, nullable settings and warning count.\n[--mermaid [--output F]]"
+    },
+    {
+      "name": "skill",
+      "hidden": false,
+      "description": "Install the agent skill in .github/skills and .claude/skills at the repository root, or with\n--user in ~/.copilot/skills and ~/.claude/skills. No project load."
+    }
+  ],
+  "options": [
+    {
+      "name": "--from",
+      "recursive": false,
+      "hidden": false,
+      "description": "One entry point: its ID, signature or a unique part of it, e.g. OrdersController.Get. Default: all.",
+      "arguments": [
+        {
+          "name": "E",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--third-party",
+      "recursive": false,
+      "hidden": false,
+      "description": "exceptions uncaught: also list calls into NuGet packages and DLLs that no catch meets on the way\n(not .NET itself, logging or Microsoft.Extensions)."
+    },
+    {
+      "name": "--declared-only",
+      "recursive": false,
+      "hidden": false,
+      "description": "Stop at interface/virtual calls instead of following them into their source implementations\n(followed steps are possibilities, never runtime facts)."
+    },
+    {
+      "name": "--locations",
+      "recursive": false,
+      "hidden": false,
+      "description": "exceptions: file:line for every step of each path."
+    },
+    {
+      "name": "--format",
+      "recursive": false,
+      "hidden": false,
+      "description": "exceptions: one build warning per finding, uncaught and miscaught unless a view is given.\nSD0001 may escape an entry point, SD0002 may escape to a global exception handler, SD0003 miscaught,\nSD0004 third-party call with no catch on the way, SD0005 leaves an async void method.",
+      "arguments": [
+        {
+          "name": "MSBUILD",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--budget",
+      "recursive": false,
+      "hidden": false,
+      "description": "Analysis work limit (default 100000); raise it when the output says the run stopped early.",
+      "arguments": [
+        {
+          "name": "N",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--max-depth",
+      "recursive": false,
+      "hidden": false,
+      "description": "diagram: call steps (default 20).  --max-nodes N (default 200).  --max-edges N (default 1000).",
+      "arguments": [
+        {
+          "name": "N",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--mermaid",
+      "recursive": false,
+      "hidden": false,
+      "description": "projects: also save the tree as a Mermaid diagram in Markdown.",
+      "arguments": [
+        {
+          "name": "MERMAID",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": false,
+      "hidden": false,
+      "description": "New file for diagram or projects --mermaid; never overwrites. Default: ./diagrams_exports.\nLoading:\n--configuration NAME (default Debug), --framework TFM (for multi-target inputs), --exclude-generated,\n--include-tests (test projects are skipped by default), --restore (always restore first; by default only when\npackages are missing), --no-restore, --no-cache (analyse again even if nothing changed).",
+      "arguments": [
+        {
+          "name": "F",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Exit: 0 complete, 1 usable but with gaps/Unknown/limits, 2 invalid request or fatal, 130 cancelled.",
+      "aliases": [
+        "--help"
+      ],
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}
