@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "devprojex",
-    "version": "5.2.0",
-    "description": "Turn a folder or repository into focused context for AI from the CLI, TUI, or MCP server."
+    "version": "5.2.5",
+    "description": "Turn any folder or Git repository into token-efficient codebase context for AI coding agents, with secrets always masked. A Repomix alternative: up to 40% fewer tokens. MCP server, CLI, and TUI with Live Context and an agent journal.\n\nDevProjex gives the model less, and better. It finds instead of dumping: search by text, regex, or declaration name, then read one declaration or a line range, not the whole file. It knows how your files connect: related files come from real imports, so the agent sees what a file uses, who uses it, and which tests import it. It shrinks the rest: code compression keeps signatures and drops bodies, Git diffs carry only the changed lines, and context packs fit a token budget. In our 18-task benchmark, agents used 28.8% and 40.9% fewer context tokens than with Repomix 1.19 across two runs.\n\nLive Context puts you in the loop: tick files in the Terminal Workspace or the desktop app and they become the agent's focus on its very next call, with no restart and no new prompt. The agent journal keeps a receipt for every session: calls, delivered files, tokens, and masked values, never file bodies.\n\nDetected secrets are masked before anything reaches the model. In the MCP server that has no off switch; credential detection is based on Gitleaks rules, access is jailed to the project root, and file contents are marked as untrusted data against prompt injection.\n\nThe Model Context Protocol (MCP) server works over stdio with Claude Code, Codex, Cursor, VS Code, Claude Desktop, Windsurf, Google Antigravity, and any other MCP client. The CLI and Terminal Workspace pack source code into a prompt for ChatGPT, Claude, or any LLM chat: pick files in a tree, see the token count, and export Markdown, JSON, XML, or plain text, or a clean project copy as a folder or ZIP. In CI, fail the build when secrets would reach the prompt.\n\nSelf-contained for Windows, Linux, and macOS on x64 and arm64. Run it with dnx devprojex or install it with dotnet tool install --global devprojex. Local, no telemetry."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 47,
+    "helpDocumentCount": 48,
     "cliParsedDescription": "DevProjex project context tools."
   },
   "commands": [
@@ -1081,6 +1081,367 @@
             "minimum": 1,
             "maximum": 1
           }
+        }
+      ]
+    },
+    {
+      "name": "diff",
+      "hidden": false,
+      "description": "Show the changed lines of uncommitted, staged, or ref-to-ref changes.",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "Project directory or Git repository URL. Defaults\nto the current directory.",
+          "arguments": [
+            {
+              "name": "PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--context",
+          "recursive": false,
+          "hidden": false,
+          "description": "Set the number of unchanged lines shown around\neach change, from 0 to 20. Default: 3.",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format. Default: text.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output path, or - for stdout. Default: -.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--branch",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repository branch for a URL source.",
+          "aliases": [
+            "-b"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Selection profile: standard, local, or a portable profile file. Default:\nstandard.",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROFILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include a root folder. Repeatable.",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--extension",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include a file extension. Repeatable.",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "EXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--select",
+          "recursive": false,
+          "hidden": false,
+          "description": "Include a relative file or directory path. Repeatable.",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "RELATIVE_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--select-from",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read source-relative selected paths from a UTF-8\nfile or stdin (-).",
+          "arguments": [
+            {
+              "name": "SELECT_FROM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--git-mode",
+          "recursive": false,
+          "hidden": false,
+          "description": "Git filtering mode: staged, changes,\ndiff:<ref>..<ref>.",
+          "arguments": [
+            {
+              "name": "MODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Set an ordinary exclusion. Repeatable.",
+          "aliases": [
+            "-x"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max-file-bytes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exclude selected files larger than SIZE (bytes or\nIEC suffixes).",
+          "arguments": [
+            {
+              "name": "SIZE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--hide-secrets",
+          "recursive": false,
+          "hidden": false,
+          "description": "Redact detected values in selected text files.\nBinary files are not inspected; no matches is not\na safety guarantee.",
+          "arguments": [
+            {
+              "name": "HIDE_SECRETS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-hide-secrets",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable secret redaction."
+        },
+        {
+          "name": "--hide-private-data",
+          "recursive": false,
+          "hidden": false,
+          "description": "Redact detected private data in selected text files. Binary files are not\ninspected; no matches is not a privacy guarantee.",
+          "arguments": [
+            {
+              "name": "HIDE_PRIVATE_DATA",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-hide-private-data",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable private-data redaction."
+        },
+        {
+          "name": "--progress",
+          "recursive": false,
+          "hidden": false,
+          "description": "Progress mode. Default: auto.\n-?, -h, /?, /h, --help      Show help and usage information.",
+          "arguments": [
+            {
+              "name": "PROGRESS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--language",
+          "recursive": false,
+          "hidden": false,
+          "description": "Human-facing language. Default: en.",
+          "arguments": [
+            {
+              "name": "CODE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--color",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "COLOR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--verbosity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Diagnostic verbosity. Default: normal.",
+          "arguments": [
+            {
+              "name": "VERBOSITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "Suppress nonessential output.",
+          "aliases": [
+            "-q"
+          ]
+        },
+        {
+          "name": "--plain",
+          "recursive": false,
+          "hidden": false,
+          "description": "Disable ANSI styling and animations."
         }
       ]
     },
@@ -2251,7 +2612,7 @@
           "name": "--tool-set",
           "recursive": false,
           "hidden": false,
-          "description": "Publish the full tool catalog, or reduced without\nanalyze and pack_context. Default: full.",
+          "description": "Publish the full tool catalog, or reduced without\nanalyze and pack_context, and without\nlist_projects unless there are several roots or\n--allow-remote. Default: reduced.",
           "arguments": [
             {
               "name": "TOOL_SET",
@@ -2427,7 +2788,7 @@
               "name": "--replace",
               "recursive": false,
               "hidden": false,
-              "description": "Confirm replacing an existing devprojex entry:\nextra fields in a Cursor or VS Code entry, or the\nsingle Codex entry when it points to another\nproject.\n-?, -h, /?, /h, --help      Show help and usage information."
+              "description": "Confirm replacing an existing devprojex entry:\nextra fields in a Cursor or VS Code entry, the\nsingle Codex entry when it points to another\nproject, or a Claude Code or Codex entry that\nDevProjex did not write.\n-?, -h, /?, /h, --help      Show help and usage information."
             },
             {
               "name": "--language",
@@ -3387,7 +3748,8 @@
               "arity": {
                 "minimum": 0,
                 "maximum": 1
-              }
+              },
+              "description": "Profile file to import."
             },
             {
               "name": "PROJECT",
@@ -4024,7 +4386,8 @@
               "arity": {
                 "minimum": 1,
                 "maximum": 1
-              }
+              },
+              "description": "Profile file to check."
             }
           ]
         }
@@ -5796,7 +6159,8 @@
                   "arity": {
                     "minimum": 1,
                     "maximum": 1
-                  }
+                  },
+                  "description": "Text to filter the tree by."
                 }
               ]
             }
@@ -6339,6 +6703,17 @@
                   "recursive": false,
                   "hidden": false,
                   "description": "Disable ANSI styling and animations."
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "TREE_CONTENT",
+                  "required": false,
+                  "hidden": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
                 }
               ]
             }
@@ -6888,7 +7263,8 @@
                   "arity": {
                     "minimum": 1,
                     "maximum": 1
-                  }
+                  },
+                  "description": "Text to search for."
                 }
               ]
             }
@@ -7194,6 +7570,17 @@
                   "recursive": false,
                   "hidden": false,
                   "description": "Disable ANSI styling and animations."
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "MARKDOWN",
+                  "required": false,
+                  "hidden": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
                 }
               ]
             }

@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "saci",
-    "version": "0.177.0",
+    "version": "0.208.0",
     "description": "saci - Software Agent for Continuous Improvement: autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code."
   },
   "x-inspectra": {
@@ -15,7 +15,7 @@
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "saci 0.177.0 - Software Agent for Continuous Improvement. Autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code. 'saci shell' opens an interactive shell."
+    "cliParsedDescription": "saci 0.208.0 - Software Agent for Continuous Improvement. Autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code. 'saci shell' opens an interactive shell."
   },
   "options": [
     {
@@ -78,6 +78,23 @@
       "arguments": [
         {
           "name": "IGNORE_LIMITS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--fast",
+      "recursive": true,
+      "hidden": false,
+      "description": "Get it done sooner, whatever it costs in tokens and machine load: every session runs on the biggest model with less thinking ('fast' in the configuration: model, effort; fastMode adds Claude Code's fast mode, which is paid from usage credits and not part of the subscription, so it is off unless set), splits its work across subagents, and more items are worked on at the same time (fast.maxParallel, one per processor). Budgets, usage limits and the checks of the protocols still apply. [default: False]",
+      "arguments": [
+        {
+          "name": "FAST",
           "required": false,
           "arity": {
             "minimum": 0,
@@ -694,6 +711,26 @@
           ]
         },
         {
+          "name": "--exclude-label",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave out pull requests and issues carrying this label (a pull request also when the issue it closes does). Repeatable: an item carrying any label named is left out.",
+          "aliases": [
+            "-L"
+          ],
+          "arguments": [
+            {
+              "name": "EXCLUDE_LABEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
           "name": "--max",
           "recursive": false,
           "hidden": false,
@@ -904,6 +941,126 @@
           ]
         },
         {
+          "name": "--notes",
+          "recursive": false,
+          "hidden": false,
+          "description": "What this run needs beyond the documenter personas, in your words: what to finish, how to do a step. Passed to the session as it is; where it differs from a persona the session follows it, which is how to try an instruction before committing it to the persona.",
+          "arguments": [
+            {
+              "name": "NOTES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show what would be done without starting Claude or changing anything. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "eval",
+      "description": "Measure the reviewer: replay its review on past pull requests whose outcome is known (the repository's eval set) and score it. A case with a known flaw passes when the review names the flaw; a control passes when it is approved. Nothing is published.",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Repository to work on (owner/name). Defaults to the repository of the current folder.",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--pr",
+          "recursive": false,
+          "hidden": false,
+          "description": "Replay only this pull request of the eval set.",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PR",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--max",
+          "recursive": false,
+          "hidden": false,
+          "description": "Replay at most this many cases, in the order of the eval set. Every case by default.",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "MAX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--file",
+          "recursive": false,
+          "hidden": false,
+          "description": "The eval set to use instead of the repository's `.saci/eval/reviewer.json`.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--dry-run",
           "recursive": false,
           "hidden": false,
@@ -1005,8 +1162,25 @@
     },
     {
       "name": "learn",
-      "description": "Learner: study what people corrected in saci's merged or closed pull requests and add the lessons to the personas.",
+      "description": "Learner: study what people corrected in saci's merged or closed pull requests and add the lessons to the personas; with --prune, propose removing the lessons that no longer hold.",
       "options": [
+        {
+          "name": "--prune",
+          "recursive": false,
+          "hidden": false,
+          "description": "Do not study pull requests: check the lessons already in the personas against the repository as it is now and propose removing those that no longer hold (what they name is gone, another says the same, a later one replaces them). [default: False]",
+          "arguments": [
+            {
+              "name": "PRUNE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
         {
           "name": "--repo",
           "recursive": false,
@@ -1655,6 +1829,26 @@
           ]
         },
         {
+          "name": "--exclude-label",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave out pull requests carrying this label, or closing an issue that carries it. Repeatable: an item carrying any label named is left out.",
+          "aliases": [
+            "-L"
+          ],
+          "arguments": [
+            {
+              "name": "EXCLUDE_LABEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
           "name": "--max",
           "recursive": false,
           "hidden": false,
@@ -2275,6 +2469,26 @@
           ]
         },
         {
+          "name": "--exclude-label",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --max: never choose issues carrying this label. Repeatable: an item carrying any label named is left out.",
+          "aliases": [
+            "-L"
+          ],
+          "arguments": [
+            {
+              "name": "EXCLUDE_LABEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
           "name": "--retriage",
           "recursive": false,
           "hidden": false,
@@ -2411,6 +2625,23 @@
                 "maximum": 1
               },
               "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--personas",
+          "recursive": false,
+          "hidden": false,
+          "description": "Instead of costs, compare the versions of each profile's persona: what the quality ledger recorded with each one (sample size, median and worst decile). Covers the whole ledger, not only --days. [default: False]",
+          "arguments": [
+            {
+              "name": "PERSONAS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }
@@ -2689,6 +2920,26 @@
           "arguments": [
             {
               "name": "LABEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--exclude-label",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave out issues carrying this label, on top of triager.excludeLabels. Repeatable: an item carrying any label named is left out.",
+          "aliases": [
+            "-L"
+          ],
+          "arguments": [
+            {
+              "name": "EXCLUDE_LABEL",
               "required": true,
               "arity": {
                 "minimum": 1,

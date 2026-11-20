@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "SageFs - F# Interactive daemon with MCP, hot reloading, and live dashboard",
-    "version": "0.6.945",
+    "version": "0.6.956",
     "description": "F# Interactive that already has your project loaded, re-runs the affected tests on unsaved edits, and patches your running app on save. VS Code, Neovim, a web dashboard and an MCP server for agents share one session."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 15
+    "helpDocumentCount": 16
   },
   "commands": [
     {
@@ -150,7 +150,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -232,7 +232,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -374,12 +374,16 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
         },
         {
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
@@ -413,7 +417,7 @@
               "name": "--mcp-port",
               "recursive": false,
               "hidden": false,
-              "description": "Set custom MCP server port (default: 37749)",
+              "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
               "arguments": [
                 {
                   "name": "PORT",
@@ -495,7 +499,7 @@
               "name": "--ttl",
               "recursive": false,
               "hidden": false,
-              "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+              "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
               "arguments": [
                 {
                   "name": "DURATION",
@@ -632,12 +636,16 @@
             {
               "name": "stop",
               "hidden": false,
-              "description": "Stop running daemon"
+              "description": "Stop running daemon (and its FSI host workers)"
             },
             {
               "name": "sweep",
               "hidden": false,
               "description": "Reap daemons whose owner process is gone"
+            },
+            {
+              "name": "uninstall",
+              "hidden": false
             }
           ]
         }
@@ -670,7 +678,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -752,7 +760,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -894,12 +902,16 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
         },
         {
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
@@ -933,7 +945,7 @@
               "name": "--mcp-port",
               "recursive": false,
               "hidden": false,
-              "description": "Set custom MCP server port (default: 37749)",
+              "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
               "arguments": [
                 {
                   "name": "PORT",
@@ -1015,7 +1027,7 @@
               "name": "--ttl",
               "recursive": false,
               "hidden": false,
-              "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+              "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
               "arguments": [
                 {
                   "name": "DURATION",
@@ -1152,12 +1164,16 @@
             {
               "name": "stop",
               "hidden": false,
-              "description": "Stop running daemon"
+              "description": "Stop running daemon (and its FSI host workers)"
             },
             {
               "name": "sweep",
               "hidden": false,
               "description": "Reap daemons whose owner process is gone"
+            },
+            {
+              "name": "uninstall",
+              "hidden": false
             }
           ]
         }
@@ -1190,7 +1206,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -1272,7 +1288,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -1414,12 +1430,16 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
         },
         {
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
@@ -1450,7 +1470,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -1532,7 +1552,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -1674,12 +1694,16 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
         },
         {
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
@@ -1710,7 +1734,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -1792,7 +1816,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -1934,12 +1958,16 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
         },
         {
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
@@ -1973,7 +2001,7 @@
               "name": "--mcp-port",
               "recursive": false,
               "hidden": false,
-              "description": "Set custom MCP server port (default: 37749)",
+              "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
               "arguments": [
                 {
                   "name": "PORT",
@@ -2055,7 +2083,7 @@
               "name": "--ttl",
               "recursive": false,
               "hidden": false,
-              "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+              "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
               "arguments": [
                 {
                   "name": "DURATION",
@@ -2192,12 +2220,16 @@
             {
               "name": "stop",
               "hidden": false,
-              "description": "Stop running daemon"
+              "description": "Stop running daemon (and its FSI host workers)"
             },
             {
               "name": "sweep",
               "hidden": false,
               "description": "Reap daemons whose owner process is gone"
+            },
+            {
+              "name": "uninstall",
+              "hidden": false
             }
           ]
         }
@@ -2230,7 +2262,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -2312,7 +2344,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -2454,12 +2486,16 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
         },
         {
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
@@ -2489,7 +2525,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -2571,7 +2607,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -2714,12 +2750,16 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
         },
         {
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
@@ -2750,7 +2790,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -2832,7 +2872,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -2974,19 +3014,23 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
         },
         {
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
     {
       "name": "stop",
       "hidden": false,
-      "description": "Stop running daemon",
+      "description": "Stop running daemon (and its FSI host workers)",
       "options": [
         {
           "name": "--version",
@@ -3010,7 +3054,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -3092,7 +3136,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -3240,6 +3284,10 @@
           "name": "sweep",
           "hidden": false,
           "description": "Reap daemons whose owner process is gone"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
         }
       ]
     },
@@ -3270,7 +3318,7 @@
           "name": "--mcp-port",
           "recursive": false,
           "hidden": false,
-          "description": "Set custom MCP server port (default: 37749)",
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
           "arguments": [
             {
               "name": "PORT",
@@ -3352,7 +3400,7 @@
           "name": "--ttl",
           "recursive": false,
           "hidden": false,
-          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
           "arguments": [
             {
               "name": "DURATION",
@@ -3499,7 +3547,275 @@
         {
           "name": "stop",
           "hidden": false,
-          "description": "Stop running daemon"
+          "description": "Stop running daemon (and its FSI host workers)"
+        },
+        {
+          "name": "uninstall",
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "uninstall",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--version",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show version information",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show this help message",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--mcp-port",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
+          "arguments": [
+            {
+              "name": "PORT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--jupyter",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run as Jupyter kernel with given connection file",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--supervised",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run under watchdog supervisor (auto-restart on crash)"
+        },
+        {
+          "name": "--no-resume",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip restoring previous sessions on daemon startup"
+        },
+        {
+          "name": "--prune",
+          "recursive": false,
+          "hidden": false,
+          "description": "Mark all stale sessions as stopped and exit"
+        },
+        {
+          "name": "--owner-pid",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit when the process at PID exits (fenced by --owner-start\nwhen given). For daemons an agent, test, or demo spawns.",
+          "arguments": [
+            {
+              "name": "PID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--owner-start",
+          "recursive": false,
+          "hidden": false,
+          "description": "UTC ticks of the owner's own start time, pairs with\n--owner-pid to close the pid-reuse race.",
+          "arguments": [
+            {
+              "name": "TICKS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--ttl",
+          "recursive": false,
+          "hidden": false,
+          "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+          "arguments": [
+            {
+              "name": "DURATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "MEMBER_ID",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "TOOL",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "PARAMETER",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "VALUE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "NAME",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "LEDGERJSONL",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "call",
+          "hidden": false,
+          "description": "List the daemon's tools (name and first line of the description)"
+        },
+        {
+          "name": "check",
+          "hidden": false,
+          "description": "Check environment before first run"
+        },
+        {
+          "name": "cohort",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "seat",
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "cohort-export",
+          "hidden": false,
+          "description": "Write the cohort ledger to a file play can replay (--scope <path>, --data-dir <dir>)"
+        },
+        {
+          "name": "data",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "clear",
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "hygiene",
+          "hidden": false,
+          "description": "Put the work of worktree <name> (commits and uncommitted files) on branch rescue/<name>, rebased on the base, and say whether the base already has it"
+        },
+        {
+          "name": "install-skill",
+          "hidden": false,
+          "description": "Install the sagefs agent skill (~/.claude/skills; --dir <folder>)"
+        },
+        {
+          "name": "mcp",
+          "hidden": false,
+          "description": "Speak MCP over stdio (spawns the daemon if needed)"
+        },
+        {
+          "name": "member",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "mint",
+              "hidden": false
+            }
+          ]
+        },
+        {
+          "name": "play",
+          "hidden": false,
+          "description": "Replay a portable cohort ledger file offline"
+        },
+        {
+          "name": "setup",
+          "hidden": false
+        },
+        {
+          "name": "status",
+          "hidden": false,
+          "description": "Show daemon info"
+        },
+        {
+          "name": "stop",
+          "hidden": false,
+          "description": "Stop running daemon (and its FSI host workers)"
+        },
+        {
+          "name": "sweep",
+          "hidden": false,
+          "description": "Reap daemons whose owner process is gone"
         }
       ]
     }
@@ -3527,7 +3843,7 @@
       "name": "--mcp-port",
       "recursive": false,
       "hidden": false,
-      "description": "Set custom MCP server port (default: 37749)",
+      "description": "Run on PORT for this run only (default: 37749). A port other than the configured\none needs --ttl or --owner-pid; to move your daemon for good, set SAGEFS_MCP_PORT.",
       "arguments": [
         {
           "name": "PORT",
@@ -3609,7 +3925,7 @@
       "name": "--ttl",
       "recursive": false,
       "hidden": false,
-      "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check   0 = every check passed          1 = at least one check failed\nsagefs stop    0 = a running daemon was stopped 1 = there was nothing to stop\nEnvironment Variables:\nSAGEFS_MCP_PORT           Override MCP server port (same as --mcp-port)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
+      "description": "Self-terminate after DURATION (e.g. 30m, 1h, 90s) with no\nlive sessions and no MCP/SSE clients.\nA value that is not valid (--ttl 30min) stops the daemon at\nstart with exit code 2; it never starts unowned.\nA small number of legacy or not-yet-wired flags are still recognized but\nare refused with an explanation instead of being silently accepted — pass\none and read the error for what to do instead.\nExit codes:\nsagefs check     0 = no check failed (warnings and notes are listed)   1 = at least one check failed\nsagefs stop      0 = stopped   1 = there was nothing to stop   3 = stopped, but a service, watchdog\nor agent bridge will start a new one (the output names it and the command that stops it)\nsagefs status    0 = running and healthy   1 = not running   3 = running, a component failed\n4 = wedged (a process holds the port and never answers)\na word sagefs does not know, or a missing argument: 2\nEnvironment Variables:\nSAGEFS_MCP_PORT           The MCP port your daemon and its clients use (the dashboard takes the port after it)\nSAGEFS_BIND_HOST          Loopback bind address: localhost (default), 127.0.0.1 or ::1.\nNon-loopback addresses are refused — SageFs has no authentication.\nDaemon:\nSageFs runs as a daemon by default. The daemon provides:\nMCP server      http://localhost:37749/     (Streamable HTTP)\nhttp://localhost:37749/sse (SSE for older clients)\nDashboard       http://localhost:37750/dashboard  (live web UI)\nFile watcher    Auto-reload .fs/.fsx changes via #load\nHot reload      Runtime function redefinition\nThe dashboard, MCP agents, and editor integrations are clients of the daemon.\nIf a daemon is already running, `sagefs` reports its dashboard URL.\nQuick Start:\n1. sagefs check                      Verify your environment (SDK, ports, fsi)\n2. sagefs                            Start the daemon — it starts BARE, with no\nproject loaded and no session created yet\n3. Open your editor (VS Code or Neovim), or visit the dashboard\n4. Create a session for your project — this is the concrete next step; the\ndaemon does not do it for you\n5. Edit an F# file and save — live test results appear automatically\nOr visit http://localhost:37750/dashboard in your browser.",
       "arguments": [
         {
           "name": "DURATION",

@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "mbus",
-    "version": "0.1.1-preview.1",
+    "version": "0.2.0-preview.3",
     "description": "The mbus command for messagebus.ai: connect coding agents on different machines, run tasks on this one, and give agents the messagebus.ai MCP tools."
   },
   "x-inspectra": {
@@ -40,7 +40,7 @@
       "name": "--server",
       "recursive": true,
       "hidden": false,
-      "description": "Server address, for example https://messagebus.ai. Defaults to the one you last signed in to.",
+      "description": "Server address, for example https://app.messagebus.ai. Defaults to the one you last signed in to.",
       "arguments": [
         {
           "name": "SERVER",
@@ -143,23 +143,6 @@
               "type": "Boolean"
             }
           ]
-        },
-        {
-          "name": "--device-code",
-          "recursive": false,
-          "hidden": false,
-          "description": "Deprecated: sign in with a Microsoft device code instead of approving in the dashboard. [default: False]",
-          "arguments": [
-            {
-              "name": "DEVICE_CODE",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
         }
       ]
     },
@@ -237,7 +220,60 @@
     },
     {
       "name": "doctor",
-      "description": "Check that this machine can take tasks, and say how to fix what it can't."
+      "description": "Check that this machine can take tasks, and say how to fix what it can't.",
+      "options": [
+        {
+          "name": "--smoke",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also have each agent change a line, build, test and commit in a small project here, as a task would. This runs each agent once, so it uses some of its tokens. [default: False]",
+          "arguments": [
+            {
+              "name": "SMOKE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --smoke: test only this agent (claude-code, codex, copilot or opencode).",
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--keep",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --smoke: keep each test's run folder for a day and print where it is. [default: False]",
+          "arguments": [
+            {
+              "name": "KEEP",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
     },
     {
       "name": "mcp",
@@ -262,6 +298,41 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "setup",
+          "description": "Ask this machine's running runner to install Git after owner approval.",
+          "options": [
+            {
+              "name": "--acknowledge-interrupted",
+              "recursive": false,
+              "hidden": false,
+              "description": "Confirm you have finished or closed any Git installer, then clear the local safety pause. Installs nothing. [default: False]",
+              "arguments": [
+                {
+                  "name": "ACKNOWLEDGE_INTERRUPTED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TOOL",
+              "description": "The prerequisite to set up (git only). [default: git]",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         }
       ]
     },
@@ -271,7 +342,7 @@
     },
     {
       "name": "update",
-      "description": "Install the latest mbus from the server you signed in to, after checking it is signed by messagebus.ai.",
+      "description": "Update mbus through dotnet tool or the signed standalone release feed.",
       "options": [
         {
           "name": "--check",
@@ -340,6 +411,26 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "--yes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Update the dotnet tool without asking. [default: False]",
+          "aliases": [
+            "-y"
+          ],
+          "arguments": [
+            {
+              "name": "YES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ]
     },
@@ -353,8 +444,25 @@
         },
         {
           "name": "trust",
-          "description": "Accept a key whose fingerprint changed, after you've checked it with an admin.",
+          "description": "Check and trust admin computers, or accept a key after checking its fingerprint with an admin.",
           "options": [
+            {
+              "name": "--admins",
+              "recursive": false,
+              "hidden": false,
+              "description": "Check and trust the admin computers that signed this workspace's current keys. [default: False]",
+              "arguments": [
+                {
+                  "name": "ADMINS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
             {
               "name": "--yes",
               "recursive": false,
@@ -377,9 +485,9 @@
             {
               "name": "KEY",
               "description": "A role name, workspace, or an admin computer's machine id (mch_…).",
-              "required": true,
+              "required": false,
               "arity": {
-                "minimum": 1,
+                "minimum": 0,
                 "maximum": 1
               },
               "type": "String"
@@ -635,7 +743,7 @@
           "name": "--project",
           "recursive": false,
           "hidden": false,
-          "description": "The project (default: the newest active one for this repository's remote).",
+          "description": "The project. Without it the message is sent without a project.",
           "arguments": [
             {
               "name": "PROJECT",
@@ -887,6 +995,23 @@
           ]
         },
         {
+          "name": "--model",
+          "recursive": false,
+          "hidden": false,
+          "description": "The model to run the task on, for example claude-fable-5-2. Only an agent that reports it takes it.",
+          "arguments": [
+            {
+              "name": "MODEL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--wait",
           "recursive": false,
           "hidden": false,
@@ -930,7 +1055,7 @@
           "name": "--project",
           "recursive": false,
           "hidden": false,
-          "description": "Look up a project: its threads and totals.",
+          "description": "Look up a project by ID or key for its threads and totals.",
           "arguments": [
             {
               "name": "PROJECT",
@@ -988,6 +1113,322 @@
             "maximum": 100000
           },
           "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "project",
+      "description": "Find, coordinate or complete a project.",
+      "commands": [
+        {
+          "name": "find",
+          "description": "Look up a visible project without creating one.",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the result as JSON (stable for scripts) instead of text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "A project key or claimed work item.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "ensure",
+          "description": "Find or create a project and acquire any requested claims.",
+          "options": [
+            {
+              "name": "--title",
+              "recursive": false,
+              "hidden": false,
+              "description": "Title for a new project.",
+              "arguments": [
+                {
+                  "name": "TITLE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--claim",
+              "recursive": false,
+              "hidden": false,
+              "description": "Claim an explicit tracker work item. Repeat for each item.",
+              "arguments": [
+                {
+                  "name": "CLAIM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--coordinator-inbox",
+              "recursive": false,
+              "hidden": false,
+              "description": "Resume a locally saved coordinator inbox with the same complete --claim list.",
+              "arguments": [
+                {
+                  "name": "COORDINATOR_INBOX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--execution-scope",
+              "recursive": false,
+              "hidden": false,
+              "description": "Choose workspace or owner-runners when creating a project. Omit to preserve the existing scope.",
+              "arguments": [
+                {
+                  "name": "EXECUTION_SCOPE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the result as JSON (stable for scripts) instead of text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "KEY",
+              "description": "A project key, for example gh:owner/repo#42 or file:plan.md.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "complete",
+          "description": "Mark a project completed or failed.",
+          "options": [
+            {
+              "name": "--summary",
+              "recursive": false,
+              "hidden": false,
+              "description": "What was done, for the dashboard.",
+              "arguments": [
+                {
+                  "name": "SUMMARY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--status",
+              "recursive": false,
+              "hidden": false,
+              "description": "Complete as completed (default) or failed.",
+              "arguments": [
+                {
+                  "name": "STATUS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print the result as JSON (stable for scripts) instead of text. [default: False]",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The project ID or key.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "move",
+      "description": "Move a task sent from this machine/session’s agent under the wrong project.",
+      "options": [
+        {
+          "name": "--project",
+          "recursive": false,
+          "hidden": false,
+          "description": "The destination project id, or none.",
+          "arguments": [
+            {
+              "name": "PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-subtasks",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave sub-tasks where they are. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_SUBTASKS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--reason",
+          "recursive": false,
+          "hidden": false,
+          "description": "Why the task is moving.",
+          "arguments": [
+            {
+              "name": "REASON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show what would move without changing anything. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the result as JSON (stable for scripts) instead of text. [default: False]",
+          "arguments": [
+            {
+              "name": "JSON",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "THREAD",
+          "description": "The task to move.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
         }
       ]
     },
@@ -1110,7 +1551,7 @@
           "name": "--project",
           "recursive": false,
           "hidden": false,
-          "description": "Only this project's threads.",
+          "description": "Only threads for this project ID or key.",
           "arguments": [
             {
               "name": "PROJECT",
@@ -1602,8 +2043,7 @@
         {
           "name": "--slots",
           "recursive": false,
-          "hidden": false,
-          "description": "The most tasks this machine runs at once. Without it, choose the number on the dashboard.",
+          "hidden": true,
           "arguments": [
             {
               "name": "SLOTS",
@@ -1612,7 +2052,7 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "Int32"
+              "type": "String"
             }
           ]
         },
@@ -1649,6 +2089,57 @@
               "type": "String"
             }
           ]
+        },
+        {
+          "name": "--keep-awake",
+          "recursive": false,
+          "hidden": false,
+          "description": "macOS idle sleep protection: always (default), tasks (only while running tasks), or off. The display may sleep and manual sleep still works.",
+          "arguments": [
+            {
+              "name": "KEEP_AWAKE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--codex-sandbox",
+          "recursive": false,
+          "hidden": false,
+          "description": "On Windows, require Codex's sandbox: always, or unelevated for its restricted-token sandbox.",
+          "arguments": [
+            {
+              "name": "CODEX_SANDBOX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--agent-tools",
+          "recursive": false,
+          "hidden": false,
+          "description": "Let role runs keep named tools from this computer's agent settings: allow (default) or refuse.",
+          "arguments": [
+            {
+              "name": "AGENT_TOOLS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         }
       ],
       "commands": [
@@ -1659,8 +2150,7 @@
             {
               "name": "--slots",
               "recursive": false,
-              "hidden": false,
-              "description": "The most tasks this machine runs at once. Without it, choose the number on the dashboard.",
+              "hidden": true,
               "arguments": [
                 {
                   "name": "SLOTS",
@@ -1669,7 +2159,7 @@
                     "minimum": 1,
                     "maximum": 1
                   },
-                  "type": "Int32"
+                  "type": "String"
                 }
               ]
             },
@@ -1706,6 +2196,91 @@
                   "type": "Boolean"
                 }
               ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Install even when the mbus set up before is a newer version. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--keep-awake",
+              "recursive": false,
+              "hidden": false,
+              "description": "macOS idle sleep protection: always (default), tasks (only while running tasks), or off. The display may sleep and manual sleep still works.",
+              "arguments": [
+                {
+                  "name": "KEEP_AWAKE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--codex-sandbox",
+              "recursive": false,
+              "hidden": false,
+              "description": "On Windows, require Codex's sandbox: always, or unelevated for its restricted-token sandbox.",
+              "arguments": [
+                {
+                  "name": "CODEX_SANDBOX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--agent-tools",
+              "recursive": false,
+              "hidden": false,
+              "description": "Let role runs keep named tools from this computer's agent settings: allow (default) or refuse.",
+              "arguments": [
+                {
+                  "name": "AGENT_TOOLS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--key-store",
+              "recursive": false,
+              "hidden": false,
+              "description": "On macOS: file or keychain. Persist where this machine keeps its key.",
+              "arguments": [
+                {
+                  "name": "KEY_STORE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
             }
           ]
         },
@@ -1731,6 +2306,10 @@
               ]
             }
           ]
+        },
+        {
+          "name": "stop",
+          "description": "Stop the runner now and keep it stopped, also after you sign in again. Running tasks go back to the queue."
         },
         {
           "name": "env",
