@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "fshw",
-    "version": "0.14.0-alpha.147",
+    "version": "0.14.0-alpha.156",
     "description": "CLI for FsHotWatch — F# file watcher daemon"
   },
   "x-inspectra": {
@@ -20,7 +20,7 @@
           "name": "--json",
           "recursive": false,
           "hidden": false,
-          "description": "Print the report as one fshw-analytics-v1 JSON object (env: FS_HOT_WATCH_JSON)",
+          "description": "Print the report as one fshw-analytics-v2 JSON object (env: FS_HOT_WATCH_JSON)",
           "aliases": [
             "-j"
           ]
@@ -64,7 +64,7 @@
           "name": "--store",
           "recursive": false,
           "hidden": false,
-          "description": "Read the outcome store from this directory instead of this repository's box-wide one (env: FS_HOT_WATCH_STORE)",
+          "description": "Read the outcome store in this directory (repeatable: the stores are read as a union, each finding naming its store). Default: this repository's box-wide one (repeatable) (env: FS_HOT_WATCH_STORE)",
           "arguments": [
             {
               "name": "STRING",
@@ -80,7 +80,7 @@
           "name": "--shadow-log",
           "recursive": false,
           "hidden": false,
-          "description": "Read this shadow ledger (repeatable). Default: this checkout's, and that of every worktree the store names (repeatable) (env: FS_HOT_WATCH_SHADOW_LOG)",
+          "description": "Read this shadow ledger (repeatable). Default: this checkout's, and that of every worktree the stores name (repeatable) (env: FS_HOT_WATCH_SHADOW_LOG)",
           "arguments": [
             {
               "name": "STRING",
@@ -97,7 +97,7 @@
     {
       "name": "audit",
       "hidden": false,
-      "description": "Clean-recompute audit (ADR-059 §35): compare the records this repository's outcome store holds with the records a from-scratch recompute filed under the SAME keys; a difference is a key that missed an input. Seeded sample per kind, exit 0 agree, 1 mismatch, 3 nothing compared, 2 usage (reads both stores; never contacts the daemon)",
+      "description": "Clean-recompute audit (ADR-059 §35): compare the records this repository's outcome store holds with the records a from-scratch recompute filed under the SAME keys; a difference is a key that missed an input. Seeded sample per kind, exit 0 agree, 1 mismatch, 3 nothing compared or a kind not audited, 2 usage (reads both stores; never contacts the daemon)",
       "options": [
         {
           "name": "--clean",
@@ -135,7 +135,26 @@
           "name": "--store",
           "recursive": false,
           "hidden": false,
-          "description": "Audit this outcome store instead of this repository's box-wide one (env: FS_HOT_WATCH_STORE)",
+          "description": "Audit this outcome store instead of this repository's box-wide one; a cache home's store (<home>/cache/outcomes/<ns>/v1) brings its evidence store (env: FS_HOT_WATCH_STORE)",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--evidence",
+          "recursive": false,
+          "hidden": false,
+          "description": "Audit this test-evidence store (for a --store that is not a cache home's outcome store; without one, test-evidence is NOT AUDITED, exit 3) (env: FS_HOT_WATCH_EVIDENCE)",
+          "aliases": [
+            "-e"
+          ],
           "arguments": [
             {
               "name": "STRING",
@@ -151,7 +170,7 @@
           "name": "--kind",
           "recursive": false,
           "hidden": false,
-          "description": "A record kind to sample (repeatable; default: check) (repeatable) (env: FS_HOT_WATCH_KIND)",
+          "description": "A record kind to sample: check, options, options-inputs, options-portable, options-portable-inputs, format, testprune-analysis, analyze, test, test-evidence, or all (repeatable or comma-separated; default: check; an unknown kind is a usage error) (repeatable) (env: FS_HOT_WATCH_KIND)",
           "arguments": [
             {
               "name": "STRING",
@@ -247,6 +266,22 @@
           "aliases": [
             "-o"
           ],
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--shadow-log",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also report LOOKUP AGREEMENT from this shadow log (a checkout's .fshw/shadow/lookup-verdict.jsonl; repeatable): daemon-green publications the lookup answered green, and lookup greens on daemon reds (repeatable) (env: FS_HOT_WATCH_SHADOW_LOG)",
           "arguments": [
             {
               "name": "STRING",

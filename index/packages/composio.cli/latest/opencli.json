@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Composio.CLI",
-    "version": "1.0.1-dev.148",
+    "version": "1.0.1-dev.157",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -705,16 +705,33 @@
           "commands": [
             {
               "name": "get-cli-get-session",
-              "description": "Get CLI session details by ID or code\nRetrieves the current state of a CLI session using either the session ID (UUID) or the 6-character code. The first UUID lookup after the session is linked returns its API key; each session issues one key. A code lookup reports status only and never returns a key.",
+              "description": "Get CLI session details by ID\nRetrieves the current state of a CLI session using its session ID (UUID v4). The first lookup after the session is linked returns its API key; each session issues one key. Display codes are not accepted. For a session created with a code_challenge, every lookup must send the verifier in the x-cli-session-secret header; a session created without one rejects any lookup that sends the header.",
               "options": [
                 {
                   "name": "--id",
                   "recursive": false,
                   "hidden": false,
-                  "description": "CLI session ID (UUID format) or 6-character code to check. Both formats are supported for flexibility in client implementations.",
+                  "description": "CLI session ID (UUID format) to check.",
                   "arguments": [
                     {
                       "name": "ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Guid"
+                    }
+                  ]
+                },
+                {
+                  "name": "--x-cli-session-secret",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The code_verifier whose S256 hash is the session's code_challenge. Required on every UUID lookup of a session created with a code_challenge; omit it for a session created without one.",
+                  "arguments": [
+                    {
+                      "name": "X_CLI_SESSION_SECRET",
                       "required": true,
                       "arity": {
                         "minimum": 1,
@@ -728,7 +745,7 @@
             },
             {
               "name": "post-cli-create-session",
-              "description": "Create a new CLI session with auth code\nGenerates a new CLI session with a random 6-character code. This endpoint is the first step in the CLI authentication flow, creating a session that can later be linked to a user account. The generated code is displayed to the user in the CLI and should be entered in the web interface to complete authentication. Optionally accepts a scope ('project' or 'user') and a source string.",
+              "description": "Create a new CLI session\nGenerates a new CLI session with a UUID v4 ID and a random 6-character display code. Use the session ID in the web interface to approve the login and when polling for its API key. The display code cannot approve or retrieve a session. Optionally accepts a scope ('project' or 'user') and a source string.",
               "options": [
                 {
                   "name": "--scope",
@@ -765,6 +782,43 @@
                         "maximum": 1
                       },
                       "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--code-challenge",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "PKCE-style S256 challenge: the base64url encoding, without padding, of the SHA-256 digest of a random verifier the client keeps. Send together with code_challenge_method.",
+                  "arguments": [
+                    {
+                      "name": "CODE_CHALLENGE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--code-challenge-method",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Method used to derive code_challenge from the verifier. Only S256 is supported. Send together with code_challenge.",
+                  "arguments": [
+                    {
+                      "name": "CODE_CHALLENGE_METHOD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "PostCliCreateSessionRequestCodeChallengeMethod",
+                      "allowedValues": [
+                        "S256"
+                      ]
                     }
                   ]
                 },
@@ -3288,7 +3342,7 @@
               "arguments": [
                 {
                   "name": "SESSION_ID",
-                  "description": "Tool router session ID (required for public API, optional for internal - injected by middleware)",
+                  "description": "Tool router session ID",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -3436,7 +3490,7 @@
               "arguments": [
                 {
                   "name": "SESSION_ID",
-                  "description": "Tool router session ID (required for public API, optional for internal - injected by middleware)",
+                  "description": "Tool router session ID",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -3955,7 +4009,7 @@
               "arguments": [
                 {
                   "name": "SESSION_ID",
-                  "description": "Tool router session ID (required for public API, optional for internal - injected by middleware)",
+                  "description": "Tool router session ID",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -4780,6 +4834,23 @@
                         "maximum": 1
                       },
                       "type": "OneOf`2"
+                    }
+                  ]
+                },
+                {
+                  "name": "--user-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Include the tools of the custom toolkits this user can use. Without it, only tools of custom toolkits with access \"all\" are listed.",
+                  "arguments": [
+                    {
+                      "name": "USER_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
                     }
                   ]
                 },
@@ -6097,7 +6168,7 @@
             },
             {
               "name": "get-webhook-subscriptions",
-              "description": "List webhook subscriptions\nLists all webhook subscriptions for the authenticated project with pagination. Currently limited to one subscription per project.",
+              "description": "List webhook subscriptions\nLists all webhook subscriptions for the authenticated project with pagination. Currently limited to one subscription per project. Viewers get a 403.",
               "options": [
                 {
                   "name": "--limit",
@@ -6137,7 +6208,7 @@
             },
             {
               "name": "get-webhook-subscriptions-by-id",
-              "description": "Get webhook subscription\nRetrieves a webhook subscription by ID.",
+              "description": "Get webhook subscription\nRetrieves a webhook subscription by ID. Viewers get a 403.",
               "arguments": [
                 {
                   "name": "ID",

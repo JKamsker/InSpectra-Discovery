@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "clink",
-    "version": "4.0.6",
+    "version": "5.1.0",
     "description": "A CLI tool for links manipulation. The reusable library API ships separately as the Foundation.Data.Doublets.Cli NuGet package."
   },
   "x-inspectra": {
@@ -10,8 +10,8 @@
     "generator": "InSpectra.Gen",
     "hookCapture": {
       "cliFramework": "System.CommandLine",
-      "frameworkVersion": "2.0.13.0",
-      "systemCommandLineVersion": "2.0.13.0",
+      "frameworkVersion": "3.0.0.0",
+      "systemCommandLineVersion": "3.0.0.0",
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
@@ -84,7 +84,7 @@
       "name": "--trace",
       "recursive": false,
       "hidden": false,
-      "description": "Enable trace (verbose output) [default: False]",
+      "description": "Enable trace (verbose output), including each transport event of --serve, --connect and --forward (as CLINK_IPC_TRACE=1 does) [default: False]",
       "aliases": [
         "-t"
       ],
@@ -541,7 +541,7 @@
       "name": "--tag",
       "recursive": false,
       "hidden": false,
-      "description": "Create a tag in the form 'name' (at current head) or 'name=<seq>'. Implies --vc.",
+      "description": "Create a tag as 'name' (current head) or 'name=<sequence-or-tag>'. Uses the first '=' whose suffix resolves. Implies --vc.",
       "arguments": [
         {
           "name": "TAG",
@@ -609,10 +609,27 @@
       "name": "--serve",
       "recursive": false,
       "hidden": false,
-      "description": "Serve the database over TCP at host:port (port 0 picks a free port)",
+      "description": "Serve the database on an endpoint until stopped: a TCP address (e.g. 127.0.0.1:7878, port 0 picks a free port) or KIND:ADDRESS for another transport, such as unix:/tmp/links.sock, pipe:NAME, fifo:DIR, shm:DIR, mmap:DIR, file:DIR, signal:DIR, mq:DIR, sysvmq:DIR, udp:HOST:PORT, stdio, mailslot:DIR, copydata:DIR or alpc:DIR (see docs/protocol/ipc-transports-v1.md); repeat it to serve one store on several endpoints at once. Each message may use the text or the binary LiNo protocol",
       "arguments": [
         {
           "name": "SERVE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--forward",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --serve: relay every connection, byte for byte, to this endpoint instead of serving a database (stacks transports)",
+      "arguments": [
+        {
+          "name": "FORWARD",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -626,7 +643,7 @@
       "name": "--connect",
       "recursive": false,
       "hidden": false,
-      "description": "Send the query to a clink server at host:port and print the reply",
+      "description": "Send the query to a clink server on a --serve endpoint (e.g. 127.0.0.1:7878 or shm:/tmp/links) instead of opening a database; an empty query reads every link",
       "arguments": [
         {
           "name": "CONNECT",
@@ -704,6 +721,193 @@
             "maximum": 1
           },
           "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--graphql",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --serve: serve Hasura-compatible GraphQL for Deep over HTTP and WebSocket instead of the links protocol [default: False]",
+      "arguments": [
+        {
+          "name": "GRAPHQL",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--jwt-secret",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --graphql: the HS256 secret of tokens; without it a random one lasts as long as the process",
+      "arguments": [
+        {
+          "name": "JWT_SECRET",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--graphql-admin-secret",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --graphql: the value of x-hasura-admin-secret that bypasses permissions",
+      "arguments": [
+        {
+          "name": "GRAPHQL_ADMIN_SECRET",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--deep-package",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --graphql: a JSON file of rows {id, type_id, from_id, to_id, string?, number?, object?} to load when starting; may be repeated",
+      "arguments": [
+        {
+          "name": "DEEP_PACKAGE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "--triplets",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --serve: read every request as triplets, (create: (type from to)), (each: (index type from to)) and three-part substitutions, over this store of doublets; without it, every request is about doublets [default: False]",
+      "arguments": [
+        {
+          "name": "TRIPLETS",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--permissions",
+      "recursive": false,
+      "hidden": false,
+      "description": "Check every read and write against permission rules stored as links: 'self' (rules in the data) or a links file of rules; without it, nothing is checked",
+      "arguments": [
+        {
+          "name": "PERMISSIONS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--subject",
+      "recursive": false,
+      "hidden": false,
+      "description": "The subject (a link index or name) queries run as with --permissions, and the subject of --serve connections before (auth: token) (default: 0, a guest)",
+      "arguments": [
+        {
+          "name": "SUBJECT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--tokens",
+      "recursive": false,
+      "hidden": false,
+      "description": "The token table of (auth: token) for --serve, --grant-token and --revoke-token: 'self' (tokens in the data) or a links file",
+      "arguments": [
+        {
+          "name": "TOKENS",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--grant-token",
+      "recursive": false,
+      "hidden": false,
+      "description": "Let a token authenticate as --subject in the --tokens table, then exit",
+      "arguments": [
+        {
+          "name": "GRANT_TOKEN",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--revoke-token",
+      "recursive": false,
+      "hidden": false,
+      "description": "Forget a token of the --tokens table, then exit",
+      "arguments": [
+        {
+          "name": "REVOKE_TOKEN",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--token",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --connect: authenticate with (auth: token) before sending the query",
+      "arguments": [
+        {
+          "name": "TOKEN",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
         }
       ]
     }
