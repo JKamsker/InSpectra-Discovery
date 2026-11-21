@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Baseten.CLI",
-    "version": "1.0.1-dev.219",
+    "version": "1.0.1-dev.221",
     "description": "Package Description"
   },
   "x-inspectra": {
@@ -9717,6 +9717,28 @@
                         "maximum": 100000
                       },
                       "type": "IList`1"
+                    }
+                  ]
+                },
+                {
+                  "name": "--hosting",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Where the volumes are stored. Defaults to your organization's hosting when it has one, and is required when it has more than one.",
+                  "arguments": [
+                    {
+                      "name": "HOSTING",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "VolumeHostingV1",
+                      "allowedValues": [
+                        "BasetenCloud",
+                        "SelfHosted",
+                        "SingleTenant"
+                      ]
                     }
                   ]
                 },
@@ -20443,7 +20465,43 @@
             },
             {
               "name": "get-training-projects-by-training-project-id-jobs",
-              "description": "Lists training jobs\nLists all training jobs for the training project.",
+              "description": "Lists training jobs\nLists the training project's jobs, newest first.",
+              "options": [
+                {
+                  "name": "--cursor",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Opaque cursor from the pagination.cursor field of a previous response. Omit both cursor and limit to get every job in one response.",
+                  "arguments": [
+                    {
+                      "name": "CURSOR",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--limit",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Maximum number of jobs to return, newest first, up to 1000.",
+                  "arguments": [
+                    {
+                      "name": "LIMIT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                }
+              ],
               "arguments": [
                 {
                   "name": "TRAINING_PROJECT_ID",
@@ -20924,7 +20982,7 @@
             },
             {
               "name": "get-volumes",
-              "description": "Gets the volumes in a namespace\nReturns one row per volume in the namespace, each with its tags, head version, version counts, and any scheduled expiry. Pass namespace to choose the namespace, which is required because the volume service has no cross-namespace inventory. Versions live on the versions sub-resource, so this response stays a fixed size per volume no matter how long a volume's history is. A volume with no live versions left, whether deleted or expired, is not listed.",
+              "description": "Gets the volumes in a namespace\nReturns one row per volume in the namespace, each with its tags, head version, version counts, and any scheduled expiry. Pass namespace to choose the namespace, which is required because the volume service has no cross-namespace inventory. Versions live on the versions sub-resource, so this response stays a fixed size per volume no matter how long a volume's history is. A volume with no live versions left, whether deleted or expired, is not listed. A page can hold fewer volumes than `limit`, or none, while more remain, so keep requesting with the returned cursor until `has_more` is false.",
               "options": [
                 {
                   "name": "--cursor",
@@ -21207,7 +21265,7 @@
                   "name": "--ttl-seconds",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Seconds from now until the checkpoint expires and is deleted, from 3600 (1 hour) to 315360000 (10 years). Null removes the TTL, so the checkpoint is kept until you delete it.",
+                  "description": "Seconds from now until the checkpoint expires and is deleted, from 3600 (1 hour) to 315360000 (10 years). Null removes the TTL, so the checkpoint never expires.",
                   "arguments": [
                     {
                       "name": "TTL_SECONDS",
@@ -21273,6 +21331,112 @@
                 }
               ],
               "arguments": [
+                {
+                  "name": "CHECKPOINT_ID",
+                  "description": "This is a missing parameter that was added automatically. Please check the OpenAPI spec.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "put-training-projects-by-training-project-id-jobs-by-training-job-id-checkpoints-by-checkpoint-id-ttl",
+              "description": "Sets a training job checkpoint's TTL\nSets when a training job checkpoint expires, counted from now, or removes its TTL so it never expires. Once a job stops, a TTL can be set only after its checkpoint upload is confirmed as finished, which usually takes a few minutes. Checkpoints of a job whose upload is never confirmed, such as most that finished before checkpoint expiry was available, can't expire.",
+              "options": [
+                {
+                  "name": "--ttl-seconds",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Seconds from now until the checkpoint expires and is deleted, from 3600 (1 hour) to 315360000 (10 years). Null removes the TTL, so the checkpoint never expires.",
+                  "arguments": [
+                    {
+                      "name": "TTL_SECONDS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--input",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Load request JSON from a file path, '-' for stdin, or an inline JSON object/array string.",
+                  "arguments": [
+                    {
+                      "name": "INPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-json",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Request body as JSON.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_JSON",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--request-file",
+                  "recursive": false,
+                  "hidden": true,
+                  "description": "Path to a JSON request file, or '-' for stdin.",
+                  "arguments": [
+                    {
+                      "name": "REQUEST_FILE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "TRAINING_PROJECT_ID",
+                  "description": "This is a missing parameter that was added automatically. Please check the OpenAPI spec.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                },
+                {
+                  "name": "TRAINING_JOB_ID",
+                  "description": "This is a missing parameter that was added automatically. Please check the OpenAPI spec.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                },
                 {
                   "name": "CHECKPOINT_ID",
                   "description": "This is a missing parameter that was added automatically. Please check the OpenAPI spec.",

@@ -1,0 +1,417 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "LocalRun — rebuild and run only what matters locally: scan repositories,",
+    "version": "0.6.0",
+    "description": "Try a library change in the services that consume it as a NuGet package, across repositories: lrun scans them, builds the project dependency graph, repacks the libraries in between into a local feed in dependency order, and runs the executables side by side."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 1,
+    "cliParsedDescription": "track dependency graphs and repack components to a local NuGet source."
+  },
+  "commands": [
+    {
+      "name": "build",
+      "hidden": false,
+      "description": "Scan a directory tree for projects and write their dependency graph to a config file."
+    }
+  ],
+  "options": [
+    {
+      "name": "--root",
+      "recursive": false,
+      "hidden": false,
+      "description": "Directory to scan (default: your settings, else current directory).\nDirectory to scan, as for build (default: your settings, else current directory).\nverify [options]\nCheck that the local feed holds an up-to-date package of every library of a config: none is missing, none older\nthan its csproj version or than a file of its folder. Exit code 6 if not.\nDirectory to check, as for build (default: settings, else current directory).",
+      "arguments": [
+        {
+          "name": "ROOT",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--local-nuget",
+      "recursive": false,
+      "hidden": false,
+      "description": "Local NuGet feed to repack into (default: your settings, else ~/.localnuget).\nLocal feed to check, as for build (default: settings, else ~/.localnuget).\nschema <name>\nPrint the JSON Schema of a file LocalRun reads or writes, to validate or generate it: the config written by build,\nthe plan written by pack, the --json document, or the settings.\n<name>: config | repack | result | settings\nchangelog [options]\nPrint what changed in each release of lrun, newest first, from the changelog shipped with it (no network). A local\nbuild shows its unreleased changes too. With --json, each release's entries by kind, breaking ones marked.",
+      "arguments": [
+        {
+          "name": "LOCAL_NUGET",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--config",
+      "recursive": false,
+      "hidden": false,
+      "description": "Config file to write (default: .lrun/localrun.config.json).\nConfig file to read (default: .lrun/localrun.config.json).\nstatus [options]\nPrint what a config holds, from the files alone (no scan, no NuGet source, no git): when and how build made it\n(flags, lrun version, each repository's commit), its projects by solution and type with their versions, what was\nleft out and why, the repack plan if any, and the up running with it. Warns when the plan is older than the\nconfig.\nConfig the up was started with: it records itself next to it (default:\n.lrun/localrun.config.json).\nsettings [options]\nCreate your settings file if missing (all commented out), check it (warning settings-invalid), then open it. It\nholds what differs from one user to the next: the local NuGet feed, the root to scan, the default suffix, how long\nup waits after Ctrl+C before killing the processes, the log level. An option given on the command line always wins\nover it.",
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--users-of",
+      "recursive": false,
+      "hidden": false,
+      "description": "Keep the given projects and all that depend on them, transitively.",
+      "arguments": [
+        {
+          "name": "NAMES",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--deps-of",
+      "recursive": false,
+      "hidden": false,
+      "description": "Keep the given projects and all they depend on, transitively. With --users-of too: only\nthe projects between them (AND).",
+      "arguments": [
+        {
+          "name": "NAMES",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--git-changes",
+      "recursive": false,
+      "hidden": false,
+      "description": "Add the projects with uncommitted changes or commits not on origin's default branch to\n--users-of (compares with your last fetch)."
+    },
+    {
+      "name": "--union",
+      "recursive": false,
+      "hidden": false,
+      "description": "With --users-of and --deps-of: users of one OR deps of the other."
+    },
+    {
+      "name": "--with-services",
+      "recursive": false,
+      "hidden": false,
+      "description": "Also keep the executables using any kept project, with the libraries in between.",
+      "arguments": [
+        {
+          "name": "WITH_SERVICES",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--include-external",
+      "recursive": false,
+      "hidden": false,
+      "description": "Keep dependencies on projects that no solution references.",
+      "arguments": [
+        {
+          "name": "INCLUDE_EXTERNAL",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--tests",
+      "recursive": false,
+      "hidden": false,
+      "description": "Keep the test projects (left out by default)."
+    },
+    {
+      "name": "--csproj",
+      "recursive": false,
+      "hidden": false,
+      "description": "Read the csproj files as they are: don't ask MSBuild for versions and package ids set\nelsewhere (props files, $(...)), and don't query your NuGet sources and local feed for\nthe latest versions (pack then starts from the csproj versions).",
+      "arguments": [
+        {
+          "name": "CSPROJ",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--plot",
+      "recursive": false,
+      "hidden": false,
+      "description": "Then plot the graph, as 'plot' does with its defaults, and open it (only on a terminal:\nwith output redirected, the page is just written)."
+    },
+    {
+      "name": "--verify",
+      "recursive": false,
+      "hidden": false,
+      "description": "Then check the local feed against the config just written, as 'verify' does.\nlist [options]\nPrint the projects 'build' would keep, with their depth, type, version and solution, without writing anything:\n'list --users-of X' answers \"what uses X?\". Doesn't query your NuGet sources."
+    },
+    {
+      "name": "--repack-config",
+      "recursive": false,
+      "hidden": false,
+      "description": "Repack config file to read, if there is one (default: .lrun/repack.config.json).\nplot [options]\nRender the dependency graph of a config file as an interactive HTML page: projects framed by solution, collapsible\ninto the solution graph, hover or click for users-of / deps-of.\nRepack config file to write (default: .lrun/repack.config.json).\nRepack config file to read (default: .lrun/repack.config.json).\nup [options]\nBuild the executables of a config file, then run them side by side; Ctrl+C (or 'down' from another shell) stops\nthem all, killing what still runs after a grace period (--stop-timeout). Each one's output also goes to\n<logs>/<name>.log. One up per config folder: a second one is refused (up-running). With --json, stdout gets one\nline per event (building, started, running, stopping, exited), then the result on one line.",
+      "arguments": [
+        {
+          "name": "REPACK_CONFIG",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": false,
+      "hidden": false,
+      "description": "Output path without extension (default: .lrun/plots/dependencies-<date-time>).",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--open",
+      "recursive": false,
+      "hidden": false,
+      "description": "Open the page with the default browser.\npack [options]\nPlan what will be repacked and to which versions, write the plan to a repack config, then pack in dependency order\ninto the local NuGet feed, as 'go' does."
+    },
+    {
+      "name": "--major",
+      "recursive": false,
+      "hidden": false,
+      "description": "Increment major version (resets minor/patch)."
+    },
+    {
+      "name": "--minor",
+      "recursive": false,
+      "hidden": false,
+      "description": "Increment minor version (resets patch)."
+    },
+    {
+      "name": "--patch",
+      "recursive": false,
+      "hidden": false,
+      "description": "Increment patch version."
+    },
+    {
+      "name": "--next",
+      "recursive": false,
+      "hidden": false,
+      "description": "Continue a prerelease (1.5.0-alpha.9 -> 1.5.0-alpha.10), or patch a release."
+    },
+    {
+      "name": "--alpha",
+      "recursive": false,
+      "hidden": false,
+      "description": "Shorthand for --next --suffix alpha."
+    },
+    {
+      "name": "--suffix",
+      "recursive": false,
+      "hidden": false,
+      "description": "Set the prerelease label, without the dash (default: your settings, else local; e.g.,\n'dev', 'beta.2'). An iteration number follows it: 1.4.3-dev.1, then .2 when packed\nagain.",
+      "arguments": [
+        {
+          "name": "TEXT",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--clean",
+      "recursive": false,
+      "hidden": false,
+      "description": "Clean projects before restoring them."
+    },
+    {
+      "name": "--dry-run",
+      "recursive": false,
+      "hidden": false,
+      "description": "Only write the plan and print what would run; 'go' runs it later.\ngo [options]\nPack projects in dependency order into the local NuGet feed, following a repack config (from 'pack --dry-run',\npossibly edited by hand).",
+      "arguments": [
+        {
+          "name": "DRY_RUN",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--exclude",
+      "recursive": false,
+      "hidden": false,
+      "description": "Executables not to run, e.g. the one you debug from your IDE.",
+      "arguments": [
+        {
+          "name": "NAMES",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--only",
+      "recursive": false,
+      "hidden": false,
+      "description": "Executables to run, the config's others left out (combines with --exclude).",
+      "arguments": [
+        {
+          "name": "NAMES",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--logs",
+      "recursive": false,
+      "hidden": false,
+      "description": "Folder of the services' log files, overwritten each run (default: .lrun/logs).",
+      "arguments": [
+        {
+          "name": "DIR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--stop-timeout",
+      "recursive": false,
+      "hidden": false,
+      "description": "Seconds to wait after Ctrl+C before killing what still runs, 0 or more (default: your\nsettings, else 10).\ndown [options]\nStop the up started with a config, from another shell or process, as Ctrl+C in its console would (grace period,\nthen kills), and wait until it has exited. Without one running, there is nothing to stop. Windows only.",
+      "arguments": [
+        {
+          "name": "S",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--path",
+      "recursive": false,
+      "hidden": false,
+      "description": "Only print where the file is, and check it (default: ~/.lrun/settings.json, or\n$LOCALRUN_SETTINGS).\ndoctor [options]\nCheck the setup before running anything: dotnet SDK, settings file, root, local feed (writable), every NuGet\nsource the projects restore from (reachable), and in each git repository origin's default branch and the last\nfetch (--git-changes compares with it). Exit code 1 if a check fails.",
+      "arguments": [
+        {
+          "name": "PATH",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--since",
+      "recursive": false,
+      "hidden": false,
+      "description": "Only the releases after this one, e.g. the version your scripts or an agent's\ninstructions were written for.\nhelp [options] (also --help, -h)\nShow this help message. With --json, the commands, options, exit codes, error codes and diagnostic codes as data,\nand the agent instructions.",
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--agent",
+      "recursive": false,
+      "hidden": false,
+      "description": "Print instructions to paste into an agent's (AGENTS.md, CLAUDE.md...): how to drive\nlrun, stamped with this version, and how to update them after an upgrade.\nversion (also --version)\nShow the installed version. Please include it when reporting an issue."
+    },
+    {
+      "name": "--json",
+      "recursive": false,
+      "hidden": false,
+      "description": "Write one JSON document on stdout (result, warnings and errors, files written), even\nwhen it fails; the logs go to stderr, plain."
+    },
+    {
+      "name": "--strict",
+      "recursive": false,
+      "hidden": false,
+      "description": "Fail (exit code 5) when the result left something out or may have a wrong version: name\ncollisions, cycles, MSBuild or NuGet source failures... The files are written all the\nsame."
+    },
+    {
+      "name": "--log-level",
+      "recursive": false,
+      "hidden": false,
+      "description": "Least important logs to print: Trace, Debug, Information, Warning, Error, Critical, None\n(default: your settings, else Information). Debug adds timings and the stack trace of a\nfailure.",
+      "arguments": [
+        {
+          "name": "LEVEL",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}

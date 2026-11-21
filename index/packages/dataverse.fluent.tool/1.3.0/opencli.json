@@ -1,0 +1,720 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "dataverse-fluent",
+    "version": "1.3.0",
+    "description": "The dataverse-fluent command: checks a project's Dataverse.Fluent models against an environment's metadata, and fixes the mechanical mistakes (lookup navigation properties and target entity sets, polymorphic targets, read-only markers) in the source."
+  },
+  "x-inspectra": {
+    "artifactSource": "static-analysis",
+    "generator": "InSpectra.Gen",
+    "metadataEnriched": true,
+    "helpDocumentCount": 4,
+    "staticAnalysis": {
+      "framework": "System.CommandLine",
+      "inspectorType": "dnlib",
+      "confidence": "high",
+      "verbCount": 1,
+      "optionCount": 0,
+      "valueCount": 0,
+      "limitations": [
+        "property-defaults-not-captured",
+        "fluent-api-configuration-not-visible"
+      ]
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "Checks Dataverse.Fluent models against a Dataverse environment's metadata, and fixes the mechanical mistakes."
+  },
+  "commands": [
+    {
+      "name": "fix",
+      "hidden": false,
+      "description": "Checks the models, then applies the fixes to the source and checks again.",
+      "options": [
+        {
+          "name": "--url",
+          "recursive": false,
+          "hidden": false,
+          "description": "The environment URL, e.g. https://yourorg.crm.dynamics.com. Default: the DATAVERSE_URL environment variable.",
+          "aliases": [
+            "-u"
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--interactive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sign in with a browser instead of DefaultAzureCredential (az login, Visual Studio, or AZURE_* variables)."
+        },
+        {
+          "name": "--tenant-id",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Microsoft Entra tenant to sign in to.",
+          "arguments": [
+            {
+              "name": "TENANT_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--api-version",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Web API version. [default: v9.2]",
+          "arguments": [
+            {
+              "name": "API_VERSION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Check only this model (full or simple name). Repeat for several.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--resolver",
+          "recursive": false,
+          "hidden": false,
+          "description": "The full name of an IDataverseNameResolver in the project to register before checking, for models mapped by a resolver.",
+          "arguments": [
+            {
+              "name": "RESOLVER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--ignore",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave out findings with this code, e.g. DVS015. Repeat for several.",
+          "arguments": [
+            {
+              "name": "IGNORE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--warnings-as-errors",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit with code 1 when a warning is found, not only an error."
+        },
+        {
+          "name": "--no-select-check",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the live $select check (one retrieve of a random ID per model)."
+        },
+        {
+          "name": "--configuration",
+          "recursive": false,
+          "hidden": false,
+          "description": "The build configuration. [default: Debug]",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONFIGURATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "The target framework of a multi-targeted project. Default: its first.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FRAMEWORK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "Use the existing build output."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the stack trace of an unexpected error."
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the changes as a diff and write nothing."
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write a file even when the check of its planned edit fails. Without it, that file is held back and its diff is printed."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "project",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The .csproj, or a directory holding one. [default: .]"
+        }
+      ]
+    },
+    {
+      "name": "scaffold",
+      "hidden": false,
+      "description": "Fills in a project's models from the environment: mapping attributes, read-only markers and property types.",
+      "options": [
+        {
+          "name": "--url",
+          "recursive": false,
+          "hidden": false,
+          "description": "The environment URL, e.g. https://yourorg.crm.dynamics.com. Default: the DATAVERSE_URL environment variable.",
+          "aliases": [
+            "-u"
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--interactive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sign in with a browser instead of DefaultAzureCredential (az login, Visual Studio, or AZURE_* variables)."
+        },
+        {
+          "name": "--tenant-id",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Microsoft Entra tenant to sign in to.",
+          "arguments": [
+            {
+              "name": "TENANT_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--api-version",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Web API version. [default: v9.2]",
+          "arguments": [
+            {
+              "name": "API_VERSION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fill in only this model (full or simple name). Repeat for several.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--table",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write a new model for this table (its logical name), with --columns and --output, instead of filling in a project's models.",
+          "arguments": [
+            {
+              "name": "TABLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--columns",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --table: the logical names of the columns the model gets, separated by commas.",
+          "arguments": [
+            {
+              "name": "COLUMNS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --table: the file to write.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--namespace",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --table: the namespace of the new model. Default: none.",
+          "arguments": [
+            {
+              "name": "NAMESPACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--class",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --table: the class name. Default: from the table's schema name.",
+          "arguments": [
+            {
+              "name": "CLASS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--enums",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write an enum for each choice column, in place of int."
+        },
+        {
+          "name": "--skip",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave this property alone, e.g. Incident.Summary: for one that is not a column. Repeat for several.",
+          "arguments": [
+            {
+              "name": "SKIP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--configuration",
+          "recursive": false,
+          "hidden": false,
+          "description": "The build configuration the project is read with. [default: Debug]",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONFIGURATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "The target framework of a multi-targeted project. Default: its first.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FRAMEWORK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the changes and write nothing."
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write a file even when the check of its planned edit fails. Without it, that file is held back and its diff is printed."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the stack trace of an unexpected error."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "project",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The .csproj, or a directory holding one, whose models to fill in. Not used with --table. [default: .]"
+        }
+      ]
+    },
+    {
+      "name": "validate",
+      "hidden": false,
+      "description": "Checks every model in a project (or built assembly) against the environment.",
+      "options": [
+        {
+          "name": "--url",
+          "recursive": false,
+          "hidden": false,
+          "description": "The environment URL, e.g. https://yourorg.crm.dynamics.com. Default: the DATAVERSE_URL environment variable.",
+          "aliases": [
+            "-u"
+          ],
+          "arguments": [
+            {
+              "name": "URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--interactive",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sign in with a browser instead of DefaultAzureCredential (az login, Visual Studio, or AZURE_* variables)."
+        },
+        {
+          "name": "--tenant-id",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Microsoft Entra tenant to sign in to.",
+          "arguments": [
+            {
+              "name": "TENANT_ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--api-version",
+          "recursive": false,
+          "hidden": false,
+          "description": "The Web API version. [default: v9.2]",
+          "arguments": [
+            {
+              "name": "API_VERSION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Check only this model (full or simple name). Repeat for several.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--resolver",
+          "recursive": false,
+          "hidden": false,
+          "description": "The full name of an IDataverseNameResolver in the project to register before checking, for models mapped by a resolver.",
+          "arguments": [
+            {
+              "name": "RESOLVER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--ignore",
+          "recursive": false,
+          "hidden": false,
+          "description": "Leave out findings with this code, e.g. DVS015. Repeat for several.",
+          "arguments": [
+            {
+              "name": "IGNORE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--warnings-as-errors",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit with code 1 when a warning is found, not only an error."
+        },
+        {
+          "name": "--no-select-check",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the live $select check (one retrieve of a random ID per model)."
+        },
+        {
+          "name": "--configuration",
+          "recursive": false,
+          "hidden": false,
+          "description": "The build configuration. [default: Debug]",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "CONFIGURATION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--framework",
+          "recursive": false,
+          "hidden": false,
+          "description": "The target framework of a multi-targeted project. Default: its first.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FRAMEWORK",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "Use the existing build output."
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the stack trace of an unexpected error."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "project",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The .csproj, a directory holding one, or a built .dll. [default: .]"
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ]
+}
