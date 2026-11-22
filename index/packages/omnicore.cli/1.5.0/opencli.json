@@ -1,0 +1,1082 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "occtl",
+    "version": "1.5.0",
+    "description": "occtl, the OmniCore command line: sign in to an OmniCore server, manage plugins, schema and entities, and deploy OmniCore to Kubernetes (through the Kubernetes API) or Docker from an OmniCoreDeployment file. Install with: dotnet tool install --global OmniCore.Cli"
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.15.0",
+      "systemCommandLineVersion": "2.0.15.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "occtl: the OmniCore command line. Sign in, manage plugins, schema and entities, and deploy OmniCore."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--context",
+      "recursive": true,
+      "hidden": false,
+      "description": "The context (server) to use; default: the current one (occtl config use-context).",
+      "arguments": [
+        {
+          "name": "CONTEXT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output format: table, json or yaml. [default: Table]",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "OUTPUT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "OutputFormat",
+          "allowedValues": [
+            "Table",
+            "Json",
+            "Yaml"
+          ]
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "login",
+      "description": "Sign in to a database server. Uses the server's identity provider in a browser by default (authorization code + PKCE). The sign-in is saved, encrypted, and renewed automatically.",
+      "options": [
+        {
+          "name": "--name",
+          "recursive": false,
+          "hidden": false,
+          "description": "The context name to save it as. Default: the server's host (and port).",
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--password",
+          "recursive": false,
+          "hidden": false,
+          "description": "Sign in with a username and password instead of a browser. [default: False]",
+          "arguments": [
+            {
+              "name": "PASSWORD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--username",
+          "recursive": false,
+          "hidden": false,
+          "description": "The username for --password (prompted for if omitted).",
+          "aliases": [
+            "-u"
+          ],
+          "arguments": [
+            {
+              "name": "USERNAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--password-stdin",
+          "recursive": false,
+          "hidden": false,
+          "description": "Read the password from standard input (for scripts). [default: False]",
+          "arguments": [
+            {
+              "name": "PASSWORD_STDIN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dev",
+          "recursive": false,
+          "hidden": false,
+          "description": "Development servers only: sign in with a development token for this subject (default dev-admin).",
+          "arguments": [
+            {
+              "name": "DEV",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SERVER",
+          "description": "The database server, e.g. https://omnicore.example.com. Default: the current context's server.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "logout",
+      "description": "Forget the saved sign-in for a context (the context itself is kept)."
+    },
+    {
+      "name": "whoami",
+      "description": "Show who you are signed in as, and your roles and permissions."
+    },
+    {
+      "name": "config",
+      "description": "Manage contexts: the OmniCore servers occtl knows, and which one is current.",
+      "commands": [
+        {
+          "name": "get-contexts",
+          "description": "List contexts (saved servers)."
+        },
+        {
+          "name": "current-context",
+          "description": "Show the current context."
+        },
+        {
+          "name": "use-context",
+          "description": "Make a context the current one.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The context name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "delete-context",
+          "description": "Delete a context and its saved sign-in.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The context name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plugin",
+      "description": "Manage plugins.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List installed plugins."
+        },
+        {
+          "name": "get",
+          "description": "Show a plugin: its classes and triggers, state, warnings and recent errors.",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The plugin id.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "install",
+          "description": "Upload an .opl plugin: installs it (or replaces the same id) and adds the schema in its manifest.",
+          "arguments": [
+            {
+              "name": "FILE",
+              "description": "The .opl file to upload.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        },
+        {
+          "name": "enable",
+          "description": "Enable a plugin.",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The plugin id.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "disable",
+          "description": "Disable a plugin.",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The plugin id.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "remove",
+          "description": "Remove a plugin (its files are deleted; schema it added stays).",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The plugin id.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "sdk",
+          "description": "Download the OmniCore.PlugIn NuGet package, to build plugins with.",
+          "options": [
+            {
+              "name": "--output-dir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to save it (default: the current folder). [default: .]",
+              "arguments": [
+                {
+                  "name": "OUTPUT_DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DirectoryInfo"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "schema",
+      "description": "Show and change the schema: fields, perspectives and relationships.",
+      "commands": [
+        {
+          "name": "get",
+          "description": "Show the whole schema (fields, perspectives, relationships)."
+        },
+        {
+          "name": "field",
+          "description": "Fields: the values entities hold.",
+          "commands": [
+            {
+              "name": "list",
+              "description": "List fields."
+            },
+            {
+              "name": "set",
+              "description": "Define a field, or change its display name and description.",
+              "options": [
+                {
+                  "name": "--type",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Text, Integer, Decimal, Boolean, DateTime, Reference or Json. Required for a new field; it cannot change.",
+                  "arguments": [
+                    {
+                      "name": "TYPE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--display-name",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name forms show.",
+                  "arguments": [
+                    {
+                      "name": "DISPLAY_NAME",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--description",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "A description.",
+                  "arguments": [
+                    {
+                      "name": "DESCRIPTION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "description": "The field's system name (the JSON key).",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "perspective",
+          "description": "Perspectives (interfaces): named, ordered sets of fields.",
+          "commands": [
+            {
+              "name": "list",
+              "description": "List perspectives (interfaces)."
+            },
+            {
+              "name": "get",
+              "description": "Show a perspective.",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "description": "The perspective's system name (or id, for get).",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "set",
+              "description": "Define a perspective, or change its display name, description and fields.",
+              "options": [
+                {
+                  "name": "--display-name",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name forms show.",
+                  "arguments": [
+                    {
+                      "name": "DISPLAY_NAME",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--description",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "A description.",
+                  "arguments": [
+                    {
+                      "name": "DESCRIPTION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--fields",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The perspective's fields in form order, comma-separated; end a name with ! to require it, e.g. \"accountNumber!,firstName,email\". Replaces the list.",
+                  "arguments": [
+                    {
+                      "name": "FIELDS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--add-field",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Add a field (end with ! to require it). Repeatable.",
+                  "arguments": [
+                    {
+                      "name": "ADD_FIELD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "String[]"
+                    }
+                  ]
+                },
+                {
+                  "name": "--remove-field",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Remove a field. Repeatable.",
+                  "arguments": [
+                    {
+                      "name": "REMOVE_FIELD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 100000
+                      },
+                      "type": "String[]"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "description": "The perspective's system name (or id, for get).",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "relationship",
+          "description": "Relationships between perspectives, enforced on every change.",
+          "commands": [
+            {
+              "name": "list",
+              "description": "List relationships."
+            },
+            {
+              "name": "set",
+              "description": "Define or replace a relationship (checked against existing data).",
+              "options": [
+                {
+                  "name": "--from",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The first end: Perspective:One|Many[:referenceField], e.g. Order:Many:customer.",
+                  "arguments": [
+                    {
+                      "name": "FROM",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--to",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The second end, e.g. Customer:One.",
+                  "arguments": [
+                    {
+                      "name": "TO",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--display-name",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "The name forms show.",
+                  "arguments": [
+                    {
+                      "name": "DISPLAY_NAME",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--description",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "A description.",
+                  "arguments": [
+                    {
+                      "name": "DESCRIPTION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "description": "The relationship's name.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "delete",
+              "description": "Delete a relationship (its references are no longer checked).",
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "description": "The relationship's name.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "entity",
+      "description": "Read, query and delete entities.",
+      "commands": [
+        {
+          "name": "get",
+          "description": "Show an entity.",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The entity id.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "query",
+          "description": "Query entities.",
+          "options": [
+            {
+              "name": "--impl",
+              "recursive": false,
+              "hidden": false,
+              "description": "Perspectives the entities must have: Contact,Customer (all of) or Customer|Supplier (any of).",
+              "arguments": [
+                {
+                  "name": "IMPL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--where",
+              "recursive": false,
+              "hidden": false,
+              "description": "A filter in the OmniCore query language, e.g. \"creditLimit > 1000 & city = 'Leeds'\".",
+              "arguments": [
+                {
+                  "name": "WHERE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--order",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sort keys, e.g. \"-creditLimit, lastName\".",
+              "arguments": [
+                {
+                  "name": "ORDER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--select",
+              "recursive": false,
+              "hidden": false,
+              "description": "Fields to return, comma-separated.",
+              "arguments": [
+                {
+                  "name": "SELECT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--take",
+              "recursive": false,
+              "hidden": false,
+              "description": "Page size (default 50). [default: 50]",
+              "arguments": [
+                {
+                  "name": "TAKE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--skip",
+              "recursive": false,
+              "hidden": false,
+              "description": "Entities to skip (paging).",
+              "arguments": [
+                {
+                  "name": "SKIP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "delete",
+          "description": "Delete an entity.",
+          "arguments": [
+            {
+              "name": "ID",
+              "description": "The entity id.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Guid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "deploy",
+      "description": "Deploy OmniCore to Kubernetes (through the Kubernetes API) or Docker, from an OmniCoreDeployment file.",
+      "commands": [
+        {
+          "name": "init",
+          "description": "Write a deployment file with every setting explained, to edit and apply.",
+          "options": [
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "description": "The OmniCoreDeployment file (default: omnicore.yaml). [default: omnicore.yaml]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--target",
+              "recursive": false,
+              "hidden": false,
+              "description": "kubernetes or docker. [default: kubernetes]",
+              "arguments": [
+                {
+                  "name": "TARGET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--identity",
+              "recursive": false,
+              "hidden": false,
+              "description": "omnicore (deploy OmniCore.Identity) or external (e.g. Entra ID). [default: omnicore]",
+              "arguments": [
+                {
+                  "name": "IDENTITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Overwrite an existing file. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "apply",
+          "description": "Create or update the deployment described by the file.",
+          "options": [
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "description": "The OmniCoreDeployment file (default: omnicore.yaml). [default: omnicore.yaml]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print what would be applied (Kubernetes objects or the compose file) without changing anything. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--no-wait",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not wait for the servers to be ready. [default: False]",
+              "arguments": [
+                {
+                  "name": "NO_WAIT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "Minutes to wait for the servers to be ready (default 5). [default: 5]",
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "description": "Show the deployment's workloads and whether its servers answer.",
+          "options": [
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "description": "The OmniCoreDeployment file (default: omnicore.yaml). [default: omnicore.yaml]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "delete",
+          "description": "Remove the deployment. Data is kept unless --purge is given.",
+          "options": [
+            {
+              "name": "--file",
+              "recursive": false,
+              "hidden": false,
+              "description": "The OmniCoreDeployment file (default: omnicore.yaml). [default: omnicore.yaml]",
+              "aliases": [
+                "-f"
+              ],
+              "arguments": [
+                {
+                  "name": "FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "FileInfo"
+                }
+              ]
+            },
+            {
+              "name": "--purge",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also delete the data volumes (all entities, the directory, plugins) and the bootstrap secret. Cannot be undone. [default: False]",
+              "arguments": [
+                {
+                  "name": "PURGE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--yes",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not ask for confirmation of --purge. [default: False]",
+              "aliases": [
+                "-y"
+              ],
+              "arguments": [
+                {
+                  "name": "YES",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

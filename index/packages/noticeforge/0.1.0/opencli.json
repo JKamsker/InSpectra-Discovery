@@ -1,0 +1,516 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "noticeforge",
+    "version": "0.1.0",
+    "description": "Generates a third-party notices file from a .NET publish folder, using the original license texts, and fails the build on unknown or disallowed licenses."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 3
+  },
+  "commands": [
+    {
+      "name": "check",
+      "hidden": false,
+      "description": "check the licenses of every locked dependency",
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "noticeforge.json (allowed licenses, per-package overrides, extra components);\nboth commands use the same file, and both check the extras",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "notices: file to write (default: <publish-dir>/THIRD-PARTY-NOTICES.txt)",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--report",
+          "recursive": false,
+          "hidden": false,
+          "description": "also write the report as JSON (for tools; the screen report stays text)",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--packages",
+          "recursive": false,
+          "hidden": false,
+          "description": "NuGet global packages folder (default: $NUGET_PACKAGES or ~/.nuget/packages)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "where texts fetched from GitHub are kept, per commit\n(default: %LOCALAPPDATA%/NoticeForge/cache or ~/.local/share/NoticeForge/cache)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "always fetch from GitHub and keep nothing\nenvironment:\nGITHUB_TOKEN         used for GitHub API requests (60 -> 5,000 requests per hour)\nexit code: 0 = ok, 1 = problems found, 2 = usage or input error"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PUBLISH_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DEPSJSON",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "PATH",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CONFIG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "TFM",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "RID",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "APP",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "notices",
+          "hidden": false,
+          "description": "write the notices file for what is distributed"
+        }
+      ]
+    },
+    {
+      "name": "notices",
+      "hidden": false,
+      "description": "write the notices file for what is distributed",
+      "options": [
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "noticeforge.json (allowed licenses, per-package overrides, extra components);\nboth commands use the same file, and both check the extras",
+          "aliases": [
+            "-c"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "notices: file to write (default: <publish-dir>/THIRD-PARTY-NOTICES.txt)",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--report",
+          "recursive": false,
+          "hidden": false,
+          "description": "also write the report as JSON (for tools; the screen report stays text)",
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--packages",
+          "recursive": false,
+          "hidden": false,
+          "description": "NuGet global packages folder (default: $NUGET_PACKAGES or ~/.nuget/packages)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "where texts fetched from GitHub are kept, per commit\n(default: %LOCALAPPDATA%/NoticeForge/cache or ~/.local/share/NoticeForge/cache)",
+          "arguments": [
+            {
+              "name": "DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "always fetch from GitHub and keep nothing\nenvironment:\nGITHUB_TOKEN         used for GitHub API requests (60 -> 5,000 requests per hour)\nexit code: 0 = ok, 1 = problems found, 2 = usage or input error"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PUBLISH_DIR",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DEPSJSON",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "PATH",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "CONFIG",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "TFM",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "RID",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "APP",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "check",
+          "hidden": false,
+          "description": "check the licenses of every locked dependency"
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--config",
+      "recursive": false,
+      "hidden": false,
+      "description": "noticeforge.json (allowed licenses, per-package overrides, extra components);\nboth commands use the same file, and both check the extras",
+      "aliases": [
+        "-c"
+      ],
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--output",
+      "recursive": false,
+      "hidden": false,
+      "description": "notices: file to write (default: <publish-dir>/THIRD-PARTY-NOTICES.txt)",
+      "aliases": [
+        "-o"
+      ],
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--report",
+      "recursive": false,
+      "hidden": false,
+      "description": "also write the report as JSON (for tools; the screen report stays text)",
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--packages",
+      "recursive": false,
+      "hidden": false,
+      "description": "NuGet global packages folder (default: $NUGET_PACKAGES or ~/.nuget/packages)",
+      "arguments": [
+        {
+          "name": "DIR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--cache",
+      "recursive": false,
+      "hidden": false,
+      "description": "where texts fetched from GitHub are kept, per commit\n(default: %LOCALAPPDATA%/NoticeForge/cache or ~/.local/share/NoticeForge/cache)",
+      "arguments": [
+        {
+          "name": "DIR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--no-cache",
+      "recursive": false,
+      "hidden": false,
+      "description": "always fetch from GitHub and keep nothing\nenvironment:\nGITHUB_TOKEN         used for GitHub API requests (60 -> 5,000 requests per hour)\nexit code: 0 = ok, 1 = problems found, 2 = usage or input error"
+    }
+  ],
+  "arguments": [
+    {
+      "name": "PUBLISH_DIR",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "DEPSJSON",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "CONFIG",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "TFM",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "RID",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "APP",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "name": "PATH",
+      "required": true,
+      "hidden": false,
+      "arity": {
+        "minimum": 1,
+        "maximum": 1
+      }
+    }
+  ]
+}

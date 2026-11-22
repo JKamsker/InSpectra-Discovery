@@ -1,0 +1,735 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "sqlbranch",
+    "version": "0.2.2",
+    "description": "Writable, full-size SQL Server database branches in seconds, for development, tests and AI agents."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "3.0.0.0",
+      "systemCommandLineVersion": "3.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "SqlBranch: writable, full-size SQL Server database branches in seconds."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--format",
+      "recursive": true,
+      "hidden": false,
+      "description": "Output format: text or json. [default: Text]",
+      "arguments": [
+        {
+          "name": "TEXT|JSON",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "OutputFormat",
+          "allowedValues": [
+            "Text",
+            "Json"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "--quiet",
+      "recursive": true,
+      "hidden": false,
+      "description": "Print only the essential result. [default: False]",
+      "aliases": [
+        "-q"
+      ],
+      "arguments": [
+        {
+          "name": "QUIET",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--config",
+      "recursive": true,
+      "hidden": false,
+      "description": "Use this file instead of the repository's .sqlbranch.yml.",
+      "arguments": [
+        {
+          "name": "CONFIG",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "FileInfo"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "description": "Create the pool and the engine, or check that they are running. Safe to repeat."
+    },
+    {
+      "name": "doctor",
+      "description": "Check Docker, the engine image, the pool, the port, free space, the host and optional SqlPackage. Works before init.",
+      "options": [
+        {
+          "name": "--sqlpackage",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to SqlPackage. Defaults to searching PATH.",
+          "arguments": [
+            {
+              "name": "SQLPACKAGE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Show the engine, the pool and anything that does not match. Exits 1 when it lists a mismatch."
+    },
+    {
+      "name": "engine",
+      "description": "Start or stop the engine container.",
+      "commands": [
+        {
+          "name": "start",
+          "description": "Start the engine and wait until it accepts connections."
+        },
+        {
+          "name": "stop",
+          "description": "Stop the engine. Safe to repeat."
+        }
+      ]
+    },
+    {
+      "name": "teardown",
+      "description": "Remove the engine, every image and branch, every other database on the engine and the pool SqlBranch created. Needs --force.",
+      "options": [
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Confirm that the engine, every image and branch, and the pool are to be removed. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "image",
+      "description": "Build, list and remove images: sealed, read-only database files that branches are cloned from.",
+      "commands": [
+        {
+          "name": "build",
+          "description": "Build an image from a backup, SQL scripts or a BACPAC.",
+          "options": [
+            {
+              "name": "--from-bacpac",
+              "recursive": false,
+              "hidden": false,
+              "description": "Build from a local BACPAC or an Azure Blob or S3 URL.",
+              "arguments": [
+                {
+                  "name": "FROM_BACPAC",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--sqlpackage",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to SqlPackage for a BACPAC build. Defaults to searching PATH.",
+              "arguments": [
+                {
+                  "name": "SQLPACKAGE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--from-bak",
+              "recursive": false,
+              "hidden": false,
+              "description": "The full database backup to build the image from: a file, an https:// Azure Blob URL or an s3:// URL.",
+              "arguments": [
+                {
+                  "name": "FROM_BAK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--s3-region",
+              "recursive": false,
+              "hidden": false,
+              "description": "The region of an s3:// URL. Default us-east-1.",
+              "arguments": [
+                {
+                  "name": "S3_REGION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--from-scripts",
+              "recursive": false,
+              "hidden": false,
+              "description": "Build from the SQL files in this folder.",
+              "arguments": [
+                {
+                  "name": "FROM_SCRIPTS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--post-script",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run this SQL script before sealing. May be repeated.",
+              "arguments": [
+                {
+                  "name": "POST_SCRIPT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--script-timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum time per script in minutes, hours or days.",
+              "arguments": [
+                {
+                  "name": "SCRIPT_TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--backup-set",
+              "recursive": false,
+              "hidden": false,
+              "description": "Which backup set of the file to use. [default: 1]",
+              "arguments": [
+                {
+                  "name": "BACKUP_SET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--keep-recovery-model",
+              "recursive": false,
+              "hidden": false,
+              "description": "Do not switch the image's database to the SIMPLE recovery model. [default: False]",
+              "arguments": [
+                {
+                  "name": "KEEP_RECOVERY_MODEL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The image name: 1 to 63 lowercase letters, digits, hyphens and underscores.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List the images with their source database, size, build time and the number of branches created from each."
+        },
+        {
+          "name": "export",
+          "description": "Write an image, its manifest and a SHA-256 for each file, as one compressed archive.",
+          "options": [
+            {
+              "name": "--to",
+              "recursive": false,
+              "hidden": false,
+              "description": "Where to write the archive: a file, an https:// Azure Blob URL or an s3:// URL. A file ends in .sbimg by convention.",
+              "arguments": [
+                {
+                  "name": "TO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--s3-region",
+              "recursive": false,
+              "hidden": false,
+              "description": "The region of an s3:// URL. Default us-east-1.",
+              "arguments": [
+                {
+                  "name": "S3_REGION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Replace the destination when it already exists. The old file is kept until the new archive is complete. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The image to export.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "import",
+          "description": "Add the image inside an archive written by 'image export' to the pool.",
+          "options": [
+            {
+              "name": "--as",
+              "recursive": false,
+              "hidden": false,
+              "description": "The name for the imported image. Default: the name inside the archive.",
+              "arguments": [
+                {
+                  "name": "AS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--s3-region",
+              "recursive": false,
+              "hidden": false,
+              "description": "The region of an s3:// URL. Default us-east-1.",
+              "arguments": [
+                {
+                  "name": "S3_REGION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "description": "The archive to import: a file, an https:// Azure Blob URL or an s3:// URL.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "rm",
+          "description": "Remove an image. Branch files are never touched.",
+          "options": [
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Remove the image even when branches were created from it. They keep working, but cannot be reset. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The image to remove.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "branch",
+      "description": "Create, list, reset and remove branches: writable databases cloned from an image.",
+      "commands": [
+        {
+          "name": "create",
+          "description": "Create a branch: a writable database holding the image's data.",
+          "options": [
+            {
+              "name": "--from",
+              "recursive": false,
+              "hidden": false,
+              "description": "The image to clone the branch from. Without it, the defaultImage setting is used.",
+              "arguments": [
+                {
+                  "name": "FROM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--copy",
+              "recursive": false,
+              "hidden": false,
+              "description": "Make full copies of the image's files even when the pool can share blocks, for benchmarks. [default: False]",
+              "arguments": [
+                {
+                  "name": "COPY",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--ephemeral",
+              "recursive": false,
+              "hidden": false,
+              "description": "Mark the branch for removal after its time limit. [default: False]",
+              "arguments": [
+                {
+                  "name": "EPHEMERAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--ttl",
+              "recursive": false,
+              "hidden": false,
+              "description": "Time limit in minutes, hours or days (default 1h).",
+              "arguments": [
+                {
+                  "name": "TTL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--label",
+              "recursive": false,
+              "hidden": false,
+              "description": "Set a key=value label. May be repeated.",
+              "arguments": [
+                {
+                  "name": "LABEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The branch name, which is also its database name: 1 to 63 lowercase letters, digits, hyphens and underscores.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "description": "List the branches with their image, clone mode, creation time, state and the space their own changed data uses.",
+          "options": [
+            {
+              "name": "--label",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show branches matching every key=value label.",
+              "arguments": [
+                {
+                  "name": "LABEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "prune",
+          "description": "Remove expired short-lived branches."
+        },
+        {
+          "name": "conn",
+          "description": "Print the connection string of a branch. It contains the engine password: this is the only command whose output does.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The branch name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "reset",
+          "description": "Return a branch to the exact state of its image, keeping its name and connection string.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The branch name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "rm",
+          "description": "Remove a branch: close its connections, drop its database and delete its files.",
+          "arguments": [
+            {
+              "name": "NAME",
+              "description": "The branch name.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "skill",
+      "description": "Install the SqlBranch coding-agent skill into a project.",
+      "commands": [
+        {
+          "name": "export",
+          "description": "Write the generated skill and its command references.",
+          "options": [
+            {
+              "name": "--dir",
+              "recursive": false,
+              "hidden": false,
+              "description": "Destination skill directory.",
+              "arguments": [
+                {
+                  "name": "DIR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Replace existing generated files. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
