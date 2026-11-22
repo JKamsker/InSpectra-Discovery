@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "calor",
-    "version": "0.29.0",
+    "version": "0.30.0",
     "description": "Calor compiler CLI - Convert C# to Calor and compile Calor to C#"
   },
   "x-inspectra": {
@@ -62,7 +62,7 @@
       "name": "--reference",
       "recursive": false,
       "hidden": false,
-      "description": "Assembly reference used to validate generated C# (repeatable)",
+      "description": "Assembly reference: calls on its types bind to their metadata, and generated C# is validated against it (repeatable)",
       "aliases": [
         "-r"
       ],
@@ -102,7 +102,7 @@
       "name": "--strict-api",
       "recursive": false,
       "hidden": false,
-      "description": "Enable strict API mode: requires §BREAKING markers for public API changes",
+      "description": "Enable strict API mode: requires /// breaking metadata for public API changes",
       "arguments": [
         {
           "name": "STRICT_API",
@@ -191,6 +191,23 @@
       "arguments": [
         {
           "name": "TRANSPILE_ONLY",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--no-implicit-system",
+      "recursive": false,
+      "hidden": false,
+      "description": "Validate standalone, without the default System-only project import",
+      "arguments": [
+        {
+          "name": "NO_IMPLICIT_SYSTEM",
           "required": false,
           "arity": {
             "minimum": 0,
@@ -602,7 +619,7 @@
           "name": "--no-fallback",
           "recursive": false,
           "hidden": false,
-          "description": "Fail conversion when encountering unsupported constructs (instead of emitting TODO comments)",
+          "description": "Disable TODO fallback; default lossless conversion still preserves unsupported C#.",
           "arguments": [
             {
               "name": "NO_FALLBACK",
@@ -633,47 +650,30 @@
           ]
         },
         {
+          "name": "--no-implicit-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Use standalone C# validation without the default System-only project import",
+          "arguments": [
+            {
+              "name": "NO_IMPLICIT_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--passthrough",
           "recursive": false,
           "hidden": false,
-          "description": "Preserve unconvertible members as §CSHARP interop blocks so the output always parses (C# → Calor). If a member's emitted Calor would be invalid, its original C# is kept verbatim instead of writing broken output.",
+          "description": "Request member-level C# preservation on conversion errors (C# → Calor). Default lossless rescue also preserves unsupported code in converter-owned raw frames.",
           "arguments": [
             {
               "name": "PASSTHROUGH",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
-          "name": "--lossy",
-          "recursive": false,
-          "hidden": false,
-          "description": "Explicitly allow reported semantic substitutions or drops. The default is lossless conversion.",
-          "arguments": [
-            {
-              "name": "LOSSY",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
-          "name": "--select-active-preprocessor-branch-lossy",
-          "recursive": false,
-          "hidden": false,
-          "description": "Explicitly lossy: evaluate conditional compilation with Roslyn and keep only the active branch.",
-          "arguments": [
-            {
-              "name": "SELECT_ACTIVE_PREPROCESSOR_BRANCH_LOSSY",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -836,23 +836,6 @@
                 "maximum": 1
               },
               "type": "Int32"
-            }
-          ]
-        },
-        {
-          "name": "--explicit-call-closers",
-          "recursive": false,
-          "hidden": false,
-          "description": "Emit explicit §/C for every §C call (v0.6.0-compatible output); disables zero-arg §/C elision",
-          "arguments": [
-            {
-              "name": "EXPLICIT_CALL_CLOSERS",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
             }
           ]
         },
@@ -1063,13 +1046,13 @@
           ]
         },
         {
-          "name": "--explicit-call-closers",
+          "name": "--no-implicit-system",
           "recursive": false,
           "hidden": false,
-          "description": "Emit explicit §/C for every §C call (v0.6.0-compatible output); disables zero-arg §/C elision",
+          "description": "Validate without the implicit System project import",
           "arguments": [
             {
-              "name": "EXPLICIT_CALL_CLOSERS",
+              "name": "NO_IMPLICIT_SYSTEM",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -1080,30 +1063,13 @@
           ]
         },
         {
-          "name": "--lossy",
+          "name": "--split-namespaces",
           "recursive": false,
           "hidden": false,
-          "description": "Explicitly allow reported semantic substitutions or drops. The default is lossless migration.",
+          "description": "Opt in to separate native files for split-safe top-level namespaces",
           "arguments": [
             {
-              "name": "LOSSY",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
-          "name": "--select-active-preprocessor-branch-lossy",
-          "recursive": false,
-          "hidden": false,
-          "description": "Explicitly lossy: select Roslyn's active conditional-compilation branch.",
-          "arguments": [
-            {
-              "name": "SELECT_ACTIVE_PREPROCESSOR_BRANCH_LOSSY",
+              "name": "SPLIT_NAMESPACES",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -2722,6 +2688,23 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--no-implicit-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Validate without the implicit System project import",
+          "arguments": [
+            {
+              "name": "NO_IMPLICIT_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -2819,7 +2802,7 @@
         },
         {
           "name": "validate-calr-content",
-          "description": "Check .calr file content for semantic version declaration",
+          "description": "Report native .calr syntax diagnostics without blocking the write",
           "arguments": [
             {
               "name": "TOOL_INPUT",
@@ -2914,17 +2897,29 @@
     },
     {
       "name": "ids",
-      "description": "Manage Calor declaration IDs",
+      "description": "Manage tooling-owned declaration IDs; use ids sync PROJECT --register FILE",
+      "arguments": [
+        {
+          "name": "RETIRED_ACTION",
+          "hidden": true,
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ],
       "commands": [
         {
           "name": "check",
-          "description": "Validate IDs (missing, duplicates, invalid format)",
+          "description": "Synchronize and validate sidecar declaration identities",
           "options": [
             {
               "name": "--allow-test-ids",
               "recursive": false,
               "hidden": false,
-              "description": "Allow test IDs (f001, m001) in all locations",
+              "description": "Allow test identities in the sidecar",
               "arguments": [
                 {
                   "name": "ALLOW_TEST_IDS",
@@ -2981,99 +2976,7 @@
           "arguments": [
             {
               "name": "PATHS",
-              "description": "Paths to files or directories to check",
-              "required": true,
-              "arity": {
-                "minimum": 1,
-                "maximum": 100000
-              },
-              "type": "String[]"
-            }
-          ]
-        },
-        {
-          "name": "assign",
-          "description": "Add missing IDs to declarations",
-          "options": [
-            {
-              "name": "--dry-run",
-              "recursive": false,
-              "hidden": false,
-              "description": "Show changes without modifying files",
-              "aliases": [
-                "-n"
-              ],
-              "arguments": [
-                {
-                  "name": "DRY_RUN",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
-              "name": "--fix-duplicates",
-              "recursive": false,
-              "hidden": false,
-              "description": "Reassign duplicate IDs (keeps first occurrence)",
-              "arguments": [
-                {
-                  "name": "FIX_DUPLICATES",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
-              "name": "--allow-test-ids",
-              "recursive": false,
-              "hidden": false,
-              "description": "Allow test IDs (f001, m001) - skip those without assigning",
-              "arguments": [
-                {
-                  "name": "ALLOW_TEST_IDS",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            },
-            {
-              "name": "--verbose",
-              "recursive": false,
-              "hidden": false,
-              "description": "Show detailed output",
-              "aliases": [
-                "-v"
-              ],
-              "arguments": [
-                {
-                  "name": "VERBOSE",
-                  "required": false,
-                  "arity": {
-                    "minimum": 0,
-                    "maximum": 1
-                  },
-                  "type": "Boolean"
-                }
-              ]
-            }
-          ],
-          "arguments": [
-            {
-              "name": "PATHS",
-              "description": "Paths to files or directories to process",
+              "description": "Active .calr files or directories of registered files",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -3085,7 +2988,7 @@
         },
         {
           "name": "index",
-          "description": "Generate an index of all IDs in the project",
+          "description": "Synchronize and export sidecar declaration identities",
           "options": [
             {
               "name": "--output",
@@ -3111,7 +3014,7 @@
           "arguments": [
             {
               "name": "PATHS",
-              "description": "Paths to files or directories to index",
+              "description": "Active .calr files or directories of registered files",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -3120,112 +3023,79 @@
               "type": "String[]"
             }
           ]
-        }
-      ]
-    },
-    {
-      "name": "fix",
-      "description": "Apply mechanical, reversible source rewrites",
-      "options": [
-        {
-          "name": "--drop-structural-ids",
-          "recursive": false,
-          "hidden": false,
-          "description": "Drop {id...} blocks from structural closing tags",
-          "arguments": [
-            {
-              "name": "DROP_STRUCTURAL_IDS",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
         },
         {
-          "name": "--compact-ids",
-          "recursive": false,
-          "hidden": false,
-          "description": "Rewrite legacy ULID payloads to v6 12-char compact form",
-          "arguments": [
+          "name": "sync",
+          "description": "Synchronize declaration identities without rewriting source",
+          "options": [
             {
-              "name": "COMPACT_IDS",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
+              "name": "--register",
+              "recursive": false,
+              "hidden": false,
+              "description": "Explicit active .calr files to register (never discovers historical fixtures)",
+              "arguments": [
+                {
+                  "name": "REGISTER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
             }
-          ]
-        },
-        {
-          "name": "--elide-call-closers",
-          "recursive": false,
-          "hidden": false,
-          "description": "Elide §/C on zero-arg + one-arg same-line calls (v0.6.x)",
+          ],
           "arguments": [
             {
-              "name": "ELIDE_CALL_CLOSERS",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
-          "name": "--heal-closers",
-          "recursive": false,
-          "hidden": false,
-          "description": "Delete legacy structural closers (§/F, §/M, …) -> indent-only form",
-          "arguments": [
-            {
-              "name": "HEAL_CLOSERS",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
-          "name": "--revert",
-          "recursive": false,
-          "hidden": false,
-          "description": "Reverse the operation using --log",
-          "arguments": [
-            {
-              "name": "REVERT",
-              "required": false,
-              "arity": {
-                "minimum": 0,
-                "maximum": 1
-              },
-              "type": "Boolean"
-            }
-          ]
-        },
-        {
-          "name": "--log",
-          "recursive": false,
-          "hidden": false,
-          "description": "Path to write (or read, with --revert) migration.log.json",
-          "arguments": [
-            {
-              "name": "LOG",
+              "name": "PROJECT",
+              "description": "Project root containing .calor/ids.json",
               "required": true,
               "arity": {
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "FileInfo"
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fix",
+      "description": "Apply safe diagnostic patches",
+      "options": [
+        {
+          "name": "--apply",
+          "recursive": false,
+          "hidden": false,
+          "description": "Apply deterministic safe diagnostic patches",
+          "arguments": [
+            {
+              "name": "APPLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-implicit-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Validate without the implicit System project import",
+          "arguments": [
+            {
+              "name": "NO_IMPLICIT_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -3273,13 +3143,13 @@
       "arguments": [
         {
           "name": "ROOT",
-          "description": "Root directory to walk recursively for .calr files",
-          "required": true,
+          "description": "Calor file or root directory (default: current directory) [default: .]",
+          "required": false,
           "arity": {
-            "minimum": 1,
+            "minimum": 0,
             "maximum": 1
           },
-          "type": "DirectoryInfo"
+          "type": "String"
         }
       ]
     },
@@ -3881,10 +3751,27 @@
           ]
         },
         {
+          "name": "--no-implicit-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Validate without the implicit System project import",
+          "arguments": [
+            {
+              "name": "NO_IMPLICIT_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--weakening-check",
           "recursive": false,
           "hidden": false,
-          "description": "M-G4 mode (gates doc Annex A-1.3): with exactly two input files (frozen, final), mechanically decide whether the named declaration's §Q/§S conjunction was weakened — prints a JSON verdict, exit 0",
+          "description": "M-G4 mode (gates doc Annex A-1.3): with exactly two input files (frozen, final), mechanically decide whether the named declaration's requires/=> conjunction was weakened — prints a JSON verdict, exit 0",
           "arguments": [
             {
               "name": "WEAKENING_CHECK",
@@ -4044,7 +3931,7 @@
           "name": "--reference",
           "recursive": false,
           "hidden": false,
-          "description": "Assembly reference used to validate generated C# (repeatable)",
+          "description": "Assembly reference: calls on its types bind to their metadata, and generated C# is validated against it (repeatable)",
           "aliases": [
             "-r"
           ],
@@ -4283,7 +4170,7 @@
       "commands": [
         {
           "name": "docs",
-          "description": "Check agent-facing docs against the compiler implementation. Covered files: CLAUDE.md, docs/syntax-reference/*.md, docs/cli/*.md, and undated docs/semantics/*.md (plus docs/**/*.md for the version scan). Checks: (1) every documented §-keyword exists in the lexer; (2) every cited CalorNNNN diagnostic code exists (and cited bands are non-empty); (3) effect codes in docs/syntax-reference/effects.md match the effect registry in both directions; (4) the Calor13xx table in docs/cli/structured-output.md is complete; (5) no doc hardcodes the current version; (6) every fenced ```calor example that declares a complete program (first non-blank line starts with §M) parses with the current compiler; (7) AGENTS.md is in sync with its single source CLAUDE.md (--fix regenerates it); (8) every complete program in the agent syntax exemplar compiles to valid C# (Roslyn-semantic-checked) and no copyable line binds an array-returning call to a generic collection (the E1a trap). (9) normative semantics-version claims match the implemented language version; (10) the AST inventory matches eng/ast-schema.json. (11) all complete examples in the actual agent-task CALOR_REFERENCE heredoc compile to valid C#. (12) website/content/**/*.mdx (historical changelog excluded): checks 1, 2, 5 and forward-only effect tables apply; complete ```calor programs compile as `calor --input` does, `expect=CalorNNNN` negatives report exactly those codes, `group=` fences compile together, and `output` fences match the real diagnostics (Calor1332-1334). Suppress an intentional-meta-notation finding by putting <!-- drift:ignore --> on the preceding line (see docs/cli/self-check.md). Exits 1 when drift is found",
+          "description": "Check agent-facing docs against the compiler implementation. Covered files: CLAUDE.md, docs/syntax-reference/*.md, docs/cli/*.md, and undated docs/semantics/*.md (plus docs/**/*.md for the version scan). Checks: (1) docs contain no retired section markers; (2) every cited CalorNNNN diagnostic code exists (and cited bands are non-empty); (3) effect codes in docs/syntax-reference/effects.md match the effect registry in both directions; (4) the Calor13xx table in docs/cli/structured-output.md is complete; (5) no doc hardcodes the current version; (6) every fenced ```calor example that declares a complete program (first non-comment content line starts with module) parses with the current compiler; (7) AGENTS.md is in sync with its single source CLAUDE.md (--fix regenerates it); (8) every complete program in the agent syntax exemplar compiles to valid C# (Roslyn-semantic-checked) and no copyable line binds an array-returning call to a generic collection (the E1a trap). (9) normative semantics-version claims match the implemented language version; (10) the AST inventory matches eng/ast-schema.json. (11) all complete examples in the generated current teaching reference compile to valid C#, and teaching mirrors are current. (12) website/content/**/*.mdx (historical changelog excluded): checks 1, 2, 5 and forward-only effect tables apply; complete ```calor programs compile as `calor --input` does, `expect=CalorNNNN` negatives report exactly those codes, `group=` fences compile together, and `output` fences match the real diagnostics (Calor1332-1334). (13) registered landing TSX snippets render shared snippets.json code; complete programs and fragments with explicit context compile to valid C#, and intended negatives match exact error/warning diagnostics. (14) Markdown syntax references match their canonical website MDX source, including fenced code bytes. Suppress an intentional-meta-notation finding by putting <!-- drift:ignore --> on the preceding line (see docs/cli/self-check.md). Exits 1 when drift is found",
           "options": [
             {
               "name": "--root",
@@ -4326,10 +4213,27 @@
               "name": "--fix",
               "recursive": false,
               "hidden": false,
-              "description": "Regenerate AGENTS.md and the schema-derived AST inventory, then run all drift checks",
+              "description": "Validate complete teaching examples before regenerating mirrors (also syntax references, AGENTS.md and AST inventory unless --teaching-only), then check",
               "arguments": [
                 {
                   "name": "FIX",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--teaching-only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Check only generated teaching mirrors and their complete examples (not repository-wide documentation)",
+              "arguments": [
+                {
+                  "name": "TEACHING_ONLY",
                   "required": false,
                   "arity": {
                     "minimum": 0,
@@ -4807,6 +4711,23 @@
               "type": "Int32"
             }
           ]
+        },
+        {
+          "name": "--no-implicit-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Validate standalone without the default System-only project import",
+          "arguments": [
+            {
+              "name": "NO_IMPLICIT_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
@@ -4967,12 +4888,115 @@
               "type": "Int32"
             }
           ]
+        },
+        {
+          "name": "--no-implicit-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Validate standalone without the default System-only project import",
+          "arguments": [
+            {
+              "name": "NO_IMPLICIT_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ],
       "arguments": [
         {
           "name": "PATH",
           "description": "A .calr file, or a directory containing .calr files (with an optional tests/ subdirectory of *.cs xUnit tests; bin/, obj/ and reference/ subdirectories are excluded)",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "description": "Build, test and verify one source snapshot; return only failures",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text or json",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Timeout per build/test process in seconds",
+          "arguments": [
+            {
+              "name": "TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--verification-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Solver timeout per contract in milliseconds",
+          "arguments": [
+            {
+              "name": "VERIFICATION_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--no-implicit-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Validate without the implicit System project import",
+          "arguments": [
+            {
+              "name": "NO_IMPLICIT_SYSTEM",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PATH",
+          "description": "Calor source file or directory with tests/*.cs xUnit tests",
           "required": true,
           "arity": {
             "minimum": 1,
@@ -5034,6 +5058,23 @@
           "arguments": [
             {
               "name": "NO_CACHE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-implicit-system",
+          "recursive": false,
+          "hidden": false,
+          "description": "Validate standalone without the default System-only project import",
+          "arguments": [
+            {
+              "name": "NO_IMPLICIT_SYSTEM",
               "required": false,
               "arity": {
                 "minimum": 0,
