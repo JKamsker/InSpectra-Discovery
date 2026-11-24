@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "winche",
-    "version": "3.1.3",
+    "version": "3.2.0",
     "description": "The winche command-line tool: set up and use a Winche Server from the terminal, test access rules locally, and deploy rules, indexes, settings and functions. Install with: dotnet tool install -g Winche.Cli"
   },
   "x-inspectra": {
@@ -29,17 +29,17 @@
     {
       "name": "apps",
       "hidden": false,
-      "description": "The project's registered apps"
+      "description": "The project's apps (Integrity), with today's verified requests"
     },
     {
       "name": "apps:create",
       "hidden": false,
-      "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+      "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
     },
     {
       "name": "apps:delete",
       "hidden": false,
-      "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+      "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
     },
     {
       "name": "assets",
@@ -250,6 +250,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -345,6 +361,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -366,17 +432,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -450,6 +516,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -606,7 +702,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -873,6 +969,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -968,6 +1080,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -989,17 +1151,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -1073,6 +1235,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -1229,7 +1421,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -1501,6 +1693,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -1596,6 +1804,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -1617,17 +1875,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -1701,6 +1959,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -1857,7 +2145,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -2124,6 +2412,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -2219,6 +2523,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -2240,17 +2594,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -2324,6 +2678,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -2480,7 +2864,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -2763,6 +3147,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -2858,6 +3258,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -2879,17 +3329,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -2957,6 +3407,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -3113,7 +3593,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -3386,6 +3866,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -3481,6 +3977,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -3502,17 +4048,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -3586,6 +4132,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -3742,7 +4318,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -4009,6 +4585,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -4104,6 +4696,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -4125,17 +4767,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -4209,6 +4851,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -4365,7 +5037,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -4632,6 +5304,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -4727,6 +5415,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -4748,17 +5486,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -4832,6 +5570,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -4988,7 +5756,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -5056,6 +5824,36 @@
       "name": "init",
       "hidden": false,
       "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+    },
+    {
+      "name": "integrity",
+      "hidden": false,
+      "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+    },
+    {
+      "name": "integrity:debug-tokens:create",
+      "hidden": false,
+      "description": "A debug token for simulators, desktop builds or CI (printed once)"
+    },
+    {
+      "name": "integrity:debug-tokens:delete",
+      "hidden": false,
+      "description": "Remove one: the Integrity tokens it got stop working"
+    },
+    {
+      "name": "integrity:play-account",
+      "hidden": false,
+      "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+    },
+    {
+      "name": "integrity:set",
+      "hidden": false,
+      "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+    },
+    {
+      "name": "integrity:turnstile-secret",
+      "hidden": false,
+      "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
     },
     {
       "name": "invites:revoke",
@@ -5321,6 +6119,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -5416,6 +6230,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -5437,17 +6301,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -5526,6 +6390,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -5671,7 +6565,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -5974,6 +6868,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -6069,6 +6979,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -6090,17 +7050,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -6179,6 +7139,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -6330,7 +7320,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -6597,6 +7587,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -6692,6 +7698,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -6713,17 +7769,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -6802,6 +7858,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -6953,7 +8039,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -7220,6 +8306,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -7315,6 +8417,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -7336,17 +8488,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -7425,6 +8577,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -7576,7 +8758,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -7843,6 +9025,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -7938,6 +9136,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -7959,17 +9207,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -8048,6 +9296,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -8199,7 +9477,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -8466,6 +9744,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -8561,6 +9855,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -8582,17 +9926,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -8671,6 +10015,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -8822,7 +10196,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -9089,6 +10463,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -9184,6 +10574,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -9205,17 +10645,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -9294,6 +10734,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -9445,7 +10915,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -9712,6 +11182,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -9807,6 +11293,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -9828,17 +11364,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -9917,6 +11453,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -10068,7 +11634,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -10150,7 +11716,7 @@
     {
       "name": "secrets:set",
       "hidden": false,
-      "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+      "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
     },
     {
       "name": "secrets:sources",
@@ -10388,6 +11954,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -10483,6 +12065,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -10504,17 +12136,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -10593,6 +12225,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -10749,7 +12411,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -11011,6 +12673,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -11106,6 +12784,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -11127,17 +12855,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -11216,6 +12944,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -11372,7 +13130,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -11634,6 +13392,22 @@
               ]
             },
             {
+              "name": "--integrity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+              "arguments": [
+                {
+                  "name": "MODE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
               "name": "--data",
               "recursive": false,
               "hidden": false,
@@ -11729,6 +13503,56 @@
               "recursive": false,
               "hidden": false,
               "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+            },
+            {
+              "name": "--android-certificate",
+              "recursive": false,
+              "hidden": false,
+              "aliases": [
+                "--android-sideloaded",
+                "--web-site-key"
+              ],
+              "arguments": [
+                {
+                  "name": "SHA256",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--web-hostname",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "HOST",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--token-minutes",
+              "recursive": false,
+              "hidden": false,
+              "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+              "arguments": [
+                {
+                  "name": "30_1440",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
             }
           ],
           "commands": [
@@ -11750,17 +13574,17 @@
             {
               "name": "apps",
               "hidden": false,
-              "description": "The project's registered apps"
+              "description": "The project's apps (Integrity), with today's verified requests"
             },
             {
               "name": "apps:create",
               "hidden": false,
-              "description": "Register an app (--id, --sdk flutter, --android-package, --apple-bundle-id,\n--web-origin, comma-separated); then winche configure --app <id>"
+              "description": "Add an app (--id, --android-package, --apple-bundle-id,\n--apple-team-id, --apple-development to accept App Attest from development\nbuilds, --android-cloud-project <number>, --android-device basic|device|strong,\n--android-sideloaded, --android-certificate <sha256,…>, --web-site-key <Turnstile site key>,\n--web-hostname <host,…>); then winche configure --app <id>"
             },
             {
               "name": "apps:delete",
               "hidden": false,
-              "description": "Remove a registered app\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
+              "description": "Remove an app (Integrity)\nprojects:archive | projects:restore | projects:delete <id>\nArchive a project (refused until restored), or delete an archived one for good"
             },
             {
               "name": "assets",
@@ -11839,6 +13663,36 @@
               "name": "init",
               "hidden": false,
               "description": "Create winche.json, starter database.rules / storage.rules and their test files"
+            },
+            {
+              "name": "integrity",
+              "hidden": false,
+              "description": "Each product's Integrity mode and today's requests, token lifetime, debug tokens"
+            },
+            {
+              "name": "integrity:debug-tokens:create",
+              "hidden": false,
+              "description": "A debug token for simulators, desktop builds or CI (printed once)"
+            },
+            {
+              "name": "integrity:debug-tokens:delete",
+              "hidden": false,
+              "description": "Remove one: the Integrity tokens it got stop working"
+            },
+            {
+              "name": "integrity:play-account",
+              "hidden": false,
+              "description": "The Google service account Play Integrity signs in as (or --ref aws-sm:…)"
+            },
+            {
+              "name": "integrity:set",
+              "hidden": false,
+              "description": "How a product treats requests without a valid Integrity token (-m why;\n--token-minutes <30-1440> for how long tokens last)"
+            },
+            {
+              "name": "integrity:turnstile-secret",
+              "hidden": false,
+              "description": "The app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)"
             },
             {
               "name": "invites:revoke",
@@ -11995,7 +13849,7 @@
             {
               "name": "secrets:set",
               "hidden": false,
-              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead"
+              "description": "Add or replace one: a functions or plugin secret by its NAME (MAIL_KEY, SMS__AUTH_TOKEN), or\nsmtp-password, keycloak-sync --provider <name>. The value from WINCHE_SECRET, --from-file\n<path>, or typed unseen; or --ref aws-sm:<ARN or name>[#field] | aws-ssm:<parameter>: read\nfrom AWS instead; or --in aws-sm | aws-ssm: the value kept in AWS by Winche\nsecrets:move <NAME> --to aws-sm | aws-ssm\nMove a value kept on the server into AWS"
             },
             {
               "name": "secrets:sources",
@@ -12266,6 +14120,22 @@
       ]
     },
     {
+      "name": "--integrity",
+      "recursive": false,
+      "hidden": false,
+      "description": "Emulators: off, monitor (default) or enforce Integrity; any proof gets a token there",
+      "arguments": [
+        {
+          "name": "MODE",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
       "name": "--data",
       "recursive": false,
       "hidden": false,
@@ -12361,6 +14231,56 @@
       "recursive": false,
       "hidden": false,
       "description": "login:add            Sign in another account on the server, beside the one in use\nlogin:list           The accounts signed in, by server (* is the one in use)\nlogin:use <email>    Use that signed-in account on the server\nlogout [<email>]     End that account's sign-in on the server (none named: all of them)\n2fa enable           Turn on two-step sign-in for your account (an authenticator app)\nrules validate       Check the rules files (offline)\nrules test           Run the allow/deny cases in the test files (offline)\nrules deploy         Run the tests, then publish the rules files as new versions on the console\nrules history [<v>]  List the console's rule versions, or show version <v> against the active one\nrules rollback <v>   Make version <v> active again (saved as a new version)\nrules diff           Show how the rules files differ from what the console enforces\nrules pull           Write the console's live rules into the rules files"
+    },
+    {
+      "name": "--android-certificate",
+      "recursive": false,
+      "hidden": false,
+      "aliases": [
+        "--android-sideloaded",
+        "--web-site-key"
+      ],
+      "arguments": [
+        {
+          "name": "SHA256",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--web-hostname",
+      "recursive": false,
+      "hidden": false,
+      "arguments": [
+        {
+          "name": "HOST",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "--token-minutes",
+      "recursive": false,
+      "hidden": false,
+      "description": "integrity:debug-tokens:create <app> <name>\nA debug token for simulators, desktop builds or CI (printed once)\nintegrity:play-account <key.json>\nThe Google service account Play Integrity signs in as (or --ref aws-sm:…)\nintegrity:turnstile-secret <app>\nThe app's Turnstile secret key, for the browser check (typed unseen, or --ref aws-sm:…)\nintegrity:debug-tokens:delete <id>\nRemove one: the Integrity tokens it got stop working",
+      "arguments": [
+        {
+          "name": "30_1440",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
     }
   ]
 }

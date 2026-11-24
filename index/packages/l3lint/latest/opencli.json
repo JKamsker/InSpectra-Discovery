@@ -1,0 +1,1548 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "l3lint",
+    "version": "1.0.0",
+    "description": "l3lint command-line tool: lints commercial card Level 2 and Level 3 payloads against Visa, Mastercard, American Express and Discover requirements before submission, and explains each likely downgrade and its fix. Offline; never transmits data."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "2.0.14.0",
+      "systemCommandLineVersion": "2.0.14.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedDescription": "l3lint lints commercial card Level 2 and Level 3 payloads against Visa, Mastercard, American Express and Discover requirements, offline."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    },
+    {
+      "name": "--no-color",
+      "recursive": true,
+      "hidden": false,
+      "description": "Turn off color. NO_COLOR also turns it off. [default: False]",
+      "arguments": [
+        {
+          "name": "NO_COLOR",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--quiet",
+      "recursive": true,
+      "hidden": false,
+      "description": "Print less: no progress notes and no passing results. [default: False]",
+      "aliases": [
+        "-q"
+      ],
+      "arguments": [
+        {
+          "name": "QUIET",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--verbose",
+      "recursive": true,
+      "hidden": false,
+      "description": "Print more: settings notes and stack traces for internal errors. [default: False]",
+      "aliases": [
+        "-v"
+      ],
+      "arguments": [
+        {
+          "name": "VERBOSE",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--log-level",
+      "recursive": true,
+      "hidden": false,
+      "description": "Log level: error, warn, info, debug or trace. Default: warn. [default: warn]",
+      "arguments": [
+        {
+          "name": "LOG_LEVEL",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--log-format",
+      "recursive": true,
+      "hidden": false,
+      "description": "Log format: text or json. Logs go to standard error. [default: text]",
+      "arguments": [
+        {
+          "name": "LOG_FORMAT",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "--log-values",
+      "recursive": true,
+      "hidden": false,
+      "description": "Include masked payload values in logs. Off by default. [default: False]",
+      "arguments": [
+        {
+          "name": "LOG_VALUES",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    }
+  ],
+  "commands": [
+    {
+      "name": "lint",
+      "description": "Lint payload files, folders, globs, NDJSON or standard input.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input format: auto, canonical, stripe, adyen, braintree, cybersource, authorizenet, checkoutcom or csv. Default: auto.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "AUTO|CANONICAL|STRIPE|ADYEN|BRAINTREE|CYBERSOURCE|AUTHORIZENET|CHECKOUTCOM|CSV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--map",
+          "recursive": false,
+          "hidden": false,
+          "description": "Column map for CSV input.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--currency",
+          "recursive": false,
+          "hidden": false,
+          "description": "ISO 4217 currency for payloads that carry none, such as Braintree requests. Payload values win.",
+          "arguments": [
+            {
+              "name": "XXX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--brand",
+          "recursive": false,
+          "hidden": false,
+          "description": "Card brand to lint against: auto, visa, mastercard, amex, discover or all. Default: auto (reads card.brand).",
+          "arguments": [
+            {
+              "name": "AUTO|VISA|MASTERCARD|AMEX|DISCOVER|ALL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--card-product",
+          "recursive": false,
+          "hidden": false,
+          "description": "Card product, overriding the payload: consumer, business, corporate, purchasing, fleet or commercialPrepaid.",
+          "arguments": [
+            {
+              "name": "CONSUMER|BUSINESS|CORPORATE|PURCHASING|FLEET|COMMERCIALPREPAID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--mcc",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merchant category code, 4 digits, overriding the payload.",
+          "arguments": [
+            {
+              "name": "NNNN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--merchant-country",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merchant country, ISO alpha-2. Default: US.",
+          "arguments": [
+            {
+              "name": "XX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--processor",
+          "recursive": false,
+          "hidden": false,
+          "description": "Processor profile name or path to a profile YAML file. Default: generic.",
+          "arguments": [
+            {
+              "name": "PROFILE|PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--as-of",
+          "recursive": false,
+          "hidden": false,
+          "description": "Lint against the rules in force on this date (YYYY-MM-DD). Default: the transaction date, else today.",
+          "arguments": [
+            {
+              "name": "YYYY_MM_DD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Config file. Default: the nearest .l3lint.yaml walking up from the current folder.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--rule-pack",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder of a rule pack to load in addition to the embedded packs. Repeatable.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run only these rule IDs or globs. Repeatable.",
+          "arguments": [
+            {
+              "name": "RULE|GLOB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--disable",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rule IDs or globs to skip, for example VISA-DQ-*. Repeatable.",
+          "arguments": [
+            {
+              "name": "RULE|GLOB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--severity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Severity override as RULE=level, for example GEN-DQ-007=error. Repeatable.",
+          "arguments": [
+            {
+              "name": "SEVERITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--rates",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rate table YAML that enables cost estimates.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--strict-pci",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stop when a card number is found instead of masking it. [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT_PCI",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--strict-profiles",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run single-processor rules as errors. [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT_PROFILES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--fail-on",
+          "recursive": false,
+          "hidden": false,
+          "description": "Lowest severity that sets exit code 1: error, warning, information or none. Default: error.",
+          "arguments": [
+            {
+              "name": "ERROR|WARNING|INFORMATION|NONE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output kind: text, json, sarif, junit or markdown. Use kind=path to write a file. Repeatable.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "KIND[=PATH]",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--max-findings",
+          "recursive": false,
+          "hidden": false,
+          "description": "Most findings to print. The summary still counts every finding.",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--annotations",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also print GitHub workflow annotations for findings at or above --fail-on: github or none. [default: none]",
+          "arguments": [
+            {
+              "name": "GITHUB|NONE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "INPUTS",
+          "description": "Files, folders, globs such as fixtures/**/*.json, NDJSON files, or - for standard input.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "explain",
+      "description": "Show a rule's requirement, rationale, sources, confidence, dates and examples.",
+      "options": [
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output: text or json. [default: text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "TEXT|JSON",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--rule-pack",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder of a rule pack to load in addition to the embedded packs. Repeatable.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "RULEID",
+          "description": "A rule ID, for example VISA-L3-004.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "fix",
+      "description": "Print a JSON Patch of mechanical fixes, or write a patched copy.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input format: auto, canonical, stripe, adyen, braintree, cybersource, authorizenet, checkoutcom or csv. Default: auto.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "AUTO|CANONICAL|STRIPE|ADYEN|BRAINTREE|CYBERSOURCE|AUTHORIZENET|CHECKOUTCOM|CSV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--map",
+          "recursive": false,
+          "hidden": false,
+          "description": "Column map for CSV input.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--currency",
+          "recursive": false,
+          "hidden": false,
+          "description": "ISO 4217 currency for payloads that carry none, such as Braintree requests. Payload values win.",
+          "arguments": [
+            {
+              "name": "XXX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--brand",
+          "recursive": false,
+          "hidden": false,
+          "description": "Card brand to lint against: auto, visa, mastercard, amex, discover or all. Default: auto (reads card.brand).",
+          "arguments": [
+            {
+              "name": "AUTO|VISA|MASTERCARD|AMEX|DISCOVER|ALL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--card-product",
+          "recursive": false,
+          "hidden": false,
+          "description": "Card product, overriding the payload: consumer, business, corporate, purchasing, fleet or commercialPrepaid.",
+          "arguments": [
+            {
+              "name": "CONSUMER|BUSINESS|CORPORATE|PURCHASING|FLEET|COMMERCIALPREPAID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--mcc",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merchant category code, 4 digits, overriding the payload.",
+          "arguments": [
+            {
+              "name": "NNNN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--merchant-country",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merchant country, ISO alpha-2. Default: US.",
+          "arguments": [
+            {
+              "name": "XX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--processor",
+          "recursive": false,
+          "hidden": false,
+          "description": "Processor profile name or path to a profile YAML file. Default: generic.",
+          "arguments": [
+            {
+              "name": "PROFILE|PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--as-of",
+          "recursive": false,
+          "hidden": false,
+          "description": "Lint against the rules in force on this date (YYYY-MM-DD). Default: the transaction date, else today.",
+          "arguments": [
+            {
+              "name": "YYYY_MM_DD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Config file. Default: the nearest .l3lint.yaml walking up from the current folder.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--rule-pack",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder of a rule pack to load in addition to the embedded packs. Repeatable.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run only these rule IDs or globs. Repeatable.",
+          "arguments": [
+            {
+              "name": "RULE|GLOB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--disable",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rule IDs or globs to skip, for example VISA-DQ-*. Repeatable.",
+          "arguments": [
+            {
+              "name": "RULE|GLOB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--severity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Severity override as RULE=level, for example GEN-DQ-007=error. Repeatable.",
+          "arguments": [
+            {
+              "name": "SEVERITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--rates",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rate table YAML that enables cost estimates.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--strict-pci",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stop when a card number is found instead of masking it. [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT_PCI",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--strict-profiles",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run single-processor rules as errors. [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT_PROFILES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the patch without writing anything. This is the default. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--write",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write the patched copy to this path instead of printing the patch.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--fix-amount",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also recompute the transaction amount. Off by default because it changes what the card is charged. [default: False]",
+          "arguments": [
+            {
+              "name": "FIX_AMOUNT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "INPUT",
+          "description": "The payload file to fix, or - for standard input.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "convert",
+      "description": "Map a gateway payload to canonical JSON, with the path map.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Input format: auto, canonical, stripe, adyen, braintree, cybersource, authorizenet, checkoutcom or csv. Default: auto.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "AUTO|CANONICAL|STRIPE|ADYEN|BRAINTREE|CYBERSOURCE|AUTHORIZENET|CHECKOUTCOM|CSV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--map",
+          "recursive": false,
+          "hidden": false,
+          "description": "Column map for CSV input.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--currency",
+          "recursive": false,
+          "hidden": false,
+          "description": "ISO 4217 currency for payloads that carry none, such as Braintree requests. Payload values win.",
+          "arguments": [
+            {
+              "name": "XXX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--brand",
+          "recursive": false,
+          "hidden": false,
+          "description": "Card brand to lint against: auto, visa, mastercard, amex, discover or all. Default: auto (reads card.brand).",
+          "arguments": [
+            {
+              "name": "AUTO|VISA|MASTERCARD|AMEX|DISCOVER|ALL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--card-product",
+          "recursive": false,
+          "hidden": false,
+          "description": "Card product, overriding the payload: consumer, business, corporate, purchasing, fleet or commercialPrepaid.",
+          "arguments": [
+            {
+              "name": "CONSUMER|BUSINESS|CORPORATE|PURCHASING|FLEET|COMMERCIALPREPAID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--mcc",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merchant category code, 4 digits, overriding the payload.",
+          "arguments": [
+            {
+              "name": "NNNN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--merchant-country",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merchant country, ISO alpha-2. Default: US.",
+          "arguments": [
+            {
+              "name": "XX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--processor",
+          "recursive": false,
+          "hidden": false,
+          "description": "Processor profile name or path to a profile YAML file. Default: generic.",
+          "arguments": [
+            {
+              "name": "PROFILE|PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--as-of",
+          "recursive": false,
+          "hidden": false,
+          "description": "Lint against the rules in force on this date (YYYY-MM-DD). Default: the transaction date, else today.",
+          "arguments": [
+            {
+              "name": "YYYY_MM_DD",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--config",
+          "recursive": false,
+          "hidden": false,
+          "description": "Config file. Default: the nearest .l3lint.yaml walking up from the current folder.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--rule-pack",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder of a rule pack to load in addition to the embedded packs. Repeatable.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run only these rule IDs or globs. Repeatable.",
+          "arguments": [
+            {
+              "name": "RULE|GLOB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--disable",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rule IDs or globs to skip, for example VISA-DQ-*. Repeatable.",
+          "arguments": [
+            {
+              "name": "RULE|GLOB",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--severity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Severity override as RULE=level, for example GEN-DQ-007=error. Repeatable.",
+          "arguments": [
+            {
+              "name": "SEVERITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--rates",
+          "recursive": false,
+          "hidden": false,
+          "description": "Rate table YAML that enables cost estimates.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--strict-pci",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stop when a card number is found instead of masking it. [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT_PCI",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--strict-profiles",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run single-processor rules as errors. [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT_PROFILES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "Target format. The only target is canonical.",
+          "arguments": [
+            {
+              "name": "CANONICAL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--canonical-only",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print only the canonical JSON, one transaction per line. [default: False]",
+          "arguments": [
+            {
+              "name": "CANONICAL_ONLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "INPUT",
+          "description": "The payload file to convert, or - for standard input.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "rules",
+      "description": "Browse rules and run every rule's examples.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List rules and rule packs.",
+          "options": [
+            {
+              "name": "--brand",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only rules for this brand: general, visa, mastercard, amex or discover.",
+              "arguments": [
+                {
+                  "name": "GENERAL|VISA|MASTERCARD|AMEX|DISCOVER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--level",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only rules at this level: general, L2 or L3.",
+              "arguments": [
+                {
+                  "name": "GENERAL|L2|L3",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--query",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only rules whose ID, title or requirement contains this text.",
+              "arguments": [
+                {
+                  "name": "TEXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output: text or json. [default: text]",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "TEXT|JSON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--rule-pack",
+              "recursive": false,
+              "hidden": false,
+              "description": "Folder of a rule pack to load in addition to the embedded packs. Repeatable.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "show",
+          "description": "Show one rule's reference page.",
+          "options": [
+            {
+              "name": "--rule-pack",
+              "recursive": false,
+              "hidden": false,
+              "description": "Folder of a rule pack to load in addition to the embedded packs. Repeatable.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "RULEID",
+              "description": "A rule ID, for example VISA-L3-004.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "test",
+          "description": "Run every rule's pass and fail examples.",
+          "options": [
+            {
+              "name": "--rule-pack",
+              "recursive": false,
+              "hidden": false,
+              "description": "Folder of a rule pack to load in addition to the embedded packs. Repeatable.",
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--only",
+              "recursive": false,
+              "hidden": false,
+              "description": "Run only these rule IDs or globs. Repeatable.",
+              "arguments": [
+                {
+                  "name": "RULE|GLOB",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "schema",
+      "description": "Print a JSON Schema: canonical, results, config, rulepack and others.",
+      "arguments": [
+        {
+          "name": "NAME",
+          "description": "The schema to print. One of: canonical, results, config, rulepack, csvmap, rates, profile, lock.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "description": "Write .l3lint.yaml, .l3lint.lock, a sample payload and a sample GitHub workflow.",
+      "options": [
+        {
+          "name": "--directory",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder to write the files in. Default: the current folder. [default: .]",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Overwrite files that already exist. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "version",
+      "description": "Print the engine and rule pack versions.",
+      "options": [
+        {
+          "name": "--rule-pack",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder of a rule pack to load in addition to the embedded packs. Repeatable.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

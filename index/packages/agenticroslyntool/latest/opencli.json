@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "agentic-roslyn-tool",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "description": "Splits C# files that declare more than one top-level type into one file per type, so a codebase can turn on StyleCop SA1402. Roslyn Syntax API only, so it does not need a solution that compiles."
   },
   "x-inspectra": {
@@ -52,7 +52,23 @@
           "name": "--manifest",
           "recursive": false,
           "hidden": false,
-          "description": "Path to the manifest CSV. Defaults to sa1402-split-manifest.csv beside a list\ninput, or in --repo-root for a directory or stdin input.",
+          "description": "Path to the plan manifest CSV. Defaults to sa1402-split-manifest.csv beside a list\ninput, or in --repo-root for a directory or stdin input. Only plan writes it.\nMust name a file. renames and content refuse a symbolic link here.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--report",
+          "recursive": false,
+          "hidden": false,
+          "description": "Where renames and content record what they did. Defaults to the manifest path\nwith .report.csv as its extension. Not accepted with the plan phase.\nReplaces a file in the report format. Refuses any other existing file.",
           "arguments": [
             {
               "name": "PATH",
@@ -68,7 +84,7 @@
           "name": "--phase",
           "recursive": false,
           "hidden": false,
-          "description": "Which phase to run. Defaults to content.",
+          "description": "Which phase to run. Defaults to plan, which changes no source file.",
           "arguments": [
             {
               "name": "PHASE",
@@ -84,7 +100,7 @@
           "name": "--dry-run",
           "recursive": false,
           "hidden": false,
-          "description": "Shorthand for --phase plan. Cannot be combined with --phase."
+          "description": "Same as --phase plan. Kept for older scripts. Cannot be combined with --phase."
         },
         {
           "name": "--json",
@@ -125,10 +141,45 @@
           ]
         },
         {
+          "name": "--collision-naming",
+          "recursive": false,
+          "hidden": false,
+          "description": "Name for two inputs that emit the same file name. file-first, the default,\ngives A.Shared.cs. type-first gives Shared.A.cs, which passes SA1649.\nThe plan records the value; renames and content reuse it when the flag is absent.",
+          "aliases": [
+            "--type-first"
+          ],
+          "arguments": [
+            {
+              "name": "COLLISION_NAMING",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--file-naming",
+          "recursive": false,
+          "hidden": false,
+          "description": "SA1649 convention for generic file names. Defaults to stylecop: Foo.cs,\nor Foo{T}.cs when a same-name type shares the file. metadata names\nthem Foo`1.cs. Pass the same value to every phase.",
+          "arguments": [
+            {
+              "name": "FILE_NAMING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--help",
           "recursive": false,
           "hidden": false,
-          "description": "Show help.\nExit codes: 0 no failures, 1 a file failed, 2 bad command line, 3 the run could not complete.\nStandard output carries the data (CSV or JSON); a one-line summary goes to standard error.",
+          "description": "Show help.\nTypical workflow. Use one list file and one manifest outside the repository for every step:\n1. split-types --input <list> --manifest <csv> --json                    plan; changes no source file\n2. split-types --input <list> --manifest <csv> --json --phase renames    git mv only; commit it\n3. split-types --input <list> --manifest <csv> --json --phase content    rewrites files; build and test\nWith --json, nextArgs in the report holds the exact arguments for the next step.\nExit codes: 0 no failures, 1 a file failed, 2 bad command line, 3 the run could not complete.\nExit 0 can still mean nothing happened. Read summary.split, or the summary line.\nStandard output carries the data (CSV or JSON); the summary and a Next: line go to standard error.\nIf the report file cannot be written, its rows go to standard output and the run exits 3.",
           "aliases": [
             "-h"
           ]
