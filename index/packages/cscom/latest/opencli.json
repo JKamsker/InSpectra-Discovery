@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "cscom",
-    "version": "4.0.0",
-    "description": "Generates COM interop assemblies and projects from type libraries using source-generated COM interop, so that they can be used with Native AOT."
+    "version": "4.1.0",
+    "description": "Generates COM interop assemblies and projects from type libraries using source-generated COM interop, so that they can be used with Native AOT, and exports the type library of an assembly with source-generated COM types, like TlbExp."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
@@ -2280,6 +2280,165 @@
       ]
     },
     {
+      "name": "typelib",
+      "description": "Exports type libraries.",
+      "commands": [
+        {
+          "name": "export",
+          "description": "Exports the type library (.tlb) of a .NET assembly with source-generated COM types, like TlbExp: its public [GeneratedComInterface] interfaces, its public [GeneratedComClass] classes with a [Guid], and the enumerations and structures that they use.",
+          "options": [
+            {
+              "name": "--output",
+              "recursive": false,
+              "hidden": false,
+              "description": "The type library to write. Default: the path of the assembly with the extension .tlb.",
+              "aliases": [
+                "-o"
+              ],
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--name",
+              "recursive": false,
+              "hidden": false,
+              "description": "The name of the type library. Default: the name of the assembly.",
+              "aliases": [
+                "-n"
+              ],
+              "arguments": [
+                {
+                  "name": "NAME",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--guid",
+              "recursive": false,
+              "hidden": false,
+              "description": "The identifier (LIBID) of the type library. Default: the [Guid] of the assembly, which is required without this option.",
+              "arguments": [
+                {
+                  "name": "GUID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--library-version",
+              "recursive": false,
+              "hidden": false,
+              "description": "The version of the type library. Default: [TypeLibVersion] of the assembly, otherwise the version of the assembly.",
+              "arguments": [
+                {
+                  "name": "MAJOR.MINOR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--platform",
+              "recursive": false,
+              "hidden": false,
+              "description": "The platform that the layouts of the structures and of the interfaces are written for: win32 or win64. [default: Win64]",
+              "arguments": [
+                {
+                  "name": "PLATFORM",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "TypeLibraryPlatform",
+                  "allowedValues": [
+                    "Win32",
+                    "Win64"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "--reference-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "An assembly that the assembly references, or a directory of such assemblies; can be repeated. The directory of the assembly and the .NET runtime of the tool are searched as well.",
+              "aliases": [
+                "--ref"
+              ],
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--type-library",
+              "recursive": false,
+              "hidden": false,
+              "description": "The file of a type library that the assembly, or an assembly that it references, has generated code of; can be repeated. The exported type library refers to the types of that code in their type libraries, which are found in the registry by default.",
+              "aliases": [
+                "--tlb"
+              ],
+              "arguments": [
+                {
+                  "name": "PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "ASSEMBLY",
+              "description": "The .NET assembly whose public [GeneratedComInterface] interfaces and [GeneratedComClass] classes are exported.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "list",
       "description": "Lists the types and members of type libraries or interop assemblies, by library, with the names that the transformers of configuration files match.",
       "options": [
@@ -2377,6 +2536,33 @@
     {
       "name": "build-generate",
       "description": "Generates the code of the CsComReference items of a project for the MSBuild task of CsCom.Build.",
+      "hidden": true,
+      "arguments": [
+        {
+          "name": "REQUEST",
+          "description": "The request that the MSBuild task of CsCom.Build writes.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "HASH",
+          "description": "The hash of the request, which is recorded in the state file.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "build-export",
+      "description": "Exports the type library of the assembly of a project for the MSBuild task of CsCom.Build.",
       "hidden": true,
       "arguments": [
         {

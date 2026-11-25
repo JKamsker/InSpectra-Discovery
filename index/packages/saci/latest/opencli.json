@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "saci",
-    "version": "0.208.0",
+    "version": "0.233.0",
     "description": "saci - Software Agent for Continuous Improvement: autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code."
   },
   "x-inspectra": {
@@ -15,7 +15,7 @@
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "saci 0.208.0 - Software Agent for Continuous Improvement. Autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code. 'saci shell' opens an interactive shell."
+    "cliParsedDescription": "saci 0.233.0 - Software Agent for Continuous Improvement. Autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code. 'saci shell' opens an interactive shell."
   },
   "options": [
     {
@@ -95,6 +95,23 @@
       "arguments": [
         {
           "name": "FAST",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "Boolean"
+        }
+      ]
+    },
+    {
+      "name": "--high",
+      "recursive": true,
+      "hidden": false,
+      "description": "Be sure of the result, whatever it costs in tokens and time: every session runs on the biggest model at the highest effort with a longer time limit ('high' in the configuration: model, effort, timeoutFactor) and is told to check everything and report every problem; the developer always takes a second look and has its change checked by independent reviewers before handing it on; a review runs independent reviews of the same commit (high.reviewers, 3) and approves only when all of them do, with the critic and every lens. Cannot be combined with --fast. Budgets and usage limits still apply. [default: False]",
+      "arguments": [
+        {
+          "name": "HIGH",
           "required": false,
           "arity": {
             "minimum": 0,
@@ -876,6 +893,23 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--run-checks",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also run each repository's checks (checks.commands) once on its default branch, to prove they work before saci relies on them. Takes as long as the build and tests. [default: False]",
+          "arguments": [
+            {
+              "name": "RUN_CHECKS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
         }
       ]
     },
@@ -1057,6 +1091,23 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--no-lenses",
+          "recursive": false,
+          "hidden": false,
+          "description": "Replay the reviews without the lenses of reviewer.lenses, to compare the score with and without them. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_LENSES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -2644,6 +2695,60 @@
               "type": "Boolean"
             }
           ]
+        },
+        {
+          "name": "--by",
+          "recursive": false,
+          "hidden": false,
+          "description": "'item': one row per issue (with the pull requests that solve it) or pull request with no known issue, worked on in the period, with its whole cost from triage to merge, the most expensive first.",
+          "arguments": [
+            {
+              "name": "BY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--top",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --by item: how many items to show. [default: 20]",
+          "arguments": [
+            {
+              "name": "TOP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--issue",
+          "recursive": false,
+          "hidden": false,
+          "description": "One item turn by turn: the issue, or a pull request with no known issue, and every Claude turn on it (whatever --days says).",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
         }
       ]
     },
@@ -3139,6 +3244,55 @@
         {
           "name": "resume",
           "description": "Let the agents start Claude sessions again."
+        }
+      ]
+    },
+    {
+      "name": "waiting",
+      "description": "What waits on a person, read from GitHub: saci's questions, blocked work, triage verdicts that need someone, approved pull requests to merge, work saci gave up on; with who acts and since when.",
+      "aliases": [
+        "inbox"
+      ],
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only this repository (owner/name). Defaults to every registered repository.",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--who",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only the items this GitHub login acts on or is assigned to; 'maintainer' for the ones saci knows no person for.",
+          "aliases": [
+            "-w"
+          ],
+          "arguments": [
+            {
+              "name": "WHO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
         }
       ]
     },

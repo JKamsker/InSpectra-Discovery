@@ -1,0 +1,720 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "sf-mod-check",
+    "version": "0.18.0",
+    "description": "Read-only, offline checks of Starfield mods: plugin checks (structure, FormIDs, links, conditions, scenes, deleted and identical-to-master records), whole load-order conflicts, release-zip checks, and triage: a first-pass report on a downloaded mod. Formerly sfmodcheck."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 9
+  },
+  "commands": [
+    {
+      "name": "check",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--masters-dir",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FOLDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "LINES",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--no-hints",
+          "recursive": false,
+          "hidden": false
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PLUGIN",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "conflict",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--plugins",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PLUGINSTXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--mo2",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "MO2",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "diff",
+      "hidden": false,
+      "description": "(sf-mod-check diff --help)",
+      "options": [
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "the game's Data folder, for the EditorIDs of records in the masters (default: Steam's usual folder)",
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "the report as JSON instead of text (always complete); on stdout the RESULT line follows\nthe JSON, so use --out for a file that holds only the JSON"
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "write the report to this file (stdout then gets only the RESULT line)"
+        },
+        {
+          "name": "--all",
+          "recursive": false,
+          "hidden": false,
+          "description": "list everything in the text report (long lists are cut short otherwise), and each cell's records\nRecords whose bytes differ but whose fields are all equal count as noise, which is no difference.\nScripts and script properties are matched by name, so a new order alone is noise.\nexit 0 = no real differences (noise only counts as none), 1 = differences, 2 = bad input or setup"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "OLD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "NEW",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "find",
+      "hidden": false,
+      "description": "(sf-mod-check find --help)",
+      "options": [
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "keep only records of this four-letter type, for example LCTN, MISC, NPC_",
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--plugin",
+          "recursive": false,
+          "hidden": false,
+          "description": "read only this plugin and its masters, with no Plugins.txt; with no record given, list every record\nthe plugin holds. Masters are looked for in the plugin's own folder, then each --masters-dir, then --data.\nGive the record as an EditorID or FormKey: a console FormID needs the whole load order.",
+          "arguments": [
+            {
+              "name": "PLUGIN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--masters-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "another folder that holds the plugin's masters (can be given more than once)",
+          "arguments": [
+            {
+              "name": "MASTERS_DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--max",
+          "recursive": false,
+          "hidden": false,
+          "description": "with --plugin and no record: list at most this many records (default 100; 0 lists them all)",
+          "arguments": [
+            {
+              "name": "MAX",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "EDITORID_FORMKEY_FORMID",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "RECORD",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "6_HEX_DIGITS",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "PLUGIN",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gap",
+      "hidden": false,
+      "description": "(sf-mod-check gap --help)",
+      "options": [
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "description": "the game's Data folder (default: Steam's usual folder)",
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--masters-dir",
+          "recursive": false,
+          "hidden": false,
+          "description": "another folder to look for masters in (can be given more than once)",
+          "arguments": [
+            {
+              "name": "MASTERS_DIR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--quiet",
+          "recursive": false,
+          "hidden": false,
+          "description": "no byline, and no WARNING lines when there are errors"
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "the troubleshooting log on stderr, or in that file\nThe last line is RESULT: OK (0 errors, n warnings), RESULT: FAIL (n errors, n warnings) or RESULT: CANNOT CHECK (...).\nexit 0 = no errors (warnings allowed), 1 = errors, 2 = can't check (a missing plugin or master, a bad argument)",
+          "aliases": [
+            "--log"
+          ],
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PLUGIN",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "patch",
+      "hidden": false,
+      "description": "(sf-mod-check patch --help)",
+      "options": [
+        {
+          "name": "--plugins",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PLUGINSTXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--mo2",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "MO2",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--profile",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "BESM",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "FIELD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "PLUGIN",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "name": "check",
+          "hidden": false,
+          "description": "(is a patch still up to date? sf-mod-check patch check --help)",
+          "options": [
+            {
+              "name": "--manifest",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "PATCH_SOURCESJSON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--plugins",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "PLUGINSTXT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--data",
+              "recursive": false,
+              "hidden": false,
+              "arguments": [
+                {
+                  "name": "DATA",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "PATCHESM",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "release",
+      "hidden": false,
+      "description": "(sf-mod-check release --help)",
+      "options": [
+        {
+          "name": "--data",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "DATA",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--masters-dir",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FOLDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--master-archive",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "BA2",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--dmmdeps",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "EXE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "ZIPFOLDERBA2PLUGIN",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "PLUGIN",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "DETAIL",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "triage",
+      "hidden": false,
+      "description": "(sf-mod-check triage --help)",
+      "options": [
+        {
+          "name": "--game",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FOLDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FOLDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "MODZIP",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "arguments": [
+        {
+          "name": "VERSION",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  ]
+}

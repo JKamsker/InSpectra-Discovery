@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "assembly-differ: a dotnet tool to diff assemblies",
-    "version": "1.2.0",
+    "version": "1.5.0",
     "description": "Diff assemblies and nuget packages"
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 8,
+    "helpDocumentCount": 9,
     "cliParsedTitle": "assembly-differ"
   },
   "commands": [
@@ -209,6 +209,76 @@
             "maximum": 1
           },
           "description": "A .dll, a directory of them, or a .nupkg. Defaults to the libraries in the current directory. [default: null]"
+        }
+      ]
+    },
+    {
+      "name": "api-diff",
+      "hidden": false,
+      "description": "Compares the .api files in two directories: what changed from\nthe old ones to the new ones, by path.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help.",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "text prints each change; json writes api-changes.json, with the APIs without changes too. [default: text] [allowed: text|json]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "A file to write the json report to, besides the summary on the console. [default: null]\nNotes:\nEach API is compared with the one of the same name, so the files of one target framework are compared with the files\nof the same framework. An API only the new directory has is added, a minor change, and one only the old directory\nhas is removed, a major one. Nothing is built, so it compares what two commits committed, such as the base of a\npull request and its head, and says what the pull request itself changes however much main has changed since the\nlast release. Always exits with 0 when it could compare; read the suggested version change from the report.",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "OLD_DIRECTORY",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The directory of the earlier .api files, such as the base branch's api/."
+        },
+        {
+          "name": "NEW_DIRECTORY",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "The directory of the later .api files."
         }
       ]
     },
@@ -746,6 +816,86 @@
           ]
         },
         {
+          "name": "--base-report",
+          "recursive": false,
+          "hidden": false,
+          "description": "The api-changes.json of api-diff for this pull request against its base branch. When given, the labels and --fail-on follow this change, the pull request's own, and the report above is shown as the change since the last release, for information. [default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--base-name",
+          "recursive": false,
+          "hidden": false,
+          "description": "What the base is called in the comment, such as the branch and its pull request; used with --base-report. [default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--stack",
+          "recursive": false,
+          "hidden": false,
+          "description": "A json array of the pull requests below this one in a stack, each with number, title, url, suggestedVersionChange and breakingChanges, to say which introduced the changes since the last release; used with --base-report. [default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--api-code",
+          "recursive": false,
+          "hidden": false,
+          "description": "The exit code of api --verify, to put the check of the committed .api files in the same comment: 0 when they match the build, 5 when they do not. The check fails on anything else. [default: default]",
+          "arguments": [
+            {
+              "name": "VALUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--api-report",
+          "recursive": false,
+          "hidden": false,
+          "description": "What api --verify printed, for the comment; used with --api-code. [default: null]",
+          "arguments": [
+            {
+              "name": "STRING",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
           "name": "--no-comment",
           "recursive": false,
           "hidden": false,
@@ -861,6 +1011,22 @@
           "arguments": [
             {
               "name": "REQUIRE_BASELINE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all-assemblies",
+          "recursive": false,
+          "hidden": false,
+          "description": "Compare every assembly the build ships, not only the ones the solution or projects in this directory build; -t overrides both.",
+          "arguments": [
+            {
+              "name": "ALL_ASSEMBLIES",
               "required": false,
               "arity": {
                 "minimum": 0,
