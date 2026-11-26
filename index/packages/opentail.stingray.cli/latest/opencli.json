@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "stingray",
-    "version": "1.0.9",
+    "version": "1.0.10",
     "description": "OpenTail.Stingray command-line interface — LLM inference and image generation using GGUF models, with CPU/Vulkan/CUDA backends. Install with `dotnet tool install -g OpenTail.Stingray.Cli`."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 31
+    "helpDocumentCount": 33
   },
   "commands": [
     {
@@ -698,6 +698,28 @@
       ]
     },
     {
+      "name": "config",
+      "hidden": false,
+      "description": "Print the recognised STINGRAY_* settings that are set, with value (redacted\nwhere sensitive), source and class (--show)",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--show",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the recognised settings that are set, with value (redacted where sensitive),\nsource and class"
+        }
+      ]
+    },
+    {
       "name": "doctor",
       "hidden": false,
       "description": "Check local runtime, backends, and optionally a GGUF model without\ninference",
@@ -1068,7 +1090,7 @@
     {
       "name": "image",
       "hidden": false,
-      "description": "Generate an image from a text prompt using a native FLUX or Z-Image-Turbo\ndiffusion pipeline (VAE + CLIP-L + T5-XXL + DiT GGUF). See\n'opentail-llm-cli image --help' for required model paths.",
+      "description": "Generate an image from a text prompt using a native FLUX or Z-Image-Turbo\ndiffusion pipeline (VAE + CLIP-L + T5-XXL + DiT GGUF). See 'stingray image\n--help' for required model paths.",
       "options": [
         {
           "name": "--help",
@@ -1577,17 +1599,6 @@
               }
             }
           ]
-        }
-      ],
-      "arguments": [
-        {
-          "name": "PATHS",
-          "required": true,
-          "hidden": false,
-          "arity": {
-            "minimum": 1,
-            "maximum": 1
-          }
         }
       ]
     },
@@ -3003,7 +3014,7 @@
           "name": "--model",
           "recursive": false,
           "hidden": false,
-          "description": "Model catalog id (default: piper-lessac).",
+          "description": "Model catalog id (default: kokoro-82m; piper-lessac is the\nsmaller research-use-only alternative).",
           "aliases": [
             "-m"
           ],
@@ -3022,7 +3033,7 @@
           "name": "--model-file",
           "recursive": false,
           "hidden": false,
-          "description": "Direct path to an ONNX voice model file (.onnx) or companion\nconfig (.json).",
+          "description": "Direct path to a voice model file: a Kokoro .gguf, or a Piper\n.onnx (or its companion .json).",
           "arguments": [
             {
               "name": "PATH",
@@ -3038,16 +3049,16 @@
           "name": "--voice",
           "recursive": false,
           "hidden": false,
-          "description": "Voice preset or style name.",
+          "description": "Voice preset or style name (default: af_heart for Kokoro,\nlessac for Piper).",
           "aliases": [
             "-v"
           ],
           "arguments": [
             {
               "name": "VOICE",
-              "required": true,
+              "required": false,
               "arity": {
-                "minimum": 1,
+                "minimum": 0,
                 "maximum": 1
               }
             }
@@ -3295,6 +3306,22 @@
                 "maximum": 1
               }
             }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "telemetry-selftest",
+      "hidden": false,
+      "description": "Verify, without a model, that engine metrics and spans reach an in-process\nlistener in this build (exit 0 = ok); used to check the published NativeAOT\nbinary",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information",
+          "aliases": [
+            "-h"
           ]
         }
       ]
@@ -4227,7 +4254,7 @@
       "name": "--spec-draft-n-max",
       "recursive": false,
       "hidden": false,
-      "description": "Max draft tokens per MTP step (issue #30\nbatched verify). Unset resolves via\nSTINGRAY_MTP_DRAFT_N, then defaults to 1 (a\n2-token verify batch — the measured optimum).\nValues > 1 also need snapshot-ring slots: set\nSTINGRAY_MTP_BATCH_MAX >= drafts+1 (default\n2; each extra slot costs ~150 MiB VRAM on\n27B). Mirrors llama.cpp.",
+      "description": "Max draft tokens per MTP step (issue #30\nbatched verify). Unset resolves via\nSTINGRAY_MTP_DRAFT_N, then defaults to 3, or\n1 (a 2-token verify batch, the measured\noptimum) on the CPU hybrid-GDN pass. Values >\n1 also need snapshot-ring slots: set\nSTINGRAY_MTP_BATCH_MAX >= drafts+1 (default\n2; each extra slot costs ~150 MiB VRAM on\n27B). Mirrors llama.cpp.",
       "arguments": [
         {
           "name": "SPEC_DRAFT_N_MAX",
@@ -4348,7 +4375,7 @@
       "name": "--threads",
       "recursive": false,
       "hidden": false,
-      "description": "CPU worker threads for the SIMD kernels\n(default: logical processor count, or\nSTINGRAY_CPU_THREADS). Mirrors llama.cpp's\n-t/--threads.",
+      "description": "CPU worker threads for the SIMD kernels\n(default: physical core count, or\nSTINGRAY_CPU_THREADS). Mirrors llama.cpp's\n-t/--threads.",
       "aliases": [
         "-t"
       ],

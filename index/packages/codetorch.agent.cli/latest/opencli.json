@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "CodeTorch.Agent.Cli",
-    "version": "1.2.17",
+    "version": "1.2.18",
     "description": "CodeTorch Agent CLI (cta) - Command-line tool for agent operations including dev slot deployments, status checks, and verification."
   },
   "x-inspectra": {
@@ -1863,6 +1863,57 @@
               ]
             },
             {
+              "name": "--environment",
+              "recursive": false,
+              "hidden": false,
+              "description": "Environment filter (repeatable). Replaces the source's configured environments for this query",
+              "arguments": [
+                {
+                  "name": "ENVIRONMENT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--sort",
+              "recursive": false,
+              "hidden": false,
+              "description": "Sort: date (last seen), new (first seen), events (frequency in the window), users",
+              "arguments": [
+                {
+                  "name": "SORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--cursor",
+              "recursive": false,
+              "hidden": false,
+              "description": "Continuation token from a previous page",
+              "arguments": [
+                {
+                  "name": "CURSOR",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
               "name": "--limit",
               "recursive": false,
               "hidden": false,
@@ -2056,6 +2107,23 @@
               ]
             },
             {
+              "name": "--additional-repo",
+              "recursive": false,
+              "hidden": false,
+              "description": "Additional read-only reference repository ID (repeatable)",
+              "arguments": [
+                {
+                  "name": "ADDITIONAL_REPO",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "Guid[]"
+                }
+              ]
+            },
+            {
               "name": "--title",
               "recursive": false,
               "hidden": false,
@@ -2232,7 +2300,7 @@
               "name": "--environment",
               "recursive": false,
               "hidden": false,
-              "description": "Target environment ID",
+              "description": "Target environment ID. When omitted, the server uses the current task's environment (inside a task), otherwise the workspace's default environment",
               "arguments": [
                 {
                   "name": "ENVIRONMENT",
@@ -2266,10 +2334,44 @@
               "name": "--model",
               "recursive": false,
               "hidden": false,
-              "description": "AI model ID",
+              "description": "AIModel id (GUID), offering key, or model identifier",
               "arguments": [
                 {
                   "name": "MODEL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--reasoning-effort",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reasoning effort for the pinned model offering",
+              "arguments": [
+                {
+                  "name": "REASONING_EFFORT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--execution-policy",
+              "recursive": false,
+              "hidden": false,
+              "description": "Existing execution policy ID (overrides workflow policy keys)",
+              "arguments": [
+                {
+                  "name": "EXECUTION_POLICY",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -2643,6 +2745,58 @@
                 "maximum": 1
               },
               "type": "Guid"
+            }
+          ]
+        },
+        {
+          "name": "status",
+          "description": "Show delegated runs' state in one call: stage, status, machine, account, tokens and last activity",
+          "options": [
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Output in JSON format (default)",
+              "arguments": [
+                {
+                  "name": "JSON",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--human",
+              "recursive": false,
+              "hidden": false,
+              "description": "One line per run",
+              "arguments": [
+                {
+                  "name": "HUMAN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TASK_IDS",
+              "description": "Task ids (at most 200, one organization)",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "Guid[]"
             }
           ]
         },
@@ -3146,6 +3300,92 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "schedule",
+          "description": "Set, move or clear a task's not-before dispatch gate",
+          "options": [
+            {
+              "name": "--not-before",
+              "recursive": false,
+              "hidden": false,
+              "description": "Earliest start time (ISO timestamp; values without offset use local time). Mutually exclusive with --clear",
+              "arguments": [
+                {
+                  "name": "NOT_BEFORE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--clear",
+              "recursive": false,
+              "hidden": false,
+              "description": "Remove the not-before gate. Mutually exclusive with --not-before",
+              "arguments": [
+                {
+                  "name": "CLEAR",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--reason",
+              "recursive": false,
+              "hidden": false,
+              "description": "Reason recorded in the task audit trail (required)",
+              "arguments": [
+                {
+                  "name": "REASON",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--source-task",
+              "recursive": false,
+              "hidden": false,
+              "description": "Your own task ID; defaults to CODETORCH_TASK_ID",
+              "arguments": [
+                {
+                  "name": "SOURCE_TASK",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Guid"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TARGET_TASK_ID",
+              "description": "ID of the task whose not-before gate to change",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Guid"
             }
           ]
         },

@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "TALXIS Artifacts CLI (artx",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "TALXIS Artifacts CLI (artx) is a .NET global tool that lets agents and people inspect, patch, validate and render documents and diagrams (Word, draw.io) with the same commands wherever they are stored."
   },
   "x-inspectra": {
@@ -16,7 +16,7 @@
     },
     "cliFramework": "System.CommandLine",
     "cliParsedTitle": "artx",
-    "cliParsedDescription": "artx - inspect, patch, validate and render documents and diagrams (Word, draw.io, ...) with the same commands wherever they live. Output is JSON when piped (text in a terminal); errors carry a stable code and a hint. Exit codes: 0 ok, 1 runtime error, 2 invalid input or not found, 3 validation found problems. Start with `artx artifact type list`."
+    "cliParsedDescription": "artx - inspect, patch, validate and render documents and diagrams (Word, draw.io, ...) with the same commands wherever they live. Output is JSON when piped (text in a terminal); errors carry a stable code and a hint. Exit codes: 0 ok, 1 runtime error, 2 invalid input or not found, 3 validation found problems. Start with `artx artifact type list`; sign in for SharePoint and OneDrive files with `artx config auth login`."
   },
   "options": [
     {
@@ -63,7 +63,7 @@
   "commands": [
     {
       "name": "artifact",
-      "description": "Inspect, patch, validate and render documents and diagrams (Word, draw.io, ...) on local disk. Workflow: `get` the artifact (structure, anchor ids, snapshot) -> build a JSON plan with operations from `operation list <type>` -> `patch --stage` to preview or `patch --apply --yes` to write -> `validate` / `convert` to check. Let a person watch live with `preview`; undo with `history` + `restore`. Start with `artx artifact type list` to see installed types and what each can do.",
+      "description": "Inspect, patch, validate and render documents and diagrams (Word, draw.io, ...) on local disk or in SharePoint and OneDrive (pass the file's https URL; sign in first with `artx config auth login`). Workflow: `get` the artifact (structure, anchor ids, snapshot) -> build a JSON plan with operations from `operation list <type>` -> `patch --stage` to preview or `patch --apply --yes` to write -> `validate` / `convert` to check. Let a person watch live with `preview`; undo with `history` + `restore`. Start with `artx artifact type list` to see installed types and what each can do.",
       "aliases": [
         "art"
       ],
@@ -147,7 +147,7 @@
           "arguments": [
             {
               "name": "TARGET",
-              "description": "Path of the artifact (relative to the current directory, or absolute).",
+              "description": "Path of the artifact (relative to the current directory, or absolute), or its SharePoint/OneDrive URL.",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -325,7 +325,7 @@
           "arguments": [
             {
               "name": "TARGET",
-              "description": "Path of the artifact to create, e.g. `proposal.docx`. Missing folders are created.",
+              "description": "Path of the artifact to create, e.g. `proposal.docx` (missing folders are created), or a SharePoint/OneDrive URL in an existing folder.",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -516,7 +516,7 @@
           "arguments": [
             {
               "name": "TARGET",
-              "description": "Path of the artifact to patch.",
+              "description": "Path of the artifact to patch, or its SharePoint/OneDrive URL.",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -571,7 +571,7 @@
           "arguments": [
             {
               "name": "TARGET",
-              "description": "Path of the artifact to validate.",
+              "description": "Path of the artifact to validate, or its SharePoint/OneDrive URL.",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -694,7 +694,7 @@
           "arguments": [
             {
               "name": "TARGET",
-              "description": "Path of the artifact to render.",
+              "description": "Path of the artifact to render, or its SharePoint/OneDrive URL (converted in place).",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -749,7 +749,7 @@
           "arguments": [
             {
               "name": "TARGET",
-              "description": "Path of the artifact.",
+              "description": "Path of the artifact, or its SharePoint/OneDrive URL.",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -821,7 +821,7 @@
           "arguments": [
             {
               "name": "TARGET",
-              "description": "Path of the artifact to restore.",
+              "description": "Path of the artifact to restore, or its SharePoint/OneDrive URL.",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -1088,6 +1088,536 @@
                 {
                   "name": "OPERATION",
                   "description": "Operation name as listed by `artx artifact operation list <type>`, e.g. replace-text.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Configure artx: credentials (`config auth`). Stored in ~/.artx (ARTX_CONFIG_DIR overrides) in txc's format; secrets live in the OS vault.",
+      "aliases": [
+        "c"
+      ],
+      "commands": [
+        {
+          "name": "auth",
+          "description": "Sign in and manage credentials. `login` signs a person in (browser, or a device code where no browser can finish: containers, SSH, Codespaces) with a Microsoft first-party public client, so no app registration is needed; `login --identity` uses the host's managed identity (Azure, agentbox); `add-service-principal` and `add-federated` are for automation. The last credential signed in or added is active (ARTX_CREDENTIAL=<alias> overrides). Without any credential, artx uses the managed identity when MSI_ENDPOINT is set.",
+          "commands": [
+            {
+              "name": "login",
+              "description": "Sign in and save the credential (it becomes the active one). Opens the browser; where no browser can complete the localhost redirect (containers, SSH, Codespaces) it shows a device code instead, and --device-code forces that. Needs an interactive terminal. With --identity it registers the host's managed identity instead (Azure hosts, agentbox): no prompt, works headless; tokens are requested when a file is accessed. The client is the Azure CLI's public client unless --client-id or ARTX_CLIENT_ID names another.",
+              "options": [
+                {
+                  "name": "--tenant",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Tenant id or domain (e.g. contoso.onmicrosoft.com). Default: ARTX_TENANT_ID, else the tenant of the account you sign in with.",
+                  "arguments": [
+                    {
+                      "name": "TENANT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--alias",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Credential alias. Default: your UPN, or managed-identity with --identity (a suffix is added when taken).",
+                  "arguments": [
+                    {
+                      "name": "ALIAS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--device-code",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Sign in with a device code instead of the browser (needed where no local browser can reach localhost).",
+                  "arguments": [
+                    {
+                      "name": "DEVICE_CODE",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--managed-identity",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Use the host's managed identity (MSI_ENDPOINT / agentbox, App Service, IMDS) instead of signing in. No identity selector is sent; tokens are kept in memory only.",
+                  "aliases": [
+                    "--managedIdentity",
+                    "--identity"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "MANAGED_IDENTITY",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--client-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Public client (application) id to sign in with. Default: ARTX_CLIENT_ID, else the Azure CLI's first-party client (04b07795-8ddb-461a-bbee-02f9e1bf7b46). Your own app registration works too (public client flows on).",
+                  "arguments": [
+                    {
+                      "name": "CLIENT_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--format",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Output format: json (default when stdout is piped or redirected) or text (default in a terminal).",
+                  "aliases": [
+                    "-f"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "FORMAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "add-service-principal",
+              "description": "Register a service principal (app registration) with a client secret or a certificate; it becomes the active credential. The secret is read from --secret-from-env, else from stdin when piped, else from a hidden prompt, and stored in the OS vault (credentials.json keeps a vault:// reference). Works headless. SharePoint refuses app-only tokens obtained with a client secret, so artx reaches files through Microsoft Graph for such credentials (it needs Graph file permissions); certificates work with both.",
+              "options": [
+                {
+                  "name": "--alias",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Credential alias, e.g. ci.",
+                  "arguments": [
+                    {
+                      "name": "ALIAS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tenant",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Tenant id or domain of the app registration.",
+                  "arguments": [
+                    {
+                      "name": "TENANT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--application-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Application (client) id of the app registration.",
+                  "aliases": [
+                    "--app-id",
+                    "--client-id"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "APPLICATION_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--description",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Free-form label shown by `artx config auth list`.",
+                  "arguments": [
+                    {
+                      "name": "DESCRIPTION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--secret-from-env",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Name of an environment variable holding the client secret.",
+                  "arguments": [
+                    {
+                      "name": "SECRET_FROM_ENV",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--certificate",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Path of a PKCS#12 (.pfx) certificate with its private key, instead of a secret. The path is stored; the file must stay there.",
+                  "arguments": [
+                    {
+                      "name": "CERTIFICATE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--certificate-password-from-env",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Name of an environment variable holding the certificate's password (stored in the OS vault).",
+                  "arguments": [
+                    {
+                      "name": "CERTIFICATE_PASSWORD_FROM_ENV",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--format",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Output format: json (default when stdout is piped or redirected) or text (default in a terminal).",
+                  "aliases": [
+                    "-f"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "FORMAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "add-federated",
+              "description": "Register a workload identity federation credential (an app registration with a federated credential; no secret); it becomes the active credential. When a token is needed, the assertion comes from Azure DevOps (ARTX_ADO_ID_TOKEN_REQUEST_URL + ARTX_ADO_ID_TOKEN_REQUEST_TOKEN; TXC_ADO_* and PAC_ADO_* also work), GitHub Actions (ACTIONS_ID_TOKEN_REQUEST_URL + ACTIONS_ID_TOKEN_REQUEST_TOKEN) or AZURE_FEDERATED_TOKEN_FILE. Works headless.",
+              "options": [
+                {
+                  "name": "--alias",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Credential alias, e.g. ci-wif.",
+                  "arguments": [
+                    {
+                      "name": "ALIAS",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--tenant",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Tenant id or domain of the app registration.",
+                  "arguments": [
+                    {
+                      "name": "TENANT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--application-id",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Application (client) id of the app registration.",
+                  "aliases": [
+                    "--app-id",
+                    "--client-id"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "APPLICATION_ID",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--description",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Free-form label shown by `artx config auth list`.",
+                  "arguments": [
+                    {
+                      "name": "DESCRIPTION",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--format",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Output format: json (default when stdout is piped or redirected) or text (default in a terminal).",
+                  "aliases": [
+                    "-f"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "FORMAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "list",
+              "description": "List the stored credentials (non-secret fields; `active` marks the one artx uses unless ARTX_CREDENTIAL names another).",
+              "options": [
+                {
+                  "name": "--format",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Output format: json (default when stdout is piped or redirected) or text (default in a terminal).",
+                  "aliases": [
+                    "-f"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "FORMAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "get",
+              "description": "Get a stored credential's non-secret fields. For a managed identity the tenant, application and object id are read from a token (not saved). --check-token requests a token for --resource (default Microsoft Graph) without prompting and shows its audience, expiry and scopes/roles.",
+              "options": [
+                {
+                  "name": "--check-token",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Request a token now (never interactive) and report its audience, expiry and scopes or roles.",
+                  "arguments": [
+                    {
+                      "name": "CHECK_TOKEN",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--resource",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Resource for --check-token, e.g. https://contoso.sharepoint.com. Default: https://graph.microsoft.com.",
+                  "arguments": [
+                    {
+                      "name": "RESOURCE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--format",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Output format: json (default when stdout is piped or redirected) or text (default in a terminal).",
+                  "aliases": [
+                    "-f"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "FORMAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "ALIAS",
+                  "description": "Credential alias, as listed by `artx config auth list`.",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "delete",
+              "description": "Delete a stored credential and its secret from the OS vault. If it was active, no credential is active afterwards. Signed-in accounts stay in the token cache until another sign-in replaces them. Needs --yes when non-interactive.",
+              "options": [
+                {
+                  "name": "--yes",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Confirm without a prompt. Required when non-interactive (CI, agents, piped stdin).",
+                  "arguments": [
+                    {
+                      "name": "YES",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--format",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Output format: json (default when stdout is piped or redirected) or text (default in a terminal).",
+                  "aliases": [
+                    "-f"
+                  ],
+                  "arguments": [
+                    {
+                      "name": "FORMAT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ],
+              "arguments": [
+                {
+                  "name": "ALIAS",
+                  "description": "Credential alias to delete.",
                   "required": true,
                   "arity": {
                     "minimum": 1,

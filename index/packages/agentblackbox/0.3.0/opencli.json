@@ -1,0 +1,450 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "bbx",
+    "version": "0.3.0",
+    "description": "A flight recorder for AI coding agents. Records what Claude Code does into a hash-chained log and produces incident reports and line-level provenance."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 12,
+    "cliParsedDescription": "bbx - a flight recorder for AI coding agents."
+  },
+  "commands": [
+    {
+      "name": "anchor",
+      "hidden": false,
+      "description": "Print Blackbox-Head trailers for the session logs staged for the next commit.",
+      "options": [
+        {
+          "name": "--message-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add Blackbox-Head trailers to this commit message file (used by the git hook). Always exits 0.",
+          "arguments": [
+            {
+              "name": "MESSAGE_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--install-hook",
+          "recursive": false,
+          "hidden": false,
+          "description": "Install a git prepare-commit-msg hook that anchors staged session logs in every commit."
+        },
+        {
+          "name": "--local",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --install-hook: call this bbx binary by absolute path instead of 'bbx' on PATH."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "blame",
+      "hidden": false,
+      "description": "Show which lines were written by the agent, in which session and from which prompt.",
+      "options": [
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print the AI-written lines of the file as JSON (for editors)."
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "description": "File, optionally with :line (e.g. src/Orders/OrderService.cs:57)."
+        }
+      ]
+    },
+    {
+      "name": "check",
+      "hidden": false,
+      "description": "CI gate: check AI-written code against traceability and test rules. Exit code 1 on failure.",
+      "options": [
+        {
+          "name": "--require-trace",
+          "recursive": false,
+          "hidden": false,
+          "description": "Regex for requirement IDs (e.g. \"REQ-\\d+\"). Every AI line must come from a session whose prompts, up to that edit, contain one.",
+          "arguments": [
+            {
+              "name": "REQUIRE_TRACE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--require-tests",
+          "recursive": false,
+          "hidden": false,
+          "description": "Every session that changed source with AI code must have run tests or changed a test file."
+        },
+        {
+          "name": "--base",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only check lines added since the merge base with this ref (e.g. origin/main). Needs full git history.",
+          "arguments": [
+            {
+              "name": "BASE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "guard",
+      "hidden": false,
+      "description": "Check one PreToolUse event from stdin against the guard rules; exit 2 blocks it (called by Claude Code).",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "hook",
+      "hidden": false,
+      "description": "Record one Claude Code hook event from stdin (called by Claude Code).",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "EVENT",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "hidden": false,
+      "description": "Set up .blackbox/ and install the agent's hooks in this project.",
+      "options": [
+        {
+          "name": "--uninstall",
+          "recursive": false,
+          "hidden": false,
+          "description": "Remove bbx hooks from every agent config bbx writes (.claude/, .codex/, .cursor/, .github/hooks/)."
+        },
+        {
+          "name": "--local",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write hooks to .claude/settings.local.json with the absolute path of this bbx binary."
+        },
+        {
+          "name": "--private",
+          "recursive": false,
+          "hidden": false,
+          "description": "Add .blackbox/ to .gitignore so recordings stay on this machine."
+        },
+        {
+          "name": "--guard",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also install the pre-flight guard: a PreToolUse hook that blocks force pushes, deleted migrations and the rules in config.json."
+        },
+        {
+          "name": "--agent",
+          "recursive": false,
+          "hidden": false,
+          "description": "The agent to record: claude-code (default), or codex, cursor, copilot (experimental). [default: claude-code]",
+          "arguments": [
+            {
+              "name": "AGENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "investigate",
+      "hidden": false,
+      "description": "Find the recorded sessions behind a commit and report the evidence.",
+      "options": [
+        {
+          "name": "--commit",
+          "recursive": false,
+          "hidden": false,
+          "description": "Commit to investigate (sha, tag or ref).",
+          "arguments": [
+            {
+              "name": "COMMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file. Default: stdout (Markdown).",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "report",
+      "hidden": false,
+      "description": "Write an incident report for a session.",
+      "options": [
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "html (default) or md. [default: html]",
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output file. Default: bbx-report-<session>.html, or stdout for md.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SESSION",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "Session id or prefix. Default: latest."
+        }
+      ]
+    },
+    {
+      "name": "sessions",
+      "hidden": false,
+      "description": "List recorded sessions.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "timeline",
+      "hidden": false,
+      "description": "Show a session as prompts and the actions they led to. Honors NO_COLOR.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SESSION",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "description": "Session id or prefix. Default: latest."
+        }
+      ]
+    },
+    {
+      "name": "verify",
+      "hidden": false,
+      "description": "Recompute the hash chain of every session and check the chain heads anchored in git commits. Exit code 1 on any mismatch.",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show help and usage information",
+          "aliases": [
+            "-?",
+            "-h"
+          ]
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-?",
+        "-h"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ]
+}
