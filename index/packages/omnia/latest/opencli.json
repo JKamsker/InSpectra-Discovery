@@ -1,15 +1,15 @@
 {
   "opencli": "0.1-draft",
   "info": {
-    "title": "omnia",
-    "version": "10.0.34",
+    "title": "Omnia Command Line Tools",
+    "version": "10.0.36-dev",
     "description": "Package Description"
   },
   "x-inspectra": {
     "artifactSource": "static-analysis",
     "generator": "InSpectra.Gen",
     "metadataEnriched": true,
-    "helpDocumentCount": 127,
+    "helpDocumentCount": 128,
     "staticAnalysis": {
       "framework": "CommandLineParser",
       "inspectorType": "dnlib",
@@ -58,26 +58,21 @@
           "description": "List AI deployment models"
         },
         {
-          "name": "new",
-          "hidden": false,
-          "description": "Create a new AI deployment model"
-        },
-        {
           "name": "update",
           "hidden": false,
-          "description": "Update an AI deployment model"
+          "description": "Change the capacity of an AI deployment model"
         }
       ]
     },
     {
       "name": "alertrules",
       "hidden": false,
-      "description": "List AlertRules",
+      "description": "Alert rule commands",
       "commands": [
         {
           "name": "delete",
           "hidden": false,
-          "description": "Deletes a Alert rule"
+          "description": "Deletes an alert rule"
         },
         {
           "name": "list",
@@ -163,7 +158,7 @@
     {
       "name": "certs",
       "hidden": false,
-      "description": "Certs",
+      "description": "Certificate commands",
       "commands": [
         {
           "name": "add",
@@ -672,7 +667,7 @@
     {
       "name": "cloudsecrets",
       "hidden": false,
-      "description": "Secrets",
+      "description": "Cloud secret commands",
       "commands": [
         {
           "name": "add",
@@ -752,6 +747,38 @@
           ]
         },
         {
+          "name": "names",
+          "hidden": false,
+          "description": "The cloud's pool of readable cluster names. Subcommands: list, add, remove, assign, release",
+          "commands": [
+            {
+              "name": "add",
+              "hidden": false,
+              "description": "Add names at the end of the cloud's cluster name pool, in the given order. Names already in the pool are skipped, so the same list can be added again. A name is 1 to 12 characters, lowercase letters a to z and digits, starting with a letter, and not a word that Azure reserves (such as azure or office). Example: omnia clusters names add --file ./prod-star-wars.txt"
+            },
+            {
+              "name": "assign",
+              "hidden": false,
+              "description": "Give an existing cluster a name from the pool. The name replaces the cluster's current name in Omnia Cloud, which is kept as the cluster's description. It is an alias: the cluster keeps its id-based name in Azure, because Azure can't rename a cluster. Without --name the cluster gets the next free name. A pool name it held before goes back into the pool. A cluster keeps a name once it has one: assign another name to change it. For a cluster that was created with its name, assign instead restores that name in the pool and on the cluster's record, when 'omnia clusters names list' reports that they disagree. Example: omnia clusters names assign --clusterid [clusterId] --name yoda"
+            },
+            {
+              "name": "list",
+              "hidden": false,
+              "description": "List the cluster names of this cloud and the cluster that holds each one, and report where the pool and the clusters disagree. Example: omnia clusters names list"
+            },
+            {
+              "name": "release",
+              "hidden": false,
+              "description": "Put a name back into the pool when the cluster that held it no longer exists. A name normally returns by itself when its cluster is deleted. A failed creation keeps its name while an AKS cluster is left under it in Azure: delete that AKS cluster first, then release the name. A name held by an existing cluster can't be released. Example: omnia clusters names release --name yoda"
+            },
+            {
+              "name": "remove",
+              "hidden": false,
+              "description": "Remove a name that no cluster holds from the cloud's cluster name pool. Example: omnia clusters names remove --name jarjar"
+            }
+          ]
+        },
+        {
           "name": "new",
           "hidden": false,
           "description": "Create new cluster",
@@ -760,7 +787,13 @@
               "name": "--name",
               "recursive": false,
               "hidden": false,
-              "description": "Friendly name of cluster"
+              "description": "(Optional) Friendly name of cluster. When the cloud has a free name in its cluster name pool (omnia clusters names list), the cluster gets that name, also as its name in Azure, and this text is kept as the cluster's description"
+            },
+            {
+              "name": "--allow-id-name",
+              "recursive": false,
+              "hidden": false,
+              "description": "Create the cluster with its id as its name when the cloud's cluster name pool has no free name that fits. Without this option the cluster is then not created, because a cluster can't be renamed in Azure afterwards"
             },
             {
               "name": "--region",
@@ -863,7 +896,7 @@
         {
           "name": "nodepools",
           "hidden": false,
-          "description": "Create new node pool",
+          "description": "Node pool commands",
           "commands": [
             {
               "name": "new",
@@ -924,7 +957,12 @@
             {
               "name": "maxtenants",
               "hidden": false,
-              "description": "Update a cluster"
+              "description": "Set the maximum number of tenants of a tenant cluster"
+            },
+            {
+              "name": "muteemail",
+              "hidden": false,
+              "description": "Mute or unmute the email Omnia Cloud sends to the customers of every tenant on one cluster. Internal alerts are not muted. Email generated during a mute is discarded, not queued or sent later. Example: omnia clusters update muteemail [clusterId] --value true. To mute one tenant: omnia tenants update muteemail [tenantId] --value true. More: omnia clusters update muteemail --help"
             },
             {
               "name": "outboundip",
@@ -934,7 +972,7 @@
             {
               "name": "restarting",
               "hidden": false,
-              "description": "Update a cluster"
+              "description": "Enable or disable the automatic restart of a cluster, and set its cron schedule"
             }
           ]
         }
@@ -948,7 +986,7 @@
         {
           "name": "addtarget",
           "hidden": false,
-          "description": "Add target to extension group"
+          "description": "Add target to deployment group"
         },
         {
           "name": "delete",
@@ -963,7 +1001,7 @@
         {
           "name": "list",
           "hidden": false,
-          "description": "List Extension Groups"
+          "description": "List deployment groups"
         },
         {
           "name": "new",
@@ -980,7 +1018,7 @@
         {
           "name": "add",
           "hidden": false,
-          "description": "Omnia Dev Add",
+          "description": "Add an Omnia dependency package to the projects and package.json files under a path",
           "options": [
             {
               "name": "--path",
@@ -1044,7 +1082,7 @@
         {
           "name": "coffee",
           "hidden": false,
-          "description": "Omnia Dev Coffee"
+          "description": "Print a coffee break message"
         },
         {
           "name": "dependencies",
@@ -1081,7 +1119,7 @@
         {
           "name": "new",
           "hidden": false,
-          "description": "Omnia Dev New",
+          "description": "Create a project or item from an Omnia template. --list lists the templates, --install installs a template pack version",
           "options": [
             {
               "name": "--install",
@@ -1169,7 +1207,7 @@
         {
           "name": "pack",
           "hidden": false,
-          "description": "Omnia Dev Pack",
+          "description": "Pack a project or solution into local NuGet packages with a given version (dotnet pack)",
           "options": [
             {
               "name": "--path",
@@ -1217,34 +1255,34 @@
             {
               "name": "add",
               "hidden": false,
-              "description": "Omnia Dev Profiles Add"
+              "description": "Add an existing dev profile from a path"
             },
             {
               "name": "list",
               "hidden": false,
-              "description": "Omnia Dev Profiles List"
+              "description": "List the dev profiles and mark the default one, or show one by id or name"
             },
             {
               "name": "new",
               "hidden": false,
-              "description": "Omnia Dev Profiles New"
+              "description": "Create a new dev profile from an existing profile used as template"
             },
             {
               "name": "remove",
               "hidden": false,
-              "description": "Omnia Dev Profiles Remove"
+              "description": "Remove a dev profile by id or name"
             },
             {
               "name": "switch",
               "hidden": false,
-              "description": "Omnia Dev Profiles SetDefault"
+              "description": "Make a dev profile the default one, by id or name"
             }
           ]
         },
         {
           "name": "publish",
           "hidden": false,
-          "description": "Omnia Dev Publish",
+          "description": "Build an Omnia solution for release: runs dotnet publish and builds the docker images",
           "options": [
             {
               "name": "--path",
@@ -1335,7 +1373,7 @@
         {
           "name": "restore",
           "hidden": false,
-          "description": "Omnia Dev Restore",
+          "description": "Restore the dependencies of the projects under a path, or of the default dev profile",
           "options": [
             {
               "name": "--path",
@@ -1360,7 +1398,7 @@
         {
           "name": "run",
           "hidden": false,
-          "description": "Omnia Dev Run",
+          "description": "Run the project in a path (dotnet and npm), or the projects of the default dev profile",
           "options": [
             {
               "name": "--path",
@@ -1425,12 +1463,12 @@
         {
           "name": "setup",
           "hidden": false,
-          "description": "Omnia Dev Setup"
+          "description": "Set up the default dev profile, or the named solutions of it: clone the repositories that are not cloned yet, check out their branches and pull, then restore the dependencies"
         },
         {
           "name": "sync",
           "hidden": false,
-          "description": "Omnia Dev Sync"
+          "description": "Copy the manifests and localizations built by the named projects of the default dev profile, or by all its projects, into Omnia, and keep them in sync until CTRL + C"
         },
         {
           "name": "templateinfos",
@@ -1462,7 +1500,7 @@
         {
           "name": "ui",
           "hidden": false,
-          "description": "Omnia Dev Ui",
+          "description": "Open the Omnia dev UI for the extension in the current directory or in --path",
           "options": [
             {
               "name": "--path",
@@ -1478,7 +1516,7 @@
         {
           "name": "update",
           "hidden": false,
-          "description": "Omnia Dev Update",
+          "description": "Update the Omnia dependencies to a version, in the named solutions of the default dev profile (all for every solution), or without a dev profile in the projects and package.json files under a path",
           "options": [
             {
               "name": "--path",
@@ -1550,7 +1588,7 @@
     {
       "name": "domain",
       "hidden": false,
-      "description": "Domain",
+      "description": "Custom domain commands",
       "commands": [
         {
           "name": "add",
@@ -1597,7 +1635,7 @@
     {
       "name": "elasticpools",
       "hidden": false,
-      "description": "List Elastic Pools",
+      "description": "Elastic pool commands",
       "commands": [
         {
           "name": "delete",
@@ -1690,7 +1728,7 @@
     {
       "name": "extensions",
       "hidden": false,
-      "description": "Extensions",
+      "description": "List your extensions, or run one of the extension commands",
       "commands": [
         {
           "name": "delete-version",
@@ -1908,7 +1946,7 @@
         {
           "name": "push",
           "hidden": false,
-          "description": "Omnia Cloud Push",
+          "description": "Push the published service package and its docker images to Omnia Cloud",
           "options": [
             {
               "name": "--intent",
@@ -2346,27 +2384,27 @@
     {
       "name": "git",
       "hidden": false,
-      "description": "Git",
+      "description": "Git commands for the repositories of the default dev profile",
       "commands": [
         {
           "name": "checkout",
           "hidden": false,
-          "description": "checkout"
+          "description": "Check out the configured branch in every repository of the default dev profile"
         },
         {
           "name": "commit",
           "hidden": false,
-          "description": "commit"
+          "description": "Commit the changes to tracked files (git commit -a) in every repository of the default dev profile, with the given message"
         },
         {
           "name": "pull",
           "hidden": false,
-          "description": "pull"
+          "description": "Pull every repository of the default dev profile"
         },
         {
           "name": "push",
           "hidden": false,
-          "description": "push"
+          "description": "Push every repository of the default dev profile"
         }
       ]
     },
@@ -2395,14 +2433,14 @@
         {
           "name": "new",
           "hidden": false,
-          "description": "new"
+          "description": "Generate a new Guid and an Azure-safe Guid"
         }
       ]
     },
     {
       "name": "licenses",
       "hidden": false,
-      "description": "Licenses",
+      "description": "License commands",
       "commands": [
         {
           "name": "list",
@@ -2424,27 +2462,7 @@
         {
           "name": "delete",
           "hidden": false,
-          "description": "Delete a spesific version of a service localization",
-          "options": [
-            {
-              "name": "--serviceId",
-              "recursive": false,
-              "hidden": false,
-              "description": "The id of the omnia service for which to delete the localization"
-            },
-            {
-              "name": "--lang",
-              "recursive": false,
-              "hidden": false,
-              "description": "Language tag to delete, on format e.g. da-dk"
-            },
-            {
-              "name": "--v",
-              "recursive": false,
-              "hidden": false,
-              "description": "Which version of the localization for the specified the omnia service that should be deleted"
-            }
-          ]
+          "description": "Delete a specific version of a service localization"
         },
         {
           "name": "diff",
@@ -2454,7 +2472,7 @@
         {
           "name": "download",
           "hidden": false,
-          "description": "Download a spesific version of a service localization json file"
+          "description": "Download a specific version of a service localization json file"
         },
         {
           "name": "gen",
@@ -2484,7 +2502,7 @@
         {
           "name": "list",
           "hidden": false,
-          "description": "Download a spesific version of a service localization json file"
+          "description": "List the versions of service localizations. With --diff, compare two versions"
         },
         {
           "name": "patch",
@@ -2527,7 +2545,7 @@
     {
       "name": "loc-translation-rules",
       "hidden": false,
-      "description": "Download Localizations Translation Rules",
+      "description": "Localization translation rule commands",
       "commands": [
         {
           "name": "download",
@@ -2647,7 +2665,7 @@
     {
       "name": "lts",
       "hidden": false,
-      "description": "lts",
+      "description": "LTS commands",
       "commands": [
         {
           "name": "update-config",
@@ -2659,7 +2677,7 @@
     {
       "name": "migration",
       "hidden": false,
-      "description": "Migration",
+      "description": "Migration commands",
       "commands": [
         {
           "name": "database-reader",
@@ -2669,7 +2687,7 @@
         {
           "name": "enable-backup-storage-account",
           "hidden": false,
-          "description": "Enable backup storage account"
+          "description": "Enable the backup storage account for every tenant, or for one tenant with --tenantid"
         },
         {
           "name": "keyvaultclient",
@@ -2681,7 +2699,7 @@
     {
       "name": "nodepools",
       "hidden": false,
-      "description": "Create new node pool",
+      "description": "Node pool commands",
       "commands": [
         {
           "name": "new",
@@ -2693,7 +2711,7 @@
     {
       "name": "permissions",
       "hidden": false,
-      "description": "Permissions",
+      "description": "Permission commands",
       "commands": [
         {
           "name": "add",
@@ -2751,7 +2769,7 @@
     {
       "name": "reports",
       "hidden": false,
-      "description": "List Reports",
+      "description": "Report commands",
       "commands": [
         {
           "name": "delete",
@@ -2773,12 +2791,12 @@
     {
       "name": "resourceproviders",
       "hidden": false,
-      "description": "List ResourceProviders",
+      "description": "Resource provider commands",
       "commands": [
         {
           "name": "add",
           "hidden": false,
-          "description": "Add the Resource Provide"
+          "description": "Add a resource provider"
         },
         {
           "name": "add-notificationhub",
@@ -2833,7 +2851,7 @@
     {
       "name": "secrets",
       "hidden": false,
-      "description": "Secrets",
+      "description": "Client secret commands",
       "commands": [
         {
           "name": "add",
@@ -2963,27 +2981,27 @@
         {
           "name": "env",
           "hidden": false,
-          "description": "Omnia Storm Env"
+          "description": "Set the Storm endpoint that the storm commands use"
         },
         {
           "name": "list",
           "hidden": false,
-          "description": "Omnia Storm List"
+          "description": "List the Storm packages"
         },
         {
           "name": "publish",
           "hidden": false,
-          "description": "Omnia Storm Publish"
+          "description": "Publish the Storm plugin in a directory as a Storm package"
         },
         {
           "name": "result",
           "hidden": false,
-          "description": "Omnia Storm Result"
+          "description": "List the results of a Storm package, show one result by its start time, or compare two results"
         },
         {
           "name": "run",
           "hidden": false,
-          "description": "Omnia Storm Run"
+          "description": "Run scenarios of a Storm package on a number of agents and follow the run"
         }
       ]
     },
@@ -3017,7 +3035,7 @@
     {
       "name": "tenants",
       "hidden": false,
-      "description": "List Tenants",
+      "description": "Tenant commands",
       "commands": [
         {
           "name": "add-probe",
@@ -3074,6 +3092,18 @@
               "recursive": false,
               "hidden": false,
               "description": "Success threshold"
+            }
+          ]
+        },
+        {
+          "name": "autosuspend",
+          "hidden": false,
+          "description": "Auto-suspend of inactive tenants. Subcommands: report",
+          "commands": [
+            {
+              "name": "report",
+              "hidden": false,
+              "description": "List the active tenants the auto-suspend job would suspend, and why the others would be skipped, without suspending anything. It shows the activity the daily job collected, so it does not check any tenant. Example: omnia tenants autosuspend report --days 30 --region WestEurope"
             }
           ]
         },
@@ -3138,7 +3168,7 @@
         {
           "name": "diagnostic",
           "hidden": false,
-          "description": "Tenants Diagnostic",
+          "description": "Tenant diagnostic commands",
           "commands": [
             {
               "name": "add",
@@ -3158,7 +3188,7 @@
             {
               "name": "run",
               "hidden": false,
-              "description": "Diagnostic a service in the tenant"
+              "description": "Run a diagnostic of a service in the tenant"
             }
           ]
         },
@@ -3226,12 +3256,12 @@
             {
               "name": "ai",
               "hidden": false,
-              "description": "get config"
+              "description": "Get the Application Insights settings of the tenant, as configured and as deployed"
             },
             {
               "name": "appsettings",
               "hidden": false,
-              "description": "Get overidden appsettings or shared appsettings"
+              "description": "Get overridden appsettings or shared appsettings"
             },
             {
               "name": "customdomains",
@@ -3275,7 +3305,7 @@
         {
           "name": "licenses",
           "hidden": false,
-          "description": "Licenses",
+          "description": "Tenant license commands",
           "commands": [
             {
               "name": "add",
@@ -3486,7 +3516,7 @@
         {
           "name": "permissions",
           "hidden": false,
-          "description": "Tenants Permissions",
+          "description": "Tenant permission commands",
           "commands": [
             {
               "name": "add",
@@ -3544,7 +3574,7 @@
         {
           "name": "resources",
           "hidden": false,
-          "description": "Resources",
+          "description": "Tenant resource commands",
           "commands": [
             {
               "name": "scale",
@@ -3599,12 +3629,12 @@
             {
               "name": "ai",
               "hidden": false,
-              "description": "update config"
+              "description": "Update the Application Insights settings of the tenant"
             },
             {
               "name": "appsettings",
               "hidden": false,
-              "description": "update overidden appsettings or shared appsettings"
+              "description": "Update overridden appsettings or shared appsettings"
             },
             {
               "name": "autosuspendsettings",
@@ -3614,7 +3644,7 @@
             {
               "name": "customerrorpage",
               "hidden": false,
-              "description": "Enables error page redirect"
+              "description": "Upload a custom error html page for the tenant"
             },
             {
               "name": "depsecurity",
@@ -3624,7 +3654,7 @@
             {
               "name": "disableerror",
               "hidden": false,
-              "description": "Disabled error page redirect"
+              "description": "Disables error page redirect"
             },
             {
               "name": "dns",
@@ -3662,6 +3692,11 @@
               "description": "Updates the kaizala connector"
             },
             {
+              "name": "muteemail",
+              "hidden": false,
+              "description": "Mute or unmute the email Omnia Cloud sends to the customers of one tenant. Internal alerts are not muted. Email generated during a mute is discarded, not queued or sent later. Example: omnia tenants update muteemail [tenantId] --value true. To mute a whole cluster: omnia clusters update muteemail [clusterId] --value true. More: omnia tenants update muteemail --help"
+            },
+            {
               "name": "name",
               "hidden": false,
               "description": "Updates the omnia tenant name"
@@ -3683,7 +3718,7 @@
     {
       "name": "users",
       "hidden": false,
-      "description": "User",
+      "description": "User commands",
       "commands": [
         {
           "name": "invalidate-sessions",

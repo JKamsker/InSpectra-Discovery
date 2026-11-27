@@ -1,0 +1,945 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "devkit",
+    "version": "0.4.0",
+    "description": "A markdown backlog in your repository (backlog/items/*.md with frontmatter) and the commands that keep it consistent: rebuild the index, lint, set fields, query, renumber, draw a graph. Also checks commit subjects, summarises dotnet build and test logs, and tracks test durations. Settings come from workflow.config.json."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 17
+  },
+  "commands": [
+    {
+      "name": "commit-subject",
+      "hidden": false,
+      "description": "Check a commit subject against the repository's rules"
+    },
+    {
+      "name": "graph",
+      "hidden": false,
+      "description": "Write the Backlog Atlas page",
+      "options": [
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--names",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--members",
+          "recursive": false,
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "init",
+      "hidden": false,
+      "description": "Start a backlog: the folders, the index and a starter workflow.config.json",
+      "options": [
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "lint",
+      "hidden": false,
+      "description": "Check every item's frontmatter (--fix corrects what it can)"
+    },
+    {
+      "name": "log-summary",
+      "hidden": false,
+      "description": "Summarise a dotnet build or test log",
+      "options": [
+        {
+          "name": "--projects",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PROJECTS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--expect",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "SLNX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--files",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--warnings",
+          "recursive": false,
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "next-id",
+      "hidden": false,
+      "description": "Print the next free ID for a prefix (BL or BUG)"
+    },
+    {
+      "name": "query",
+      "hidden": false,
+      "description": "List the items whose frontmatter matches filters",
+      "arguments": [
+        {
+          "name": "FIELD",
+          "required": false,
+          "hidden": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "V1",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "V2",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "V",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "F2",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "renumber",
+      "hidden": false,
+      "description": "Give an item a new ID and rewrite the references to it",
+      "options": [
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "take your item from a commit (a rebase or merge collision); the working tree's file is kept",
+          "arguments": [
+            {
+              "name": "REF",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--base",
+          "recursive": false,
+          "hidden": false,
+          "description": "the base branch (default origin/<baseBranch in workflow.config.json>): its items are taken,\nand references are rewritten\nonly in files changed since merge-base <ref> HEAD",
+          "arguments": [
+            {
+              "name": "REF",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--branch-tip",
+          "recursive": false,
+          "hidden": false,
+          "description": "the branch whose commits <base>..<ref> hold taken IDs (default: the tip a rebase in\nprogress started from, otherwise HEAD)",
+          "arguments": [
+            {
+              "name": "REF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--all",
+          "recursive": false,
+          "hidden": false,
+          "description": "rewrite references in every file (a renumber with no collision)"
+        },
+        {
+          "name": "--apply",
+          "recursive": false,
+          "hidden": false,
+          "description": "write the changes; without it, a dry run"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "OLD_ID",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "NEW_ID",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "BASEBRANCH_IN_WORKFLOWCONFIGJSON",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "BASE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "REF",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "set-field",
+      "hidden": false,
+      "description": "Set one frontmatter field on items, then rebuild the index",
+      "options": [
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--tick-all-criteria",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "ID",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FIELD",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "name": "VALUE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "skills",
+      "hidden": false,
+      "description": "Write the chosen skill packs into .claude/ (--check finds stale copies)",
+      "options": [
+        {
+          "name": "--check",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false
+        }
+      ]
+    },
+    {
+      "name": "sync",
+      "hidden": false,
+      "description": "Rebuild backlog/BACKLOG.md from the item files"
+    },
+    {
+      "name": "test-timing",
+      "hidden": false,
+      "description": "Record and compare build and test durations",
+      "commands": [
+        {
+          "name": "check",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "commit-subject",
+              "hidden": false,
+              "description": "Check a commit subject against the repository's rules"
+            },
+            {
+              "name": "graph",
+              "hidden": false,
+              "description": "Write the Backlog Atlas page"
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Start a backlog: the folders, the index and a starter workflow.config.json"
+            },
+            {
+              "name": "lint",
+              "hidden": false,
+              "description": "Check every item's frontmatter (--fix corrects what it can)"
+            },
+            {
+              "name": "log-summary",
+              "hidden": false,
+              "description": "Summarise a dotnet build or test log"
+            },
+            {
+              "name": "next-id",
+              "hidden": false,
+              "description": "Print the next free ID for a prefix (BL or BUG)"
+            },
+            {
+              "name": "query",
+              "hidden": false,
+              "description": "List the items whose frontmatter matches filters"
+            },
+            {
+              "name": "renumber",
+              "hidden": false,
+              "description": "Give an item a new ID and rewrite the references to it"
+            },
+            {
+              "name": "set-field",
+              "hidden": false,
+              "description": "Set one frontmatter field on items, then rebuild the index"
+            },
+            {
+              "name": "skills",
+              "hidden": false,
+              "description": "Write the chosen skill packs into .claude/ (--check finds stale copies)"
+            },
+            {
+              "name": "sync",
+              "hidden": false,
+              "description": "Rebuild backlog/BACKLOG.md from the item files"
+            },
+            {
+              "name": "test-timing",
+              "hidden": false,
+              "description": "Record and compare build and test durations"
+            },
+            {
+              "name": "text-replace",
+              "hidden": false,
+              "description": "Replace exact text in files, keeping line endings and encoding"
+            },
+            {
+              "name": "tidy",
+              "hidden": false,
+              "description": "List worktrees, branches and stashes: finished, stranded or in progress"
+            }
+          ]
+        },
+        {
+          "name": "compare",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "commit-subject",
+              "hidden": false,
+              "description": "Check a commit subject against the repository's rules"
+            },
+            {
+              "name": "graph",
+              "hidden": false,
+              "description": "Write the Backlog Atlas page"
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Start a backlog: the folders, the index and a starter workflow.config.json"
+            },
+            {
+              "name": "lint",
+              "hidden": false,
+              "description": "Check every item's frontmatter (--fix corrects what it can)"
+            },
+            {
+              "name": "log-summary",
+              "hidden": false,
+              "description": "Summarise a dotnet build or test log"
+            },
+            {
+              "name": "next-id",
+              "hidden": false,
+              "description": "Print the next free ID for a prefix (BL or BUG)"
+            },
+            {
+              "name": "query",
+              "hidden": false,
+              "description": "List the items whose frontmatter matches filters"
+            },
+            {
+              "name": "renumber",
+              "hidden": false,
+              "description": "Give an item a new ID and rewrite the references to it"
+            },
+            {
+              "name": "set-field",
+              "hidden": false,
+              "description": "Set one frontmatter field on items, then rebuild the index"
+            },
+            {
+              "name": "skills",
+              "hidden": false,
+              "description": "Write the chosen skill packs into .claude/ (--check finds stale copies)"
+            },
+            {
+              "name": "sync",
+              "hidden": false,
+              "description": "Rebuild backlog/BACKLOG.md from the item files"
+            },
+            {
+              "name": "test-timing",
+              "hidden": false,
+              "description": "Record and compare build and test durations"
+            },
+            {
+              "name": "text-replace",
+              "hidden": false,
+              "description": "Replace exact text in files, keeping line endings and encoding"
+            },
+            {
+              "name": "tidy",
+              "hidden": false,
+              "description": "List worktrees, branches and stashes: finished, stranded or in progress"
+            }
+          ]
+        },
+        {
+          "name": "record",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "commit-subject",
+              "hidden": false,
+              "description": "Check a commit subject against the repository's rules"
+            },
+            {
+              "name": "graph",
+              "hidden": false,
+              "description": "Write the Backlog Atlas page"
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Start a backlog: the folders, the index and a starter workflow.config.json"
+            },
+            {
+              "name": "lint",
+              "hidden": false,
+              "description": "Check every item's frontmatter (--fix corrects what it can)"
+            },
+            {
+              "name": "log-summary",
+              "hidden": false,
+              "description": "Summarise a dotnet build or test log"
+            },
+            {
+              "name": "next-id",
+              "hidden": false,
+              "description": "Print the next free ID for a prefix (BL or BUG)"
+            },
+            {
+              "name": "query",
+              "hidden": false,
+              "description": "List the items whose frontmatter matches filters"
+            },
+            {
+              "name": "renumber",
+              "hidden": false,
+              "description": "Give an item a new ID and rewrite the references to it"
+            },
+            {
+              "name": "set-field",
+              "hidden": false,
+              "description": "Set one frontmatter field on items, then rebuild the index"
+            },
+            {
+              "name": "skills",
+              "hidden": false,
+              "description": "Write the chosen skill packs into .claude/ (--check finds stale copies)"
+            },
+            {
+              "name": "sync",
+              "hidden": false,
+              "description": "Rebuild backlog/BACKLOG.md from the item files"
+            },
+            {
+              "name": "test-timing",
+              "hidden": false,
+              "description": "Record and compare build and test durations"
+            },
+            {
+              "name": "text-replace",
+              "hidden": false,
+              "description": "Replace exact text in files, keeping line endings and encoding"
+            },
+            {
+              "name": "tidy",
+              "hidden": false,
+              "description": "List worktrees, branches and stashes: finished, stranded or in progress"
+            }
+          ]
+        },
+        {
+          "name": "reusable",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "commit-subject",
+              "hidden": false,
+              "description": "Check a commit subject against the repository's rules"
+            },
+            {
+              "name": "graph",
+              "hidden": false,
+              "description": "Write the Backlog Atlas page"
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Start a backlog: the folders, the index and a starter workflow.config.json"
+            },
+            {
+              "name": "lint",
+              "hidden": false,
+              "description": "Check every item's frontmatter (--fix corrects what it can)"
+            },
+            {
+              "name": "log-summary",
+              "hidden": false,
+              "description": "Summarise a dotnet build or test log"
+            },
+            {
+              "name": "next-id",
+              "hidden": false,
+              "description": "Print the next free ID for a prefix (BL or BUG)"
+            },
+            {
+              "name": "query",
+              "hidden": false,
+              "description": "List the items whose frontmatter matches filters"
+            },
+            {
+              "name": "renumber",
+              "hidden": false,
+              "description": "Give an item a new ID and rewrite the references to it"
+            },
+            {
+              "name": "set-field",
+              "hidden": false,
+              "description": "Set one frontmatter field on items, then rebuild the index"
+            },
+            {
+              "name": "skills",
+              "hidden": false,
+              "description": "Write the chosen skill packs into .claude/ (--check finds stale copies)"
+            },
+            {
+              "name": "sync",
+              "hidden": false,
+              "description": "Rebuild backlog/BACKLOG.md from the item files"
+            },
+            {
+              "name": "test-timing",
+              "hidden": false,
+              "description": "Record and compare build and test durations"
+            },
+            {
+              "name": "text-replace",
+              "hidden": false,
+              "description": "Replace exact text in files, keeping line endings and encoding"
+            },
+            {
+              "name": "tidy",
+              "hidden": false,
+              "description": "List worktrees, branches and stashes: finished, stranded or in progress"
+            }
+          ]
+        },
+        {
+          "name": "trend",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "commit-subject",
+              "hidden": false,
+              "description": "Check a commit subject against the repository's rules"
+            },
+            {
+              "name": "graph",
+              "hidden": false,
+              "description": "Write the Backlog Atlas page"
+            },
+            {
+              "name": "init",
+              "hidden": false,
+              "description": "Start a backlog: the folders, the index and a starter workflow.config.json"
+            },
+            {
+              "name": "lint",
+              "hidden": false,
+              "description": "Check every item's frontmatter (--fix corrects what it can)"
+            },
+            {
+              "name": "log-summary",
+              "hidden": false,
+              "description": "Summarise a dotnet build or test log"
+            },
+            {
+              "name": "next-id",
+              "hidden": false,
+              "description": "Print the next free ID for a prefix (BL or BUG)"
+            },
+            {
+              "name": "query",
+              "hidden": false,
+              "description": "List the items whose frontmatter matches filters"
+            },
+            {
+              "name": "renumber",
+              "hidden": false,
+              "description": "Give an item a new ID and rewrite the references to it"
+            },
+            {
+              "name": "set-field",
+              "hidden": false,
+              "description": "Set one frontmatter field on items, then rebuild the index"
+            },
+            {
+              "name": "skills",
+              "hidden": false,
+              "description": "Write the chosen skill packs into .claude/ (--check finds stale copies)"
+            },
+            {
+              "name": "sync",
+              "hidden": false,
+              "description": "Rebuild backlog/BACKLOG.md from the item files"
+            },
+            {
+              "name": "test-timing",
+              "hidden": false,
+              "description": "Record and compare build and test durations"
+            },
+            {
+              "name": "text-replace",
+              "hidden": false,
+              "description": "Replace exact text in files, keeping line endings and encoding"
+            },
+            {
+              "name": "tidy",
+              "hidden": false,
+              "description": "List worktrees, branches and stashes: finished, stranded or in progress"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text-replace",
+      "hidden": false,
+      "description": "Replace exact text in files, keeping line endings and encoding",
+      "options": [
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--all",
+          "recursive": false,
+          "hidden": false
+        },
+        {
+          "name": "--regex",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "REGEX",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--allow-missing",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--files-from",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--find",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--find-file",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--replace",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "TEXT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--replace-file",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--pairs-file",
+          "recursive": false,
+          "hidden": false,
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FILE",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "tidy",
+      "hidden": false,
+      "description": "List worktrees, branches and stashes: finished, stranded or in progress",
+      "options": [
+        {
+          "name": "--stale-days",
+          "recursive": false,
+          "hidden": false,
+          "description": "days without activity before uncommitted work or a stash counts as\nstranded (default 7)",
+          "arguments": [
+            {
+              "name": "N",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "write the report as JSON, for the git-tidy skill"
+        }
+      ]
+    }
+  ]
+}

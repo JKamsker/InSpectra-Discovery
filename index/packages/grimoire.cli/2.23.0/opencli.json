@@ -1,0 +1,721 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "Grimoire CLI",
+    "version": "2.23.0",
+    "description": "Command-line client for Grimoire, the self-hosted Vault & Configuration Manager: read and write secrets and configuration, import and export .env and JSON files, compare environments, and run a process with its secrets injected as environment variables."
+  },
+  "x-inspectra": {
+    "artifactSource": "startup-hook",
+    "generator": "InSpectra.Gen",
+    "hookCapture": {
+      "cliFramework": "System.CommandLine",
+      "frameworkVersion": "3.0.0.0",
+      "systemCommandLineVersion": "3.0.0.0",
+      "patchTarget": "Parse-postfix ()"
+    },
+    "cliFramework": "System.CommandLine",
+    "cliParsedTitle": "grimoire",
+    "cliParsedDescription": "Command-line client for Grimoire: read and write secrets and configuration, export them, compare environments and run processes with their secrets injected."
+  },
+  "options": [
+    {
+      "name": "--help",
+      "recursive": true,
+      "hidden": false,
+      "description": "Show help and usage information",
+      "aliases": [
+        "-h",
+        "/h",
+        "-?",
+        "/?"
+      ]
+    },
+    {
+      "name": "--version",
+      "recursive": false,
+      "hidden": false,
+      "description": "Show version information"
+    }
+  ],
+  "commands": [
+    {
+      "name": "login",
+      "description": "Save the API URL and a read token (or, with --admin, the admin key). The secret is read from standard input when piped, otherwise prompted for without echoing. Run it once for each to save both.",
+      "options": [
+        {
+          "name": "--url",
+          "recursive": false,
+          "hidden": false,
+          "description": "Grimoire API base URL, e.g. https://grimoire.example.com",
+          "arguments": [
+            {
+              "name": "URL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "The application's slug. Required with --admin; saved for set and import.",
+          "arguments": [
+            {
+              "name": "APP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--admin",
+          "recursive": false,
+          "hidden": false,
+          "description": "Save the management admin key (for set and import) instead of a read token. [default: False]",
+          "arguments": [
+            {
+              "name": "ADMIN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "logout",
+      "description": "Delete the saved credentials."
+    },
+    {
+      "name": "get",
+      "description": "Print a secret's current value.",
+      "options": [
+        {
+          "name": "--environment",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment slug. Defaults to $GRIMOIRE_ENVIRONMENT.",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENVIRONMENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "NAME",
+          "description": "Secret name.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "config",
+      "description": "Read configuration.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List the effective configuration as Key=value lines (values unquoted).",
+          "options": [
+            {
+              "name": "--environment",
+              "recursive": false,
+              "hidden": false,
+              "description": "Environment slug. Defaults to $GRIMOIRE_ENVIRONMENT.",
+              "aliases": [
+                "-e"
+              ],
+              "arguments": [
+                {
+                  "name": "ENVIRONMENT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "export",
+      "description": "Export every value the application can read in an environment.",
+      "options": [
+        {
+          "name": "--environment",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment slug. Defaults to $GRIMOIRE_ENVIRONMENT.",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENVIRONMENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "env (default), json (array and json values as real JSON) or dotnet. [default: env]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--structured",
+          "recursive": false,
+          "hidden": false,
+          "description": "How array and json values are written: raw (default, the JSON text), flatten (one entry per item, AllowedIps:0 → ALLOWEDIPS__0) or both. [default: raw]",
+          "arguments": [
+            {
+              "name": "STRUCTURED",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--include",
+          "recursive": false,
+          "hidden": false,
+          "description": "secrets, configurations or both, comma-separated (default both).",
+          "arguments": [
+            {
+              "name": "INCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--prefix",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only keys and secret names starting with this, ignoring case.",
+          "arguments": [
+            {
+              "name": "PREFIX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write to this file (readable only by you) instead of standard output.",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "FileInfo"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "run",
+      "description": "Run a program with the environment's secrets and configuration as environment variables (Feature:DarkMode → FEATURE__DARKMODE). Nothing is written to disk.",
+      "options": [
+        {
+          "name": "--environment",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment slug. Defaults to $GRIMOIRE_ENVIRONMENT.",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENVIRONMENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--structured",
+          "recursive": false,
+          "hidden": false,
+          "description": "How array and json values are written: raw (default, the JSON text), flatten (one entry per item, AllowedIps:0 → ALLOWEDIPS__0) or both. [default: raw]",
+          "arguments": [
+            {
+              "name": "STRUCTURED",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--include",
+          "recursive": false,
+          "hidden": false,
+          "description": "secrets, configurations or both, comma-separated (default both).",
+          "arguments": [
+            {
+              "name": "INCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--prefix",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only keys and secret names starting with this, ignoring case.",
+          "arguments": [
+            {
+              "name": "PREFIX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "COMMAND",
+          "description": "The program and its arguments, after --.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "type": "String[]"
+        }
+      ]
+    },
+    {
+      "name": "diff",
+      "description": "Show what differs between two environments: configuration keys by value, secrets by whether they have an active version. Secret values are never compared or shown.",
+      "options": [
+        {
+          "name": "--include",
+          "recursive": false,
+          "hidden": false,
+          "description": "secrets, configurations or both, comma-separated (default both).",
+          "arguments": [
+            {
+              "name": "INCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--prefix",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only keys and secret names starting with this, ignoring case.",
+          "arguments": [
+            {
+              "name": "PREFIX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--exit-code",
+          "recursive": false,
+          "hidden": false,
+          "description": "Exit with 1 when the environments differ (for scripts and CI). [default: False]",
+          "arguments": [
+            {
+              "name": "EXIT_CODE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FROM",
+          "description": "First environment slug.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "TO",
+          "description": "Second environment slug.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "set",
+      "description": "Create or update a configuration entry, or write a new version of a secret.",
+      "options": [
+        {
+          "name": "--environment",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment slug. Defaults to $GRIMOIRE_ENVIRONMENT.",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENVIRONMENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "Application slug. Defaults to the saved one or $GRIMOIRE_APP.",
+          "arguments": [
+            {
+              "name": "APP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--secret",
+          "recursive": false,
+          "hidden": false,
+          "description": "Write a secret. Its value is read from standard input or a hidden prompt, never from the command line, so it stays out of your shell history. [default: False]",
+          "arguments": [
+            {
+              "name": "SECRET",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "Configuration value type: string, multiline, array (JSON or one item per line) or json. Leave out to keep the entry's type (string for a new one).",
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "KEY",
+          "description": "Configuration key or secret name.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        },
+        {
+          "name": "VALUE",
+          "description": "The value (configuration only). Leave out to read it from standard input.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "import",
+      "description": "Import a .env, appsettings.json, JSON or PHP config file. Shows the plan first, then applies it once you confirm.",
+      "options": [
+        {
+          "name": "--environment",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment slug. Defaults to $GRIMOIRE_ENVIRONMENT.",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENVIRONMENT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--app",
+          "recursive": false,
+          "hidden": false,
+          "description": "Application slug. Defaults to the saved one or $GRIMOIRE_APP.",
+          "arguments": [
+            {
+              "name": "APP",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--format",
+          "recursive": false,
+          "hidden": false,
+          "description": "env, appsettings, json or php. Detected from the file name when left out.",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FORMAT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--secret-keys",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated name patterns to import as secrets (e.g. *PASSWORD*,*_KEY). Defaults to the server's list.",
+          "arguments": [
+            {
+              "name": "SECRET_KEYS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--exclude",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated keys to leave out.",
+          "arguments": [
+            {
+              "name": "EXCLUDE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--overwrite",
+          "recursive": false,
+          "hidden": false,
+          "description": "Replace values that already exist (default: keep them). [default: False]",
+          "arguments": [
+            {
+              "name": "OVERWRITE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show the plan without changing anything. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--yes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Apply without asking. Required when standard input isn't a terminal. [default: False]",
+          "aliases": [
+            "-y"
+          ],
+          "arguments": [
+            {
+              "name": "YES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "FILE",
+          "description": "The file to import, or - for standard input.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    }
+  ]
+}

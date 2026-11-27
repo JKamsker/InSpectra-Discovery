@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "Eternet Test Planner",
-    "version": "2.8.1",
+    "version": "2.8.10",
     "description": "Dotnet tool for planning affected test selections from repository changes."
   },
   "x-inspectra": {
@@ -1584,6 +1584,23 @@
                   "arguments": [
                     {
                       "name": "COMPLETE_SNAPSHOT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--certify-complete-snapshot",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Certify the whole-workspace snapshot without building when existing carriers already cover every project. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "CERTIFY_COMPLETE_SNAPSHOT",
                       "required": false,
                       "arity": {
                         "minimum": 0,
@@ -3703,6 +3720,23 @@
                   ]
                 },
                 {
+                  "name": "--certify-complete-snapshot",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Certify the whole-workspace snapshot without building when existing carriers already cover every project. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "CERTIFY_COMPLETE_SNAPSHOT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
                   "name": "--defer-publication",
                   "recursive": false,
                   "hidden": false,
@@ -4767,10 +4801,27 @@
                   "name": "--continuous-coverage-store-root",
                   "recursive": false,
                   "hidden": false,
-                  "description": "Continuous-coverage checkpoint store root, required when --coverage-checkpoint-branch is set.",
+                  "description": "Continuous-coverage checkpoint store root, required when --coverage-checkpoint-branch or --base-coverage-branch is set.",
                   "arguments": [
                     {
                       "name": "CONTINUOUS_COVERAGE_STORE_ROOT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--base-coverage-branch",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Optional branch (a pull request's target) whose continuous-coverage checkpoint may certify the requested base. When only an ancestor has a compiler snapshot and that checkpoint verified the exact base, the plan keeps the base and the ancestor supplies per-project carriers. Requires --continuous-coverage-store-root; has no effect without --allow-partial-graph-reuse.",
+                  "arguments": [
+                    {
+                      "name": "BASE_COVERAGE_BRANCH",
                       "required": true,
                       "arity": {
                         "minimum": 1,
@@ -8212,6 +8263,23 @@
                   ]
                 },
                 {
+                  "name": "--certified-head-history",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Earlier green heads kept in the checkpoint (0 keeps none). restore-baseline --base-coverage-branch reads them to certify a pull request base that has no compiler snapshot of its own. [default: 64]",
+                  "arguments": [
+                    {
+                      "name": "CERTIFIED_HEAD_HISTORY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
                   "name": "--summary-output",
                   "recursive": false,
                   "hidden": false,
@@ -8511,6 +8579,159 @@
                       "type": "String"
                     }
                   ]
+                },
+                {
+                  "name": "--pull-request-head",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Pull request author head; the checkout must be its two-parent merge, planned from the first parent.",
+                  "arguments": [
+                    {
+                      "name": "PULL_REQUEST_HEAD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--exact-base",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Exact planning base SHA; the restored and planned bases must equal it (manual and PR replays).",
+                  "arguments": [
+                    {
+                      "name": "EXACT_BASE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--partition-count",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Test partitions: auto or a positive integer.",
+                  "arguments": [
+                    {
+                      "name": "PARTITION_COUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--test-slot-count",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Concurrent test fragment processes: auto or a positive integer; defaults to an explicit partition count.",
+                  "arguments": [
+                    {
+                      "name": "TEST_SLOT_COUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--skip-tests",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Plan only: no build, tests, finalize or publication. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "SKIP_TESTS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--complete-snapshot",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Build and certify a complete compiler snapshot even off the protected branch. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "COMPLETE_SNAPSHOT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--refresh-durations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Refresh the duration baseline from this run (refresh plan, publish without a restored snapshot). [default: False]",
+                  "arguments": [
+                    {
+                      "name": "REFRESH_DURATIONS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--reseed-durations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Reset the running duration averages; requires --force-full and --refresh-durations. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "RESEED_DURATIONS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--build-output-reuse-off",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Build every project fresh; requires --force-full and a run that executes the tests. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "BUILD_OUTPUT_REUSE_OFF",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
                 }
               ]
             },
@@ -8772,12 +8993,165 @@
                       "type": "String"
                     }
                   ]
+                },
+                {
+                  "name": "--pull-request-head",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Pull request author head; the checkout must be its two-parent merge, planned from the first parent.",
+                  "arguments": [
+                    {
+                      "name": "PULL_REQUEST_HEAD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--exact-base",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Exact planning base SHA; the restored and planned bases must equal it (manual and PR replays).",
+                  "arguments": [
+                    {
+                      "name": "EXACT_BASE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--partition-count",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Test partitions: auto or a positive integer.",
+                  "arguments": [
+                    {
+                      "name": "PARTITION_COUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--test-slot-count",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Concurrent test fragment processes: auto or a positive integer; defaults to an explicit partition count.",
+                  "arguments": [
+                    {
+                      "name": "TEST_SLOT_COUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--skip-tests",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Plan only: no build, tests, finalize or publication. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "SKIP_TESTS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--complete-snapshot",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Build and certify a complete compiler snapshot even off the protected branch. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "COMPLETE_SNAPSHOT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--refresh-durations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Refresh the duration baseline from this run (refresh plan, publish without a restored snapshot). [default: False]",
+                  "arguments": [
+                    {
+                      "name": "REFRESH_DURATIONS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--reseed-durations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Reset the running duration averages; requires --force-full and --refresh-durations. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "RESEED_DURATIONS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--build-output-reuse-off",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Build every project fresh; requires --force-full and a run that executes the tests. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "BUILD_OUTPUT_REUSE_OFF",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
                 }
               ]
             },
             {
               "name": "complete",
-              "description": "Run the selected tests, finalize, seal the green tree and publish by the repository's policy.",
+              "description": "Run the selected tests, finalize, audit the work budget, seal the green tree and publish by the repository's policy.",
               "options": [
                 {
                   "name": "--workspace",
@@ -9025,6 +9399,624 @@
                   "arguments": [
                     {
                       "name": "STEP_SUMMARY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--pull-request-head",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Pull request author head; the checkout must be its two-parent merge, planned from the first parent.",
+                  "arguments": [
+                    {
+                      "name": "PULL_REQUEST_HEAD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--exact-base",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Exact planning base SHA; the restored and planned bases must equal it (manual and PR replays).",
+                  "arguments": [
+                    {
+                      "name": "EXACT_BASE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--partition-count",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Test partitions: auto or a positive integer.",
+                  "arguments": [
+                    {
+                      "name": "PARTITION_COUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--test-slot-count",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Concurrent test fragment processes: auto or a positive integer; defaults to an explicit partition count.",
+                  "arguments": [
+                    {
+                      "name": "TEST_SLOT_COUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--skip-tests",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Plan only: no build, tests, finalize or publication. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "SKIP_TESTS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--complete-snapshot",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Build and certify a complete compiler snapshot even off the protected branch. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "COMPLETE_SNAPSHOT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--refresh-durations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Refresh the duration baseline from this run (refresh plan, publish without a restored snapshot). [default: False]",
+                  "arguments": [
+                    {
+                      "name": "REFRESH_DURATIONS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--reseed-durations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Reset the running duration averages; requires --force-full and --refresh-durations. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "RESEED_DURATIONS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--build-output-reuse-off",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Build every project fresh; requires --force-full and a run that executes the tests. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "BUILD_OUTPUT_REUSE_OFF",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--defer-publication",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Leave publication and the evidence archive to 'etp ci affected-tests publish'. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "DEFER_PUBLICATION",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--upstream-failure",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Name of a failed repository step: finalize records it, publish withholds publication.",
+                  "arguments": [
+                    {
+                      "name": "UPSTREAM_FAILURE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "publish",
+              "description": "Publish a run that complete --defer-publication left, after the repository steps that gate it.",
+              "options": [
+                {
+                  "name": "--workspace",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Repository workspace path. [default: <path>]",
+                  "arguments": [
+                    {
+                      "name": "WORKSPACE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--work-root",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Task-owned work root outside the checkout; the first phase creates it.",
+                  "arguments": [
+                    {
+                      "name": "WORK_ROOT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--force-full",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Run the full suite through ETP. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "FORCE_FULL",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--restore-config",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "NuGet configuration passed as RestoreConfigFile to every build.",
+                  "arguments": [
+                    {
+                      "name": "RESTORE_CONFIG",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--event",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Event name; defaults to GITHUB_EVENT_NAME.",
+                  "arguments": [
+                    {
+                      "name": "EVENT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--ref",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Git ref; defaults to GITHUB_REF.",
+                  "arguments": [
+                    {
+                      "name": "REF",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--repository",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "owner/name; defaults to GITHUB_REPOSITORY.",
+                  "arguments": [
+                    {
+                      "name": "REPOSITORY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--pull-request-number",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Defaults to the event payload.",
+                  "arguments": [
+                    {
+                      "name": "PULL_REQUEST_NUMBER",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "Int32"
+                    }
+                  ]
+                },
+                {
+                  "name": "--base-sha",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Pull request base commit; defaults to the event payload.",
+                  "arguments": [
+                    {
+                      "name": "BASE_SHA",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--base-ref",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Pull request base branch; defaults to the event payload.",
+                  "arguments": [
+                    {
+                      "name": "BASE_REF",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--head-repository",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Pull request head repository.",
+                  "arguments": [
+                    {
+                      "name": "HEAD_REPOSITORY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--push-before",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Previous head of a push; defaults to the event payload.",
+                  "arguments": [
+                    {
+                      "name": "PUSH_BEFORE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--event-path",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Event payload; defaults to GITHUB_EVENT_PATH.",
+                  "arguments": [
+                    {
+                      "name": "EVENT_PATH",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--github-output",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Outputs file; defaults to GITHUB_OUTPUT.",
+                  "arguments": [
+                    {
+                      "name": "GITHUB_OUTPUT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--step-summary",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Markdown summary; defaults to GITHUB_STEP_SUMMARY.",
+                  "arguments": [
+                    {
+                      "name": "STEP_SUMMARY",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--pull-request-head",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Pull request author head; the checkout must be its two-parent merge, planned from the first parent.",
+                  "arguments": [
+                    {
+                      "name": "PULL_REQUEST_HEAD",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--exact-base",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Exact planning base SHA; the restored and planned bases must equal it (manual and PR replays).",
+                  "arguments": [
+                    {
+                      "name": "EXACT_BASE",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--partition-count",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Test partitions: auto or a positive integer.",
+                  "arguments": [
+                    {
+                      "name": "PARTITION_COUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--test-slot-count",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Concurrent test fragment processes: auto or a positive integer; defaults to an explicit partition count.",
+                  "arguments": [
+                    {
+                      "name": "TEST_SLOT_COUNT",
+                      "required": true,
+                      "arity": {
+                        "minimum": 1,
+                        "maximum": 1
+                      },
+                      "type": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "--skip-tests",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Plan only: no build, tests, finalize or publication. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "SKIP_TESTS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--complete-snapshot",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Build and certify a complete compiler snapshot even off the protected branch. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "COMPLETE_SNAPSHOT",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--refresh-durations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Refresh the duration baseline from this run (refresh plan, publish without a restored snapshot). [default: False]",
+                  "arguments": [
+                    {
+                      "name": "REFRESH_DURATIONS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--reseed-durations",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Reset the running duration averages; requires --force-full and --refresh-durations. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "RESEED_DURATIONS",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--build-output-reuse-off",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Build every project fresh; requires --force-full and a run that executes the tests. [default: False]",
+                  "arguments": [
+                    {
+                      "name": "BUILD_OUTPUT_REUSE_OFF",
+                      "required": false,
+                      "arity": {
+                        "minimum": 0,
+                        "maximum": 1
+                      },
+                      "type": "Boolean"
+                    }
+                  ]
+                },
+                {
+                  "name": "--upstream-failure",
+                  "recursive": false,
+                  "hidden": false,
+                  "description": "Name of a failed repository step: finalize records it, publish withholds publication.",
+                  "arguments": [
+                    {
+                      "name": "UPSTREAM_FAILURE",
                       "required": true,
                       "arity": {
                         "minimum": 1,
