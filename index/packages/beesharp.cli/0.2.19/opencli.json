@@ -1,0 +1,1036 @@
+{
+  "opencli": "0.1-draft",
+  "info": {
+    "title": "beesharp - run presets headlessly and inspect exported run bundles without the UI",
+    "version": "0.2.19",
+    "description": "Command-line tool (beesharp) for running load-test presets headlessly and inspecting exported or live Beesharp runs."
+  },
+  "x-inspectra": {
+    "artifactSource": "crawled-from-help",
+    "generator": "InSpectra.Gen",
+    "helpDocumentCount": 12
+  },
+  "commands": [
+    {
+      "name": "run",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--preset",
+          "recursive": false,
+          "hidden": false,
+          "description": "The preset to run: its name, or the path of a preset .json file. Required.",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PRESET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--env",
+          "recursive": false,
+          "hidden": false,
+          "description": "The environment whose {{Key}} values are filled in. Needed when the preset uses placeholders.",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "NAME",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder with presets/, environments/, scripts/ (preflight/, shutdown/) and data/.\nDefault: the current directory.",
+          "arguments": [
+            {
+              "name": "FOLDER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--storage",
+          "recursive": false,
+          "hidden": false,
+          "description": "duckdb (default): save the run to <root>/data/beesharp.duckdb, so the server's UI shows it in the history.\nmemory: save nothing.",
+          "arguments": [
+            {
+              "name": "KIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--duration",
+          "recursive": false,
+          "hidden": false,
+          "description": "Run for this long instead of the preset's duration.",
+          "aliases": [
+            "-d"
+          ],
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--progress",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print a progress line this often (default 5, 0 = none).",
+          "arguments": [
+            {
+              "name": "SECONDS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--logs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Stream live scenario logs (trace|debug|info|warn|error; default info).",
+          "arguments": [
+            {
+              "name": "LOGS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print summary as JSON to stdout (suppresses chatter), or also write JSON to <file>."
+        },
+        {
+          "name": "--export",
+          "recursive": false,
+          "hidden": false,
+          "description": "Export the finished run to a file or directory.",
+          "arguments": [
+            {
+              "name": "PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--export-format",
+          "recursive": false,
+          "hidden": false,
+          "description": "Export format: parquet, duckdb, json, or csv (inferred from --export path when omitted).",
+          "arguments": [
+            {
+              "name": "FMT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "This text.\nThe run starts with the preflight, then the scenario entries, then the shutdown program (as in the UI).\nCtrl+C stops the run like Stop in the UI: bees in flight are canceled, the shutdown program still runs, the run is saved.\nExit codes:\n0  all bees succeeded\n1  at least one bee failed or was canceled (also: stopped with Ctrl+C, shutdown program failed)\n2  the run could not run: bad arguments, preset or environment not found, a script does not compile,\nan unknown {{placeholder}}, the preflight failed",
+          "aliases": [
+            "-h"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "runs",
+      "hidden": false,
+      "commands": [
+        {
+          "name": "bee",
+          "hidden": false,
+          "description": "Full step visits, HTTP calls, status codes, errors, and logs for one bee\ncompare <targetA> <targetB> Latency and error-rate regression diff between two runs",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Query a running Beesharp server (also uses BEESHARP_URL if target is not a local file).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "Exported run bundle (.zip, .duckdb, or .json) or run ID / latest / prev with --url."
+            },
+            {
+              "name": "BEE",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "description": "1-based bee number (1 or B1 = first bee)."
+            }
+          ]
+        },
+        {
+          "name": "calls",
+          "hidden": false,
+          "description": "Endpoint latency breakdown and slow/failing call counts",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Query a running Beesharp server (also uses BEESHARP_URL if target is not a local file).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--entry",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to one scenario entry (1-based, e.g. 1).",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--scenario",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to scenario entry/entries matching this scenario ID or display label.",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--step",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to one scenario step (1-based, e.g. 1).",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--by-step",
+              "recursive": false,
+              "hidden": false,
+              "description": "Split endpoint latency and slow counts by scenario step (useful when multiple steps share a URL)."
+            },
+            {
+              "name": "--slowest",
+              "recursive": false,
+              "hidden": false,
+              "description": "List the top <n> slowest individual calls (1 to 1000) with bee ID, step, duration, status, and headers.",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--endpoint",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to endpoints containing <ep> (works with summary or --slowest).",
+              "arguments": [
+                {
+                  "name": "EP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--slow",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only endpoints/calls marked slow."
+            },
+            {
+              "name": "--failed",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only endpoints/calls with failures."
+            },
+            {
+              "name": "--min-ms",
+              "recursive": false,
+              "hidden": false,
+              "description": "Minimum duration in milliseconds.",
+              "arguments": [
+                {
+                  "name": "MS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--search",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter endpoints/calls whose normalized name, URL, host, or step name contains <q>.",
+              "arguments": [
+                {
+                  "name": "Q",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILERUNIDLATESTPREV",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "Conventions",
+          "hidden": false,
+          "description": "Scenario entries, steps, and bees are 1-based (matching the UI: entry 1, step 1, bee 1 = B1).\n--json is a pure boolean flag on all \"runs\" commands and prints untruncated camelCase JSON to stdout."
+        },
+        {
+          "name": "errors",
+          "hidden": false,
+          "description": "Grouped, untruncated errors with counts, affected entries/steps, and sample bees",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Query a running Beesharp server (also uses BEESHARP_URL if target is not a local file).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILERUNIDLATESTPREV",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "hotspots",
+          "hidden": false,
+          "description": "Where the time of slow calls went, per endpoint (from the fetched distributed traces)",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Query a running Beesharp server (also uses BEESHARP_URL if target is not a local file).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--endpoint",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only endpoints containing <ep>.",
+              "arguments": [
+                {
+                  "name": "EP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--slow",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only endpoints that have slow calls with a fetched trace."
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show at most <n> endpoints (1 to 100, default 10); each shows its top 5 hotspots.",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.\nFor each endpoint's slow calls: the span (service + name) with the largest self time per call, how many slow calls it explains, its typical self time and share of\nthe call, example trace IDs for \"runs trace\", and the same span's time in the endpoint's typical calls as the baseline. Needs traces fetched into the run.",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILERUNIDLATESTPREV",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "list",
+          "hidden": false,
+          "description": "List stored runs on a running Beesharp server",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Beesharp server URL (defaults to BEESHARP_URL environment variable).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum runs to fetch (1 to 500, default 20).",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "logs",
+          "hidden": false,
+          "description": "Filtered log lines",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Query a running Beesharp server (also uses BEESHARP_URL if target is not a local file).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--bee",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to one bee (1-based: 1 or B1 = first bee).",
+              "arguments": [
+                {
+                  "name": "BEE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--entry",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to one scenario entry (1-based, e.g. 1) or preflight|shutdown|host.",
+              "arguments": [
+                {
+                  "name": "ENTRY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--step",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to one scenario step (1-based, e.g. 1).",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--level",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter by level(s): trace, debug, info, warn, error.",
+              "arguments": [
+                {
+                  "name": "LVLLVL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--search",
+              "recursive": false,
+              "hidden": false,
+              "description": "Case-insensitive substring match in message, exception, or bee name.",
+              "arguments": [
+                {
+                  "name": "Q",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--offset",
+              "recursive": false,
+              "hidden": false,
+              "description": "Zero-based row offset (default 0).",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--limit",
+              "recursive": false,
+              "hidden": false,
+              "description": "Maximum log lines to return (default 200, max 10000).",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILERUNIDLATESTPREV",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "Remote",
+          "hidden": false,
+          "commands": [
+            {
+              "name": "mode",
+              "hidden": false,
+              "description": "Pass --url <url> (or set BEESHARP_URL when <target> is a run ID or alias);\n<target> can be an exact run ID, \"latest\", or \"prev\" (second most recent run)."
+            }
+          ]
+        },
+        {
+          "name": "summary",
+          "hidden": false,
+          "description": "Run metadata, bee counts, per-scenario & per-step counts, min/p50/p95/max latencies",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Query a running Beesharp server (also uses BEESHARP_URL if target is not a local file).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILERUNIDLATESTPREV",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "timeline",
+          "hidden": false,
+          "description": "Time-bucketed concurrency, req/s, latency, slow and failure timeline",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Query a running Beesharp server (also uses BEESHARP_URL if target is not a local file).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--bucket",
+              "recursive": false,
+              "hidden": false,
+              "description": "Bucket width in seconds (default 5, e.g. 1, 5, 10, 30).",
+              "arguments": [
+                {
+                  "name": "SECONDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--entry",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to one scenario entry (1-based, e.g. 1).",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--scenario",
+              "recursive": false,
+              "hidden": false,
+              "description": "Filter to scenario entry/entries matching this scenario ID or display label.",
+              "arguments": [
+                {
+                  "name": "ID",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "FILERUNIDLATESTPREV",
+              "required": true,
+              "hidden": false,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "trace",
+          "hidden": false,
+          "description": "One bee's distributed trace as a flat span list (depth, service, self time, share)",
+          "options": [
+            {
+              "name": "--url",
+              "recursive": false,
+              "hidden": false,
+              "description": "Query a running Beesharp server (also uses BEESHARP_URL if target is not a local file).",
+              "arguments": [
+                {
+                  "name": "URL",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--call",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only the spans below call <n> of the bee (1-based, as numbered by \"runs bee\").",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--max-spans",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show at most <n> spans (1 to 5000, default 50); over that the spans with the largest self time are kept.",
+              "arguments": [
+                {
+                  "name": "N",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  }
+                }
+              ]
+            },
+            {
+              "name": "--json",
+              "recursive": false,
+              "hidden": false,
+              "description": "Print untruncated JSON to stdout."
+            },
+            {
+              "name": "--help",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show this help text.\nEach line: depth, service, span name, duration, self time (the span's own time, without its children) and its share of the bee's (or call's) duration,\nerror flag, HTTP status and key attributes such as db.query.text. Needs the trace to be fetched into the run (a TraceStore.* environment).\nExit codes: 0 shown, 2 invalid arguments or run/bee not found, 3 the trace is not stored with the run (the message gives the likely reason).",
+              "aliases": [
+                "-h"
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": false,
+              "hidden": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "description": "Exported run bundle (.zip, .duckdb, or .json) or run ID / latest / prev with --url.\n<bee|traceId> A bee (1-based: 5 or B5) or a trace ID (32 hex characters, as printed by the slowest calls and by \"runs bee\")."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "options": [
+    {
+      "name": "--help",
+      "recursive": false,
+      "hidden": false
+    }
+  ]
+}

@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "saci",
-    "version": "0.233.0",
+    "version": "0.241.0",
     "description": "saci - Software Agent for Continuous Improvement: autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code."
   },
   "x-inspectra": {
@@ -15,7 +15,7 @@
       "patchTarget": "Parse-postfix ()"
     },
     "cliFramework": "System.CommandLine",
-    "cliParsedDescription": "saci 0.233.0 - Software Agent for Continuous Improvement. Autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code. 'saci shell' opens an interactive shell."
+    "cliParsedDescription": "saci 0.241.0 - Software Agent for Continuous Improvement. Autonomous triager, developer, reviewer and tester agents for GitHub repositories, powered by Claude Code. 'saci shell' opens an interactive shell."
   },
   "options": [
     {
@@ -365,7 +365,7 @@
     },
     {
       "name": "clean",
-      "description": "Remove what finished work left on disk (merged or closed pull requests, closed issues): worktrees, run folders, session records and Claude's copy of the sessions.",
+      "description": "Remove what finished work left on disk (merged or closed pull requests, closed issues, demos untouched for demoRetentionDays): worktrees, run folders, session records, Claude's copy of the sessions and demo folders.",
       "options": [
         {
           "name": "--repo",
@@ -405,6 +405,23 @@
           ]
         },
         {
+          "name": "--demos",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also remove every demo (video, session, checkout of the product), not only the ones untouched for demoRetentionDays. [default: False]",
+          "arguments": [
+            {
+              "name": "DEMOS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--dry-run",
           "recursive": false,
           "hidden": false,
@@ -420,6 +437,112 @@
               "type": "Boolean"
             }
           ]
+        }
+      ]
+    },
+    {
+      "name": "code",
+      "description": "Review a pull request yourself, in the terminal: its files, the diff in four views (side by side, new file, old file, inline), where a name is used, comments in a GitHub pending review under your own account, viewed marks, threads. Keyboard and mouse; ? shows the keys.",
+      "options": [
+        {
+          "name": "--repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "A repository registered in saci (owner/name), when not run inside a clone of it. Needs the pull request.",
+          "aliases": [
+            "-r"
+          ],
+          "arguments": [
+            {
+              "name": "REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--split",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show old and new side by side in this run, whatever is remembered. [default: False]",
+          "arguments": [
+            {
+              "name": "SPLIT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--inline",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show the diff in one column in this run, whatever is remembered. [default: False]",
+          "arguments": [
+            {
+              "name": "INLINE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--new",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show only the new file in this run: what was removed is left out. [default: False]",
+          "arguments": [
+            {
+              "name": "NEW",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--old",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show only the old file in this run: what was added is left out. [default: False]",
+          "arguments": [
+            {
+              "name": "OLD",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PR",
+          "description": "Number or URL of the pull request. Omitted: the pull request of the current branch.",
+          "required": false,
+          "arity": {
+            "minimum": 0,
+            "maximum": 1
+          },
+          "type": "String"
         }
       ]
     },
@@ -1138,6 +1261,16 @@
       ]
     },
     {
+      "name": "hook",
+      "description": "Hooks for agent tools such as Claude Code and Codex: they read the tool call on standard input and allow it (exit 0) or block it (exit 2, the reason on standard error).",
+      "commands": [
+        {
+          "name": "pre-pr",
+          "description": "PreToolUse hook (Bash, PowerShell): blocks `gh pr create` unless `saci review --local` approved the commit checked out (HEAD) and, when the command passes --body-file / -F, the file is the description it reviewed. Anything else runs. Reads one JSON object on standard input (tool_name, tool_input.command, cwd); no network, no Claude. Malformed input exits 1, which the tools treat as a hook error, never as a block."
+        }
+      ]
+    },
+    {
       "name": "init",
       "description": "Get a repository ready for saci: register this clone, let Claude write its shared configuration (.saci/config.json) from the code and the issues and open a pull request with it, and write a persona per profile. Creates the user configuration first when it is missing.",
       "options": [
@@ -1800,7 +1933,7 @@
     },
     {
       "name": "review",
-      "description": "Reviewer: build, test, check the pull request solves its issue and try it in a browser; mark it ready for review when it passes. With --pr n --interactive nothing is posted: the items are numbered in the terminal and you argue one, have saci fix one or push a fix and ask for a new check, then post or quit.",
+      "description": "Reviewer: build, test, check the pull request solves its issue and try it in a browser; mark it ready for review when it passes. With --pr n --interactive nothing is posted: the items are numbered in the terminal and you argue one, have saci fix one or push a fix and ask for a new check, then post or quit. With --local the commit checked out here is reviewed before its pull request exists, and nothing is posted.",
       "options": [
         {
           "name": "--repo",
@@ -1819,6 +1952,128 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--local",
+          "recursive": false,
+          "hidden": false,
+          "description": "Review the commit checked out here (HEAD of this clone or worktree) before its pull request is opened: the same review --pr would give a pull request with this head, issue and description, in a disposable checkout. Nothing is posted; the verdict goes to <git common dir>/saci/local-review/<head>.json, which `saci hook pre-pr` reads. Exit code 0 only when it approves. Tracked files must be committed. [default: False]",
+          "arguments": [
+            {
+              "name": "LOCAL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--issue",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --local: the issue the change solves. Default: the number in the branch name, by developer.branchName.",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "ISSUE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--title",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --local: the title the pull request will have.",
+          "arguments": [
+            {
+              "name": "TITLE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--body-file",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --local: the file with the description the pull request will be opened with (`gh pr create --body-file` the same file). Without it the gates judged on the description are not checked, and an approval waits for it.",
+          "arguments": [
+            {
+              "name": "BODY_FILE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--base",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --local: the branch the pull request will go into. Default: the issue's branch as saci picks it (the 'branches' labels, else the default branch).",
+          "arguments": [
+            {
+              "name": "BASE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--browser",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --local: `test` tests the change in a browser (required), `defer` leaves the browser test to a later review (criteria only a browser can confirm are recorded as deferred and do not block; `saci hook pre-pr` then lets no pull request into a base branch through). Default by the issue: deferred for a sub-issue whose parent's branch is on origin, required for an epic (an issue with sub-issues), the repository's reviewer.browserTest otherwise.",
+          "arguments": [
+            {
+              "name": "BROWSER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--normal",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --local: review an epic as a normal run; it runs as --high by default. [default: False]",
+          "arguments": [
+            {
+              "name": "NORMAL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
