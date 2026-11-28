@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "sf-mod-check",
-    "version": "0.27.0",
+    "version": "0.28.1",
     "description": "Read-only, offline checks of Starfield mods: plugin checks (structure, FormIDs, links, conditions, scenes, deleted and identical-to-master records), whole load-order conflicts, release-zip checks, and triage: a first-pass report on a downloaded mod. Formerly sfmodcheck."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 19
+    "helpDocumentCount": 20
   },
   "commands": [
     {
@@ -402,13 +402,23 @@
           "name": "--out",
           "recursive": false,
           "hidden": false,
-          "description": "the new plugin file; it must not exist yet, and it can't be the input"
+          "description": "the new plugin file; it must not exist yet, and it can't be the input or named like one of its\nmasters. An .esl name needs a light plugin (the game loads every .esl as light), and an .esl\ninput without the light flag needs an .esl --out or --set-light.",
+          "arguments": [
+            {
+              "name": "OUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
         },
         {
           "name": "--drop-master",
           "recursive": false,
           "hidden": false,
-          "description": "remove a master the plugin doesn't use (the FormIDs after it are renumbered); refused if anything uses it"
+          "description": "remove a master the plugin doesn't use (the FormIDs after it are renumbered); refused if anything uses it.\nOnly values Mutagen reads as links are renumbered; a number that only looks like one is left alone\n(and the report counts it), and one that names a real record is refused."
         },
         {
           "name": "--set-light",
@@ -1002,42 +1012,12 @@
           "description": "(is a patch still up to date? sf-mod-check patch check --help)",
           "options": [
             {
-              "name": "--manifest",
+              "name": "--json",
               "recursive": false,
               "hidden": false,
               "arguments": [
                 {
-                  "name": "PATCH_SOURCESJSON",
-                  "required": true,
-                  "arity": {
-                    "minimum": 1,
-                    "maximum": 1
-                  }
-                }
-              ]
-            },
-            {
-              "name": "--plugins",
-              "recursive": false,
-              "hidden": false,
-              "arguments": [
-                {
-                  "name": "PLUGINSTXT",
-                  "required": true,
-                  "arity": {
-                    "minimum": 1,
-                    "maximum": 1
-                  }
-                }
-              ]
-            },
-            {
-              "name": "--data",
-              "recursive": false,
-              "hidden": false,
-              "arguments": [
-                {
-                  "name": "DATA",
+                  "name": "FILE",
                   "required": true,
                   "arity": {
                     "minimum": 1,
@@ -1197,7 +1177,7 @@
           "name": "--out",
           "recursive": false,
           "hidden": false,
-          "description": "write the tree to this Markdown file and print only the counts"
+          "description": "write the tree to this Markdown file and print only the counts (a mod file's name, a file stream or a folder is refused)"
         },
         {
           "name": "--max",
@@ -1258,6 +1238,52 @@
       "arguments": [
         {
           "name": "PLUGIN",
+          "required": true,
+          "hidden": false,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "text",
+      "hidden": false,
+      "description": "(sf-mod-check text --help)",
+      "options": [
+        {
+          "name": "--type",
+          "recursive": false,
+          "hidden": false,
+          "description": "only these record types, comma-separated (--type BOOK,MESG)",
+          "arguments": [
+            {
+              "name": "TYPE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--json",
+          "recursive": false,
+          "hidden": false,
+          "description": "print one JSON object instead of the text"
+        },
+        {
+          "name": "--out",
+          "recursive": false,
+          "hidden": false,
+          "description": "write the text (or the JSON) to this file, replacing it, and print only the counts\n(a plugin, BA2, archive, string file, script or DLL name is refused)"
+        }
+      ],
+      "arguments": [
+        {
+          "name": "PLUGIN_ARCHIVE",
           "required": true,
           "hidden": false,
           "arity": {
@@ -1394,7 +1420,7 @@
           "name": "--out",
           "recursive": false,
           "hidden": false,
-          "description": "write the list to this file (default: the screen, stdout)"
+          "description": "write the list to this file (default: the screen, stdout); a mod file's name, a file stream or a folder is refused"
         },
         {
           "name": "--voice",

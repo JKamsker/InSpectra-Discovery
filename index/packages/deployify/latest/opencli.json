@@ -2,8 +2,8 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "deployify",
-    "version": "1.0.0-alpha.16",
-    "description": "Package Description"
+    "version": "1.0.0-rc.1",
+    "description": "Deploy .NET Aspire AppHost projects to Nomad, Kubernetes, Helm, GitOps, Docker Compose, AWS ECS or Azure Container Apps."
   },
   "x-inspectra": {
     "artifactSource": "startup-hook",
@@ -100,7 +100,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "arguments": [
             {
               "name": "TARGET",
@@ -109,15 +109,7 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
             }
           ]
         },
@@ -418,7 +410,7 @@
           "name": "--dashboard-token",
           "recursive": false,
           "hidden": false,
-          "description": "Browser auth token (omit for unauthenticated).",
+          "description": "Browser auth token as env:NAME (omit for unauthenticated).",
           "arguments": [
             {
               "name": "DASHBOARD_TOKEN",
@@ -452,7 +444,7 @@
           "name": "--nomad-token",
           "recursive": false,
           "hidden": false,
-          "description": "Nomad ACL token.",
+          "description": "Nomad ACL token as env:NAME. Default: NOMAD_TOKEN at run time.",
           "arguments": [
             {
               "name": "NOMAD_TOKEN",
@@ -541,7 +533,7 @@
           "name": "--nomad-registry-password",
           "recursive": false,
           "hidden": false,
-          "description": "Docker registry password or access token.",
+          "description": "Docker registry password or access token as env:NAME. Default: DEPLOYIFY_REGISTRY_PASSWORD at run time.",
           "arguments": [
             {
               "name": "NOMAD_REGISTRY_PASSWORD",
@@ -647,6 +639,273 @@
           "arguments": [
             {
               "name": "KUBERNETES_INGRESS_DOMAIN",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--gitops-repo",
+          "recursive": false,
+          "hidden": false,
+          "description": "Config repository the GitOps controller watches (https or ssh URL).",
+          "arguments": [
+            {
+              "name": "GITOPS_REPO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--gitops-branch",
+          "recursive": false,
+          "hidden": false,
+          "description": "Branch Deployify commits to. [default: main]",
+          "arguments": [
+            {
+              "name": "GITOPS_BRANCH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--gitops-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder in the repository for this environment. Default: deployify/{env}.",
+          "arguments": [
+            {
+              "name": "GITOPS_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--ovh-endpoint",
+          "recursive": false,
+          "hidden": false,
+          "description": "OVHcloud API endpoint: ovh-eu | ovh-ca | ovh-us. [default: ovh-eu]",
+          "arguments": [
+            {
+              "name": "OVH_ENDPOINT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--ovh-project",
+          "recursive": false,
+          "hidden": false,
+          "description": "OVHcloud Public Cloud project ID. Default: OVH_CLOUD_PROJECT_SERVICE at run time.",
+          "arguments": [
+            {
+              "name": "OVH_PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--ovh-cluster",
+          "recursive": false,
+          "hidden": false,
+          "description": "OVHcloud Managed Kubernetes cluster ID.",
+          "arguments": [
+            {
+              "name": "OVH_CLUSTER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--iis-host",
+          "recursive": false,
+          "hidden": false,
+          "description": "Windows server running IIS. Default: this machine.",
+          "arguments": [
+            {
+              "name": "IIS_HOST",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--iis-transport",
+          "recursive": false,
+          "hidden": false,
+          "description": "How to reach --iis-host: WinRm | Ssh. [default: WinRm]",
+          "arguments": [
+            {
+              "name": "IIS_TRANSPORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "IisTransport",
+              "allowedValues": [
+                "WinRm",
+                "Ssh"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--iis-user",
+          "recursive": false,
+          "hidden": false,
+          "description": "User to connect as. WinRM reads the password from IIS_PASSWORD.",
+          "arguments": [
+            {
+              "name": "IIS_USER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--iis-sites-root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder on the server for the sites and their releases. [default: C:\\inetpub\\deployify]",
+          "arguments": [
+            {
+              "name": "IIS_SITES_ROOT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--host-hosts",
+          "recursive": false,
+          "hidden": false,
+          "description": "Comma-separated machines to deploy to (host names or SSH aliases). Default: this machine.",
+          "arguments": [
+            {
+              "name": "HOST_HOSTS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--host-os",
+          "recursive": false,
+          "hidden": false,
+          "description": "Operating system of the hosts: Linux | Windows. Default: Linux, or this machine's OS without --host-hosts.",
+          "arguments": [
+            {
+              "name": "HOST_OS",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "HostOs",
+              "allowedValues": [
+                "Linux",
+                "Windows"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--host-transport",
+          "recursive": false,
+          "hidden": false,
+          "description": "Windows hosts: how to reach them, WinRm | Ssh. [default: WinRm]",
+          "arguments": [
+            {
+              "name": "HOST_TRANSPORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "HostTransport",
+              "allowedValues": [
+                "WinRm",
+                "Ssh"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "--host-user",
+          "recursive": false,
+          "hidden": false,
+          "description": "User to connect as; on Linux the services run as this user too. WinRM reads the password from HOST_PASSWORD.",
+          "arguments": [
+            {
+              "name": "HOST_USER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--host-root",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder on the hosts for the services and their releases. Default: /opt/deployify or C:\\deployify.",
+          "arguments": [
+            {
+              "name": "HOST_ROOT",
               "required": true,
               "arity": {
                 "minimum": 1,
@@ -878,6 +1137,57 @@
           ]
         },
         {
+          "name": "--cloudrun-project",
+          "recursive": false,
+          "hidden": false,
+          "description": "Google Cloud project ID.",
+          "arguments": [
+            {
+              "name": "CLOUDRUN_PROJECT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--cloudrun-region",
+          "recursive": false,
+          "hidden": false,
+          "description": "Cloud Run region. [default: us-central1]",
+          "arguments": [
+            {
+              "name": "CLOUDRUN_REGION",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--cloudrun-service-account",
+          "recursive": false,
+          "hidden": false,
+          "description": "Service account the services run as (blank: the default compute service account).",
+          "arguments": [
+            {
+              "name": "CLOUDRUN_SERVICE_ACCOUNT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
           "name": "--nc-nomad-address",
           "recursive": false,
           "hidden": false,
@@ -898,7 +1208,7 @@
           "name": "--nc-nomad-token",
           "recursive": false,
           "hidden": false,
-          "description": "Nomad ACL token (Consul mesh target).",
+          "description": "Nomad ACL token as env:NAME (Consul mesh target). Default: NOMAD_TOKEN at run time.",
           "arguments": [
             {
               "name": "NC_NOMAD_TOKEN",
@@ -966,7 +1276,7 @@
           "name": "--nc-consul-token",
           "recursive": false,
           "hidden": false,
-          "description": "Consul ACL token.",
+          "description": "Consul ACL token as env:NAME. Default: CONSUL_HTTP_TOKEN at run time.",
           "arguments": [
             {
               "name": "NC_CONSUL_TOKEN",
@@ -987,6 +1297,23 @@
           "arguments": [
             {
               "name": "NC_INGRESS_GATEWAY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--allow-plaintext-secrets",
+          "recursive": false,
+          "hidden": false,
+          "description": "Allow secret flags (tokens, passwords) to take literal values, which are saved as plain text in deployify-state.json. By default they must be env:NAME references. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_PLAINTEXT_SECRETS",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -1111,7 +1438,7 @@
               "name": "--target",
               "recursive": false,
               "hidden": false,
-              "description": "Deployment target.",
+              "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target. Required unless --extends is given.",
               "arguments": [
                 {
                   "name": "TARGET",
@@ -1120,15 +1447,41 @@
                     "minimum": 1,
                     "maximum": 1
                   },
-                  "type": "DeploymentTargetType",
-                  "allowedValues": [
-                    "Nomad",
-                    "Kubernetes",
-                    "Compose",
-                    "AwsEcs",
-                    "AzureContainerApps",
-                    "NomadConsul"
-                  ]
+                  "type": "DeploymentTargetType"
+                }
+              ]
+            },
+            {
+              "name": "--extends",
+              "recursive": false,
+              "hidden": false,
+              "description": "Build on another environment: start from its settings and keep only what differs. Takes the target and settings given here as overrides; no prompts.",
+              "arguments": [
+                {
+                  "name": "EXTENDS",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--abstract",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only hold settings for other environments to extend; it can't be deployed or made active. [default: False]",
+              "arguments": [
+                {
+                  "name": "ABSTRACT",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             },
@@ -1272,7 +1625,7 @@
               "name": "--nomad-token",
               "recursive": false,
               "hidden": false,
-              "description": "Nomad ACL token.",
+              "description": "Nomad ACL token as env:NAME. Default: NOMAD_TOKEN at run time.",
               "arguments": [
                 {
                   "name": "NOMAD_TOKEN",
@@ -1367,6 +1720,23 @@
                     "maximum": 1
                   },
                   "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--allow-plaintext-secrets",
+              "recursive": false,
+              "hidden": false,
+              "description": "Allow secret flags (tokens, passwords) to take literal values, which are saved as plain text in deployify-state.json. By default they must be env:NAME references. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALLOW_PLAINTEXT_SECRETS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
                 }
               ]
             }
@@ -1497,7 +1867,7 @@
               "name": "--nomad-token",
               "recursive": false,
               "hidden": false,
-              "description": "Update Nomad token.",
+              "description": "Update the Nomad token reference (env:NAME).",
               "arguments": [
                 {
                   "name": "NOMAD_TOKEN",
@@ -1565,7 +1935,7 @@
               "name": "--nomad-registry-password",
               "recursive": false,
               "hidden": false,
-              "description": "Docker registry password or token (empty string to remove).",
+              "description": "Docker registry password or token as env:NAME (empty string to remove).",
               "arguments": [
                 {
                   "name": "NOMAD_REGISTRY_PASSWORD",
@@ -1701,7 +2071,7 @@
               "name": "--dashboard-token",
               "recursive": false,
               "hidden": false,
-              "description": "Browser auth token (empty string to remove).",
+              "description": "Browser auth token as env:NAME (empty string to remove).",
               "arguments": [
                 {
                   "name": "DASHBOARD_TOKEN",
@@ -1798,6 +2168,23 @@
                   "type": "String"
                 }
               ]
+            },
+            {
+              "name": "--allow-plaintext-secrets",
+              "recursive": false,
+              "hidden": false,
+              "description": "Allow secret flags (tokens, passwords) to take literal values, which are saved as plain text in deployify-state.json. By default they must be env:NAME references. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALLOW_PLAINTEXT_SECRETS",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
             }
           ],
           "arguments": [
@@ -1872,7 +2259,7 @@
     },
     {
       "name": "generate",
-      "description": "Generate deployment artifacts (HCL, manifests, compose files) without contacting the cluster.",
+      "description": "Generate deployment artifacts (Nomad jobs, manifests, compose files) without contacting the cluster.",
       "options": [
         {
           "name": "--project-path",
@@ -1918,7 +2305,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -1930,15 +2317,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }
@@ -1992,7 +2388,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2004,15 +2400,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }
@@ -2066,7 +2471,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2078,14 +2483,64 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail when the manifest has resources Deployify won't deploy, even if nothing depends on them (list the ones you expect under ignoreResources). [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text | json. With json, stdout gets one JSON document (see the JSON output reference) and the human-readable output goes to stderr. [default: Text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
               "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
+                "Text",
+                "Json"
               ]
             }
           ]
@@ -2140,7 +2595,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2152,15 +2607,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -2182,6 +2646,23 @@
           ]
         },
         {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail when the manifest has resources Deployify won't deploy, even if nothing depends on them (list the ones you expect under ignoreResources). [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
           "name": "--auto-approve",
           "recursive": false,
           "hidden": false,
@@ -2189,6 +2670,162 @@
           "arguments": [
             {
               "name": "AUTO_APPROVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--image-tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deploy this image tag instead of the environment's configured tag, for example one promoted from another environment.",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "IMAGE_TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--require-digest",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail instead of deploying a built image by tag when no published digest is recorded for it (for example after 'deployify promote'). [default: False]",
+          "arguments": [
+            {
+              "name": "REQUIRE_DIGEST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--require-signature",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail unless every image the environment builds is pinned by digest and has a cosign signature that the environment's signing settings trust (signing.publicKey, or signing.identity and signing.issuer). Needs cosign. [default: False]",
+          "arguments": [
+            {
+              "name": "REQUIRE_SIGNATURE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-health-gate",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deploy without waiting for services to become healthy and without automatic rollback. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_HEALTH_GATE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-rollback",
+          "recursive": false,
+          "hidden": false,
+          "description": "Wait for health, but leave a failed deployment in place instead of rolling it back. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_ROLLBACK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--health-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds each service may take to become healthy before the rollout fails (default: 600). [default: 600]",
+          "arguments": [
+            {
+              "name": "HEALTH_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--rollback-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds the whole rollback may take (default: 900). [default: 900]",
+          "arguments": [
+            {
+              "name": "ROLLBACK_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--prune",
+          "recursive": false,
+          "hidden": false,
+          "description": "After a successful deploy, remove services that are no longer in the manifest (only ones Deployify deployed and still marks as its own). [default: False]",
+          "arguments": [
+            {
+              "name": "PRUNE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--force-prune",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prune even when it would remove more than half of the services, or all of them. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE_PRUNE",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -2248,7 +2885,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2260,15 +2897,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -2380,7 +3026,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2392,15 +3038,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -2461,8 +3116,180 @@
       ]
     },
     {
+      "name": "promote",
+      "description": "Make another environment deploy the images an environment already published, by digest, without rebuilding them.",
+      "options": [
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--from",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment whose published images to promote (e.g. staging).",
+          "arguments": [
+            {
+              "name": "FROM",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--to",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment to promote them to (e.g. prod).",
+          "arguments": [
+            {
+              "name": "TO",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--image-tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "Tag to promote, for example the commit SHA. Defaults to the source environment's configured tag.",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "IMAGE_TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--copy-with",
+          "recursive": false,
+          "hidden": false,
+          "description": "Tool that copies images when the target uses another registry: crane | skopeo | docker. Defaults to the first one installed, in that order.",
+          "arguments": [
+            {
+              "name": "COPY_WITH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--require-signature",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail unless every image the environment builds is pinned by digest and has a cosign signature that the environment's signing settings trust (signing.publicKey, or signing.identity and signing.issuer). Needs cosign. [default: False]",
+          "arguments": [
+            {
+              "name": "REQUIRE_SIGNATURE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Simulate the operation without making changes. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text | json. With json, stdout gets one JSON document (see the JSON output reference) and the human-readable output goes to stderr. [default: Text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "ci",
-      "description": "Run the full generate → validate → plan → apply pipeline for CI/CD.",
+      "description": "Run the full generate → validate → plan → publish → apply pipeline for CI/CD.",
       "options": [
         {
           "name": "--project-path",
@@ -2508,7 +3335,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2520,15 +3347,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -2553,10 +3389,64 @@
           "name": "--skip-apply",
           "recursive": false,
           "hidden": false,
-          "description": "Stop after plan — generate and validate but do not deploy. [default: False]",
+          "description": "Stop after plan — generate and validate but do not publish or deploy. [default: False]",
           "arguments": [
             {
               "name": "SKIP_APPLY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-publish",
+          "recursive": false,
+          "hidden": false,
+          "description": "Don't build and push project images; deploy images that were published elsewhere. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_PUBLISH",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--image-tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "Tag for this run's images. Defaults to the configured tag, or the commit SHA when that is 'latest'.",
+          "aliases": [
+            "-i"
+          ],
+          "arguments": [
+            {
+              "name": "IMAGE_TAG",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--allow-mutable-tag",
+          "recursive": false,
+          "hidden": false,
+          "description": "Publish and deploy with 'latest' when no commit SHA is available. Rollbacks then can't restore the previous image. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_MUTABLE_TAG",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -2591,6 +3481,159 @@
           "arguments": [
             {
               "name": "AUTO_APPROVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--strict",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail when the manifest has resources Deployify won't deploy, even if nothing depends on them (list the ones you expect under ignoreResources). [default: False]",
+          "arguments": [
+            {
+              "name": "STRICT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--require-digest",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail instead of deploying a built image by tag when no published digest is recorded for it (for example after 'deployify promote'). [default: False]",
+          "arguments": [
+            {
+              "name": "REQUIRE_DIGEST",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--require-signature",
+          "recursive": false,
+          "hidden": false,
+          "description": "Fail unless every image the environment builds is pinned by digest and has a cosign signature that the environment's signing settings trust (signing.publicKey, or signing.identity and signing.issuer). Needs cosign. [default: False]",
+          "arguments": [
+            {
+              "name": "REQUIRE_SIGNATURE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-health-gate",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deploy without waiting for services to become healthy and without automatic rollback. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_HEALTH_GATE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-rollback",
+          "recursive": false,
+          "hidden": false,
+          "description": "Wait for health, but leave a failed deployment in place instead of rolling it back. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_ROLLBACK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--health-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds each service may take to become healthy before the rollout fails (default: 600). [default: 600]",
+          "arguments": [
+            {
+              "name": "HEALTH_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--rollback-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds the whole rollback may take (default: 900). [default: 900]",
+          "arguments": [
+            {
+              "name": "ROLLBACK_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--prune",
+          "recursive": false,
+          "hidden": false,
+          "description": "After a successful deploy, remove services that are no longer in the manifest (only ones Deployify deployed and still marks as its own). [default: False]",
+          "arguments": [
+            {
+              "name": "PRUNE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--force-prune",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prune even when it would remove more than half of the services, or all of them. [default: False]",
+          "arguments": [
+            {
+              "name": "FORCE_PRUNE",
               "required": false,
               "arity": {
                 "minimum": 0,
@@ -2650,7 +3693,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2662,15 +3705,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -2758,7 +3810,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2770,15 +3822,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         },
@@ -2799,6 +3860,30 @@
                 "maximum": 1
               },
               "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text | json. With json, stdout gets one JSON document (see the JSON output reference) and the human-readable output goes to stderr. [default: Text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
             }
           ]
         }
@@ -2852,7 +3937,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2864,15 +3949,24 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
-              "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
-              ]
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
             }
           ]
         }
@@ -2926,7 +4020,7 @@
           "name": "--target",
           "recursive": false,
           "hidden": false,
-          "description": "Deployment target: nomad | kubernetes | compose. Required.",
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
           "aliases": [
             "-t"
           ],
@@ -2938,15 +4032,2386 @@
                 "minimum": 1,
                 "maximum": 1
               },
-              "type": "DeploymentTargetType",
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--summary",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print only the table of services and the counts, without the changed values (for Kubernetes and Helm, the kubectl diff / helm diff output). --output json includes the values either way. [default: False]",
+          "arguments": [
+            {
+              "name": "SUMMARY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text | json. With json, stdout gets one JSON document (see the JSON output reference) and the human-readable output goes to stderr. [default: Text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
               "allowedValues": [
-                "Nomad",
-                "Kubernetes",
-                "Compose",
-                "AwsEcs",
-                "AzureContainerApps",
-                "NomadConsul"
+                "Text",
+                "Json"
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "drift",
+      "description": "Check whether environments still match what was last deployed, and send alerts (drift.notify) when they don't.",
+      "options": [
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--env",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--all",
+          "recursive": false,
+          "hidden": false,
+          "description": "Check every environment in deployify-state.json (except abstract ones and ones with drift.enabled: false) instead of only the active one or --env. [default: False]",
+          "arguments": [
+            {
+              "name": "ALL",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-notify",
+          "recursive": false,
+          "hidden": false,
+          "description": "Report only: send no alerts and leave the recorded result of the last check alone, so a check by hand doesn't use up the scheduled job's alerts. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_NOTIFY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--every",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep running and check again at this interval (for example 15m, 1h, 1d) until stopped. For a long-running container; in CI, schedule the job instead.",
+          "arguments": [
+            {
+              "name": "EVERY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "TimeSpan"
+            }
+          ]
+        },
+        {
+          "name": "--summary",
+          "recursive": false,
+          "hidden": false,
+          "description": "Print only which services drifted, without the live and deployed values. [default: False]",
+          "arguments": [
+            {
+              "name": "SUMMARY",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text | json. With json, stdout gets one JSON document (see the JSON output reference) and the human-readable output goes to stderr. [default: Text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "status",
+      "description": "Show recent rollouts and how they ended.",
+      "options": [
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--env",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--rollout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show the services and events of this rollout instead of the list.",
+          "arguments": [
+            {
+              "name": "ROLLOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--limit",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many rollouts to list (default: 10). [default: 10]",
+          "arguments": [
+            {
+              "name": "LIMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text | json. With json, stdout gets one JSON document (see the JSON output reference) and the human-readable output goes to stderr. [default: Text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "history",
+      "description": "Show who published, promoted and deployed which images, and when.",
+      "options": [
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--env",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--limit",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many releases to list, newest first (default: 20). [default: 20]",
+          "arguments": [
+            {
+              "name": "LIMIT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text | json. With json, stdout gets one JSON document (see the JSON output reference) and the human-readable output goes to stderr. [default: Text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "logs",
+      "description": "Show a deployed service's console output (stdout and stderr), on any target.",
+      "options": [
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--env",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--follow",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep printing new lines as they are written, until Ctrl+C. [default: False]",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "FOLLOW",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--tail",
+          "recursive": false,
+          "hidden": false,
+          "description": "How many recent lines to start with, per instance, or 'all' (default: 100). [default: 100]",
+          "aliases": [
+            "-n"
+          ],
+          "arguments": [
+            {
+              "name": "TAIL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--since",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only lines written since then: a duration such as 30s, 10m, 2h or 1d, or a time such as 2026-05-01T10:00:00Z.",
+          "arguments": [
+            {
+              "name": "SINCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--timestamps",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start each line with the time the platform recorded for it (UTC), where it records one. [default: False]",
+          "arguments": [
+            {
+              "name": "TIMESTAMPS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--no-prefix",
+          "recursive": false,
+          "hidden": false,
+          "description": "Don't start each line with the instance (pod, allocation, container, …) it came from. [default: False]",
+          "arguments": [
+            {
+              "name": "NO_PREFIX",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Output format: text | json. With json, every line is a JSON object on a line of its own (JSON Lines): service, instance, timestamp, stream and text. [default: Text]",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "OutputFormat",
+              "allowedValues": [
+                "Text",
+                "Json"
+              ]
+            }
+          ]
+        }
+      ],
+      "arguments": [
+        {
+          "name": "SERVICE",
+          "description": "The service, by its name in the AppHost.",
+          "required": true,
+          "arity": {
+            "minimum": 1,
+            "maximum": 1
+          },
+          "type": "String"
+        }
+      ]
+    },
+    {
+      "name": "dashboard",
+      "description": "Serve the environment's deployed resources to the Aspire dashboard (a standalone resource service).",
+      "options": [
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--env",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--port",
+          "recursive": false,
+          "hidden": false,
+          "description": "Port the resource service listens on (default: 18886). [default: 18886]",
+          "arguments": [
+            {
+              "name": "PORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--bind",
+          "recursive": false,
+          "hidden": false,
+          "description": "Address to listen on: an IP address, localhost, or 0.0.0.0 for every interface (default: 127.0.0.1). [default: 127.0.0.1]",
+          "arguments": [
+            {
+              "name": "BIND",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--api-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "API key the dashboard must send, as env:NAME. Default: $DEPLOYIFY_RESOURCE_SERVICE_API_KEY, or a random key printed at start.",
+          "arguments": [
+            {
+              "name": "API_KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--unsecured",
+          "recursive": false,
+          "hidden": false,
+          "description": "Accept every caller without an API key. Only allowed when listening on a loopback address. [default: False]",
+          "arguments": [
+            {
+              "name": "UNSECURED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--poll-interval",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds between reads of the target (default: 3). [default: 3]",
+          "arguments": [
+            {
+              "name": "POLL_INTERVAL",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Double"
+            }
+          ]
+        },
+        {
+          "name": "--hide-env-values",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show environment variable names without their values. Secret values are never shown. [default: False]",
+          "arguments": [
+            {
+              "name": "HIDE_ENV_VALUES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--launch",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also start the Aspire dashboard container (Docker or Podman) pointed at the resource service. [default: False]",
+          "arguments": [
+            {
+              "name": "LAUNCH",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dashboard-port",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --launch: host port for the dashboard UI (default: dashboard.port, 18888).",
+          "arguments": [
+            {
+              "name": "DASHBOARD_PORT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "rollback",
+      "description": "Undo a rollout: restore the revisions that ran before it.",
+      "options": [
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--env",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--rollout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Id of the rollout to undo (see 'deployify status'). Defaults to the latest one.",
+          "arguments": [
+            {
+              "name": "ROLLOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--auto-approve",
+          "recursive": false,
+          "hidden": false,
+          "description": "Roll back without asking for confirmation. Required when there is no interactive terminal. [default: False]",
+          "arguments": [
+            {
+              "name": "AUTO_APPROVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--health-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds each service may take to become healthy before the rollout fails (default: 600). [default: 600]",
+          "arguments": [
+            {
+              "name": "HEALTH_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        },
+        {
+          "name": "--rollback-timeout",
+          "recursive": false,
+          "hidden": false,
+          "description": "Seconds the whole rollback may take (default: 900). [default: 900]",
+          "arguments": [
+            {
+              "name": "ROLLBACK_TIMEOUT",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "Int32"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "destroy",
+      "description": "Remove everything Deployify deployed in an environment.",
+      "options": [
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--env",
+          "recursive": false,
+          "hidden": false,
+          "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+          "aliases": [
+            "-e"
+          ],
+          "arguments": [
+            {
+              "name": "ENV",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--target",
+          "recursive": false,
+          "hidden": false,
+          "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+          "aliases": [
+            "-t"
+          ],
+          "arguments": [
+            {
+              "name": "TARGET",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "DeploymentTargetType"
+            }
+          ]
+        },
+        {
+          "name": "--allow-unverified",
+          "recursive": false,
+          "hidden": false,
+          "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+          "arguments": [
+            {
+              "name": "ALLOW_UNVERIFIED",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Simulate the operation without making changes. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--service",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only destroy these services (comma-separated or repeated). Default: all of them.",
+          "aliases": [
+            "-s"
+          ],
+          "arguments": [
+            {
+              "name": "SERVICE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "--keep-secrets",
+          "recursive": false,
+          "hidden": false,
+          "description": "Keep the services' platform-side secrets (Nomad variables, SSM parameters, Secrets Manager secrets). [default: False]",
+          "arguments": [
+            {
+              "name": "KEEP_SECRETS",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--volumes",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also remove data volumes (Compose). They are kept by default. [default: False]",
+          "arguments": [
+            {
+              "name": "VOLUMES",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--auto-approve",
+          "recursive": false,
+          "hidden": false,
+          "description": "Destroy without typing the environment name to confirm. Required when there is no interactive terminal. [default: False]",
+          "arguments": [
+            {
+              "name": "AUTO_APPROVE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "state",
+      "description": "Inspect and manage deployment state (inventory, lock, remote backend).",
+      "commands": [
+        {
+          "name": "show",
+          "description": "Show where state is kept, the lock, and what is recorded as deployed.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--env",
+              "recursive": false,
+              "hidden": false,
+              "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+              "aliases": [
+                "-e"
+              ],
+              "arguments": [
+                {
+                  "name": "ENV",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--target",
+              "recursive": false,
+              "hidden": false,
+              "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TARGET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DeploymentTargetType"
+                }
+              ]
+            },
+            {
+              "name": "--allow-unverified",
+              "recursive": false,
+              "hidden": false,
+              "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALLOW_UNVERIFIED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "unlock",
+          "description": "Remove a lock left behind by a run that is no longer going.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--env",
+              "recursive": false,
+              "hidden": false,
+              "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+              "aliases": [
+                "-e"
+              ],
+              "arguments": [
+                {
+                  "name": "ENV",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--target",
+              "recursive": false,
+              "hidden": false,
+              "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TARGET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DeploymentTargetType"
+                }
+              ]
+            },
+            {
+              "name": "--allow-unverified",
+              "recursive": false,
+              "hidden": false,
+              "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALLOW_UNVERIFIED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "LOCK_ID",
+              "description": "The id of the lock to remove, as 'state show' or the lock error prints it.",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "adopt",
+          "description": "Record services the target marks as Deployify's but state doesn't list yet (deployed before Deployify kept an inventory), so destroy and prune can remove them.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--env",
+              "recursive": false,
+              "hidden": false,
+              "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+              "aliases": [
+                "-e"
+              ],
+              "arguments": [
+                {
+                  "name": "ENV",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--target",
+              "recursive": false,
+              "hidden": false,
+              "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TARGET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DeploymentTargetType"
+                }
+              ]
+            },
+            {
+              "name": "--allow-unverified",
+              "recursive": false,
+              "hidden": false,
+              "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALLOW_UNVERIFIED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--service",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only adopt these services (comma-separated or repeated). Default: all of them.",
+              "aliases": [
+                "-s"
+              ],
+              "arguments": [
+                {
+                  "name": "SERVICE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "push",
+          "description": "Copy local state (inventory, generated parameters, rollout journals) into the remote backend configured for the environment. Use it once, after switching an existing environment to remote state.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--env",
+              "recursive": false,
+              "hidden": false,
+              "description": "Environment to use, overriding the active environment (e.g. local, prod).",
+              "aliases": [
+                "-e"
+              ],
+              "arguments": [
+                {
+                  "name": "ENV",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--target",
+              "recursive": false,
+              "hidden": false,
+              "description": "Deployment target: nomad | kubernetes | helm | argocd | flux | ovhcloud | compose | awsecs | azurecontainerapps | nomadconsul | iis | cloudrun | host, or the ID of a plugin target.",
+              "aliases": [
+                "-t"
+              ],
+              "arguments": [
+                {
+                  "name": "TARGET",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "DeploymentTargetType"
+                }
+              ]
+            },
+            {
+              "name": "--allow-unverified",
+              "recursive": false,
+              "hidden": false,
+              "description": "Start target plugins that deployify-plugins.lock.json has no hash for, with a warning each time (a plugin whose files don't match its locked hash is still refused). Run 'deployify plugin lock' instead to verify them. [default: False]",
+              "arguments": [
+                {
+                  "name": "ALLOW_UNVERIFIED",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--force",
+              "recursive": false,
+              "hidden": false,
+              "description": "Replace remote state even when it belongs to another lineage or is newer. [default: False]",
+              "arguments": [
+                {
+                  "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "migrate-secrets",
+          "description": "Replace tokens and passwords stored as plain text in deployify-state.json with env:NAME references.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Show what would change without writing the file or printing secret values. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "plugin",
+      "description": "Find, install, update, show and lock the target plugins this project can use.",
+      "commands": [
+        {
+          "name": "list",
+          "description": "List the target plugins Deployify can find, and where it found them.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--check",
+              "recursive": false,
+              "hidden": false,
+              "description": "Start each plugin and show what it reports (name, version, capabilities). [default: False]",
+              "arguments": [
+                {
+                  "name": "CHECK",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "lock",
+          "description": "Record the plugin version and the SHA-256 of its files each target uses in deployify-plugins.lock.json. Deployify refuses to start a plugin target without one. A platform-specific plugin gets a hash per platform: run this on each platform that deploys.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TARGETS",
+              "description": "Plugin target IDs to lock. Default: every plugin target the project's environments use.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "search",
+          "description": "Search the signed plugin index for target plugins. Deployify checks the index's signature before reading it, so this needs cosign.",
+          "options": [
+            {
+              "name": "--prerelease",
+              "recursive": false,
+              "hidden": false,
+              "description": "Consider pre-release versions when picking the newest one. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRERELEASE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--index",
+              "recursive": false,
+              "hidden": false,
+              "description": "The plugin index to use instead of the public one (https://lv3rmeulen.github.io/Deployify/plugins/index.json): an https:// URL or a local path. Default: DEPLOYIFY_PLUGIN_INDEX. Another index needs --index-identity or --index-key.",
+              "arguments": [
+                {
+                  "name": "INDEX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-identity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Who must have signed the index given with --index (keyless): the exact certificate identity, such as the workflow that signs it. Default: DEPLOYIFY_PLUGIN_INDEX_IDENTITY.",
+              "arguments": [
+                {
+                  "name": "INDEX_IDENTITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-issuer",
+              "recursive": false,
+              "hidden": false,
+              "description": "The OIDC issuer of --index-identity. Default: DEPLOYIFY_PLUGIN_INDEX_ISSUER, else GitHub Actions (https://token.actions.githubusercontent.com).",
+              "arguments": [
+                {
+                  "name": "INDEX_ISSUER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-key",
+              "recursive": false,
+              "hidden": false,
+              "description": "The public key file the index given with --index is signed with, instead of a keyless identity. Default: DEPLOYIFY_PLUGIN_INDEX_KEY.",
+              "arguments": [
+                {
+                  "name": "INDEX_KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TERM",
+              "description": "Text to look for in plugin IDs, names, publishers and descriptions. Default: list every plugin.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "install",
+          "description": "Install target plugins from the signed plugin index. Each package must match the SHA-256 the index lists and be signed by the publisher the index names; nothing of it runs before both checks pass. In a project, the plugin is then locked in deployify-plugins.lock.json. Needs cosign.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--local",
+              "recursive": false,
+              "hidden": false,
+              "description": "Install into the project's .deployify/plugins folder instead of ~/.deployify/plugins. [default: False]",
+              "arguments": [
+                {
+                  "name": "LOCAL",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--prerelease",
+              "recursive": false,
+              "hidden": false,
+              "description": "Consider pre-release versions when picking the newest one. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRERELEASE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--index",
+              "recursive": false,
+              "hidden": false,
+              "description": "The plugin index to use instead of the public one (https://lv3rmeulen.github.io/Deployify/plugins/index.json): an https:// URL or a local path. Default: DEPLOYIFY_PLUGIN_INDEX. Another index needs --index-identity or --index-key.",
+              "arguments": [
+                {
+                  "name": "INDEX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-identity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Who must have signed the index given with --index (keyless): the exact certificate identity, such as the workflow that signs it. Default: DEPLOYIFY_PLUGIN_INDEX_IDENTITY.",
+              "arguments": [
+                {
+                  "name": "INDEX_IDENTITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-issuer",
+              "recursive": false,
+              "hidden": false,
+              "description": "The OIDC issuer of --index-identity. Default: DEPLOYIFY_PLUGIN_INDEX_ISSUER, else GitHub Actions (https://token.actions.githubusercontent.com).",
+              "arguments": [
+                {
+                  "name": "INDEX_ISSUER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-key",
+              "recursive": false,
+              "hidden": false,
+              "description": "The public key file the index given with --index is signed with, instead of a keyless identity. Default: DEPLOYIFY_PLUGIN_INDEX_KEY.",
+              "arguments": [
+                {
+                  "name": "INDEX_KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TARGETS",
+              "description": "Plugin target IDs to install, optionally with a version: digitalocean or digitalocean@1.2.0. Default: every plugin deployify-plugins.lock.json records as installed from an index, at its locked version.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        },
+        {
+          "name": "update",
+          "description": "Update the plugins deployify-plugins.lock.json records as installed from a plugin index to their newest version without breaking changes, and lock the new versions. Each package is checked like 'plugin install' checks it: the index's hash, its publisher's signature, and what the plugin reports. Needs cosign.",
+          "options": [
+            {
+              "name": "--project-path",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+              "aliases": [
+                "-p"
+              ],
+              "arguments": [
+                {
+                  "name": "PROJECT_PATH",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--major",
+              "recursive": false,
+              "hidden": false,
+              "description": "Also move to a new major version (for 0.x: a new minor version), which may have breaking changes. Default: stay on versions without breaking changes. [default: False]",
+              "arguments": [
+                {
+                  "name": "MAJOR",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--prerelease",
+              "recursive": false,
+              "hidden": false,
+              "description": "Consider pre-release versions when picking the newest one. [default: False]",
+              "arguments": [
+                {
+                  "name": "PRERELEASE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--check",
+              "recursive": false,
+              "hidden": false,
+              "description": "Only report what would be updated. Exits 2 when something can be updated, 0 when nothing can, 1 when a check failed. [default: False]",
+              "arguments": [
+                {
+                  "name": "CHECK",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--dry-run",
+              "recursive": false,
+              "hidden": false,
+              "description": "Simulate the operation without making changes. [default: False]",
+              "arguments": [
+                {
+                  "name": "DRY_RUN",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            },
+            {
+              "name": "--index",
+              "recursive": false,
+              "hidden": false,
+              "description": "The plugin index to use instead of the public one (https://lv3rmeulen.github.io/Deployify/plugins/index.json): an https:// URL or a local path. Default: DEPLOYIFY_PLUGIN_INDEX. Another index needs --index-identity or --index-key.",
+              "arguments": [
+                {
+                  "name": "INDEX",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-identity",
+              "recursive": false,
+              "hidden": false,
+              "description": "Who must have signed the index given with --index (keyless): the exact certificate identity, such as the workflow that signs it. Default: DEPLOYIFY_PLUGIN_INDEX_IDENTITY.",
+              "arguments": [
+                {
+                  "name": "INDEX_IDENTITY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-issuer",
+              "recursive": false,
+              "hidden": false,
+              "description": "The OIDC issuer of --index-identity. Default: DEPLOYIFY_PLUGIN_INDEX_ISSUER, else GitHub Actions (https://token.actions.githubusercontent.com).",
+              "arguments": [
+                {
+                  "name": "INDEX_ISSUER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--index-key",
+              "recursive": false,
+              "hidden": false,
+              "description": "The public key file the index given with --index is signed with, instead of a keyless identity. Default: DEPLOYIFY_PLUGIN_INDEX_KEY.",
+              "arguments": [
+                {
+                  "name": "INDEX_KEY",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            }
+          ],
+          "arguments": [
+            {
+              "name": "TARGETS",
+              "description": "Plugin target IDs to update. Default: every plugin deployify-plugins.lock.json records as installed from an index.",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 100000
+              },
+              "type": "String[]"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "update",
+      "description": "Update the project's plugins to their newest version without breaking changes (like 'deployify plugin update') and check that the AppHost's Deployify.Hosting package matches this Deployify. With --self, update Deployify itself.",
+      "options": [
+        {
+          "name": "--self",
+          "recursive": false,
+          "hidden": false,
+          "description": "Update Deployify itself instead of the project, with 'dotnet tool update'. Works for a global, --tool-path or local .NET tool. On Windows a global or --tool-path Deployify is updated in the background once this command has exited, with its output in %TEMP%\\deployify-update.log. [default: False]",
+          "arguments": [
+            {
+              "name": "SELF",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--project-path",
+          "recursive": false,
+          "hidden": false,
+          "description": "Path to the Aspire AppHost .csproj or its directory. [default: <path>]",
+          "aliases": [
+            "-p"
+          ],
+          "arguments": [
+            {
+              "name": "PROJECT_PATH",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--major",
+          "recursive": false,
+          "hidden": false,
+          "description": "Also move to a new major version (for 0.x: a new minor version), which may have breaking changes. Default: stay on versions without breaking changes. [default: False]",
+          "arguments": [
+            {
+              "name": "MAJOR",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--prerelease",
+          "recursive": false,
+          "hidden": false,
+          "description": "Consider pre-release versions. Default: only when the current version is one. [default: False]",
+          "arguments": [
+            {
+              "name": "PRERELEASE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--check",
+          "recursive": false,
+          "hidden": false,
+          "description": "Only report what would be updated. Exits 2 when something can be updated, 0 when nothing can, 1 when a check failed. [default: False]",
+          "arguments": [
+            {
+              "name": "CHECK",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--dry-run",
+          "recursive": false,
+          "hidden": false,
+          "description": "Simulate the operation without making changes. [default: False]",
+          "arguments": [
+            {
+              "name": "DRY_RUN",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              },
+              "type": "Boolean"
+            }
+          ]
+        },
+        {
+          "name": "--source",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --self: the NuGet feed to look for Deployify in, a v3 service index URL or a folder of .nupkg files. Default: DEPLOYIFY_UPDATE_SOURCE, else https://api.nuget.org/v3/index.json.",
+          "arguments": [
+            {
+              "name": "SOURCE",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--index",
+          "recursive": false,
+          "hidden": false,
+          "description": "The plugin index to use instead of the public one (https://lv3rmeulen.github.io/Deployify/plugins/index.json): an https:// URL or a local path. Default: DEPLOYIFY_PLUGIN_INDEX. Another index needs --index-identity or --index-key.",
+          "arguments": [
+            {
+              "name": "INDEX",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--index-identity",
+          "recursive": false,
+          "hidden": false,
+          "description": "Who must have signed the index given with --index (keyless): the exact certificate identity, such as the workflow that signs it. Default: DEPLOYIFY_PLUGIN_INDEX_IDENTITY.",
+          "arguments": [
+            {
+              "name": "INDEX_IDENTITY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--index-issuer",
+          "recursive": false,
+          "hidden": false,
+          "description": "The OIDC issuer of --index-identity. Default: DEPLOYIFY_PLUGIN_INDEX_ISSUER, else GitHub Actions (https://token.actions.githubusercontent.com).",
+          "arguments": [
+            {
+              "name": "INDEX_ISSUER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
+            }
+          ]
+        },
+        {
+          "name": "--index-key",
+          "recursive": false,
+          "hidden": false,
+          "description": "The public key file the index given with --index is signed with, instead of a keyless identity. Default: DEPLOYIFY_PLUGIN_INDEX_KEY.",
+          "arguments": [
+            {
+              "name": "INDEX_KEY",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              },
+              "type": "String"
             }
           ]
         }

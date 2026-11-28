@@ -2,13 +2,13 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "flowline",
-    "version": "0.21.0",
+    "version": "0.22.0",
     "description": "Flowline is a Dataverse ALM CLI for Dynamics 365 and Power Apps. PAC CLI gives you the primitives, Flowline gives you the workflow."
   },
   "x-inspectra": {
     "artifactSource": "crawled-from-help",
     "generator": "InSpectra.Gen",
-    "helpDocumentCount": 21,
+    "helpDocumentCount": 22,
     "cliFramework": "Spectre.Console.Cli",
     "cliParsedDescription": "shared and identifying values are hashed first. The local log file shows exactly what was"
   },
@@ -132,7 +132,7 @@
     {
       "name": "deploy",
       "hidden": false,
-      "description": "Pack the solution from the repo and import it into the target environment (test,\nuat, prod, or URL). Needs a clean git working tree, or --path to import a\npre-built zip from any folder. Reuses a cached pack while the source is\nunchanged; --no-cache forces a fresh one",
+      "description": "Pack the solution from the repo and import it into the target environment (test,\nuat, prod, or URL). Needs a clean git working tree, or --path to import a\npre-built zip from any folder. Packs fresh on every run; use pack and --path to\nimport one build into several environments",
       "options": [
         {
           "name": "--help",
@@ -240,7 +240,19 @@
           "name": "--no-delete",
           "recursive": false,
           "hidden": false,
-          "description": "Report orphan components without deleting\nthem\nup the target, without importing the\nsolution"
+          "description": "Report orphan components without deleting\nthem\na fresh build instead of the committed\ncopies; the rest of the solution stays as\ncommitted"
+        },
+        {
+          "name": "--binaries-from-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "Pack plugin and web resource binaries from\na fresh build instead of the committed\ncopies; the rest of the solution stays as\ncommitted"
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --binaries-from-build: skip 'dotnet\nbuild' and use the existing Release output"
         },
         {
           "name": "--dry-run",
@@ -805,6 +817,112 @@
       ]
     },
     {
+      "name": "pack",
+      "hidden": false,
+      "description": "Pack the committed solution into a versioned zip, without a target environment.\nRun it in CI or before a hand-off. Runs the solution checker, needs a clean git\nworking tree, and writes to artifacts/ unless --output says otherwise. Import\nthe zip later with 'deploy <env> --path'",
+      "options": [
+        {
+          "name": "--help",
+          "recursive": false,
+          "hidden": false,
+          "description": "Prints help information",
+          "aliases": [
+            "-h"
+          ]
+        },
+        {
+          "name": "--verbose",
+          "recursive": false,
+          "hidden": false,
+          "description": "Show detailed command output\ncommand; repeatable. Pass 'all' for\neverything this command gates. An invalid\nvalue lists the valid ones",
+          "aliases": [
+            "-v"
+          ]
+        },
+        {
+          "name": "--force",
+          "recursive": false,
+          "hidden": false,
+          "description": "Approve a specific hazard by name for this\ncommand; repeatable. Pass 'all' for\neverything this command gates. An invalid\nvalue lists the valid ones",
+          "aliases": [
+            "-f"
+          ],
+          "arguments": [
+            {
+              "name": "SPECIFIER",
+              "required": true,
+              "arity": {
+                "minimum": 1,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--no-cache",
+          "recursive": false,
+          "hidden": false,
+          "description": "Re-run all pre-flight checks instead of\nusing cached results\nprofile to match the one Flowline\nin place after the run"
+        },
+        {
+          "name": "--auto-select-auth-profile",
+          "recursive": false,
+          "hidden": false,
+          "description": "Automatically switch PAC CLI's active auth\nprofile to match the one Flowline\nresolved, without asking. The switch stays\nin place after the run",
+          "aliases": [
+            "-a"
+          ],
+          "arguments": [
+            {
+              "name": "AUTO_SELECT_AUTH_PROFILE",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--output",
+          "recursive": false,
+          "hidden": false,
+          "description": "Folder to write the zip to (default:\nartifacts/ next to the solution)",
+          "aliases": [
+            "-o"
+          ],
+          "arguments": [
+            {
+              "name": "OUTPUT",
+              "required": false,
+              "arity": {
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          ]
+        },
+        {
+          "name": "--skip-solution-check",
+          "recursive": false,
+          "hidden": false,
+          "description": "Skip the solution checker gate\na fresh build instead of the committed\ncopies; the rest of the solution stays as\ncommitted"
+        },
+        {
+          "name": "--binaries-from-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "Pack plugin and web resource binaries from\na fresh build instead of the committed\ncopies; the rest of the solution stays as\ncommitted"
+        },
+        {
+          "name": "--no-build",
+          "recursive": false,
+          "hidden": false,
+          "description": "With --binaries-from-build: skip 'dotnet\nbuild' and use the existing Release output\nDocs: https://github.com/RemyDuijkeren/Flowline/wiki"
+        }
+      ]
+    },
+    {
       "name": "provision",
       "hidden": false,
       "description": "Create a DEV, TEST, or UAT environment by copying production. Saves the\nenvironment URL to .flowline. One-time setup per environment",
@@ -1058,7 +1176,13 @@
           "name": "--no-build",
           "recursive": false,
           "hidden": false,
-          "description": "Skip the 'dotnet build'\nvalidation step\nDocs: https://github.com/RemyDuijkeren/Flowline/wiki"
+          "description": "Skip the 'dotnet build'\nvalidation step"
+        },
+        {
+          "name": "--tidy-connrefs",
+          "recursive": false,
+          "hidden": false,
+          "description": "Merge duplicate connection\nreferences, remove unused ones\nand rename default names in DEV\nDocs: https://github.com/RemyDuijkeren/Flowline/wiki"
         }
       ]
     },

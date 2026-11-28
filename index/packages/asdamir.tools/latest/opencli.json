@@ -2,7 +2,7 @@
   "opencli": "0.1-draft",
   "info": {
     "title": "asdamir",
-    "version": "2.0.0",
+    "version": "2.1.4",
     "description": "Code generator and scaffolding tool for the Asdamir stack. Generates entity/DTO/repository/service/controller/test/migration sets that follow the framework's audited conventions out of the box."
   },
   "x-inspectra": {
@@ -2595,7 +2595,7 @@
     },
     {
       "name": "secrets",
-      "description": "Secret tooling: re-encrypt stored secrets on Security:EncryptionKey rotation, produce an encrypted value, or generate a JWT signing key pair.",
+      "description": "Secret tooling: re-encrypt stored secrets on Security:EncryptionKey rotation, produce an encrypted value, generate a JWT signing key pair, or check that every Gateway trusts a new signing key.",
       "commands": [
         {
           "name": "rotate-key",
@@ -2880,6 +2880,218 @@
               "arguments": [
                 {
                   "name": "FORCE",
+                  "required": false,
+                  "arity": {
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "type": "Boolean"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "check-gateways",
+          "description": "Read-only: before AppManagement switches to Jwt:SigningKeyPem, check that every active managed app's Gateway already trusts the NEW signing key. One harmless GET per Gateway; nothing is written.",
+          "options": [
+            {
+              "name": "--key-file",
+              "recursive": false,
+              "hidden": false,
+              "description": "Path to the NEW private signing key (PKCS#8 / SEC1 EC P-256 PEM — what `secrets new-signing-key` wrote). The key itself is never accepted on the command line.",
+              "aliases": [
+                "-k"
+              ],
+              "arguments": [
+                {
+                  "name": "KEY_FILE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--connection",
+              "recursive": false,
+              "hidden": false,
+              "description": "Full ADO.NET connection string to AsdamirVault. Wins over --server/--database/--user/--password.",
+              "aliases": [
+                "-c",
+                "--vault-connection"
+              ],
+              "arguments": [
+                {
+                  "name": "CONNECTION",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--server",
+              "recursive": false,
+              "hidden": false,
+              "description": "SQL Server instance (when --connection is omitted).",
+              "aliases": [
+                "-S"
+              ],
+              "arguments": [
+                {
+                  "name": "SERVER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--database",
+              "recursive": false,
+              "hidden": false,
+              "description": "AsdamirVault database name. Required when --connection is omitted — a connection is never defaulted.",
+              "aliases": [
+                "-d"
+              ],
+              "arguments": [
+                {
+                  "name": "DATABASE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--user",
+              "recursive": false,
+              "hidden": false,
+              "description": "SQL login (SQL auth). Omit for Windows integrated auth.",
+              "aliases": [
+                "-U"
+              ],
+              "arguments": [
+                {
+                  "name": "USER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--password",
+              "recursive": false,
+              "hidden": false,
+              "description": "Password for --user.",
+              "aliases": [
+                "-P"
+              ],
+              "arguments": [
+                {
+                  "name": "PASSWORD",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--issuer",
+              "recursive": false,
+              "hidden": false,
+              "description": "The token issuer the Gateways expect (AppManagement's Jwt:Issuer).",
+              "arguments": [
+                {
+                  "name": "ISSUER",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--audience",
+              "recursive": false,
+              "hidden": false,
+              "description": "The app-token audience the Gateways expect (AppManagement's Jwt:Audience).",
+              "arguments": [
+                {
+                  "name": "AUDIENCE",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "String"
+                }
+              ]
+            },
+            {
+              "name": "--app",
+              "recursive": false,
+              "hidden": false,
+              "description": "Probe only this app Code (repeatable). Default: every active app.",
+              "arguments": [
+                {
+                  "name": "APP",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 100000
+                  },
+                  "type": "String[]"
+                }
+              ]
+            },
+            {
+              "name": "--timeout",
+              "recursive": false,
+              "hidden": false,
+              "description": "Seconds to wait for each Gateway (1–120).",
+              "arguments": [
+                {
+                  "name": "TIMEOUT",
+                  "required": true,
+                  "arity": {
+                    "minimum": 1,
+                    "maximum": 1
+                  },
+                  "type": "Int32"
+                }
+              ]
+            },
+            {
+              "name": "--allow-untrusted-certs",
+              "recursive": false,
+              "hidden": false,
+              "description": "Development only: accept any TLS server certificate (e.g. the ASP.NET dev certificate). Prints a warning.",
+              "arguments": [
+                {
+                  "name": "ALLOW_UNTRUSTED_CERTS",
                   "required": false,
                   "arity": {
                     "minimum": 0,
